@@ -1629,6 +1629,17 @@
 <script>
 (function(){
 
+  // ===== SUPABASE CONFIG =====
+  // Fill these in with YOUR project's values (Project Settings → API).
+  // SUPABASE_ANON_KEY is the public "anon" key — it's designed to be
+  // exposed in client-side code (Supabase docs make this explicit) and is
+  // NOT the same thing as a service_role key or a Groq/Gemini API key. The
+  // real Groq/Gemini keys now live only as server-side secrets on the edge
+  // functions below and never ship in this file.
+  const SUPABASE_URL = 'https://iiehhmelfotwkdqxplug.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlpZWhobWVsZm90d2tkcXhwbHVnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzNDYxMzEsImV4cCI6MjA5ODkyMjEzMX0.8QzN1LJmr70Sidxp2RsOq-z3S_NX5lN9QWTr45CSaHo';
+  const SUPABASE_FUNCTIONS_URL = SUPABASE_URL + '/functions/v1';
+
   // ===== Decorative side-margin parallax words (purely visual, no interaction) =====
   (function setupSideWords(){
     const leftInner  = document.getElementById('sideWordsLeftInner');
@@ -2336,35 +2347,29 @@ Output ONLY this JSON, nothing else: {"questions":["...","...","..."]}`;
     }
   }
 
-  // Question generation now uses Gemini (Google AI Studio) with the built-in
-  // Google Search grounding tool, instead of Groq. This key is used ONLY for
-  // extemp question generation — transcription/feedback still use Groq above.
-  const GEMINI_API_KEY = 'AQ.Ab8RN6LkPu90hHTqlZIV23_Ak0Nhx4RHLZiHQM_KlyWDDV2qIg';
+  // Question generation uses Gemini (Google AI Studio) with the built-in
+  // Google Search grounding tool. The real Gemini key never lives in this
+  // file — it's a Supabase secret, and this call goes through the
+  // `gemini-generate` edge function proxy (see SUPABASE_URL below).
   const GEMINI_MODEL = 'gemini-2.5-flash';
 
-  // Optional user-supplied fallback key (Settings → "2nd Gemini key"). Only
-  // used if the built-in key fails or gets rate-limited — the built-in key
-  // is always tried first.
+  // Optional user-supplied override key (Settings → "2nd Gemini key"),
+  // forwarded to the edge function and tried before its own server-side keys.
   function geminiKeyList(){
     const override = (document.getElementById('geminiKey2')?.value || '').trim();
-    return [GEMINI_API_KEY, override].filter(Boolean);
+    return [override].filter(Boolean);
   }
 
   async function callGeminiWithKey(prompt, apiKey, maxOutputTokens){
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`,
-      {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({
-          contents:[{ parts:[{ text: prompt }] }],
-          tools:[{ google_search:{} }],
-          // Keep this tight — grounded answers don't need much room, and a
-          // small token budget keeps each generation cheap.
-          generationConfig:{ temperature:0.9, maxOutputTokens:(maxOutputTokens||1024), thinkingConfig:{ thinkingBudget:0 } }
-        })
-      }
-    );
+    const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/gemini-generate`, {
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'Authorization':'Bearer '+SUPABASE_ANON_KEY,
+        'apikey': SUPABASE_ANON_KEY
+      },
+      body: JSON.stringify({ prompt, maxOutputTokens: maxOutputTokens||1024, overrideKey: apiKey || undefined })
+    });
     if(!res.ok){
       const bodyText = await res.text().catch(()=> '');
       throw new Error('gemini_failed:'+res.status+':'+bodyText.slice(0,300));
@@ -2375,20 +2380,17 @@ Output ONLY this JSON, nothing else: {"questions":["...","...","..."]}`;
     return candidate;
   }
 
-  // Tries each available Gemini key in order (built-in first, then any
-  // user-supplied fallback), moving to the next key only if a call fails
-  // outright or gets rate-limited (429).
+  // Tries each available override key in order, then lets the edge function
+  // fall back through its own server-side keys if none are supplied/work.
   async function callGemini(prompt, maxOutputTokens){
     const keys = geminiKeyList();
+    if(!keys.length) return await callGeminiWithKey(prompt, null, maxOutputTokens);
     let lastErr = null;
     for(const key of keys){
       try{
         return await callGeminiWithKey(prompt, key, maxOutputTokens);
       }catch(err){
         lastErr = err;
-        // Only fall through to the next key on rate-limit/auth-ish failures;
-        // otherwise there's no reason a different key would fix it, but we
-        // try anyway since it's cheap and the caller only sees the last error.
       }
     }
     throw lastErr || new Error('gemini_no_keys');
@@ -3461,25 +3463,11 @@ Formatting rules: plain text only, with the sole exception of wrapping key terms
   });
 
   // ===== SUBMISSION =====
-  // Tried in priority order for question generation: KEY_3 (new) first, then
-  // KEY (original) and KEY_2 (original) as fallbacks if KEY_3 hits a rate
-  // limit or errors out. None of the original keys were removed.
-  const DEFAULT_GROQ_KEY = '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';
-  const DEFAULT_GROQ_KEY_2 = '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';
-  const DEFAULT_GROQ_KEY_3 = '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';
-  // These two are from genuinely separate Groq accounts/orgs (confirmed by the
-  // user), so unlike KEY_2/KEY_3 they actually carry their own independent
-  // tokens-per-minute budget rather than sharing one pool. Tried first.
-  const DEFAULT_GROQ_KEY_4 = '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';
-  const DEFAULT_GROQ_KEY_5 = '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';
-
-  // Builds the full fallback key list used everywhere a Groq call is made:
-  // any explicit override(s) the user typed in first, then the two separate-
-  // account keys (real extra capacity), then the three original same-org
-  // keys as a last line of defense. Deduplicated by withKeyFallback itself.
-  function buildKeyList(...overrides){
-    return [...overrides, DEFAULT_GROQ_KEY_4, DEFAULT_GROQ_KEY_5, DEFAULT_GROQ_KEY_3, DEFAULT_GROQ_KEY, DEFAULT_GROQ_KEY_2].filter(Boolean);
-  }
+  // The real Groq API keys no longer live in this file — they're Supabase
+  // secrets on the `groq-chat` / `groq-transcribe` edge functions. Anything
+  // typed into Settings ("API key override") is just forwarded to those
+  // functions as `overrideKey` and tried first; if omitted, the functions
+  // fall back to their own server-side keys automatically.
 
   // Wraps fetch() with a hard timeout so a hung/unresponsive request (bad
   // network, stalled connection, etc.) fails with a clear error instead of
@@ -3498,12 +3486,8 @@ Formatting rules: plain text only, with the sole exception of wrapping key terms
   }
 
   document.getElementById('submitBtn').addEventListener('click', () => {
-    const override = apiKeyInput.value.trim();
-    const key = override || DEFAULT_GROQ_KEY;
-    const overrideKey2 = document.getElementById('apiKey2').value.trim();
-    // Falls back to the built-in second key automatically — no setup needed —
-    // unless the person has explicitly entered their own second key.
-    const key2 = overrideKey2 || DEFAULT_GROQ_KEY_2;
+    const key = apiKeyInput.value.trim() || null;
+    const key2 = document.getElementById('apiKey2').value.trim() || null;
     runPipeline(key, key2 !== key ? key2 : null);
   });
 
@@ -3717,13 +3701,15 @@ Formatting rules: plain text only, with the sole exception of wrapping key terms
     return encodeWavFromFloat32(mono, targetRate);
   }
 
-  // Tries an async Groq call with one key, and automatically retries with the
-  // second key if the first one fails for any reason (bad key, rate limit,
-  // server error, etc.) — fully transparent, no user action required.
+  // Tries an async call with each supplied override key in turn (falling
+  // back to a final "no override" attempt so the edge function's own
+  // server-side Groq keys still get tried) — fully transparent, no user
+  // action required.
   async function withKeyFallback(fn, ...keys){
-    const uniqueKeys = [...new Set(keys.filter(Boolean))];
+    const list = [...new Set(keys)];
+    if(!list.some(k => !k)) list.push(null); // guarantee a no-override attempt
     let lastErr = null;
-    for(const k of uniqueKeys){
+    for(const k of list){
       try{
         return await fn(k);
       }catch(err){
@@ -3736,11 +3722,15 @@ Formatting rules: plain text only, with the sole exception of wrapping key terms
   async function transcribeBlob(blob, key, filename){
     const form = new FormData();
     form.append('file', blob, filename);
-    form.append('model', 'whisper-large-v3');
-    form.append('response_format', 'verbose_json');
-    form.append('timestamp_granularities[]', 'word');
-    const res = await fetchWithTimeout('https://api.groq.com/openai/v1/audio/transcriptions',{
-      method:'POST', headers:{'Authorization':'Bearer '+key}, body:form
+    form.append('filename', filename);
+    if(key) form.append('overrideKey', key);
+    const res = await fetchWithTimeout(`${SUPABASE_FUNCTIONS_URL}/groq-transcribe`,{
+      method:'POST',
+      headers:{
+        'Authorization':'Bearer '+SUPABASE_ANON_KEY,
+        'apikey': SUPABASE_ANON_KEY
+      },
+      body:form
     }, 75000);
     if(!res.ok) throw new Error('transcription_failed:'+res.status+':'+await safeErrText(res));
     const json = await res.json();
@@ -3756,7 +3746,7 @@ Formatting rules: plain text only, with the sole exception of wrapping key terms
     const wholeWav = await audioBufferSliceToWav(audioBuffer, 0, audioBuffer.duration);
     if(wholeWav.size <= GROQ_UPLOAD_SAFE_BYTES){
       onStatus && onStatus('Transcribing testimony…', '', 0.92);
-      return await withKeyFallback(k => transcribeBlob(wholeWav, k, 'speech.wav'), ...buildKeyList(primaryKey, secondaryKey));
+      return await withKeyFallback(k => transcribeBlob(wholeWav, k, 'speech.wav'), primaryKey, secondaryKey);
     }
 
     // Still too big even after compression (very long speech) — split into chunks.
@@ -4620,9 +4610,6 @@ Formatting rules: plain text only, with the sole exception of wrapping key terms
     statusText.textContent = 'Reading audio track…';
     statusSub.textContent = 'Decoding and compressing the recording before upload.';
     pipelineProgress.start(PIPELINE_PHRASES.audio, 8);
-    // Same full priority list as question generation: explicit overrides
-    // first, then the two separate-account keys, then the original three.
-    const pipelineKeys = buildKeyList(key, key2);
     try{
       let audioBuffer;
       try{
@@ -4661,20 +4648,25 @@ Formatting rules: plain text only, with the sole exception of wrapping key terms
 
       const metricsBlock = buildDeliveryMetricsBlock(deliveryMetrics, fillerStutterStats);
       const chatJson = await withKeyFallback(async (k) => {
-        const res = await fetchWithTimeout('https://api.groq.com/openai/v1/chat/completions',{
+        const res = await fetchWithTimeout(`${SUPABASE_FUNCTIONS_URL}/groq-chat`,{
           method:'POST',
-          headers:{'Authorization':'Bearer '+k,'Content-Type':'application/json'},
+          headers:{
+            'Authorization':'Bearer '+SUPABASE_ANON_KEY,
+            'apikey': SUPABASE_ANON_KEY,
+            'Content-Type':'application/json'
+          },
           body: JSON.stringify({
             model:'llama-3.3-70b-versatile', temperature:0.4, max_tokens:3000,
             messages:[
               {role:'system', content:RUBRIC_PROMPT},
               {role:'user', content:'TRANSCRIPT:\n\n'+transcript+'\n\n'+metricsBlock}
-            ]
+            ],
+            overrideKey: k || undefined
           })
         }, 60000);
         if(!res.ok) throw new Error('judging_failed:'+res.status+':'+await safeErrText(res));
         return await res.json();
-      }, ...pipelineKeys);
+      }, key, key2);
       const feedback = chatJson.choices?.[0]?.message?.content || '';
       if(!feedback) throw new Error('judging_failed:empty:No content returned.');
       lastRawFeedback = feedback;
@@ -4695,21 +4687,26 @@ Formatting rules: plain text only, with the sole exception of wrapping key terms
   async function fetchTranscriptAnnotations(transcript, key, key2){
     try{
       const chatJson = await withKeyFallback(async (k) => {
-        const res = await fetchWithTimeout('https://api.groq.com/openai/v1/chat/completions',{
+        const res = await fetchWithTimeout(`${SUPABASE_FUNCTIONS_URL}/groq-chat`,{
           method:'POST',
-          headers:{'Authorization':'Bearer '+k,'Content-Type':'application/json'},
+          headers:{
+            'Authorization':'Bearer '+SUPABASE_ANON_KEY,
+            'apikey': SUPABASE_ANON_KEY,
+            'Content-Type':'application/json'
+          },
           body: JSON.stringify({
             model:'llama-3.3-70b-versatile', temperature:0.3, max_tokens:3800,
             response_format:{ type:'json_object' },
             messages:[
               {role:'system', content:ANNOTATION_PROMPT},
               {role:'user', content:'TRANSCRIPT:\n\n'+transcript}
-            ]
+            ],
+            overrideKey: k || undefined
           })
         }, 45000);
         if(!res.ok) throw new Error('annotation_failed:'+res.status);
         return await res.json();
-      }, ...buildKeyList(key, key2));
+      }, key, key2);
       const raw = chatJson.choices?.[0]?.message?.content || '';
       if(!raw) return null;
       let cleaned = raw.trim();

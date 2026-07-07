@@ -1159,7 +1159,7 @@
             <span>Keyboard Shortcuts</span>
           </div>
           <div class="sp-body" style="padding-bottom:14px;">
-            <div class="shortcut-row"><span>Start / stop recording</span><kbd>Space</kbd></div>
+            <div class="shortcut-row"><span>Start / stop recording — or play / pause video while reviewing</span><kbd>Space</kbd></div>
             <div class="shortcut-row"><span>Toggle prep timer</span><kbd>T</kbd></div>
             <div class="shortcut-row"><span>Toggle time signal settings</span><kbd>S</kbd></div>
             <div class="shortcut-row"><span>Toggle light / dark mode</span><kbd>D</kbd></div>
@@ -1872,6 +1872,25 @@ RULES:
   let wordTokenSpans = []; // [{s,e,ts,te}] char offsets into lastTranscript <-> seconds into recordedBlob
   let resultsVideoURL = null;
   let activeWordSpanEl = null;
+  // Auto-scroll-to-active-word is suspended the moment the user manually
+  // scrolls/touches/wheels the page, so playback never fights the user for
+  // control of the viewport. It's re-armed when they click a transcript
+  // word (an explicit "take me there/follow along again" action) or when a
+  // fresh transcript/example is rendered.
+  let autoScrollToWordEnabled = true;
+  let lastProgrammaticScrollAt = 0;
+  function suspendAutoScrollToWord(){
+    // Ignore scroll/touch events that fire right after our own
+    // scrollIntoView call — only a scroll the user actually initiated
+    // should suspend auto-scroll.
+    if(Date.now() - lastProgrammaticScrollAt < 400) return;
+    autoScrollToWordEnabled = false;
+  }
+  window.addEventListener('wheel', suspendAutoScrollToWord, { passive:true });
+  window.addEventListener('touchmove', suspendAutoScrollToWord, { passive:true });
+  window.addEventListener('keydown', (e)=>{
+    if(['ArrowUp','ArrowDown','PageUp','PageDown','Home','End'].includes(e.key)) suspendAutoScrollToWord();
+  });
   let timeSignals = JSON.parse(JSON.stringify(DEFAULT_SIGNALS));
   let overlayTimeout = null;
   let settingsOpen = false;
@@ -3162,7 +3181,16 @@ Formatting rules: plain text only, with the sole exception of wrapping key terms
     }
     if(e.code === 'Space' || e.key === ' '){
       e.preventDefault();
-      if(recBtn && !recBtn.disabled) recBtn.click();
+      // Space is context-aware: while reviewing a results/example video it
+      // plays/pauses (stops) that video instantly; only while actually on
+      // the record screen does it start/stop recording.
+      if(!viewExample.classList.contains('hidden')){
+        examplePbPlayBtn.click();
+      } else if(!viewResults.classList.contains('hidden')){
+        pbPlayBtn.click();
+      } else if(recBtn && !recBtn.disabled){
+        recBtn.click();
+      }
     }
   });
 
@@ -4104,7 +4132,15 @@ Formatting rules: plain text only, with the sole exception of wrapping key terms
     if(currentActiveEl) currentActiveEl.classList.remove('tw-active');
     if(newEl){
       newEl.classList.add('tw-active');
-      newEl.scrollIntoView({ block:'nearest', behavior:'smooth' });
+      // Only auto-scroll the page to follow the highlighted word if the
+      // user hasn't manually scrolled away — otherwise this would yank
+      // the viewport back and trap them on the highlighted word,
+      // preventing them from scrolling up to reach the pause/stop
+      // controls or anything else on the page.
+      if(autoScrollToWordEnabled){
+        lastProgrammaticScrollAt = Date.now();
+        newEl.scrollIntoView({ block:'nearest', behavior:'smooth' });
+      }
     }
     return newEl;
   }
@@ -4273,7 +4309,10 @@ Formatting rules: plain text only, with the sole exception of wrapping key terms
     const wordEl = e.target.closest('.tw');
     if(!wordEl) return;
     const ts = parseFloat(wordEl.dataset.ts);
-    if(!isNaN(ts)) seekExampleVideo(ts);
+    if(!isNaN(ts)){
+      autoScrollToWordEnabled = true; // user asked to jump/follow here explicitly
+      seekExampleVideo(ts);
+    }
   });
 
   // Renders plainTranscript.slice(rangeStart, rangeEnd) as escaped HTML, with
@@ -4320,7 +4359,10 @@ Formatting rules: plain text only, with the sole exception of wrapping key terms
     const wordEl = e.target.closest('.tw');
     if(!wordEl) return;
     const ts = parseFloat(wordEl.dataset.ts);
-    if(!isNaN(ts)) seekResultsVideo(ts);
+    if(!isNaN(ts)){
+      autoScrollToWordEnabled = true; // user asked to jump/follow here explicitly
+      seekResultsVideo(ts);
+    }
   });
 
   let activeCommentEl = null;
@@ -4472,6 +4514,7 @@ Formatting rules: plain text only, with the sole exception of wrapping key terms
   const EXAMPLE_DRILL = "To address the issue of filler words and to improve the overall fluency of the delivery, the speaker should practice speaking without fillers by recording themselves and then listening back to identify instances of \"um,\" \"ah,\" \"like,\" and other filler words. They should then re-record the speech, focusing on replacing these fillers with pauses or more deliberate speech. This practice should be repeated several times, with the goal of reducing filler words to near zero.";
 
   function renderExampleBallot(){
+    autoScrollToWordEnabled = true; // fresh view of the example: follow along by default again
     let html = scoreKeyHtml();
     EXAMPLE_CATEGORIES.forEach(cat => {
       const band = bandClass(cat.score, cat.max);
@@ -4868,6 +4911,7 @@ Formatting rules: plain text only, with the sole exception of wrapping key terms
   }
 
   function renderResults(feedback, transcript){
+    autoScrollToWordEnabled = true; // fresh results view: follow along by default again
     const parsed = parseBallot(feedback);
     let html = '';
 

@@ -1140,7 +1140,7 @@
       <div class="field"><b>Event</b>Extemporaneous Speaking</div>
       <div class="field"><b>Round</b><span id="roundNo">1</span></div>
       <div class="field"><b>Speaker</b>You</div>
-      <div class="field"><b>Judge</b>AI Panel — Llama 3.3 70B</div>
+      <div class="field"><b>Judge</b>AI Panel — Grok 4.3</div>
     </div>
 
     <div class="ballot-body">
@@ -1804,15 +1804,60 @@ This category grades HOW the speech was delivered, not its content. A separate m
 OUTPUT FORMAT:
 Format your entire response using clear Markdown headers. Be thorough and in-depth — this is a detailed written ballot, not a summary, so do not be brief. For each of the 8 categories, you must include:
 ### [Category Name] - [Score]/[category cap from above]
-- **What Worked:** List however many SEPARATE, specific instances of what worked in this category genuinely exist — anywhere from 2 to 5. Do not force a fixed count: a clean, strong category may have 4-5 real strengths worth naming, while a weak or thin category may only have 1-2 (or, rarely, none). Let the actual quality of the speech dictate the number — never pad to hit a quota, and never artificially cap a genuinely strong section at fewer points than it deserves. Format this as a NUMBERED list using "1)", "2)", "3)", etc. — never asterisks or dashes. Each numbered point must be a complete mini-analysis: state the specific strength, AND, in the same point, back it up with a specific piece of evidence from the transcript — either a short direct quote (under 15 words) or a precise paraphrase of exactly what the speaker said/did at that moment. A point that only makes a general claim without pointing to a specific, identifiable moment in the speech is not acceptable — vague claims like "the argument is well-structured" must instead say something like "1) The argument is well-structured — for example, the speaker explicitly signposts the shift into point two by saying 'now that we've seen the economic angle, let's turn to the political fallout,' which makes the organization easy to flow." Do not collapse multiple instances into one point. If there is genuinely only one thing that worked, or nothing worked, say so explicitly rather than padding.
-- **Critical Flaws:** List however many SEPARATE, specific instances of weaknesses, flawed logic, or gaps in this category genuinely exist — anywhere from 2 to 5. Do not force a fixed count: a badly flawed category may have 4-5 real, distinct problems worth naming, while a strong category may only have 1-2 minor soft spots (or, rarely, none). Let the actual quality of the speech dictate the number — never pad to hit a quota, and never soften a genuinely weak section down to fewer flaws than it deserves just to hit a target. Format this as a NUMBERED list using "1)", "2)", "3)", etc. — never asterisks or dashes. Each numbered point must be a complete mini-analysis: name the specific flaw, explain precisely why it's a flaw and what the impact is, AND, in the same point, back it up with a specific piece of evidence from the transcript — either a short direct quote (under 15 words) or a precise paraphrase of exactly what the speaker said/did at that moment. A point that only makes a general claim without pointing to a specific, identifiable moment in the speech is not acceptable. Banned pattern: never end a flaw on an unfilled instruction like "could use more nuance," "should consider counterarguments," "needs deeper analysis," or "could be smoother" — if you name that kind of gap, you must also supply the specific missing content yourself (the actual counterargument, the actual deeper causal mechanism, the actual smoother transition line) so the point is a concrete example, not homework left for the speaker. For the Speech Quality category, this must separately cover filler words found, volume, emphasis placement, tone variety, and pacing/pauses as distinct numbered items — citing the specific numbers from the AUDIO DELIVERY METRICS as the "evidence" for those points. Do not collapse multiple instances into one point. If there is genuinely only one flaw, or none, say so explicitly rather than padding.
+- **What Worked:** List however many SEPARATE, specific instances of what worked in this category genuinely exist — anywhere from 2 to 5. Every single category write-up — even one with only 2 points — must be as long, dense, and specifically evidenced as one with 5; a lower count is a signal of the speech's actual quality, never an excuse to write less or think less hard. Do not force a fixed count: a clean, strong category may have 4-5 real strengths worth naming, while a weak or thin category may only have 1-2 (or, rarely, none). Let the actual quality of the speech dictate the number — never pad to hit a quota, and never artificially cap a genuinely strong section at fewer points than it deserves. Format this as a NUMBERED list using "1)", "2)", "3)", etc. — never asterisks or dashes. Each numbered point must be a complete mini-analysis: state the specific strength, AND, in the same point, back it up with a specific piece of evidence from the transcript — either a short direct quote (under 15 words) or a precise paraphrase of exactly what the speaker said/did at that moment. A point that only makes a general claim without pointing to a specific, identifiable moment in the speech is not acceptable — vague claims like "the argument is well-structured" must instead say something like "1) The argument is well-structured — for example, the speaker explicitly signposts the shift into point two by saying 'now that we've seen the economic angle, let's turn to the political fallout,' which makes the organization easy to flow." Every point must also stay strictly on-topic for THIS category's own definition above — e.g. a Structure point must be about organization/transitions/timing, not about whether the argument itself was convincing (that belongs in Strength of Argument & Analysis) or which fallacy was used (that belongs in Flaws in Reasoning); if a point would fit better under a different category's heading, move it there instead of leaving it under the wrong one. Do not collapse multiple instances into one point. If there is genuinely only one thing that worked, or nothing worked, say so explicitly rather than padding.
+- **Critical Flaws:** List however many SEPARATE, specific instances of weaknesses, flawed logic, or gaps in this category genuinely exist — anywhere from 2 to 5. Every single category write-up — even one with only 2 points — must be as long, dense, and specifically evidenced as one with 5; a lower count is a signal of the speech's actual quality, never an excuse to write less or think less hard. Do not force a fixed count: a badly flawed category may have 4-5 real, distinct problems worth naming, while a strong category may only have 1-2 minor soft spots (or, rarely, none). Let the actual quality of the speech dictate the number — never pad to hit a quota, and never soften a genuinely weak section down to fewer flaws than it deserves just to hit a target. Format this as a NUMBERED list using "1)", "2)", "3)", etc. — never asterisks or dashes. Each numbered point must be a complete mini-analysis: name the specific flaw, explain precisely why it's a flaw and what the impact is, AND, in the same point, back it up with a specific piece of evidence from the transcript — either a short direct quote (under 15 words) or a precise paraphrase of exactly what the speaker said/did at that moment. A point that only makes a general claim without pointing to a specific, identifiable moment in the speech is not acceptable. Every point must also stay strictly on-topic for THIS category's own definition above — e.g. a Flaws in Reasoning point must name an actual logical fallacy or reasoning gap (hasty generalization, unproven causal leap, false cause, etc.), not just "the point could be stronger"; if a point would fit better under a different category's heading, move it there instead of leaving it under the wrong one. Banned pattern: never end a flaw on an unfilled instruction like "could use more nuance," "should consider counterarguments," "needs deeper analysis," or "could be smoother" — if you name that kind of gap, you must also supply the specific missing content yourself (the actual counterargument, the actual deeper causal mechanism, the actual smoother transition line) so the point is a concrete example, not homework left for the speaker. For the Speech Quality category, this must separately cover filler words found, volume, emphasis placement, tone variety, and pacing/pauses as distinct numbered items — citing the specific numbers from the AUDIO DELIVERY METRICS as the "evidence" for those points. Do not collapse multiple instances into one point. If there is genuinely only one flaw, or none, say so explicitly rather than padding.
 - **What You Could Have Done:** Directly addressing the Critical Flaws you just listed above for this category, rewrite what the speaker should have said instead — a corrected/improved version of the actual moment(s) in question. Ground it in the speaker's real words: reuse the parts of their original phrasing that were fine as plain, unmarked text, and wrap ONLY the words you are personally adding or changing in double asterisks (**like this**) so it is clear which words are the speaker's original language and which words are your rewrite. For example, if a flaw was that the speaker jumped straight from one point to another with no transition, you would write something like: "...the U has a simple-minded, myopic perspective. **Now that we've seen how shortsighted the strategy is, let's turn to how it played out in practice —** second, we'll see the U.S.'s proposed solution..." Cover each numbered flaw from Critical Flaws above with its own corrected line, in the same order, so the speaker can see exactly what to say instead at each specific moment you criticized.
 Overall, aim for genuine depth and volume in every category — a thin, one-line write-up per field is not acceptable, and a claim with no specific evidence attached to it is not acceptable. Write like a judge filling out a real, detailed paper ballot who wants the competitor to walk away with a long list of concrete, actionable takeaways, each one anchored to an exact moment in their own speech.
 Conclude your analysis with these three final sections:
 ### Total Composite Score: [Sum of all 8 category scores]/100
 ### Judge's Rank: [Rank]/5 — In a flight (round) of 6 competitors at a competitive state-level-or-below tournament, where 1 is the best speaker in the room and 5 is the weakest of the six (i.e. this speaker beats the number of competitors implied by their rank), where would this speech place relative to five typical state-level competitors on this same question? Be a discerning, realistic judge — do not default to the middle. A truly excellent, polished speech should rank 1st; a speech riddled with flaws should rank 5th.
 ### Rank Explanation: A tight, judge's-ballot-style paragraph (4-6 sentences) that opens by stating where this speech would place in a flight of 6 competitors at a competitive state-level-or-below tournament (e.g. "This speech would place 3rd against 5 other competitors on this question"), then justifies that rank by summarizing, in your own synthesized words, this speaker's core strengths and core weaknesses drawn from the eight categories analyzed above — written the way a judge would justify a rank to a tab room, not a restatement of every category.
-### Actionable Drill for Next Round: Provide one concrete, highly specific practice drill tailored to fix the single worst flaw identified in this speech.`;
+### Actionable Drill for Next Round: Provide one concrete, highly specific practice drill tailored to fix the single worst flaw identified in this speech.
+
+GOLD-STANDARD EXAMPLE OF REQUIRED DEPTH, SPECIFICITY, AND FORMAT:
+The example below is a real, previously-produced ballot for a DIFFERENT speech (an Afghanistan/troop-surges extemp round). It is provided ONLY as a calibration reference for depth, specificity, evidence-density, and formatting — never reuse any of its content, quotes, topic, or scores for the actual speech you are grading. Study exactly how dense and concrete each numbered point is (a specific claim PLUS a specific quote/paraphrase, every single time, with zero vague filler points), how "What You Could Have Done" always rewrites the speaker's real words with only the changed/added portion wrapped in double asterisks, and how even a category with only 2 "What Worked" or "Critical Flaws" points is still exhaustively detailed rather than short. Match this exact quality bar for every category, every time, regardless of how many numbered points a given category ends up needing (2 is fine if the speech only gives you 2 genuine, distinct things to say — but each of those 2 must be as long, specific, and well-argued as the ones below, never a shortcut for lower effort):
+
+### Creative Hook & Intro - 6/8
+**What Worked**
+1) The SpongeBob SquarePants cold-open is a genuinely creative AGD choice — it opens with "In one of the most classic episodes of arguably the most classic TV show of all time, SpongeBob SquarePants...", which is far more memorable than a generic quote or statistic hook.
+2) The link from the cartoon analogy into the literal question drawn is smooth; the speaker pivots directly into "...and that's exactly the approach the U.S. took in Afghanistan" without an awkward gap.
+3) The thesis statement is explicit and easy to flow — "So today we'll answer whether the war was in vain" leaves no ambiguity about the speaker's side.
+**Critical Flaws**
+1) The preview of the three main points is delivered in one breath without clear numbered signposting — the speaker says "we'll look at strategy, policy, and consequences" instead of formally marking "first... second... third," which makes it harder for a judge to flow.
+2) The hook is never explicitly tied back to the topic in a single sentence — the connection is implied rather than stated, e.g. there's no line like "just as SpongeBob X, the U.S. Y."
+**What You Could Have Done**
+1) "...we'll look at strategy, policy, and consequences — **first, the strategic myopia driving this war; second, the policy failures that followed; and third, the long-term consequences we're still living with today.**"
+2) "So today we'll answer whether the war was in vain. **Just as SpongeBob's shortsighted scheme always collapses in on itself, the U.S.'s shortsighted strategy in Afghanistan did the same.**"
+
+### Structure - 8/10
+**What Worked**
+1) The skeleton is all present and correctly ordered — a single AGD, a clear thesis, three distinct body points, and a conclusion — with none of the parts missing or blurred together.
+2) The transition from point two into point three is clean and explicit: "...have been a disastrous failure. Now that we've seen how the policy itself broke down, let's turn to what it actually cost us long-term" clearly signposts the shift.
+3) Timing is close to competitive benchmarks: Introduction ran ~19% (about 57s), Body 1 ~28% (84s), Body 2 ~27% (81s), Body 3 ~17% (51s), Conclusion ~9% (27s) of a 300-second speech — the intro, both early body points, and the conclusion all land within a reasonable range of the 14/26/26/26/7 target.
+**Critical Flaws**
+1) The transition from point one into point two is abrupt — the speaker jumps straight to "Second, we'll see the U.S.'s proposed solution..." with no linking sentence connecting the two ideas, unlike the smoother point-two-to-point-three bridge.
+2) The AGD is only referenced at the very start and very end — there are no short callbacks to the SpongeBob framing anywhere in the body, so the throughline goes quiet for the entire middle of the speech.
+3) Body 3 is noticeably underweighted at ~17% versus the 26% benchmark, while the Introduction runs slightly hot at ~19% versus 14% — that imbalance directly explains why point three feels thinner and rushed compared to points one and two; roughly 5-8 seconds should be reallocated from the intro into point three.
+4) The conclusion restates the three points but never delivers an explicit "So What?" close tying back to the AGD's significance — it summarizes rather than resolves.
+**What You Could Have Done**
+1) "...the U has a simple-minded, myopic perspective. **Now that we've seen just how shortsighted that strategy is, let's turn to how it actually played out on the ground —** second, we'll see the U.S.'s proposed solution, troop surges, have been a disastrous failure."
+2) "So today we'll answer whether the war was in vain... **and just as SpongeBob's harebrained scheme resurfaces halfway through the episode to make things worse, the U.S.'s troop-surge strategy resurfaces here in point two to make things worse.**"
+3) "Things need to change going forward. **And just as SpongeBob's shortsighted scheme always collapses in on itself, so did the U.S.'s — which is exactly why the next chapter in Afghanistan policy has to break from that same shortsighted pattern.**"
+
+### Flaws in Reasoning - 8/12
+**What Worked**
+1) The speaker avoids the most common Extemp fallacy (slippery slope) — each claim about troop surges stays proportionate to the evidence cited rather than escalating into worst-case predictions.
+2) The "myopic strategy" framing is used consistently across points one and two rather than shifting definitions mid-speech, which keeps the argument internally coherent.
+**Critical Flaws**
+1) The claim that U.S. policy is driven "solely" by counterterrorism is a hasty generalization — it ignores the economic and geopolitical motivations the speaker's own Foreign Affairs source mentions.
+2) The line "the proof is in the pudding here" substitutes a cliché for actual causal reasoning — no specific mechanism follows it explaining why the evidence proves the claim.
+3) There's an unproven causal leap from "troop surges increased violence in the short term" directly to "this whole war has been for nothing," which skips over whether any other approach would have fared better.
+**What You Could Have Done**
+1) "...the U.S.'s policy has been driven solely by counterterrorism. **— though that's not the whole picture; the Foreign Affairs piece I cited also points to real economic and geopolitical motivations behind the U.S.'s presence there.**"
+2) "The proof is in the pudding here. **Specifically: troop surges were meant to reduce violence, but Foreign Affairs' own reporting shows violence rose in the surge regions instead — that's the mechanism connecting the strategy to its failure.**"
+
+Note how "Flaws in Reasoning" above names the EXACT fallacy/logical gap (hasty generalization, cliché-substituting-for-mechanism, unproven causal leap) rather than a vague "the logic could be tighter" — this specificity, naming the precise reasoning error and showing exactly where it occurs, is mandatory for that category on every ballot, not just this example.
+`;
 
   const ANNOTATION_PROMPT = `You are an elite NSDA Extemporaneous Speaking judge marking up a speech transcript with structural labels and inline comments, the way a judge marks a flow sheet or a teacher leaves inline comments in Google Docs.
 
@@ -3505,11 +3550,13 @@ Formatting rules: plain text only, with the sole exception of wrapping key terms
   });
 
   // ===== SUBMISSION =====
-  // The real Groq API keys no longer live in this file — they're Supabase
-  // secrets on the `groq-chat` / `groq-transcribe` edge functions. Anything
-  // typed into Settings ("API key override") is just forwarded to those
-  // functions as `overrideKey` and tried first; if omitted, the functions
-  // fall back to their own server-side keys automatically.
+  // Real provider API keys no longer live in this file — they're Supabase
+  // secrets on the edge functions: `grok-chat` (ballot judging + transcript
+  // annotations, via Grok) and `groq-transcribe` (audio transcription, via
+  // Groq/Whisper — unrelated provider, name is coincidentally similar).
+  // Anything typed into Settings ("API key override") is just forwarded to
+  // those functions as `overrideKey` and tried first; if omitted, the
+  // functions fall back to their own server-side keys automatically.
 
   // Wraps fetch() with a hard timeout so a hung/unresponsive request (bad
   // network, stalled connection, etc.) fails with a clear error instead of
@@ -4771,12 +4818,12 @@ Formatting rules: plain text only, with the sole exception of wrapping key terms
         : Object.assign({ audioUnavailable:true }, fillerStutterStats);
 
       statusText.textContent = 'The panel is deliberating…';
-      statusSub.textContent = 'Llama 3.3 70B Versatile is scoring your speech against the rubric.';
+      statusSub.textContent = 'Grok 4.3 is scoring your speech against the rubric.';
       pipelineProgress.setStage(88, PIPELINE_PHRASES.judging);
 
       const metricsBlock = buildDeliveryMetricsBlock(deliveryMetrics, fillerStutterStats);
       const chatJson = await withKeyFallback(async (k) => {
-        const res = await fetchWithTimeout(`${SUPABASE_FUNCTIONS_URL}/groq-chat`,{
+        const res = await fetchWithTimeout(`${SUPABASE_FUNCTIONS_URL}/grok-chat`,{
           method:'POST',
           headers:{
             'Authorization':'Bearer '+SUPABASE_ANON_KEY,
@@ -4784,7 +4831,7 @@ Formatting rules: plain text only, with the sole exception of wrapping key terms
             'Content-Type':'application/json'
           },
           body: JSON.stringify({
-            model:'llama-3.3-70b-versatile', temperature:0.4, max_tokens:3000,
+            model:'grok-4.3', temperature:0.4, max_tokens:3000,
             messages:[
               {role:'system', content:RUBRIC_PROMPT},
               {role:'user', content:'TRANSCRIPT:\n\n'+transcript+'\n\n'+metricsBlock}
@@ -4809,13 +4856,13 @@ Formatting rules: plain text only, with the sole exception of wrapping key terms
     }catch(err){ pipelineProgress.stop(); handlePipelineError(err); }
   }
 
-  // Makes a second, best-effort Groq call to get structural section labels and
+  // Makes a second, best-effort Grok call to get structural section labels and
   // inline comment quotes for the transcript, as JSON. Never throws — returns
   // null on any failure, and the UI gracefully falls back to a plain transcript.
   async function fetchTranscriptAnnotations(transcript, key, key2){
     try{
       const chatJson = await withKeyFallback(async (k) => {
-        const res = await fetchWithTimeout(`${SUPABASE_FUNCTIONS_URL}/groq-chat`,{
+        const res = await fetchWithTimeout(`${SUPABASE_FUNCTIONS_URL}/grok-chat`,{
           method:'POST',
           headers:{
             'Authorization':'Bearer '+SUPABASE_ANON_KEY,
@@ -4823,7 +4870,7 @@ Formatting rules: plain text only, with the sole exception of wrapping key terms
             'Content-Type':'application/json'
           },
           body: JSON.stringify({
-            model:'llama-3.3-70b-versatile', temperature:0.3, max_tokens:3800,
+            model:'grok-4.3', temperature:0.3, max_tokens:3800,
             response_format:{ type:'json_object' },
             messages:[
               {role:'system', content:ANNOTATION_PROMPT},

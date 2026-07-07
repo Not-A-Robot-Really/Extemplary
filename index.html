@@ -864,6 +864,16 @@
   .pb-scrub::-moz-range-thumb{
     width:13px;height:13px;border-radius:50%;background:var(--brass);cursor:pointer;border:2px solid var(--on-accent);
   }
+  .sync-fix-row{display:flex;align-items:center;gap:8px;margin-top:8px;padding:0 2px;flex-wrap:wrap;}
+  .sync-fix-btn{
+    font-family:var(--font-mono);font-size:11px;letter-spacing:0.3px;
+    border:1px solid var(--ink-line);background:rgba(255,255,255,0.04);color:var(--chrome-text-dim);
+    border-radius:20px;padding:5px 11px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;
+    transition:background 0.15s ease,color 0.15s ease,border-color 0.15s ease;
+  }
+  .sync-fix-btn:hover{color:var(--chrome-text);border-color:var(--brass);}
+  .sync-fix-btn.armed{background:var(--brass);color:var(--on-accent);border-color:var(--brass);}
+  .sync-fix-hint{font-family:var(--font-mono);font-size:11px;color:var(--brass);}
 
   .error-box{
     border:1px solid #a3322a;background:rgba(163,50,42,0.07);
@@ -1493,7 +1503,7 @@
         <!-- Synced video playback — identical interaction to a real round's results -->
         <div class="playback-section" id="examplePlaybackSection">
           <div class="ts-head">Watch &amp; Read Along</div>
-          <div class="ts-meta">Click any word in the transcript below (or a judge's note) to jump the video there</div>
+          <div class="ts-meta">Click any word in the transcript below (or a judge's note) to jump the video there. This example's highlighting timing is estimated, not exact — use "Fix sync" below if it's pointing at the wrong part.</div>
           <div class="playback-stage">
             <div class="playback-frame">
               <div id="exampleYtPlayer"></div>
@@ -1508,7 +1518,11 @@
               <input type="range" id="examplePbScrub" class="pb-scrub" min="0" max="1000" value="0" step="0.1">
               <span class="pb-time" id="examplePbTimeDur">0:00</span>
             </div>
-            <div class="stage-note"><a href="https://www.youtube.com/watch?v=lzoUu1fDmWE&t=449s" target="_blank" rel="noopener noreferrer" style="color:inherit;">Trouble playing? Open on YouTube ↗</a></div>
+            <div class="sync-fix-row">
+              <button class="sync-fix-btn" id="exampleSyncBtn" type="button">🎯 Fix sync</button>
+              <span class="sync-fix-hint hidden" id="exampleSyncHint">Now click the word actually being said in the video…</span>
+            </div>
+            <div class="stage-note"><a href="https://www.youtube.com/watch?v=lzoUu1fDmWE&t=20s" target="_blank" rel="noopener noreferrer" style="color:inherit;">Trouble playing? Open on YouTube ↗</a></div>
           </div>
         </div>
 
@@ -4159,12 +4173,15 @@ Formatting rules: plain text only, with the sole exception of wrapping key terms
   // blob, so it can't get real Whisper word timestamps. Instead we lay the
   // hand-written example transcript's words out evenly across the speech at
   // its stated pace (152 wpm, per the example's own Vocal Delivery panel),
-  // starting at the same point in the video (449s) the "watch on YouTube"
+  // starting at the same point in the video (0:20) the "watch on YouTube"
   // link always jumped to. The playback/highlight/click-to-seek mechanics
-  // are otherwise identical to a real round's results.
+  // are otherwise identical to a real round's results. The speech itself
+  // runs from 0:20 to 8:18 in the source video (everything outside that
+  // range is intro/other content, not the speech), so playback is clamped
+  // to that window and the word pacing is calibrated to its exact length.
   const EXAMPLE_YT_VIDEO_ID = 'lzoUu1fDmWE';
-  const EXAMPLE_SPEECH_START = 449;
-  const EXAMPLE_WPM = 152;
+  const EXAMPLE_SPEECH_START = 20;   // 0:20
+  const EXAMPLE_SPEECH_END = 498;    // 8:18
 
   let exampleWordSpans = [];
   let exampleWordEls = [];
@@ -4231,7 +4248,7 @@ Formatting rules: plain text only, with the sole exception of wrapping key terms
       videoId: EXAMPLE_YT_VIDEO_ID,
       width: '640',
       height: '360',
-      playerVars: { start: EXAMPLE_SPEECH_START, controls: 0, modestbranding: 1, rel: 0, playsinline: 1 },
+      playerVars: { start: EXAMPLE_SPEECH_START, end: EXAMPLE_SPEECH_END, controls: 0, modestbranding: 1, rel: 0, playsinline: 1 },
       events: {
         onReady: ()=>{ ytPlayerReady = true; },
         onStateChange: onExamplePlayerStateChange,
@@ -4269,7 +4286,16 @@ Formatting rules: plain text only, with the sole exception of wrapping key terms
     stopExamplePolling();
     ytPollTimer = setInterval(()=>{
       if(!ytPlayer || !ytPlayer.getCurrentTime) return;
-      const t = ytPlayer.getCurrentTime() - EXAMPLE_SPEECH_START;
+      const rawTime = ytPlayer.getCurrentTime();
+      // Clamp to the actual speech window (0:20–8:18) — everything outside
+      // it is intro/other content, not the speech itself.
+      if(rawTime >= EXAMPLE_SPEECH_END){
+        ytPlayer.pauseVideo();
+        examplePbPlayBtn.classList.remove('pb-playing');
+        stopExamplePolling();
+        return;
+      }
+      const t = rawTime - EXAMPLE_SPEECH_START;
       if(!examplePbScrubbing){
         examplePbScrub.value = String(Math.max(0, t));
         examplePbTimeCur.textContent = fmtPb(t);
@@ -4283,8 +4309,44 @@ Formatting rules: plain text only, with the sole exception of wrapping key terms
 
   function seekExampleVideo(t){
     if(!ytPlayer || !ytPlayer.seekTo) return;
-    ytPlayer.seekTo(t, true);
+    const clamped = Math.min(Math.max(t, EXAMPLE_SPEECH_START), EXAMPLE_SPEECH_END);
+    ytPlayer.seekTo(clamped, true);
     ytPlayer.playVideo();
+  }
+
+  // ===== Manual sync-fix for the example's synthetic word timing =====
+  // The example transcript has no real per-word timestamps from the source
+  // video (it's a YouTube clip, not a Whisper-transcribed recording), so its
+  // highlight timing is a best-guess estimate and can end up pointing at a
+  // completely different part of the speech than what's actually playing.
+  // "Fix sync" lets the person correct that live: arm it, then click the
+  // word that's actually being spoken right now, and every timestamp is
+  // re-anchored (shifted) so the highlight lines up from that point on.
+  let exampleSyncArmed = false;
+  const exampleSyncBtn  = document.getElementById('exampleSyncBtn');
+  const exampleSyncHint = document.getElementById('exampleSyncHint');
+  function setExampleSyncArmed(on){
+    exampleSyncArmed = on;
+    exampleSyncBtn.classList.toggle('armed', on);
+    exampleSyncHint.classList.toggle('hidden', !on);
+  }
+  exampleSyncBtn.addEventListener('click', ()=>{
+    setExampleSyncArmed(!exampleSyncArmed);
+  });
+  // Shifts every word's ts/te by the same delta, so the pacing (words per
+  // second) stays whatever it was, but the whole sequence is re-anchored to
+  // match reality at the point the person just confirmed.
+  function resyncExampleWords(clickedWordEl, actualVideoTime){
+    const clickedIdx = exampleWordSpans.findIndex(s => s.el === clickedWordEl);
+    if(clickedIdx === -1) return;
+    const delta = actualVideoTime - exampleWordSpans[clickedIdx].ts;
+    exampleWordSpans.forEach(s => {
+      s.ts += delta;
+      s.te += delta;
+      s.el.dataset.ts = s.ts.toFixed(2);
+      s.el.dataset.te = s.te.toFixed(2);
+    });
+    showToast('Sync fixed — highlighting re-anchored to this word');
   }
 
   const examplePbPlayBtn  = document.getElementById('examplePbPlayBtn');
@@ -4301,13 +4363,21 @@ Formatting rules: plain text only, with the sole exception of wrapping key terms
   });
   examplePbScrub.addEventListener('input', ()=>{
     examplePbScrubbing = true;
-    if(ytPlayer && ytPlayer.seekTo) ytPlayer.seekTo(EXAMPLE_SPEECH_START + (parseFloat(examplePbScrub.value) || 0), true);
+    const target = Math.min(EXAMPLE_SPEECH_START + (parseFloat(examplePbScrub.value) || 0), EXAMPLE_SPEECH_END);
+    if(ytPlayer && ytPlayer.seekTo) ytPlayer.seekTo(target, true);
   });
   examplePbScrub.addEventListener('change', ()=>{ examplePbScrubbing = false; });
 
   document.getElementById('exampleTranscriptBody').addEventListener('click', (e)=>{
     const wordEl = e.target.closest('.tw');
     if(!wordEl) return;
+    if(exampleSyncArmed){
+      if(ytPlayer && ytPlayer.getCurrentTime){
+        resyncExampleWords(wordEl, ytPlayer.getCurrentTime());
+      }
+      setExampleSyncArmed(false);
+      return;
+    }
     const ts = parseFloat(wordEl.dataset.ts);
     if(!isNaN(ts)){
       autoScrollToWordEnabled = true; // user asked to jump/follow here explicitly
@@ -4515,6 +4585,7 @@ Formatting rules: plain text only, with the sole exception of wrapping key terms
 
   function renderExampleBallot(){
     autoScrollToWordEnabled = true; // fresh view of the example: follow along by default again
+    if(typeof setExampleSyncArmed === 'function') setExampleSyncArmed(false);
     let html = scoreKeyHtml();
     EXAMPLE_CATEGORIES.forEach(cat => {
       const band = bandClass(cat.score, cat.max);
@@ -4573,14 +4644,24 @@ Formatting rules: plain text only, with the sole exception of wrapping key terms
 
     // Lay synthetic, evenly-paced word timestamps over the transcript (see
     // note above EXAMPLE_YT_VIDEO_ID) so the same click-to-seek and
-    // live-highlight mechanics as a real round work here too.
+    // live-highlight mechanics as a real round work here too. The pace is
+    // calibrated so the words exactly fill the real 0:20–8:18 speech
+    // window, whatever the word count turns out to be.
     exampleActiveWordEl = null;
-    const secPerWord = 60 / EXAMPLE_WPM;
-    exampleWordSpans = wrapWordsInDom(body, EXAMPLE_SPEECH_START, secPerWord);
+    exampleWordSpans = wrapWordsInDom(body, EXAMPLE_SPEECH_START, 1); // placeholder pace, recalibrated below
     exampleWordEls = exampleWordSpans.map(s => s.el);
     attachCommentListeners(body, seekExampleVideo);
 
-    const totalDuration = exampleWordSpans.length * secPerWord;
+    const windowDuration = EXAMPLE_SPEECH_END - EXAMPLE_SPEECH_START;
+    const secPerWord = windowDuration / Math.max(1, exampleWordSpans.length);
+    exampleWordSpans.forEach((s, i) => {
+      s.ts = EXAMPLE_SPEECH_START + i * secPerWord;
+      s.te = s.ts + secPerWord * 0.92;
+      s.el.dataset.ts = s.ts.toFixed(2);
+      s.el.dataset.te = s.te.toFixed(2);
+    });
+
+    const totalDuration = windowDuration;
     examplePbScrub.max = String(totalDuration);
     examplePbScrub.value = '0';
     examplePbTimeCur.textContent = '0:00';
@@ -5316,7 +5397,7 @@ Formatting rules: plain text only, with the sole exception of wrapping key terms
   document.getElementById('exampleDownloadVideoBtn').addEventListener('click', () => {
     closeAllExportMenus();
     showToast('This is a sample round — opening the source video on YouTube');
-    window.open('https://www.youtube.com/watch?v=lzoUu1fDmWE&t=449s', '_blank', 'noopener,noreferrer');
+    window.open('https://www.youtube.com/watch?v=lzoUu1fDmWE&t=20s', '_blank', 'noopener,noreferrer');
   });
 
   document.getElementById('exampleShareRoundBtn').addEventListener('click', () => {

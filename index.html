@@ -1248,8 +1248,11 @@
                   style="width:100%;font-family:var(--font-mono);font-size:12px;padding:8px 10px;border:1px solid var(--rule);border-radius:3px;background:#ffffff;color:var(--charcoal);margin-bottom:12px;" />
                 <div style="font-size:11px;font-family:var(--font-mono);color:var(--slate);margin-bottom:12px;">Used for AI question drafting and Tournament Briefings — only needed if the built-in key runs out of credits.</div>
                 <input type="password" id="apiKey2" placeholder="Optional: 2nd Groq key (speeds up long recordings)" autocomplete="off"
+                  style="width:100%;font-family:var(--font-mono);font-size:12px;padding:8px 10px;border:1px solid var(--rule);border-radius:3px;background:#ffffff;color:var(--charcoal);margin-bottom:12px;" />
+                <div style="font-size:11px;font-family:var(--font-mono);color:var(--slate);margin-bottom:12px;">A backup Groq key is already wired in and used automatically if the main key fails or rate-limits, and to speed up long recordings split into chunks. Only fill this in if you want to use your own second key instead.</div>
+                <input type="password" id="apiKey3" placeholder="Optional: 3rd Groq key (extra fallback for long recordings)" autocomplete="off"
                   style="width:100%;font-family:var(--font-mono);font-size:12px;padding:8px 10px;border:1px solid var(--rule);border-radius:3px;background:#ffffff;color:var(--charcoal);" />
-                <div style="font-size:11px;font-family:var(--font-mono);color:var(--slate);margin-top:5px;">A backup Groq key is already wired in and used automatically if the main key fails or rate-limits, and to speed up long recordings split into chunks. Only fill this in if you want to use your own second key instead.</div>
+                <div style="font-size:11px;font-family:var(--font-mono);color:var(--slate);margin-top:5px;">A third backup key runs alongside the other two — if any key hits a rate limit partway through a long recording, the remaining keys keep transcribing the rest without stopping.</div>
               </div>
             </div>
           </div>
@@ -3575,7 +3578,9 @@ Formatting rules: plain text only, with the sole exception of wrapping key terms
   document.getElementById('submitBtn').addEventListener('click', () => {
     const key = apiKeyInput.value.trim() || null;
     const key2 = document.getElementById('apiKey2').value.trim() || null;
-    runPipeline(key, key2 !== key ? key2 : null);
+    const key3 = document.getElementById('apiKey3').value.trim() || null;
+    const keys = [key, key2, key3].filter((k, i, arr) => k && arr.indexOf(k) === i); // non-empty, deduped, order preserved
+    runPipeline(keys[0] || null, keys[1] || null, keys[2] || null);
   });
 
   document.getElementById('backToReviewBtn').addEventListener('click', () => showView(viewReview));
@@ -3712,7 +3717,11 @@ Formatting rules: plain text only, with the sole exception of wrapping key terms
   }
 
   // ===== AUDIO EXTRACTION & COMPRESSION (fixes "Request Entity Too Large") =====
-  // Groq's transcription endpoint caps upload size (~25MB on the free tier).
+  // Groq's transcription endpoint caps upload size (~25MB), but the request
+  // can also get rejected earlier by the Supabase Edge Function/CDN in front
+  // of it at a smaller size than that. We stay well under both by using a
+  // conservative chunk-size budget, and if a chunk still comes back 413 for
+  // any reason, we automatically halve it and retry rather than giving up.
   // A multi-minute recording is a video+audio container and can blow past that
   // easily. Whisper only needs the audio anyway, so we decode the recording
   // once, strip the video, downsample to 16kHz mono, and re-encode as a
@@ -3720,7 +3729,8 @@ Formatting rules: plain text only, with the sole exception of wrapping key terms
   // If a single speech is still too long even after compression, we split
   // the audio into multiple chunks and transcribe them one at a time,
   // stitching the text and word timestamps back together.
-  const GROQ_UPLOAD_SAFE_BYTES = 24 * 1024 * 1024; // stay under Groq's ~25MB cap
+  const GROQ_UPLOAD_SAFE_BYTES = 8 * 1024 * 1024;  // conservative per-chunk budget — well under Groq's ~25MB cap and any proxy/edge-function body-size limit in front of it
+  const GROQ_UPLOAD_MIN_BYTES  = 512 * 1024;        // floor so we don't recurse forever on a genuinely broken upload path
 
   async function decodeAudioFromBlob(blob){
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -3824,47 +3834,94 @@ Formatting rules: plain text only, with the sole exception of wrapping key terms
     return { text:(json.text||'').trim(), words: Array.isArray(json.words) ? json.words : [] };
   }
 
-  // Transcribes a (possibly long) decoded AudioBuffer. Compresses to a single
-  // 16kHz mono WAV first; if that's still over Groq's size cap, splits it into
-  // sequential chunks (transcribed one after another, optionally using a second
-  // API key to run two chunks in parallel at a time for speed) and stitches the
-  // text + word timestamps back together with correct time offsets.
-  async function transcribeLongAudio(audioBuffer, primaryKey, secondaryKey, onStatus){
+  // Transcribes a single chunk; if Groq/the upload path still rejects it as
+  // too large (413) even at our conservative budget, halves the chunk and
+  // retries each half recursively instead of failing outright. Returns
+  // {text, words} with word timestamps already offset to absolute time.
+  async function transcribeChunkResilient(audioBuffer, startSec, endSec, keys, labelPrefix, onProgress){
+    const wav = await audioBufferSliceToWav(audioBuffer, startSec, endSec);
+    if(wav.size > GROQ_UPLOAD_SAFE_BYTES && (endSec - startSec) > 20 && wav.size/2 > GROQ_UPLOAD_MIN_BYTES){
+      // Pre-emptively split before even trying — no point uploading something
+      // we already know is over budget.
+      const mid = startSec + (endSec - startSec) / 2;
+      const [a, b] = await Promise.all([
+        transcribeChunkResilient(audioBuffer, startSec, mid, keys, labelPrefix+'a', onProgress),
+        transcribeChunkResilient(audioBuffer, mid, endSec, keys, labelPrefix+'b', onProgress)
+      ]);
+      return { text: (a.text+' '+b.text).trim(), words: a.words.concat(b.words) };
+    }
+    try{
+      const r = await withKeyFallback(k => transcribeBlob(wav, k, 'speech_'+labelPrefix+'.wav'), ...keys);
+      onProgress && onProgress();
+      return { text: r.text, words: r.words.map(w => ({ ...w, start: w.start+startSec, end: w.end+startSec })) };
+    }catch(err){
+      const s = String(err.message || err);
+      const isTooLarge = s.includes(':413:') || s.toLowerCase().includes('request entity too large');
+      if(isTooLarge && (endSec - startSec) > 5 && wav.size/2 > GROQ_UPLOAD_MIN_BYTES){
+        // Still rejected even under our budget (a stricter real-world limit
+        // than we assumed) — self-heal by halving and retrying each half.
+        const mid = startSec + (endSec - startSec) / 2;
+        const [a, b] = await Promise.all([
+          transcribeChunkResilient(audioBuffer, startSec, mid, keys, labelPrefix+'a', onProgress),
+          transcribeChunkResilient(audioBuffer, mid, endSec, keys, labelPrefix+'b', onProgress)
+        ]);
+        return { text: (a.text+' '+b.text).trim(), words: a.words.concat(b.words) };
+      }
+      throw err;
+    }
+  }
+
+  // Transcribes a (possibly long) decoded AudioBuffer. Always compresses to
+  // 16kHz mono WAV and splits it into conservative-sized chunks (even a
+  // short recording is one "chunk" covering the whole thing), transcribed by
+  // a pool of workers — one per available API key — running in parallel.
+  // If one key hits a rate limit or any other error on its chunk, that
+  // request falls back through the other available keys automatically; the
+  // other workers keep making progress on their own chunks the whole time,
+  // so one key stalling out never blocks the rest of the transcription.
+  // Any chunk that still comes back "too large" is self-healed by being
+  // recursively split further (see transcribeChunkResilient above).
+  // Results are stitched back together with correct absolute timestamps.
+  async function transcribeLongAudio(audioBuffer, keysIn, onStatus){
+    const keys = [...new Set((keysIn || []).filter(Boolean))];
+    if(!keys.length) keys.push(null); // fall through to the edge function's own server-side keys
+
     const wholeWav = await audioBufferSliceToWav(audioBuffer, 0, audioBuffer.duration);
     if(wholeWav.size <= GROQ_UPLOAD_SAFE_BYTES){
       onStatus && onStatus('Transcribing testimony…', '', 0.92);
-      return await withKeyFallback(k => transcribeBlob(wholeWav, k, 'speech.wav'), primaryKey, secondaryKey);
+      return await transcribeChunkResilient(audioBuffer, 0, audioBuffer.duration, keys, 'full', null);
     }
 
-    // Still too big even after compression (very long speech) — split into chunks.
+    // Split into conservative-sized chunks up front.
     const bytesPerSec = wholeWav.size / audioBuffer.duration;
-    const chunkSeconds = Math.max(30, Math.floor((GROQ_UPLOAD_SAFE_BYTES*0.9) / bytesPerSec));
+    const chunkSeconds = Math.max(30, Math.floor((GROQ_UPLOAD_SAFE_BYTES*0.85) / bytesPerSec));
     const chunkRanges = [];
     for(let t=0; t<audioBuffer.duration; t+=chunkSeconds){
       chunkRanges.push([t, Math.min(audioBuffer.duration, t+chunkSeconds)]);
     }
 
-    const keys = secondaryKey ? [primaryKey, secondaryKey] : [primaryKey];
     const results = new Array(chunkRanges.length);
     let nextIdx = 0, completed = 0;
 
-    async function worker(key){
+    async function worker(myKey){
       while(nextIdx < chunkRanges.length){
         const myIdx = nextIdx++;
         const [s,e] = chunkRanges[myIdx];
         onStatus && onStatus(
           'Transcribing testimony… (part '+(completed+1)+' of '+chunkRanges.length+')',
-          'Recording is long, so it\'s being processed in '+chunkRanges.length+' parts'+(keys.length>1?' across 2 API keys':'')+'.',
+          'Recording is long, so it\'s being processed in '+chunkRanges.length+' parts'+(keys.length>1?' across '+keys.length+' API keys':'')+'.',
           completed / chunkRanges.length
         );
-        const chunkWav = await audioBufferSliceToWav(audioBuffer, s, e);
-        const otherKey = (key===primaryKey) ? secondaryKey : primaryKey;
-        const r = await withKeyFallback(k => transcribeBlob(chunkWav, k, 'speech_part'+myIdx+'.wav'), key, otherKey);
-        results[myIdx] = { text:r.text, words: r.words.map(w=>({ ...w, start:w.start+s, end:w.end+s })) };
+        // Try this worker's own key first, then fall back through every
+        // other available key (in order) if it fails for any reason —
+        // rate limit, auth, transient error, etc.
+        const orderedKeys = [myKey, ...keys.filter(k => k !== myKey)];
+        const r = await transcribeChunkResilient(audioBuffer, s, e, orderedKeys, 'part'+myIdx, null);
+        results[myIdx] = r;
         completed++;
       }
     }
-    await Promise.all(keys.map(k=>worker(k)));
+    await Promise.all(keys.map(k => worker(k)));
 
     const text = results.map(r=>r.text).join(' ').trim();
     const words = results.reduce((acc,r)=>acc.concat(r.words), []);
@@ -4776,7 +4833,7 @@ Formatting rules: plain text only, with the sole exception of wrapping key terms
   });
   document.getElementById('exampleBackBtn').addEventListener('click', closeExampleBallot);
 
-  async function runPipeline(key, key2){
+  async function runPipeline(key, key2, key3){
     showView(viewProcessing);
     processError.classList.add('hidden');
     processErrorActions.classList.add('hidden');
@@ -4793,7 +4850,7 @@ Formatting rules: plain text only, with the sole exception of wrapping key terms
 
       pipelineProgress.setStage(12, PIPELINE_PHRASES.transcribe);
       const { text: transcript, words: wordTimestamps } = await transcribeLongAudio(
-        audioBuffer, key, key2,
+        audioBuffer, [key, key2, key3],
         (main, sub, frac)=>{
           statusText.textContent = main; statusSub.textContent = sub;
           // frac (0-1), when provided, reflects progress through multi-part
@@ -4839,7 +4896,7 @@ Formatting rules: plain text only, with the sole exception of wrapping key terms
         }, 60000);
         if(!res.ok) throw new Error('judging_failed:'+res.status+':'+await safeErrText(res));
         return await res.json();
-      }, key, key2);
+      }, key, key2, key3);
       const feedback = chatJson.choices?.[0]?.message?.content || '';
       if(!feedback) throw new Error('judging_failed:empty:No content returned.');
       lastRawFeedback = feedback;
@@ -4847,7 +4904,7 @@ Formatting rules: plain text only, with the sole exception of wrapping key terms
       statusText.textContent = 'Marking up the transcript…';
       statusSub.textContent = 'Adding inline judge comments and paragraph structure.';
       pipelineProgress.setStage(95, PIPELINE_PHRASES.annotate);
-      lastTranscriptAnnotations = await fetchTranscriptAnnotations(transcript, key, key2);
+      lastTranscriptAnnotations = await fetchTranscriptAnnotations(transcript, key, key2, key3);
 
       pipelineProgress.finish();
       renderResults(feedback, transcript);
@@ -4857,7 +4914,7 @@ Formatting rules: plain text only, with the sole exception of wrapping key terms
   // Makes a second, best-effort Groq call to get structural section labels and
   // inline comment quotes for the transcript, as JSON. Never throws — returns
   // null on any failure, and the UI gracefully falls back to a plain transcript.
-  async function fetchTranscriptAnnotations(transcript, key, key2){
+  async function fetchTranscriptAnnotations(transcript, key, key2, key3){
     try{
       const chatJson = await withKeyFallback(async (k) => {
         const res = await fetchWithTimeout(`${SUPABASE_FUNCTIONS_URL}/groq-chat`,{
@@ -4879,7 +4936,7 @@ Formatting rules: plain text only, with the sole exception of wrapping key terms
         }, 45000);
         if(!res.ok) throw new Error('annotation_failed:'+res.status);
         return await res.json();
-      }, key, key2);
+      }, key, key2, key3);
       const raw = chatJson.choices?.[0]?.message?.content || '';
       if(!raw) return null;
       let cleaned = raw.trim();
@@ -4954,7 +5011,7 @@ Formatting rules: plain text only, with the sole exception of wrapping key terms
     else if(s.includes(':401:')||s.toLowerCase().includes('invalid api key'))
       msg = 'Groq rejected the API key (401). Double-check you pasted the correct key.';
     else if(s.includes(':413:')||s.toLowerCase().includes('request entity too large'))
-      msg = 'The recording was too large to upload even after compression. Try recording a shorter speech, or add a second Groq API key in Settings to auto-split long recordings.';
+      msg = 'The recording was still too large to upload even after automatic compression and splitting. Try recording a shorter speech, or check your internet connection and try again.';
     else if(s.startsWith('transcription_failed'))
       msg = 'Transcription failed: '+s.split(':').slice(2).join(':');
     else if(s.startsWith('decode_failed'))

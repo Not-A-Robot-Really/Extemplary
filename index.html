@@ -3801,16 +3801,30 @@ Formatting rules: plain text only, with the sole exception of wrapping key terms
   // Tries an async call with each supplied override key in turn (falling
   // back to a final "no override" attempt so the edge function's own
   // server-side Groq keys still get tried) — fully transparent, no user
-  // action required.
+  // action required. Transient-looking failures (rate limits, momentary
+  // network blips, 5xx from Groq) get a couple of short-backoff retries on
+  // the SAME key before moving on to the next one, since those usually
+  // resolve on their own within a second or two.
+  function isTransientError(err){
+    const s = String(err && err.message || err);
+    return /:429:|:500:|:502:|:503:|:504:/.test(s) || /rate.?limit/i.test(s) || s.includes('Failed to fetch');
+  }
   async function withKeyFallback(fn, ...keys){
     const list = [...new Set(keys)];
     if(!list.some(k => !k)) list.push(null); // guarantee a no-override attempt
     let lastErr = null;
     for(const k of list){
-      try{
-        return await fn(k);
-      }catch(err){
-        lastErr = err;
+      for(let attempt = 0; attempt < 3; attempt++){
+        try{
+          return await fn(k);
+        }catch(err){
+          lastErr = err;
+          if(attempt < 2 && isTransientError(err)){
+            await new Promise(r => setTimeout(r, 600 * (attempt+1)));
+            continue;
+          }
+          break;
+        }
       }
     }
     throw lastErr || new Error('withKeyFallback_no_keys');
@@ -3872,32 +3886,36 @@ Formatting rules: plain text only, with the sole exception of wrapping key terms
   }
 
   // Transcribes a (possibly long) decoded AudioBuffer. Always compresses to
-  // 16kHz mono WAV and splits it into conservative-sized chunks (even a
-  // short recording is one "chunk" covering the whole thing), transcribed by
-  // a pool of workers — one per available API key — running in parallel.
-  // If one key hits a rate limit or any other error on its chunk, that
-  // request falls back through the other available keys automatically; the
-  // other workers keep making progress on their own chunks the whole time,
-  // so one key stalling out never blocks the rest of the transcription.
-  // Any chunk that still comes back "too large" is self-healed by being
-  // recursively split further (see transcribeChunkResilient above).
-  // Results are stitched back together with correct absolute timestamps.
+  // 16kHz mono WAV and splits it into small, FIXED-duration chunks (60s each
+  // — about 1.9MB apiece at 16kHz/16-bit mono, far under any plausible
+  // upload limit) rather than trying to estimate a safe chunk size from
+  // measured bytes — a fixed duration can never be wrong the way a size
+  // estimate can. Chunks are transcribed by a pool of workers, one per
+  // available API key, running in parallel. If one key hits a rate limit or
+  // any other error on its chunk, that request falls back through the other
+  // available keys automatically; the other workers keep making progress on
+  // their own chunks the whole time, so one key stalling out never blocks
+  // the rest of the transcription. Any chunk that somehow still comes back
+  // "too large" is self-healed by being recursively split further (see
+  // transcribeChunkResilient above) — so this should never fail purely on
+  // size for a normal-length speech. Results are stitched back together
+  // with correct absolute timestamps.
+  const FIXED_CHUNK_SECONDS = 60; // ≈1.9MB per chunk at 16kHz/16-bit mono — small enough for any realistic limit
   async function transcribeLongAudio(audioBuffer, keysIn, onStatus){
     const keys = [...new Set((keysIn || []).filter(Boolean))];
     if(!keys.length) keys.push(null); // fall through to the edge function's own server-side keys
 
-    const wholeWav = await audioBufferSliceToWav(audioBuffer, 0, audioBuffer.duration);
-    if(wholeWav.size <= GROQ_UPLOAD_SAFE_BYTES){
+    const duration = audioBuffer.duration;
+    if(duration <= FIXED_CHUNK_SECONDS * 1.25){
+      // Short enough to send as one piece (transcribeChunkResilient will
+      // still self-heal and split it further if it's somehow rejected).
       onStatus && onStatus('Transcribing testimony…', '', 0.92);
-      return await transcribeChunkResilient(audioBuffer, 0, audioBuffer.duration, keys, 'full', null);
+      return await transcribeChunkResilient(audioBuffer, 0, duration, keys, 'full', null);
     }
 
-    // Split into conservative-sized chunks up front.
-    const bytesPerSec = wholeWav.size / audioBuffer.duration;
-    const chunkSeconds = Math.max(30, Math.floor((GROQ_UPLOAD_SAFE_BYTES*0.85) / bytesPerSec));
     const chunkRanges = [];
-    for(let t=0; t<audioBuffer.duration; t+=chunkSeconds){
-      chunkRanges.push([t, Math.min(audioBuffer.duration, t+chunkSeconds)]);
+    for(let t=0; t<duration; t+=FIXED_CHUNK_SECONDS){
+      chunkRanges.push([t, Math.min(duration, t+FIXED_CHUNK_SECONDS)]);
     }
 
     const results = new Array(chunkRanges.length);

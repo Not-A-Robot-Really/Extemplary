@@ -1140,7 +1140,7 @@
       <div class="field"><b>Event</b>Extemporaneous Speaking</div>
       <div class="field"><b>Round</b><span id="roundNo">1</span></div>
       <div class="field"><b>Speaker</b>You</div>
-      <div class="field"><b>Judge</b>AI Panel — Grok 4.3</div>
+      <div class="field"><b>Judge</b>AI Panel — Llama 3.3 70B</div>
     </div>
 
     <div class="ballot-body">
@@ -3551,12 +3551,10 @@ Formatting rules: plain text only, with the sole exception of wrapping key terms
 
   // ===== SUBMISSION =====
   // Real provider API keys no longer live in this file — they're Supabase
-  // secrets on the edge functions: `grok-chat` (ballot judging + transcript
-  // annotations, via Grok) and `groq-transcribe` (audio transcription, via
-  // Groq/Whisper — unrelated provider, name is coincidentally similar).
-  // Anything typed into Settings ("API key override") is just forwarded to
-  // those functions as `overrideKey` and tried first; if omitted, the
-  // functions fall back to their own server-side keys automatically.
+  // secrets on the `groq-chat` / `groq-transcribe` edge functions. Anything
+  // typed into Settings ("API key override") is just forwarded to those
+  // functions as `overrideKey` and tried first; if omitted, the functions
+  // fall back to their own server-side keys automatically.
 
   // Wraps fetch() with a hard timeout so a hung/unresponsive request (bad
   // network, stalled connection, etc.) fails with a clear error instead of
@@ -4818,12 +4816,12 @@ Formatting rules: plain text only, with the sole exception of wrapping key terms
         : Object.assign({ audioUnavailable:true }, fillerStutterStats);
 
       statusText.textContent = 'The panel is deliberating…';
-      statusSub.textContent = 'Grok 4.3 is scoring your speech against the rubric.';
+      statusSub.textContent = 'Llama 3.3 70B Versatile is scoring your speech against the rubric.';
       pipelineProgress.setStage(88, PIPELINE_PHRASES.judging);
 
       const metricsBlock = buildDeliveryMetricsBlock(deliveryMetrics, fillerStutterStats);
       const chatJson = await withKeyFallback(async (k) => {
-        const res = await fetchWithTimeout(`${SUPABASE_FUNCTIONS_URL}/grok-chat`,{
+        const res = await fetchWithTimeout(`${SUPABASE_FUNCTIONS_URL}/groq-chat`,{
           method:'POST',
           headers:{
             'Authorization':'Bearer '+SUPABASE_ANON_KEY,
@@ -4831,7 +4829,7 @@ Formatting rules: plain text only, with the sole exception of wrapping key terms
             'Content-Type':'application/json'
           },
           body: JSON.stringify({
-            model:'grok-4.3', temperature:0.4, max_tokens:3000,
+            model:'llama-3.3-70b-versatile', temperature:0.4, max_tokens:3000,
             messages:[
               {role:'system', content:RUBRIC_PROMPT},
               {role:'user', content:'TRANSCRIPT:\n\n'+transcript+'\n\n'+metricsBlock}
@@ -4856,13 +4854,13 @@ Formatting rules: plain text only, with the sole exception of wrapping key terms
     }catch(err){ pipelineProgress.stop(); handlePipelineError(err); }
   }
 
-  // Makes a second, best-effort Grok call to get structural section labels and
+  // Makes a second, best-effort Groq call to get structural section labels and
   // inline comment quotes for the transcript, as JSON. Never throws — returns
   // null on any failure, and the UI gracefully falls back to a plain transcript.
   async function fetchTranscriptAnnotations(transcript, key, key2){
     try{
       const chatJson = await withKeyFallback(async (k) => {
-        const res = await fetchWithTimeout(`${SUPABASE_FUNCTIONS_URL}/grok-chat`,{
+        const res = await fetchWithTimeout(`${SUPABASE_FUNCTIONS_URL}/groq-chat`,{
           method:'POST',
           headers:{
             'Authorization':'Bearer '+SUPABASE_ANON_KEY,
@@ -4870,7 +4868,7 @@ Formatting rules: plain text only, with the sole exception of wrapping key terms
             'Content-Type':'application/json'
           },
           body: JSON.stringify({
-            model:'grok-4.3', temperature:0.3, max_tokens:3800,
+            model:'llama-3.3-70b-versatile', temperature:0.3, max_tokens:3800,
             response_format:{ type:'json_object' },
             messages:[
               {role:'system', content:ANNOTATION_PROMPT},

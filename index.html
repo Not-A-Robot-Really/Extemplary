@@ -5083,8 +5083,20 @@ Formatting rules: plain text only, with the sole exception of wrapping key terms
     return out;
   }
 
+  const BALLOT_FIELD_LABELS = ['What Worked', 'Critical Flaws', 'What You Could Have Done'];
   function extractField(body, label){
-    const re = new RegExp('\\*\\*'+label+':?\\*\\*:?\\s*([\\s\\S]*?)(?=\\n-\\s*\\*\\*|\\n###|$)','i');
+    const esc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    // Stop as soon as we hit ANY of the three known field labels again (the
+    // model sometimes writes them as a plain "**Label**" header and
+    // sometimes as a "- **Label**" list item), or a new "###" category
+    // header, or the end of the body. Without this, a field with no
+    // dash-prefixed label after it would otherwise swallow every section
+    // that follows it too.
+    const stopAlternation = BALLOT_FIELD_LABELS.map(esc).join('|');
+    const re = new RegExp(
+      '\\*\\*'+esc(label)+':?\\*\\*:?\\s*([\\s\\S]*?)(?=\\n{0,2}-?\\s*\\*\\*(?:'+stopAlternation+'):?\\*\\*|\\n###|$)',
+      'i'
+    );
     const found = body.match(re);
     return found ? found[1].trim() : '';
   }

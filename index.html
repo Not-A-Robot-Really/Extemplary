@@ -169,6 +169,105 @@
   }
   .flight .chip b{color:var(--charcoal);}
 
+  /* -------- auth gate -------- */
+  #authGate{
+    position:fixed;inset:0;z-index:900;background:var(--ink);
+    display:flex;align-items:center;justify-content:center;padding:24px;
+  }
+  #authGate.hidden{display:none;}
+  .auth-card{
+    width:100%;max-width:380px;background:var(--parchment);color:var(--charcoal);
+    border-radius:6px;box-shadow:0 12px 40px var(--shadow);padding:30px 28px 26px;
+    border:1px solid var(--ink-line);
+  }
+  .auth-card h1{
+    font-family:var(--font-display);font-size:24px;margin:0 0 4px;color:var(--charcoal);
+    display:flex;align-items:center;gap:8px;
+  }
+  .auth-card .auth-sub{font-family:var(--font-mono);font-size:11.5px;color:var(--slate);margin:0 0 20px;}
+  .auth-tabs{display:flex;border-bottom:1px solid var(--rule);margin-bottom:18px;}
+  .auth-tab{
+    flex:1;text-align:center;padding:8px 4px;font-family:var(--font-mono);font-size:12px;
+    letter-spacing:0.5px;text-transform:uppercase;color:var(--slate);background:none;border:none;
+    cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;
+  }
+  .auth-tab.active{color:var(--crimson);border-bottom-color:var(--crimson);font-weight:600;}
+  .auth-field{margin-bottom:14px;}
+  .auth-field label{display:block;font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:var(--slate);margin-bottom:5px;}
+  .auth-field input{
+    width:100%;padding:9px 11px;border:1px solid var(--rule);border-radius:4px;
+    font-family:var(--font-body);font-size:14px;background:#fff;color:var(--charcoal);
+  }
+  .auth-field input:focus-visible{outline:2px solid var(--brass);outline-offset:1px;}
+  .auth-error{
+    font-family:var(--font-mono);font-size:12px;color:#a3322a;margin:-4px 0 12px;display:none;
+  }
+  .auth-error.visible{display:block;}
+  .auth-submit{
+    width:100%;padding:11px;border:none;border-radius:4px;background:var(--crimson);
+    color:var(--on-accent);font-family:var(--font-mono);font-size:13px;letter-spacing:0.5px;
+    text-transform:uppercase;cursor:pointer;font-weight:600;
+  }
+  .auth-submit:hover{background:var(--crimson-deep);}
+  .auth-note{font-family:var(--font-mono);font-size:10.5px;color:var(--slate);text-align:center;margin-top:14px;line-height:1.5;}
+
+  /* -------- account chip / history -------- */
+  .account-chip{
+    font-family:var(--font-mono);font-size:11px;color:var(--chrome-text-dim);
+    display:flex;align-items:center;gap:8px;padding:4px 10px 4px 4px;border:1px solid var(--ink-line);
+    border-radius:20px;
+  }
+  .account-chip .acc-email{max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .account-chip button{
+    background:none;border:none;color:var(--chrome-text-dim);cursor:pointer;font-family:var(--font-mono);
+    font-size:11px;text-decoration:underline;padding:0;
+  }
+  .account-chip button:hover{color:var(--crimson-bright);}
+
+  .history-list{display:flex;flex-direction:column;gap:14px;}
+  .history-empty{font-family:var(--font-mono);font-size:12.5px;color:var(--slate);text-align:center;padding:40px 10px;}
+  .history-trends{
+    border:1px solid var(--rule);border-radius:4px;padding:16px 18px;margin-bottom:22px;background:rgba(255,255,255,0.35);
+  }
+  .history-trends h3{font-family:var(--font-display);font-size:17px;margin:0 0 10px;}
+  .trend-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;font-size:13px;}
+  .trend-row .trend-name{width:150px;flex-shrink:0;font-family:var(--font-mono);font-size:11.5px;color:var(--slate);}
+  .trend-row .trend-bar-wrap{flex:1;background:var(--rule);border-radius:3px;height:8px;overflow:hidden;}
+  .trend-row .trend-bar{height:100%;border-radius:3px;}
+  .trend-row .trend-avg{width:44px;text-align:right;font-family:var(--font-mono);font-size:11.5px;flex-shrink:0;}
+  .trend-summary{display:flex;gap:18px;flex-wrap:wrap;margin-top:14px;}
+  .trend-summary .col{flex:1;min-width:180px;}
+  .trend-summary h4{font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:0.5px;margin:0 0 6px;color:var(--slate);}
+  .trend-summary .col.strength h4{color:var(--forest);}
+  .trend-summary .col.weakness h4{color:var(--crimson);}
+  .trend-summary ul{margin:0;padding-left:18px;font-size:13px;}
+
+  .history-card{border:1px solid var(--rule);border-radius:4px;overflow:hidden;background:rgba(255,255,255,0.35);}
+  .history-card-head{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;cursor:pointer;
+  }
+  .history-card-head:hover{background:rgba(255,255,255,0.25);}
+  .history-card-head .hc-title{font-family:var(--font-mono);font-size:12.5px;color:var(--charcoal);}
+  .history-card-head .hc-title b{color:var(--slate);font-weight:400;}
+  .history-card-head .hc-score{font-family:var(--font-mono);font-size:14px;font-weight:bold;}
+  .history-card-body{padding:0 16px 16px;display:none;}
+  .history-card-body.open{display:block;}
+  .history-card video{width:100%;max-height:280px;border-radius:4px;background:#000;margin-bottom:10px;display:block;}
+  .history-card .hc-cats{display:flex;flex-direction:column;gap:8px;margin-bottom:10px;}
+  .history-card .hc-cat{font-size:12.5px;border-left:3px solid var(--rule);padding:4px 0 4px 10px;}
+  .history-card .hc-cat b{display:inline-block;min-width:36px;}
+  .history-card .hc-transcript{
+    font-family:var(--font-mono);font-size:11.5px;line-height:1.6;color:var(--slate);
+    max-height:160px;overflow:auto;border-top:1px dashed var(--rule);padding-top:10px;white-space:pre-wrap;
+  }
+  .history-card .hc-actions{display:flex;gap:10px;margin-top:10px;}
+  .history-card .hc-actions button{
+    font-family:var(--font-mono);font-size:11px;padding:5px 10px;border:1px solid var(--rule);
+    background:none;border-radius:4px;cursor:pointer;color:var(--slate);
+  }
+  .history-card .hc-actions button:hover{color:var(--crimson);border-color:var(--crimson);}
+  .flight .chip b{color:var(--charcoal);}
+
   /* -------- video stage -------- */
   .stage{background:var(--ink);border-radius:4px;padding:10px;border:1px solid var(--ink-line);}
   .stage .frame{position:relative;background:#000;border-radius:2px;overflow:hidden;aspect-ratio:16/10;}
@@ -1035,8 +1134,38 @@
   }
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 </head>
 <body>
+
+<!-- ====== AUTH GATE ====== -->
+<div id="authGate">
+  <div class="auth-card">
+    <h1>Extemplary</h1>
+    <p class="auth-sub">Sign in to save and track your practice ballots</p>
+    <div class="auth-tabs">
+      <button type="button" class="auth-tab active" id="authTabLogin">Log In</button>
+      <button type="button" class="auth-tab" id="authTabSignup">Sign Up</button>
+    </div>
+    <form id="authForm" autocomplete="on">
+      <div class="auth-field">
+        <label for="authEmail">Email</label>
+        <input type="email" id="authEmail" name="email" required autocomplete="username" />
+      </div>
+      <div class="auth-field">
+        <label for="authPassword">Password</label>
+        <input type="password" id="authPassword" name="password" required autocomplete="current-password" minlength="6" />
+      </div>
+      <div class="auth-field hidden" id="authConfirmWrap">
+        <label for="authPasswordConfirm">Confirm Password</label>
+        <input type="password" id="authPasswordConfirm" name="passwordConfirm" autocomplete="new-password" minlength="6" />
+      </div>
+      <div class="auth-error" id="authError"></div>
+      <button type="submit" class="auth-submit" id="authSubmitBtn">Log In</button>
+      <p class="auth-note">Your account and ballots are stored only in this browser — there is no server. Use the same browser and device to keep access to your history.</p>
+    </form>
+  </div>
+</div>
 
 <!-- ====== TOAST NOTIFICATIONS ====== -->
 <div class="toast-container" id="toastContainer" aria-live="polite"></div>
@@ -1076,6 +1205,17 @@
   </div>
   <div style="display:flex;align-items:center;gap:12px;">
     <div class="session-tag" id="sessionTag"><span class="rt-num">Round 1</span></div>
+    <div class="account-chip hidden" id="accountChip">
+      <span class="acc-email" id="accountEmail"></span>
+      <button type="button" id="signOutBtn">Sign out</button>
+    </div>
+    <button class="gear-btn" id="historyToggle" type="button" aria-label="My Ballot History" title="My Ballot History">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 12a9 9 0 1 0 3-6.7"/>
+        <path d="M3 4v5h5"/>
+        <path d="M12 8v5l3 2"/>
+      </svg>
+    </button>
     <button class="gear-btn" id="timerToggle" type="button" aria-label="Prep Timer" title="30-Minute Prep Timer">
       <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <line x1="10" y1="2" x2="14" y2="2"/>
@@ -1579,6 +1719,17 @@
       </div>
 
       <!-- ====== TOURNAMENT BRIEFING VIEW ====== -->
+      <!-- ====== HISTORY VIEW ====== -->
+      <div id="view-history" class="hidden">
+        <div class="actions" style="justify-content:flex-start;margin-bottom:18px;">
+          <button class="btn ghost" id="historyBackBtn">← Back</button>
+        </div>
+        <div id="historyTrends"></div>
+        <div id="historyListWrap">
+          <div class="history-list" id="historyList"></div>
+        </div>
+      </div>
+
       <div id="view-briefing" class="hidden">
         <div class="ballot-title" style="font-size:22px;margin-bottom:16px;">Tournament Briefing</div>
 
@@ -1656,6 +1807,303 @@
   const SUPABASE_URL = 'https://iiehhmelfotwkdqxplug.supabase.co';
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlpZWhobWVsZm90d2tkcXhwbHVnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzNDYxMzEsImV4cCI6MjA5ODkyMjEzMX0.8QzN1LJmr70Sidxp2RsOq-z3S_NX5lN9QWTr45CSaHo';
   const SUPABASE_FUNCTIONS_URL = SUPABASE_URL + '/functions/v1';
+
+  // ===== AUTH + SAVED PROGRESS =====
+  // Real accounts via Supabase Auth (email + password). Session tokens are
+  // persisted by supabase-js itself (localStorage), which is what makes
+  // "stay signed in across tabs/reopens" work with zero extra code.
+  // Ballot history (video/transcript/feedback) lives in the cloud: a
+  // Postgres table ("ballots") plus a Storage bucket ("ballot-videos") in
+  // this same Supabase project, both protected by Row Level Security so
+  // each signed-in user can only ever read/write their own rows and files.
+  // One-time setup required in the Supabase SQL editor — see setup.sql.
+  const supabaseClient = (window.supabase && window.supabase.createClient)
+    ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+    : null;
+  const VIDEO_BUCKET = 'ballot-videos';
+
+  let currentUser = null; // { id, email }
+
+  async function loadHistory(){
+    if(!currentUser || !supabaseClient) return [];
+    const { data, error } = await supabaseClient
+      .from('ballots')
+      .select('*')
+      .eq('user_id', currentUser.id)
+      .order('ts', { ascending: false });
+    if(error){ console.warn('Could not load ballot history', error); return []; }
+    return (data || []).map(row => ({
+      id: row.id, round: row.round, ts: new Date(row.ts).getTime(),
+      question: row.question || '', total: row.total, rank: row.rank,
+      categories: row.categories || [], feedback: row.feedback || '',
+      transcript: row.transcript || '', hasVideo: !!row.video_path,
+      videoPath: row.video_path || null
+    }));
+  }
+
+  // Records one completed round (called from renderResults once feedback
+  // has been parsed) so it shows up later in "My History".
+  async function recordBallotToHistory(parsed, feedback, transcript, question, round, videoBlob){
+    if(!currentUser || !supabaseClient) return;
+    const id = (crypto.randomUUID && crypto.randomUUID()) || ('b_' + Date.now() + '_' + Math.random().toString(36).slice(2,8));
+    let videoPath = null;
+    if(videoBlob){
+      videoPath = currentUser.id + '/' + id + '.webm';
+      const { error: upErr } = await supabaseClient.storage
+        .from(VIDEO_BUCKET)
+        .upload(videoPath, videoBlob, { contentType: videoBlob.type || 'video/webm', upsert: true });
+      if(upErr){ console.warn('Could not upload video', upErr); videoPath = null; }
+    }
+    const { error } = await supabaseClient.from('ballots').insert({
+      id, user_id: currentUser.id, round, ts: new Date().toISOString(),
+      question: question || '', total: parsed.total, rank: parsed.rank,
+      categories: parsed.categories.map(c => ({name:c.name, score:c.score, max:c.max})),
+      feedback: feedback || '', transcript: transcript || '', video_path: videoPath
+    });
+    if(error) console.warn('Could not save ballot to cloud history', error);
+  }
+
+  async function getVideoUrl(videoPath){
+    if(!videoPath || !supabaseClient) return null;
+    const { data, error } = await supabaseClient.storage
+      .from(VIDEO_BUCKET)
+      .createSignedUrl(videoPath, 3600);
+    if(error){ console.warn('Could not load saved video', error); return null; }
+    return data.signedUrl;
+  }
+
+  async function deleteBallotFromHistory(id, videoPath){
+    if(!supabaseClient) return;
+    await supabaseClient.from('ballots').delete().eq('id', id);
+    if(videoPath) await supabaseClient.storage.from(VIDEO_BUCKET).remove([videoPath]);
+  }
+
+  // ---- rendering "My History" ----
+  function computeTrends(list){
+    const byCategory = {};
+    list.forEach(entry => {
+      (entry.categories||[]).forEach(c => {
+        if(!byCategory[c.name]) byCategory[c.name] = { sum:0, max:0, n:0 };
+        byCategory[c.name].sum += (c.score / (c.max||10)) * 100;
+        byCategory[c.name].n += 1;
+      });
+    });
+    const rows = Object.keys(byCategory).map(name => ({
+      name, avgPct: byCategory[name].sum / byCategory[name].n
+    }));
+    rows.sort((a,b) => b.avgPct - a.avgPct);
+    return rows;
+  }
+
+  function renderHistoryTrends(list){
+    const el = document.getElementById('historyTrends');
+    if(!list.length){ el.innerHTML = ''; return; }
+    const rows = computeTrends(list);
+    if(!rows.length){ el.innerHTML = ''; return; }
+    const strengths = rows.slice(0,2);
+    const weaknesses = rows.slice(-2).reverse();
+    el.innerHTML = `
+      <div class="history-trends">
+        <h3>Trends Across ${list.length} Ballot${list.length===1?'':'s'}</h3>
+        ${rows.map(r => `
+          <div class="trend-row">
+            <span class="trend-name">${escHtml(r.name)}</span>
+            <span class="trend-bar-wrap"><span class="trend-bar" style="width:${r.avgPct.toFixed(0)}%;background:${colorFromRatio(r.avgPct/100)}"></span></span>
+            <span class="trend-avg">${r.avgPct.toFixed(0)}%</span>
+          </div>`).join('')}
+        <div class="trend-summary">
+          <div class="col strength">
+            <h4>Overall Strengths</h4>
+            <ul>${strengths.map(s=>`<li>${escHtml(s.name)}</li>`).join('')}</ul>
+          </div>
+          <div class="col weakness">
+            <h4>Overall Weaknesses</h4>
+            <ul>${weaknesses.map(s=>`<li>${escHtml(s.name)}</li>`).join('')}</ul>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  async function renderHistoryList(){
+    const wrap = document.getElementById('historyList');
+    wrap.innerHTML = '<div class="history-empty">Loading your ballots…</div>';
+    const list = (await loadHistory()).sort((a,b) => b.ts - a.ts);
+    renderHistoryTrends(list);
+    if(!list.length){
+      wrap.innerHTML = '<div class="history-empty">No saved ballots yet — finish a practice round and it will show up here.</div>';
+      return;
+    }
+    wrap.innerHTML = list.map(entry => {
+      const date = new Date(entry.ts).toLocaleString();
+      const scoreColor = entry.total !== null && entry.total !== undefined ? colorFromRatio(entry.total/100) : 'var(--slate)';
+      return `
+      <div class="history-card" data-id="${entry.id}">
+        <div class="history-card-head">
+          <div class="hc-title">Round ${entry.round} <b>· ${date}</b>${entry.question ? ' <b>· '+escHtml(entry.question)+'</b>' : ''}</div>
+          <div class="hc-score" style="color:${scoreColor}">${entry.total!==null && entry.total!==undefined ? entry.total+'/100' : '—'}</div>
+        </div>
+        <div class="history-card-body">
+          <div class="hc-video-slot"></div>
+          <div class="hc-cats">
+            ${(entry.categories||[]).map(c => `<div class="hc-cat"><b>${c.score}/${c.max||10}</b> ${escHtml(c.name)}</div>`).join('')}
+          </div>
+          <div class="hc-actions">
+            <button type="button" class="hc-toggle-transcript">Show transcript &amp; full feedback</button>
+            <button type="button" class="hc-delete">Delete</button>
+          </div>
+          <div class="hc-transcript hidden"></div>
+        </div>
+      </div>`;
+    }).join('');
+
+    wrap.querySelectorAll('.history-card').forEach(card => {
+      const id = card.getAttribute('data-id');
+      const head = card.querySelector('.history-card-head');
+      const body = card.querySelector('.history-card-body');
+      head.addEventListener('click', async () => {
+        const opening = !body.classList.contains('open');
+        body.classList.toggle('open');
+        if(opening && !body.dataset.videoLoaded){
+          body.dataset.videoLoaded = '1';
+          const entry = list.find(e => e.id === id);
+          if(entry && entry.hasVideo){
+            const url = await getVideoUrl(entry.videoPath);
+            if(url){
+              const slot = card.querySelector('.hc-video-slot');
+              slot.innerHTML = '<video controls playsinline src="'+url+'"></video>';
+            }
+          }
+        }
+      });
+      card.querySelector('.hc-toggle-transcript').addEventListener('click', (e) => {
+        e.stopPropagation();
+        const entry = list.find(e2 => e2.id === id);
+        const t = card.querySelector('.hc-transcript');
+        if(t.classList.contains('hidden')){
+          t.innerHTML = '<strong>Judge Feedback</strong><br>' + basicMarkdown(entry.feedback || '(none)') +
+            '<br><br><strong>Transcript</strong><br>' + escHtml(entry.transcript || '(none)').replace(/\n/g,'<br>');
+          t.classList.remove('hidden');
+        }else{
+          t.classList.add('hidden');
+        }
+      });
+      card.querySelector('.hc-delete').addEventListener('click', (e) => {
+        e.stopPropagation();
+        if(confirm('Delete this saved ballot? This cannot be undone.')){
+          deleteBallotFromHistory(id, list.find(e2 => e2.id === id)?.videoPath).then(renderHistoryList);
+        }
+      });
+    });
+  }
+
+  // ---- auth gate wiring ----
+  const authGate = document.getElementById('authGate');
+  const authForm = document.getElementById('authForm');
+  const authTabLogin = document.getElementById('authTabLogin');
+  const authTabSignup = document.getElementById('authTabSignup');
+  const authConfirmWrap = document.getElementById('authConfirmWrap');
+  const authError = document.getElementById('authError');
+  const authSubmitBtn = document.getElementById('authSubmitBtn');
+  const accountChip = document.getElementById('accountChip');
+  const accountEmail = document.getElementById('accountEmail');
+  let authMode = 'login'; // 'login' | 'signup'
+
+  function setAuthMode(mode){
+    authMode = mode;
+    authTabLogin.classList.toggle('active', mode === 'login');
+    authTabSignup.classList.toggle('active', mode === 'signup');
+    authConfirmWrap.classList.toggle('hidden', mode !== 'signup');
+    document.getElementById('authPasswordConfirm').required = (mode === 'signup');
+    authSubmitBtn.textContent = mode === 'login' ? 'Log In' : 'Sign Up';
+    authError.classList.remove('visible');
+  }
+  authTabLogin.addEventListener('click', () => setAuthMode('login'));
+  authTabSignup.addEventListener('click', () => setAuthMode('signup'));
+
+  function showAuthError(msg){
+    authError.textContent = msg;
+    authError.classList.add('visible');
+  }
+
+  authForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    authError.classList.remove('visible');
+    if(!supabaseClient){
+      showAuthError('Could not load the sign-in service. Check your internet connection and reload.');
+      return;
+    }
+    const email = document.getElementById('authEmail').value.trim();
+    const password = document.getElementById('authPassword').value;
+    authSubmitBtn.disabled = true;
+    try{
+      if(authMode === 'signup'){
+        const confirm = document.getElementById('authPasswordConfirm').value;
+        if(password !== confirm){ showAuthError("Passwords don't match."); return; }
+        if(password.length < 6){ showAuthError('Password must be at least 6 characters.'); return; }
+        const { data, error } = await supabaseClient.auth.signUp({ email, password });
+        if(error){ showAuthError(error.message); return; }
+        if(data.session){
+          onSignedIn(data.session.user);
+        }else{
+          showAuthError('Account created — check your email to confirm it, then log in.');
+          setAuthMode('login');
+        }
+      }else{
+        const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+        if(error){ showAuthError(error.message); return; }
+        onSignedIn(data.user);
+      }
+    }catch(err){
+      showAuthError('Something went wrong: ' + (err.message || err));
+    }finally{
+      authSubmitBtn.disabled = false;
+    }
+  });
+
+  document.getElementById('signOutBtn').addEventListener('click', async () => {
+    if(supabaseClient) await supabaseClient.auth.signOut();
+    onSignedOut();
+  });
+
+  document.getElementById('historyToggle').addEventListener('click', () => {
+    renderHistoryList();
+    showView(viewHistory);
+  });
+  document.getElementById('historyBackBtn').addEventListener('click', () => showView(viewRecord));
+
+  function onSignedIn(user){
+    currentUser = { id: user.id, email: user.email };
+    accountChip.classList.remove('hidden');
+    accountEmail.textContent = currentUser.email;
+    accountEmail.title = currentUser.email;
+    authGate.classList.add('hidden');
+    authForm.reset();
+  }
+  function onSignedOut(){
+    currentUser = null;
+    accountChip.classList.add('hidden');
+    authGate.classList.remove('hidden');
+    setAuthMode('login');
+  }
+
+  // Restore session on load / whenever it changes (this is what makes
+  // "stay signed in when you reopen the tab" work automatically).
+  (async function initAuth(){
+    if(!supabaseClient){
+      // No client library (e.g. offline) — let the person in anyway so the
+      // recorder still works, just without saved history.
+      authGate.classList.add('hidden');
+      return;
+    }
+    const { data } = await supabaseClient.auth.getSession();
+    if(data && data.session){
+      onSignedIn(data.session.user);
+    }
+    supabaseClient.auth.onAuthStateChange((event, session) => {
+      if(event === 'SIGNED_IN' && session) onSignedIn(session.user);
+      else if(event === 'SIGNED_OUT') onSignedOut();
+    });
+  })();
 
   // ===== Decorative side-margin parallax words (purely visual, no interaction) =====
   (function setupSideWords(){
@@ -2083,6 +2531,7 @@ RULES:
   const viewResults    = document.getElementById('view-results');
   const viewExample    = document.getElementById('view-example');
   const viewBriefing   = document.getElementById('view-briefing');
+  const viewHistory    = document.getElementById('view-history');
   const statusText     = document.getElementById('statusText');
   const statusSub      = document.getElementById('statusSub');
   const processError   = document.getElementById('processError');
@@ -2149,7 +2598,7 @@ RULES:
   let viewBeforeExample = null;
   let viewBeforeBriefing = null;
   function showView(v){
-    [viewRecord, viewReview, viewProcessing, viewResults, viewExample, viewBriefing].forEach(x => x.classList.add('hidden'));
+    [viewRecord, viewReview, viewProcessing, viewResults, viewExample, viewBriefing, viewHistory].forEach(x => x.classList.add('hidden'));
     v.classList.remove('hidden');
     if(v !== viewExample && typeof exampleOpen !== 'undefined' && exampleOpen){
       exampleOpen = false;
@@ -5198,6 +5647,7 @@ Formatting rules: plain text only, with the sole exception of wrapping key terms
 
     if(parsed.total !== null) flightHistory.push({round:roundNo, total:parsed.total});
     renderFlightStrips();
+    recordBallotToHistory(parsed, feedback, transcript, lastQuestion, roundNo, recordedBlob);
     showView(viewResults);
   }
 

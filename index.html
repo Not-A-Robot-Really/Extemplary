@@ -169,22 +169,93 @@
   }
   .flight .chip b{color:var(--charcoal);}
 
-  /* -------- auth gate -------- */
+  /* -------- auth gate / landing page -------- */
   #authGate{
     position:fixed;inset:0;z-index:900;background:var(--ink);
-    display:flex;align-items:center;justify-content:center;padding:24px;
+    overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;
+    scroll-behavior:smooth;
   }
   #authGate.hidden{display:none;}
+
+  /* When previewing the example ballot from the landing page (not signed
+     in), keep authGate in place (so the real app stays covered/inert) and
+     just lift <main> above it — since every other in-app view is still
+     `.hidden` at this point, only the example content actually shows. */
+  body.previewing-example header.topbar{ display:none !important; }
+  body.previewing-example main{ position:relative; z-index:950; max-width:none; margin:0; padding:0; min-height:100vh; }
+  body.previewing-example .ballot{ border-radius:0; min-height:100vh; }
+  body.previewing-example .ballot::before{ display:none; }
+  body.previewing-example .ballot-body{ padding-top:64px; }
+
+  #previewExitBtn{
+    display:none;position:fixed;top:18px;right:18px;z-index:1000;
+    width:38px;height:38px;border-radius:50%;border:none;cursor:pointer;
+    background:#2356a8;color:#fff;align-items:center;justify-content:center;
+    box-shadow:0 6px 18px rgba(0,0,0,0.35);transition:transform 0.2s ease, background 0.2s ease;
+  }
+  #previewExitBtn:hover{background:#1c4685;transform:scale(1.06);}
+  #previewExitBtn svg{width:18px;height:18px;}
+  body.previewing-example #previewExitBtn{ display:flex; }
+
+  #wrVideoModal{
+    position:fixed;inset:0;z-index:1200;display:none;align-items:center;justify-content:center;padding:24px;
+  }
+  #wrVideoModal.show{display:flex;}
+  #wrVideoModal .wr-video-backdrop{position:absolute;inset:0;background:rgba(6,10,16,0.86);}
+  #wrVideoModal .wr-video-frame{
+    position:relative;width:100%;max-width:860px;background:#000;border-radius:8px;overflow:hidden;
+    box-shadow:0 24px 70px rgba(0,0,0,0.6);animation:wrVideoIn 0.3s cubic-bezier(.2,.8,.3,1) both;
+  }
+  @keyframes wrVideoIn{ from{opacity:0;transform:scale(0.96);} to{opacity:1;transform:scale(1);} }
+  #wrVideoModal .wr-video-embed{position:relative;width:100%;padding-top:56.25%;}
+  #wrVideoModal .wr-video-embed iframe{position:absolute;inset:0;width:100%;height:100%;border:0;}
+  #wrVideoModal .wr-video-close{
+    position:absolute;top:10px;right:10px;z-index:2;width:34px;height:34px;border-radius:50%;
+    background:rgba(0,0,0,0.6);color:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  }
+  #wrVideoModal .wr-video-close svg{width:16px;height:16px;}
+  #wrVideoModal .wr-video-close:hover{background:rgba(0,0,0,0.8);}
+
+  .landing-hero{
+    min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    padding:40px 24px 60px;position:relative;
+    perspective:1200px;overflow:hidden;
+  }
+  .landing-hero::before{
+    content:'';position:absolute;top:-20%;left:50%;width:900px;height:900px;
+    background:radial-gradient(circle, rgba(154,26,26,0.22) 0%, rgba(154,26,26,0) 60%);
+    transform:translateX(-50%);pointer-events:none;
+    animation:heroGlow 8s ease-in-out infinite;
+  }
+  @keyframes heroGlow{
+    0%,100%{opacity:0.7;transform:translateX(-50%) scale(1);}
+    50%{opacity:1;transform:translateX(-50%) scale(1.08);}
+  }
+
   .auth-card{
     width:100%;max-width:380px;background:var(--parchment);color:var(--charcoal);
     border-radius:6px;box-shadow:0 12px 40px var(--shadow);padding:30px 28px 26px;
-    border:1px solid var(--ink-line);
+    border:1px solid var(--ink-line);margin-top:18px;
+    animation:authCardIn 0.7s cubic-bezier(.2,.8,.3,1) both;
   }
-  .auth-card h1{
-    font-family:var(--font-display);font-size:24px;margin:0 0 4px;color:var(--charcoal);
-    display:flex;align-items:center;gap:8px;
+  @keyframes authCardIn{
+    from{opacity:0;transform:translateY(22px) scale(0.97);}
+    to{opacity:1;transform:translateY(0) scale(1);}
   }
-  .auth-card .auth-sub{font-family:var(--font-mono);font-size:11.5px;color:var(--slate);margin:0 0 20px;}
+  .auth-card-logo{
+    font-family:var(--font-display);letter-spacing:0.5px;line-height:1;
+    display:flex;align-items:center;justify-content:center;text-align:center;margin:0 0 16px;
+    color:var(--charcoal);font-size:26px;
+  }
+  .auth-card-logo .mark-e-wrap{
+    position:relative;top:0.12em;display:inline-flex;align-items:center;justify-content:center;
+    width:1.9em;height:1.75em;margin-right:2px;flex-shrink:0;color:var(--crimson);
+  }
+  .auth-card-logo .mark-e-wrap svg{width:100%;height:100%;display:block;}
+  .auth-card .auth-sub{
+    font-family:var(--font-body);font-size:13px;color:var(--slate);margin:0 0 20px;
+    letter-spacing:-0.1px;line-height:1.4;
+  }
   .auth-tabs{display:flex;border-bottom:1px solid var(--rule);margin-bottom:18px;}
   .auth-tab{
     flex:1;text-align:center;padding:8px 4px;font-family:var(--font-mono);font-size:12px;
@@ -209,7 +280,140 @@
     text-transform:uppercase;cursor:pointer;font-weight:600;
   }
   .auth-submit:hover{background:var(--crimson-deep);}
-  .auth-note{font-family:var(--font-mono);font-size:10.5px;color:var(--slate);text-align:center;margin-top:14px;line-height:1.5;}
+
+  .landing-scroll-cue{
+    position:absolute;bottom:22px;left:50%;transform:translateX(-50%);
+    display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--chrome-text-dim);
+    font-family:var(--font-mono);font-size:10.5px;letter-spacing:1px;text-transform:uppercase;
+    animation:landingBounce 2.2s ease-in-out infinite;
+  }
+  .landing-scroll-cue svg{width:16px;height:16px;}
+  @keyframes landingBounce{
+    0%,100%{transform:translateX(-50%) translateY(0);}
+    50%{transform:translateX(-50%) translateY(7px);}
+  }
+
+  /* ----- feature showcase section ----- */
+  .landing-features{
+    max-width:1080px;margin:0 auto;padding:90px 24px 70px;
+  }
+  .landing-features-head{text-align:center;margin-bottom:56px;}
+  .landing-features-head h2{
+    font-family:var(--font-display);font-size:clamp(26px,4vw,38px);margin:0 0 12px;color:var(--chrome-text);
+  }
+  .landing-features-head p{
+    font-family:var(--font-body);font-size:15px;color:var(--chrome-text-dim);max-width:520px;margin:0 auto;
+    line-height:1.6;
+  }
+  .feature-grid{
+    display:grid;grid-template-columns:repeat(auto-fit, minmax(240px,1fr));gap:20px;
+  }
+  .feature-card{
+    background:var(--ink-soft);border:1px solid var(--ink-line);border-radius:10px;padding:24px 22px;
+    opacity:0;transform:translateY(28px);
+    transition:opacity 0.7s cubic-bezier(.2,.7,.3,1), transform 0.35s cubic-bezier(.2,.7,.3,1), box-shadow 0.35s ease, border-color 0.35s ease;
+    transform-style:preserve-3d;will-change:transform;
+  }
+  .feature-card.in-view{opacity:1;}
+  .feature-card.in-view:not(.tilting){transform:translateY(0);}
+  .feature-card:hover{border-color:var(--brass);box-shadow:0 20px 46px rgba(0,0,0,0.28);}
+  .feature-card .fc-icon{
+    width:38px;height:38px;border-radius:9px;background:var(--crimson);color:var(--on-accent);
+    display:flex;align-items:center;justify-content:center;margin-bottom:14px;
+    transform:translateZ(24px);transition:transform 0.35s ease;
+  }
+  .feature-card:hover .fc-icon{transform:translateZ(34px) scale(1.06);}
+  .feature-card .fc-icon svg{width:20px;height:20px;}
+  .feature-card h3{font-family:var(--font-display);font-size:17px;margin:0 0 8px;color:var(--chrome-text);transform:translateZ(14px);}
+  .feature-card p{font-family:var(--font-body);font-size:13.5px;color:var(--chrome-text-dim);line-height:1.55;margin:0;transform:translateZ(10px);}
+  .feature-card.wide{grid-column:1 / -1;}
+  .feature-card.wide .fc-body{display:grid;grid-template-columns:minmax(220px,320px) 1fr;gap:26px;align-items:start;}
+  .feature-card.wide .fc-body.stacked{display:flex;flex-direction:column;gap:16px;}
+  @media (max-width:720px){ .feature-card.wide .fc-body{grid-template-columns:1fr;} }
+
+  /* ----- interactive demo widgets embedded in feature cards ----- */
+  .demo-panel{
+    background:var(--parchment);color:var(--charcoal);border-radius:8px;padding:16px 16px 14px;
+    margin-top:16px;position:relative;overflow:hidden;box-shadow:inset 0 0 0 1px var(--rule);
+    transform:translateZ(6px);
+  }
+  .demo-panel .q-hint, .demo-panel .progress-phrase{color:var(--slate);}
+  .demo-locked-overlay{
+    position:absolute;inset:0;background:rgba(20,26,36,0.72);backdrop-filter:blur(2px);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:10px;
+    padding:20px;opacity:0;pointer-events:none;transition:opacity 0.35s ease;
+  }
+  .demo-locked-overlay.show{opacity:1;pointer-events:auto;}
+  .demo-locked-overlay svg{width:26px;height:26px;color:var(--brass);}
+  .demo-locked-overlay p{color:#fff;font-family:var(--font-body);font-size:13px;margin:0;max-width:260px;line-height:1.5;}
+  .demo-locked-overlay .demo-signup-btn{
+    padding:9px 20px;border-radius:24px;background:var(--crimson);color:var(--on-accent);border:none;
+    font-family:var(--font-mono);font-size:11.5px;letter-spacing:0.5px;text-transform:uppercase;cursor:pointer;
+    font-weight:600;transition:background 0.2s ease, transform 0.2s ease;
+  }
+  .demo-signup-btn:hover{background:var(--crimson-deep);transform:translateY(-1px);}
+  .demo-free-tag{
+    display:inline-block;font-family:var(--font-mono);font-size:9.5px;letter-spacing:0.8px;text-transform:uppercase;
+    background:var(--brass);color:#fff;border-radius:10px;padding:2px 8px;margin-left:8px;vertical-align:middle;
+  }
+
+  /* mini timer demo */
+  .mini-timer-display{
+    font-family:var(--font-mono);font-size:40px;text-align:center;color:var(--charcoal);letter-spacing:1px;padding:6px 0 2px;
+  }
+  .mini-timer-display.warn{color:var(--crimson);}
+  .mini-timer-btn-row{display:flex;gap:8px;justify-content:center;margin-top:6px;}
+
+  /* AI-judged ballot demo: animated score ring + staggered row reveal */
+  .demo-category-reveal .badge-wrap .demo-ring-path{
+    stroke-dasharray:190;stroke-dashoffset:190;
+    animation:demoRingDraw 1.3s cubic-bezier(.3,.7,.3,1) 0.15s forwards;
+  }
+  @keyframes demoRingDraw{ to{ stroke-dashoffset:0; } }
+  .demo-category-reveal .score{
+    opacity:0;animation:demoFadeUp 0.5s ease 0.9s forwards;
+  }
+  .demo-category-reveal .cat-name{
+    opacity:0;transform:translateY(8px);animation:demoFadeUp 0.5s ease 0.5s forwards;
+  }
+  .demo-category-reveal .cat-row{
+    opacity:0;transform:translateY(8px);animation:demoFadeUp 0.5s ease forwards;
+  }
+  .demo-category-reveal .cat-row.worked{animation-delay:0.65s;}
+  .demo-category-reveal .cat-row.flaws{animation-delay:0.8s;}
+  .demo-category-reveal .cat-row.evidence{animation-delay:0.95s;}
+  @keyframes demoFadeUp{ from{opacity:0;transform:translateY(8px);} to{opacity:1;transform:translateY(0);} }
+
+  /* watch & read-along mini preview */
+  .wr-preview{display:flex;gap:14px;align-items:flex-start;}
+  .wr-thumb{
+    position:relative;width:150px;flex-shrink:0;border-radius:6px;overflow:hidden;box-shadow:0 4px 14px rgba(0,0,0,0.25);
+    cursor:pointer;background:#000;
+  }
+  .wr-thumb img{width:100%;display:block;transition:transform 0.4s ease;}
+  .wr-thumb:hover img{transform:scale(1.05);}
+  .wr-thumb .wr-play{
+    position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  }
+  .wr-thumb .wr-play svg{width:34px;height:34px;color:#fff;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.5));}
+  .wr-snippet{font-family:var(--font-body);font-size:13px;line-height:1.7;color:var(--charcoal);}
+  .wr-snippet .tw{cursor:default;}
+
+  /* ----- example ballot CTA section ----- */
+  .landing-example{
+    max-width:640px;margin:0 auto;padding:20px 24px 110px;text-align:center;
+    opacity:0;transform:translateY(24px);transition:opacity 0.7s cubic-bezier(.2,.7,.3,1), transform 0.7s cubic-bezier(.2,.7,.3,1);
+  }
+  .landing-example.in-view{opacity:1;transform:translateY(0);}
+  .landing-example h2{font-family:var(--font-display);font-size:26px;margin:0 0 10px;color:var(--chrome-text);}
+  .landing-example p{font-family:var(--font-body);font-size:14px;color:var(--chrome-text-dim);margin:0 0 22px;line-height:1.6;}
+  .landing-example-btn{
+    display:inline-flex;align-items:center;justify-content:center;padding:11px 32px;border-radius:4px;
+    background:var(--crimson);color:var(--on-accent);border:none;cursor:pointer;
+    font-family:var(--font-mono);font-size:13px;letter-spacing:0.5px;text-transform:uppercase;font-weight:600;
+    box-shadow:0 8px 24px var(--shadow);transition:transform 0.25s ease, background 0.25s ease, box-shadow 0.25s ease;
+  }
+  .landing-example-btn:hover{background:var(--crimson-deep);transform:translateY(-3px) scale(1.02);box-shadow:0 14px 32px rgba(0,0,0,0.35);}
 
   /* -------- account chip / history -------- */
   .account-chip{
@@ -860,7 +1064,7 @@
   .ann-comment.ann-active{filter:brightness(0.9);}
 
   .comment-popover{
-    position:fixed;z-index:200;max-width:300px;
+    position:fixed;z-index:1300;max-width:300px;
     background:#ffffff;border:1px solid var(--charcoal);
     border-radius:4px;
     padding:10px 13px;font-size:12.5px;line-height:1.5;
@@ -1140,32 +1344,195 @@
 
 <!-- ====== AUTH GATE ====== -->
 <div id="authGate">
-  <div class="auth-card">
-    <h1>Extemplary</h1>
-    <p class="auth-sub">Sign in to save and track your practice ballots</p>
-    <div class="auth-tabs">
-      <button type="button" class="auth-tab active" id="authTabLogin">Log In</button>
-      <button type="button" class="auth-tab" id="authTabSignup">Sign Up</button>
+  <div class="landing-hero">
+    <div class="auth-card">
+      <h1 class="auth-card-logo mark" aria-label="Extemplary">
+        <span class="mark-e-wrap" aria-hidden="true"><svg viewBox="0 0 36 37" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9 2H27C30.3137 2 33 4.68629 33 8V20C33 23.3137 30.3137 26 27 26H15.5L8.5 32.5C8.03 32.94 7.28 32.6 7.28 31.96V26H9C5.68629 26 3 23.3137 3 20V8C3 4.68629 5.68629 2 9 2Z" fill="currentColor"/><text x="18" y="15" text-anchor="middle" dominant-baseline="central" style="font-family:var(--font-display);" font-weight="900" font-size="23" fill="var(--parchment)">E</text></svg></span>xtemplary
+      </h1>
+      <p class="auth-sub">Sign in to save and track your practice ballots</p>
+      <div class="auth-tabs">
+        <button type="button" class="auth-tab active" id="authTabLogin">Log In</button>
+        <button type="button" class="auth-tab" id="authTabSignup">Sign Up</button>
+      </div>
+      <form id="authForm" autocomplete="on">
+        <div class="auth-field">
+          <label for="authEmail">Email</label>
+          <input type="email" id="authEmail" name="email" required autocomplete="username" />
+        </div>
+        <div class="auth-field">
+          <label for="authPassword">Password</label>
+          <input type="password" id="authPassword" name="password" required autocomplete="current-password" minlength="6" />
+        </div>
+        <div class="auth-field hidden" id="authConfirmWrap">
+          <label for="authPasswordConfirm">Confirm Password</label>
+          <input type="password" id="authPasswordConfirm" name="passwordConfirm" autocomplete="new-password" minlength="6" />
+        </div>
+        <div class="auth-error" id="authError"></div>
+        <button type="submit" class="auth-submit" id="authSubmitBtn">Log In</button>
+      </form>
     </div>
-    <form id="authForm" autocomplete="on">
-      <div class="auth-field">
-        <label for="authEmail">Email</label>
-        <input type="email" id="authEmail" name="email" required autocomplete="username" />
+  </div>
+
+  <div class="landing-features">
+    <div class="landing-features-head">
+      <h2>Everything you need to practice like it's round six</h2>
+      <p>Extemplary handles the entire extemp practice loop — from drawing a question to reviewing exactly how you can improve — so every rep counts.</p>
+    </div>
+    <div class="feature-grid" id="landingFeatureGrid">
+      <div class="feature-card wide">
+        <div class="fc-body">
+          <div>
+            <div class="fc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></div>
+            <h3>Real practice questions<span class="demo-free-tag">1 free try</span></h3>
+            <p>Draw from authentic-style extemp questions or generate fresh ones on demand, across foreign and domestic topic areas — powered by live current-events research.</p>
+          </div>
+          <div class="demo-panel" id="demoQuestionPanel">
+            <div class="q-hint" style="margin-bottom:8px;">Choose a category — the AI will draft three real current-events questions, just like in the app.</div>
+            <div class="q-cat-row" id="demoQCatRow">
+              <button class="btn ghost q-cat-btn" data-cat="Domestic" type="button">Domestic</button>
+              <button class="btn ghost q-cat-btn" data-cat="International" type="button">International</button>
+              <button class="btn ghost q-cat-btn" data-cat="Economic" type="button">Economic</button>
+            </div>
+            <div class="q-error" id="demoQError" style="display:none;margin-top:8px;"></div>
+            <div id="demoQLoading" class="hidden" style="text-align:center;padding:14px 0;">
+              <div class="q-hint" id="demoQLoadingText">Drafting three questions…</div>
+              <div class="progress-bar-wrap"><div class="progress-bar-track"><div class="progress-bar-fill" id="demoQProgressFill"></div></div></div>
+              <div class="progress-phrase" id="demoQProgressPhrase"></div>
+            </div>
+            <div id="demoQOptions" style="margin-top:10px;"></div>
+            <div id="demoQConfirmed" class="hidden">
+              <div class="q-hint">Your drawn question:</div>
+              <div class="q-confirmed-text" id="demoQConfirmedText"></div>
+            </div>
+            <div class="demo-locked-overlay" id="demoQLock">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              <p>That was your free question draft. Sign up to draft unlimited questions and start practicing.</p>
+              <button type="button" class="demo-signup-btn demo-signup-cta">Sign Up Free</button>
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="auth-field">
-        <label for="authPassword">Password</label>
-        <input type="password" id="authPassword" name="password" required autocomplete="current-password" minlength="6" />
+      <div class="feature-card wide">
+        <div class="fc-body">
+          <div>
+            <div class="fc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div>
+            <h3>Full prep &amp; speech timer</h3>
+            <p>A 30-minute prep clock and speech timer keep every round tournament-realistic from draw to drop. Try the real countdown below — no sign-up needed.</p>
+          </div>
+          <div class="demo-panel">
+            <div class="mini-timer-display" id="demoTimerDisplay">30:00</div>
+            <div class="mini-timer-btn-row">
+              <button type="button" class="btn primary" id="demoTimerStart">Start</button>
+              <button type="button" class="btn ghost hidden" id="demoTimerPause">Pause</button>
+              <button type="button" class="btn ghost hidden" id="demoTimerResume">Resume</button>
+              <button type="button" class="btn ghost" id="demoTimerReset">Reset</button>
+            </div>
+            <div class="q-hint" style="margin-top:10px;text-align:center;">Same 30-minute prep clock you'll use before every recorded round.</div>
+          </div>
+        </div>
       </div>
-      <div class="auth-field hidden" id="authConfirmWrap">
-        <label for="authPasswordConfirm">Confirm Password</label>
-        <input type="password" id="authPasswordConfirm" name="passwordConfirm" autocomplete="new-password" minlength="6" />
+      <div class="feature-card">
+        <div class="fc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></div>
+        <h3>Record your round</h3>
+        <p>Camera-record your speech right in the browser — no app to install, nothing to upload by hand.</p>
       </div>
-      <div class="auth-error" id="authError"></div>
-      <button type="submit" class="auth-submit" id="authSubmitBtn">Log In</button>
-      <p class="auth-note">Your account and ballots are stored only in this browser — there is no server. Use the same browser and device to keep access to your history.</p>
-    </form>
+      <div class="feature-card">
+        <div class="fc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg></div>
+        <h3>Word-for-word transcript</h3>
+        <p>Automatic transcription with a stenographer-style layout and auto-detected Intro / Body / Conclusion sections.</p>
+      </div>
+      <div class="feature-card">
+        <div class="fc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V10M18 20V4M6 20v-4"/></svg></div>
+        <h3>Vocal delivery analysis</h3>
+        <p>Volume, emphasis, tone and pitch variety, pauses, pace (WPM), filler words, and stutters — measured straight from your recording's audio.</p>
+      </div>
+      <div class="feature-card wide">
+        <div class="fc-body">
+          <div>
+            <div class="fc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/><circle cx="8.5" cy="12" r="2"/></svg></div>
+            <h3>Watch &amp; read along</h3>
+            <p>Click any word or judge's note to jump your video to that exact moment, with the transcript highlighting live as it plays. Here's a peek at the example round.</p>
+          </div>
+          <div class="demo-panel">
+            <div class="wr-preview">
+              <div class="wr-thumb" id="wrThumb">
+                <img src="https://img.youtube.com/vi/lzoUu1fDmWE/hqdefault.jpg" alt="Example round thumbnail" />
+                <div class="wr-play"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="11" fill="rgba(0,0,0,0.45)"/><path d="M10 8l6 4-6 4V8z" fill="#fff"/></svg></div>
+              </div>
+              <div class="wr-snippet" id="wrSnippet">
+                In one of the most classic episodes of arguably the most classic TV show of all time,
+                <span class="ann-comment ann-green" data-color="green" data-comment="Excellent, vivid creative hook — instantly memorable and sets up the analogy for the whole speech.">SpongeBob SquarePants</span>.
+                SpongeBob and his buddy Patrick set <span class="ann-comment ann-yellow" data-color="yellow" data-comment="Filler/intensifier word — cut for cleaner, more polished delivery.">literally</span> every building on fire — and
+                <span class="ann-comment ann-blue" data-color="blue" data-comment="Clean, explicit link from the hook straight into the topic area — judges want to see this connection made directly.">this is exactly the U.S.'s approach to the war in Afghanistan.</span>
+                <div class="q-hint" style="margin-top:8px;">Click any colored phrase for the judge's note — same as the real transcript.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="feature-card wide">
+        <div class="fc-body stacked">
+          <div>
+            <div class="fc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 7.2H22l-6 4.6 2.4 7.2L12 16.4l-6.4 4.6 2.4-7.2-6-4.6h7.6z"/></svg></div>
+            <h3>AI-judged ballot</h3>
+            <p>Scored against an 8-category NSDA-style rubric, with what worked, critical flaws, and evidence-based reasoning for every score. Here's one real category from an actual ballot.</p>
+          </div>
+          <div class="demo-panel" id="demoCategoryPanel"></div>
+        </div>
+      </div>
+      <div class="feature-card wide">
+        <div class="fc-body">
+          <div>
+            <div class="fc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div>
+            <h3>Current event briefings<span class="demo-free-tag">1 free try</span></h3>
+            <p>Get up to speed on the story behind your question with a concise, prep-ready current event briefing — real live research, same as the app.</p>
+          </div>
+          <div class="demo-panel" id="demoBriefingPanel">
+            <div class="q-hint" style="margin-bottom:8px;">When's your tournament? See a real domestic news briefing, generated live.</div>
+            <div class="bf-timing-row" id="demoBfTimingRow" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+              <button class="bf-timing-btn" data-timing="today" type="button">In a few hours</button>
+              <button class="bf-timing-btn" data-timing="tomorrow" type="button">Tomorrow</button>
+              <button class="bf-timing-btn" data-timing="custom" type="button">Pick a date</button>
+            </div>
+            <div class="bf-custom-row" id="demoBfCustomRow">
+              <input type="datetime-local" id="demoBfCustomDate" />
+            </div>
+            <button type="button" class="btn primary" id="demoBriefingBtn" style="width:100%;" disabled>Generate Briefing</button>
+            <div class="q-error" id="demoBfError" style="display:none;margin-top:8px;"></div>
+            <div id="demoBfLoading" class="hidden" style="text-align:center;padding:14px 0;">
+              <div class="q-hint" id="demoBfLoadingText">Pulling together your briefing…</div>
+              <div class="progress-bar-wrap"><div class="progress-bar-track"><div class="progress-bar-fill" id="demoBfProgressFill"></div></div></div>
+              <div class="progress-phrase" id="demoBfProgressPhrase"></div>
+            </div>
+            <div class="bf-result" id="demoBfResult" style="margin-top:10px;max-height:260px;overflow:auto;"></div>
+            <div class="demo-locked-overlay" id="demoBfLock">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              <p>That was your free briefing. Sign up to generate a fresh briefing before every tournament.</p>
+              <button type="button" class="demo-signup-btn demo-signup-cta">Sign Up Free</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="feature-card">
+        <div class="fc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 8v5l3 2"/></svg></div>
+        <h3>Cloud-saved history &amp; trends</h3>
+        <p>Every round — video, transcript, and feedback — is saved to your account, with trends showing your overall strengths and weaknesses over time.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="landing-example" id="landingExample">
+    <h2>See it in action first</h2>
+    <p>Not ready to record yet? Watch a fully worked example round — real speech, real ballot, same synced video-and-transcript playback you'll get on your own rounds.</p>
+    <button type="button" class="landing-example-btn" id="landingExampleBtn">See an Example</button>
   </div>
 </div>
+
+<!-- Fullscreen exit button — only shown while previewing the example ballot
+     from the landing page (not signed in). Always pinned top-right. -->
+<button type="button" id="previewExitBtn" aria-label="Close example and return to sign in">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+</button>
 
 <!-- ====== TOAST NOTIFICATIONS ====== -->
 <div class="toast-container" id="toastContainer" aria-live="polite"></div>
@@ -1175,6 +1542,7 @@
   <div class="sp-head">
     <span>Tip</span>
   </div>
+
   <div class="sp-body">
     Press <kbd>?</kbd> anytime to see keyboard shortcuts.
   </div>
@@ -1580,11 +1948,6 @@
           </div>
           <div class="transcript-body" id="transcriptBody"></div>
         </div>
-        <div class="comment-popover hidden" id="commentPopover">
-          <div class="cp-arrow"></div>
-          <div class="cp-tag" id="cpTag"></div>
-          <div class="cp-text" id="cpText"></div>
-        </div>
 
         <div class="actions">
           <button class="btn primary" id="recordAgainBtn">Record Next Round</button>
@@ -1793,6 +2156,15 @@
 
   <div class="legal">Unofficial practice tool · not affiliated with or endorsed by the NSDA · audio sent only to Groq's API</div>
 </main>
+
+<!-- Body-level (not inside any single view) so the comment popover can show
+     regardless of which view/panel is currently active — including the
+     Example Ballot and the landing-page preview demo. -->
+<div class="comment-popover hidden" id="commentPopover">
+  <div class="cp-arrow"></div>
+  <div class="cp-tag" id="cpTag"></div>
+  <div class="cp-text" id="cpText"></div>
+</div>
 
 <script>
 (function(){
@@ -2025,6 +2397,22 @@
     authError.classList.add('visible');
   }
 
+  function describeAuthError(err){
+    if(!err) return 'Unknown error.';
+    // Supabase errors are usually {message, status, code}; but network/CORS
+    // failures throw plain Error/TypeErrors, and some edge cases hand back
+    // odd shapes. Never trust a single field blindly — build the fullest
+    // readable string we can so the box never shows a stray fragment.
+    const parts = [];
+    if(typeof err === 'string') return err;
+    if(err.message) parts.push(err.message);
+    if(err.error_description && err.error_description !== err.message) parts.push(err.error_description);
+    if(err.status) parts.push('(status ' + err.status + ')');
+    if(err.code) parts.push('[' + err.code + ']');
+    if(parts.length) return parts.join(' ');
+    try{ return JSON.stringify(err); }catch(e){ return String(err); }
+  }
+
   authForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     authError.classList.remove('visible');
@@ -2044,20 +2432,41 @@
           email, password,
           options: { emailRedirectTo: window.location.origin + window.location.pathname }
         });
-        if(error){ showAuthError(error.message); return; }
+        if(error){
+          console.error('Sign-up error:', error);
+          if(error.status === 500 && (error.code === 'unexpected_failure' || /confirmation email/i.test(error.message||''))){
+            // Usually means this email already has an account and Supabase's
+            // attempt to resend the confirmation email failed/hit a cooldown.
+            // Retrying signUp again for the same address tends to fail the
+            // same way, so point the person at login/reset instead of
+            // inviting another retry loop.
+            showAuthError('This email may already be registered, or a confirmation email was already sent recently. Try logging in, or wait a few minutes before signing up again.');
+            setAuthMode('login');
+          }else{
+            showAuthError(describeAuthError(error));
+          }
+          return;
+        }
         if(data.session){
           onSignedIn(data.session.user);
+        }else if(data.user && (!data.user.identities || data.user.identities.length === 0)){
+          // Supabase's signature for "this email already has an account":
+          // it returns a user-shaped object with no identities instead of
+          // an error, to avoid leaking which emails are registered.
+          showAuthError('That email may already have an account — try logging in instead.');
+          setAuthMode('login');
         }else{
           showAuthError('Account created — check your email to confirm it, then log in.');
           setAuthMode('login');
         }
       }else{
         const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
-        if(error){ showAuthError(error.message); return; }
+        if(error){ console.error('Log-in error:', error); showAuthError(describeAuthError(error)); return; }
         onSignedIn(data.user);
       }
     }catch(err){
-      showAuthError('Something went wrong: ' + (err.message || err));
+      console.error('Auth exception:', err);
+      showAuthError('Something went wrong: ' + describeAuthError(err));
     }finally{
       authSubmitBtn.disabled = false;
     }
@@ -2074,12 +2483,380 @@
   });
   document.getElementById('historyBackBtn').addEventListener('click', () => showView(viewRecord));
 
+  // ----- landing page scroll-reveal animation -----
+  (function setupLandingReveal(){
+    const targets = document.querySelectorAll('#authGate .feature-card, #authGate .landing-example');
+    if(!targets.length) return;
+    if(!('IntersectionObserver' in window)){
+      targets.forEach(t => t.classList.add('in-view'));
+      return;
+    }
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((entry, i) => {
+        if(entry.isIntersecting){
+          const el = entry.target;
+          const delay = el.classList.contains('feature-card')
+            ? Array.prototype.indexOf.call(el.parentNode.children, el) * 70
+            : 0;
+          setTimeout(() => el.classList.add('in-view'), delay);
+          io.unobserve(el);
+        }
+      });
+    }, { threshold: 0.15 });
+    targets.forEach(t => io.observe(t));
+  })();
+
+  // ----- "See an Example" from the landing page, before signing in -----
+  let exampleOpenedFromLanding = false;
+  document.getElementById('landingExampleBtn').addEventListener('click', () => {
+    exampleOpenedFromLanding = true;
+    // IMPORTANT: do NOT hide authGate here. Hiding it would reveal the real
+    // app's header (History, Settings, Timer, Sign out, etc.) underneath,
+    // letting someone use the whole app without ever signing up. Instead,
+    // keep authGate in place and just lift the example view's content
+    // above it with a body class, while the header stays hidden via CSS.
+    document.body.classList.add('previewing-example');
+    exampleOpen = true;
+    helpToggle.classList.add('active');
+    viewBeforeExample = viewRecord;
+    renderExampleBallot();
+    showView(viewExample);
+  });
+  document.getElementById('previewExitBtn').addEventListener('click', () => {
+    if(exampleOpen) closeExampleBallot();
+  });
+
+  // ----- make the "Watch & read along" demo snippet's colored comments -----
+  // ----- actually clickable, using the exact same popover the real app uses -----
+  attachCommentListeners(document.getElementById('wrSnippet'), () => {});
+
+  // ----- "Watch & Read Along" thumbnail: opens just the sample video, -----
+  // ----- not the full ballot/feedback experience.                    -----
+  (function setupWrVideoModal(){
+    const modal = document.createElement('div');
+    modal.id = 'wrVideoModal';
+    modal.innerHTML = `
+      <div class="wr-video-backdrop"></div>
+      <div class="wr-video-frame">
+        <button type="button" class="wr-video-close" aria-label="Close video">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+        <div class="wr-video-embed"></div>
+      </div>`;
+    document.body.appendChild(modal);
+    const embed = modal.querySelector('.wr-video-embed');
+    function open(){
+      embed.innerHTML = '<iframe src="https://www.youtube.com/embed/lzoUu1fDmWE?start=20&autoplay=1&rel=0" title="Extemplary example round" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>';
+      modal.classList.add('show');
+    }
+    function close(){
+      modal.classList.remove('show');
+      embed.innerHTML = ''; // stop playback
+    }
+    document.getElementById('wrThumb').addEventListener('click', open);
+    modal.querySelector('.wr-video-close').addEventListener('click', close);
+    modal.querySelector('.wr-video-backdrop').addEventListener('click', close);
+  })();
+
+  // ----- "Sign Up Free" buttons inside locked demo overlays -----
+  document.querySelectorAll('.demo-signup-cta').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelector('.landing-hero').scrollIntoView({ behavior:'smooth', block:'center' });
+      setAuthMode('signup');
+      setTimeout(() => document.getElementById('authEmail').focus(), 500);
+    });
+  });
+
+  // ----- mini prep timer demo (fully local, unlimited use) -----
+  (function setupDemoTimer(){
+    const DEMO_TIMER_SECONDS = 30 * 60;
+    let remaining = DEMO_TIMER_SECONDS;
+    let ticking = null;
+    const disp = document.getElementById('demoTimerDisplay');
+    const startBtn = document.getElementById('demoTimerStart');
+    const pauseBtn = document.getElementById('demoTimerPause');
+    const resumeBtn = document.getElementById('demoTimerResume');
+    const resetBtn = document.getElementById('demoTimerReset');
+    function paint(){
+      const m = Math.floor(remaining/60), s = remaining%60;
+      disp.textContent = String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+      disp.classList.toggle('warn', remaining <= 60);
+    }
+    function tick(){
+      remaining = Math.max(0, remaining - 1);
+      paint();
+      if(remaining === 0){ clearInterval(ticking); ticking = null; toRunningState(false); }
+    }
+    function toRunningState(running){
+      startBtn.classList.toggle('hidden', remaining !== DEMO_TIMER_SECONDS);
+      pauseBtn.classList.toggle('hidden', !running);
+      resumeBtn.classList.toggle('hidden', running || remaining === DEMO_TIMER_SECONDS || remaining === 0);
+    }
+    startBtn.addEventListener('click', () => {
+      paint();
+      ticking = setInterval(tick, 1000);
+      toRunningState(true);
+    });
+    pauseBtn.addEventListener('click', () => {
+      clearInterval(ticking); ticking = null;
+      toRunningState(false);
+    });
+    resumeBtn.addEventListener('click', () => {
+      ticking = setInterval(tick, 1000);
+      toRunningState(true);
+    });
+    resetBtn.addEventListener('click', () => {
+      clearInterval(ticking); ticking = null;
+      remaining = DEMO_TIMER_SECONDS;
+      paint();
+      startBtn.classList.remove('hidden');
+      pauseBtn.classList.add('hidden');
+      resumeBtn.classList.add('hidden');
+    });
+    paint();
+  })();
+
+  // ----- subtle 3D tilt on feature cards, mouse-driven -----
+  (function setupTilt(){
+    if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if(window.matchMedia && window.matchMedia('(hover: none)').matches) return; // skip on touch
+    document.querySelectorAll('#authGate .feature-card').forEach(card => {
+      let raf = null;
+      card.addEventListener('mousemove', (e) => {
+        const rect = card.getBoundingClientRect();
+        const px = (e.clientX - rect.left) / rect.width - 0.5;
+        const py = (e.clientY - rect.top) / rect.height - 0.5;
+        if(raf) cancelAnimationFrame(raf);
+        raf = requestAnimationFrame(() => {
+          card.classList.add('tilting');
+          card.style.transform = `translateY(0) rotateX(${(-py*6).toFixed(2)}deg) rotateY(${(px*6).toFixed(2)}deg)`;
+        });
+      });
+      card.addEventListener('mouseleave', () => {
+        if(raf) cancelAnimationFrame(raf);
+        card.classList.remove('tilting');
+        card.style.transform = '';
+      });
+    });
+  })();
+
+  // ----- "Real practice questions" landing demo: 1 real free try -----
+  (function setupDemoQuestions(){
+    const DEMO_Q_KEY = 'extemplary-demo-question-used';
+    const catRow = document.getElementById('demoQCatRow');
+    const errEl = document.getElementById('demoQError');
+    const loading = document.getElementById('demoQLoading');
+    const loadingText = document.getElementById('demoQLoadingText');
+    const optionsEl = document.getElementById('demoQOptions');
+    const confirmedWrap = document.getElementById('demoQConfirmed');
+    const confirmedText = document.getElementById('demoQConfirmedText');
+    const lockEl = document.getElementById('demoQLock');
+    const demoQProgress = createProgressController(
+      document.getElementById('demoQProgressFill'),
+      document.getElementById('demoQProgressPhrase')
+    );
+
+    function lockDemo(){
+      lockEl.classList.add('show');
+      catRow.style.pointerEvents = 'none';
+      catRow.style.opacity = '0.4';
+      try{ localStorage.setItem(DEMO_Q_KEY, '1'); }catch(e){}
+    }
+
+    if(localStorage.getItem(DEMO_Q_KEY) === '1'){
+      lockEl.classList.add('show');
+      catRow.style.opacity = '0.4';
+      catRow.style.pointerEvents = 'none';
+    }
+
+    catRow.querySelectorAll('.q-cat-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if(localStorage.getItem(DEMO_Q_KEY) === '1') return;
+        errEl.style.display = 'none';
+        confirmedWrap.classList.add('hidden');
+        optionsEl.innerHTML = '';
+        catRow.style.pointerEvents = 'none';
+        catRow.style.opacity = '0.5';
+        const category = btn.dataset.cat;
+        loadingText.textContent = `Drafting three ${category.toLowerCase()} questions…`;
+        loading.classList.remove('hidden');
+        demoQProgress.start(QGEN_PHRASES, 90);
+        try{
+          const dateStr = new Date().toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+          const prompt = buildQuestionGenPrompt(category, dateStr);
+          const candidate = await callGemini(prompt);
+          const questions = extractQuestions(candidate);
+          demoQProgress.finish();
+          await new Promise(r => setTimeout(r, 220));
+          loading.classList.add('hidden');
+          questions.forEach(q => {
+            const card = document.createElement('div');
+            card.className = 'q-option-card';
+            card.textContent = q;
+            card.addEventListener('click', () => {
+              if(localStorage.getItem(DEMO_Q_KEY) === '1') return;
+              confirmedText.textContent = q;
+              confirmedWrap.classList.remove('hidden');
+              optionsEl.innerHTML = '';
+              lockDemo();
+            });
+            optionsEl.appendChild(card);
+          });
+        }catch(err){
+          console.warn('Landing demo question generation failed:', err);
+          demoQProgress.stop();
+          loading.classList.add('hidden');
+          errEl.textContent = "Couldn't draft questions right now — please try again in a moment.";
+          errEl.style.display = 'block';
+          catRow.style.pointerEvents = '';
+          catRow.style.opacity = '';
+        }
+      });
+    });
+  })();
+
+  // ----- "Current event briefings" landing demo: 1 real free try -----
+  (function setupDemoBriefing(){
+    const DEMO_BF_KEY = 'extemplary-demo-briefing-used';
+    const btn = document.getElementById('demoBriefingBtn');
+    const errEl = document.getElementById('demoBfError');
+    const loading = document.getElementById('demoBfLoading');
+    const resultEl = document.getElementById('demoBfResult');
+    const lockEl = document.getElementById('demoBfLock');
+    const timingRow = document.getElementById('demoBfTimingRow');
+    const customRow = document.getElementById('demoBfCustomRow');
+    const customDate = document.getElementById('demoBfCustomDate');
+    const demoBfProgress = createProgressController(
+      document.getElementById('demoBfProgressFill'),
+      document.getElementById('demoBfProgressPhrase')
+    );
+    let demoBfTiming = null;
+    const alreadyUsed = () => localStorage.getItem(DEMO_BF_KEY) === '1';
+
+    timingRow.querySelectorAll('.bf-timing-btn').forEach(tb => {
+      tb.addEventListener('click', () => {
+        if(alreadyUsed()) return;
+        timingRow.querySelectorAll('.bf-timing-btn').forEach(b => b.classList.remove('active'));
+        tb.classList.add('active');
+        demoBfTiming = tb.dataset.timing;
+        customRow.classList.toggle('show', demoBfTiming === 'custom');
+        btn.disabled = false;
+      });
+    });
+
+    function describeDemoTiming(){
+      const now = new Date();
+      if(demoBfTiming === 'today'){
+        return `in a few hours, later today (${now.toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' })})`;
+      }
+      if(demoBfTiming === 'tomorrow'){
+        const t = new Date(now.getTime() + 24*60*60*1000);
+        return `tomorrow (${t.toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' })})`;
+      }
+      if(demoBfTiming === 'custom' && customDate.value){
+        const d = new Date(customDate.value);
+        if(!isNaN(d.getTime())) return `on ${d.toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' })}`;
+      }
+      return 'soon';
+    }
+
+    if(alreadyUsed()){
+      lockEl.classList.add('show');
+      btn.disabled = true; btn.style.opacity = '0.4';
+      timingRow.style.pointerEvents = 'none'; timingRow.style.opacity = '0.5';
+    }
+
+    // A transient network hiccup (ad blocker, brief connectivity drop, cold
+    // edge function) shows up as a bare "Failed to fetch" TypeError with no
+    // HTTP status at all. Worth one silent retry before bothering the person
+    // with an error, since a real failure (bad prompt, quota, etc.) will
+    // fail the same way twice in a row anyway.
+    async function callGeminiWithRetry(prompt){
+      try{
+        return await callGemini(prompt);
+      }catch(err){
+        const isNetworkError = err instanceof TypeError || /failed to fetch/i.test(err?.message || '');
+        if(!isNetworkError) throw err;
+        await new Promise(r => setTimeout(r, 1200));
+        return await callGemini(prompt);
+      }
+    }
+
+    btn.addEventListener('click', async () => {
+      if(alreadyUsed() || !demoBfTiming) return;
+      errEl.style.display = 'none';
+      resultEl.innerHTML = '';
+      btn.disabled = true; btn.style.opacity = '0.5';
+      timingRow.style.pointerEvents = 'none'; timingRow.style.opacity = '0.6';
+      loading.classList.remove('hidden');
+      demoBfProgress.start(typeof BF_PHRASES !== 'undefined' ? BF_PHRASES : ['Pulling together your briefing…'], 92);
+      try{
+        // A condensed version of the real briefing prompt, scoped to just
+        // one section so the free demo is quick — the full multi-section
+        // Tournament Briefing (domestic + international + economic +
+        // "what to expect") is what you get once signed in.
+        const dateStr = new Date().toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+        const timingDesc = describeDemoTiming();
+        const prompt = `You are prepping a competitive NSDA extemp speaker whose tournament is ${timingDesc}. Today is ${dateStr}. Use Google Search to find real, current news from the last week. Write a brief briefing in exactly this plain-text structure (use this exact "## " header, nothing before it):\n\n## Domestic\n4-5 bullet points ("- ") on the most important U.S. domestic stories from the last week. Each bullet MUST start with a short label followed by a colon, like "- Government Shutdown Fight: description here." Wrap the 2-3 most important key terms in double asterisks like **this**.\n\nFormatting rules: plain text only besides the "**bold**" spans, no other markdown, no intro or closing remarks, nothing before "## Domestic" or after the last bullet.`;
+        const candidate = await callGeminiWithRetry(prompt);
+        const raw = (candidate.content?.parts || []).map(p => p.text || '').join('').trim();
+        demoBfProgress.finish();
+        await new Promise(r => setTimeout(r, 220));
+        loading.classList.add('hidden');
+        resultEl.innerHTML = renderBriefingText(raw);
+        lockEl.classList.add('show');
+        try{ localStorage.setItem(DEMO_BF_KEY, '1'); }catch(e){}
+      }catch(err){
+        console.warn('Landing demo briefing failed:', err);
+        demoBfProgress.stop();
+        loading.classList.add('hidden');
+        const isNetworkError = err instanceof TypeError || /failed to fetch/i.test(err?.message || '');
+        errEl.textContent = isNetworkError
+          ? "Couldn't reach the briefing service — check your connection (or an ad blocker/extension may be blocking the request) and try again."
+          : "Couldn't generate a briefing right now — please try again in a moment.";
+        errEl.style.display = 'block';
+        btn.disabled = false; btn.style.opacity = '';
+        timingRow.style.pointerEvents = ''; timingRow.style.opacity = '';
+      }
+    });
+  })();
+
+  function renderDemoCategoryCard(){
+    const panel = document.getElementById('demoCategoryPanel');
+    const demoCat = {
+      name: 'Clarity',
+      score: 7, max: 10,
+      whatWorked: '1) Key terms like **"troop surges"** and **"myopic strategy"** are defined in plain language the first time they\'re used, so a judge without prior Afghanistan-policy background can follow the throughline without prior expertise.\n\n2) The point-to-point vocabulary stays **consistent** ("myopic," "surge," "long-term cost") rather than switching terminology mid-speech, which keeps the argument easy to track sentence to sentence.\n\n3) Sentence structure in points one and two is **direct and declarative** rather than looping through multiple clauses, which is easy for a live listener to parse in real time.\n\n4) The speech is generally **to the point** — points one and two each state their claim and move directly into support, without circling back to re-explain something already said.',
+      criticalFlaws: '1) **Awkward phrasing** (most important check): "the U has a simple-minded, myopic perspective" is clunky — dropping the article before "U" and stacking two synonyms back to back reads as unedited rather than deliberate; it would land more cleanly as "the U.S. has taken a myopic perspective."\n\n2) **Vague pronoun**: in "This has led to consequences we\'re still dealing with," the "This" has no single clear antecedent — the prior sentence mentions both the surge policy and its violence data, so a listener can\'t tell which one "This" is pointing to.\n\n3) **Weak verbal signposting**: the speech relies on the AGD/thesis to imply the three-point structure rather than explicitly marking "first," "second," "third" at each transition, which is harder to track by ear than on paper.\n\n4) **Hedging/fluff language** appears at the exact moment the content gets thinnest: "and third, um, there\'s also the long-term stuff to think about" stacks a filler pause with vague filler phrasing right where precision matters most.\n\n5) The phrase "the proof is in the pudding here" is a **cliché placeholder** rather than a clear explanation, and would likely read as vague filler to a judge expecting a concrete mechanism — this also costs the speech some conciseness, since a direct claim would have been shorter and clearer than the idiom.',
+      evidence: '1) "...the U has a simple-minded, myopic perspective." → rephrase as **"the U.S. has taken a myopic perspective"** — clearer and drops the redundant double-descriptor.\n\n2) "This has led to consequences we\'re still dealing with." → replace "This" with **"that troop-surge violence spike"** so the antecedent is unambiguous.\n\n3) "...second, we\'ll see the U.S.\'s proposed solution, troop surges, have been a disastrous failure." → add an explicit **"Second,"** at the top of this sentence so the structural shift is audible, not just implied.\n\n4) "and third, um, there\'s also the long-term stuff to think about." → cut "um" and replace "the long-term stuff" with **"the long-term institutional and credibility costs"** to keep the language as precise as points one and two.'
+    };
+    const band = bandClass(demoCat.score, demoCat.max);
+    panel.innerHTML = `
+      <div class="category demo-category-reveal" style="border-top:none;padding-top:0;">
+        <div class="badge-wrap" style="--bc:${band}">
+          <svg viewBox="0 0 64 64"><path class="demo-ring-path" d="${CIRCLE_PATH}" fill="none" stroke-width="2.5"/></svg>
+          <div class="score">${demoCat.score}<small>/${demoCat.max}</small></div>
+        </div>
+        <div>
+          <h3 class="cat-name">${escHtml(demoCat.name)}</h3>
+          <div class="cat-row worked"><span class="tag">What Worked</span>${inlineMd(demoCat.whatWorked)}</div>
+          <div class="cat-row flaws"><span class="tag">Critical Flaws</span>${inlineMd(demoCat.criticalFlaws)}</div>
+          <div class="cat-row evidence"><span class="tag">What You Could Have Done</span>${inlineMd(demoCat.evidence)}</div>
+        </div>
+      </div>`;
+  }
+  // Deferred via setTimeout: CIRCLE_PATH/inlineMd/escHtml/bandClass are
+  // declared further down this same script, so this needs to run after the
+  // whole file has finished its initial synchronous pass, not inline here.
+  setTimeout(renderDemoCategoryCard, 0);
+
   function onSignedIn(user){
     currentUser = { id: user.id, email: user.email };
     accountChip.classList.remove('hidden');
     accountEmail.textContent = currentUser.email;
     accountEmail.title = currentUser.email;
     authGate.classList.add('hidden');
+    document.body.classList.remove('previewing-example');
     authForm.reset();
   }
   function onSignedOut(){
@@ -5277,6 +6054,12 @@ Formatting rules: plain text only, with the sole exception of wrapping key terms
     helpToggle.classList.remove('active');
     if(ytPlayer && ytPlayer.pauseVideo) ytPlayer.pauseVideo();
     stopExamplePolling();
+    if(exampleOpenedFromLanding && !currentUser){
+      exampleOpenedFromLanding = false;
+      document.body.classList.remove('previewing-example');
+      showView(viewRecord);
+      return;
+    }
     showView(viewBeforeExample || viewRecord);
   }
   helpToggle.addEventListener('click', (e) => {

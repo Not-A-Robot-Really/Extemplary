@@ -171,9 +171,16 @@
 
   /* -------- auth gate / landing page -------- */
   #authGate{
-    position:fixed;inset:0;z-index:900;background:var(--ink);
+    position:fixed;inset:0;z-index:900;
+    background:linear-gradient(135deg, var(--ink) 0%, var(--ink) 45%, var(--ink-soft) 100%);
+    background-size:220% 220%;
+    animation:bgDrift 22s ease-in-out infinite;
     overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;
     scroll-behavior:smooth;
+  }
+  @keyframes bgDrift{
+    0%,100%{background-position:0% 50%;}
+    50%{background-position:100% 50%;}
   }
   #authGate.hidden{display:none;}
 
@@ -217,24 +224,40 @@
   #wrVideoModal .wr-video-close:hover{background:rgba(0,0,0,0.8);}
 
   .landing-hero{
-    min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    min-height:100vh;display:flex;flex-direction:row;align-items:center;justify-content:center;
+    gap:64px;flex-wrap:wrap;
     padding:40px 24px 60px;position:relative;
     perspective:1200px;overflow:hidden;
   }
-  .landing-hero::before{
-    content:'';position:absolute;top:-20%;left:50%;width:900px;height:900px;
-    background:radial-gradient(circle, rgba(154,26,26,0.22) 0%, rgba(154,26,26,0) 60%);
-    transform:translateX(-50%);pointer-events:none;
-    animation:heroGlow 8s ease-in-out infinite;
+  .landing-hero-headline{
+    max-width:440px;position:relative;z-index:1;
+    animation:heroSlideIn 0.8s cubic-bezier(.2,.8,.3,1) both;
   }
-  @keyframes heroGlow{
-    0%,100%{opacity:0.7;transform:translateX(-50%) scale(1);}
-    50%{opacity:1;transform:translateX(-50%) scale(1.08);}
+  @keyframes heroSlideIn{
+    from{opacity:0;transform:translateX(-18px);}
+    to{opacity:1;transform:translateX(0);}
+  }
+  .landing-hero-headline h2{
+    font-family:var(--font-display);font-size:clamp(28px,3.6vw,40px);margin:0 0 14px;color:var(--chrome-text);
+    line-height:1.15;
+  }
+  .landing-hero-headline h2 .hl-word{color:#4d84cf;}
+  .landing-hero-headline p{
+    font-family:var(--font-body);font-size:15px;color:var(--chrome-text-dim);line-height:1.65;margin:0;
+    opacity:0;animation:heroFadeUp 0.7s ease 0.35s both;
+  }
+  @keyframes heroFadeUp{
+    from{opacity:0;transform:translateY(10px);}
+    to{opacity:1;transform:translateY(0);}
+  }
+  @media (max-width:860px){
+    .landing-hero{flex-direction:column-reverse;gap:32px;text-align:center;}
+    .landing-hero-headline{max-width:480px;text-align:center;}
   }
 
   .auth-card{
-    width:100%;max-width:380px;background:var(--parchment);color:var(--charcoal);
-    border-radius:6px;box-shadow:0 12px 40px var(--shadow);padding:30px 28px 26px;
+    width:100%;max-width:432px;background:var(--parchment);color:var(--charcoal);
+    border-radius:8px;box-shadow:0 12px 40px var(--shadow);padding:38px 40px 34px;
     border:1px solid var(--ink-line);margin-top:18px;
     animation:authCardIn 0.7s cubic-bezier(.2,.8,.3,1) both;
   }
@@ -242,10 +265,19 @@
     from{opacity:0;transform:translateY(22px) scale(0.97);}
     to{opacity:1;transform:translateY(0) scale(1);}
   }
+  .auth-card > *{opacity:0;animation:authFieldIn 0.5s ease both;}
+  .auth-card > *:nth-child(1){animation-delay:0.25s;}
+  .auth-card > *:nth-child(2){animation-delay:0.32s;}
+  .auth-card > *:nth-child(3){animation-delay:0.39s;}
+  .auth-card > *:nth-child(4){animation-delay:0.46s;}
+  @keyframes authFieldIn{
+    from{opacity:0;transform:translateY(8px);}
+    to{opacity:1;transform:translateY(0);}
+  }
   .auth-card-logo{
     font-family:var(--font-display);letter-spacing:0.5px;line-height:1;
-    display:flex;align-items:center;justify-content:center;text-align:center;margin:0 0 16px;
-    color:var(--charcoal);font-size:26px;
+    display:flex;align-items:center;justify-content:center;text-align:center;margin:0 0 18px;
+    color:var(--charcoal);font-size:29px;
   }
   .auth-card-logo .mark-e-wrap{
     position:relative;top:0.12em;display:inline-flex;align-items:center;justify-content:center;
@@ -256,29 +288,43 @@
     font-family:var(--font-body);font-size:13px;color:var(--slate);margin:0 0 20px;
     letter-spacing:-0.1px;line-height:1.4;
   }
-  .auth-tabs{display:flex;border-bottom:1px solid var(--rule);margin-bottom:18px;}
+  .auth-tabs{display:flex;border-bottom:1px solid var(--rule);margin-bottom:18px;position:relative;}
   .auth-tab{
     flex:1;text-align:center;padding:8px 4px;font-family:var(--font-mono);font-size:12px;
     letter-spacing:0.5px;text-transform:uppercase;color:var(--slate);background:none;border:none;
     cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;
+    transition:color 0.25s ease;
   }
-  .auth-tab.active{color:var(--crimson);border-bottom-color:var(--crimson);font-weight:600;}
+  .auth-tab.active{color:var(--crimson);font-weight:600;}
+  .auth-tab-indicator{
+    position:absolute;bottom:-1px;left:0;width:50%;height:2px;background:var(--crimson);
+    transition:transform 0.3s cubic-bezier(.3,.7,.3,1);
+  }
   .auth-field{margin-bottom:14px;}
   .auth-field label{display:block;font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:var(--slate);margin-bottom:5px;}
   .auth-field input{
-    width:100%;padding:9px 11px;border:1px solid var(--rule);border-radius:4px;
+    width:100%;padding:10px 12px;border:1px solid var(--rule);border-radius:4px;
     font-family:var(--font-body);font-size:14px;background:#fff;color:var(--charcoal);
+    transition:border-color 0.2s ease;
   }
+  .auth-field input:hover{border-color:var(--slate);}
   .auth-field input:focus-visible{outline:2px solid var(--brass);outline-offset:1px;}
   .auth-error{
     font-family:var(--font-mono);font-size:12px;color:#a3322a;margin:-4px 0 12px;display:none;
   }
   .auth-error.visible{display:block;}
   .auth-submit{
-    width:100%;padding:11px;border:none;border-radius:4px;background:var(--crimson);
+    width:100%;padding:12px;border:none;border-radius:4px;background:var(--crimson);
     color:var(--on-accent);font-family:var(--font-mono);font-size:13px;letter-spacing:0.5px;
     text-transform:uppercase;cursor:pointer;font-weight:600;
+    position:relative;overflow:hidden;transition:background 0.2s ease;
   }
+  .auth-submit::after{
+    content:'';position:absolute;top:0;left:-60%;width:40%;height:100%;
+    background:linear-gradient(120deg, transparent, rgba(255,255,255,0.16), transparent);
+    transform:skewX(-20deg);transition:left 0.6s ease;
+  }
+  .auth-submit:hover::after{left:130%;}
   .auth-submit:hover{background:var(--crimson-deep);}
 
   .landing-scroll-cue{
@@ -296,14 +342,6 @@
   /* ----- feature showcase section ----- */
   .landing-features{
     max-width:1080px;margin:0 auto;padding:90px 24px 70px;
-  }
-  .landing-features-head{text-align:center;margin-bottom:56px;}
-  .landing-features-head h2{
-    font-family:var(--font-display);font-size:clamp(26px,4vw,38px);margin:0 0 12px;color:var(--chrome-text);
-  }
-  .landing-features-head p{
-    font-family:var(--font-body);font-size:15px;color:var(--chrome-text-dim);max-width:520px;margin:0 auto;
-    line-height:1.6;
   }
   .feature-grid{
     display:grid;grid-template-columns:repeat(auto-fit, minmax(240px,1fr));gap:20px;
@@ -355,6 +393,11 @@
   .demo-free-tag{
     display:inline-block;font-family:var(--font-mono);font-size:9.5px;letter-spacing:0.8px;text-transform:uppercase;
     background:var(--brass);color:#fff;border-radius:10px;padding:2px 8px;margin-left:8px;vertical-align:middle;
+    animation:tagPulse 2.6s ease-in-out infinite;
+  }
+  @keyframes tagPulse{
+    0%,100%{transform:scale(1);}
+    50%{transform:scale(1.07);}
   }
 
   /* mini timer demo */
@@ -412,7 +455,14 @@
     background:var(--crimson);color:var(--on-accent);border:none;cursor:pointer;
     font-family:var(--font-mono);font-size:13px;letter-spacing:0.5px;text-transform:uppercase;font-weight:600;
     box-shadow:0 8px 24px var(--shadow);transition:transform 0.25s ease, background 0.25s ease, box-shadow 0.25s ease;
+    position:relative;overflow:hidden;
   }
+  .landing-example-btn::after{
+    content:'';position:absolute;top:0;left:-60%;width:40%;height:100%;
+    background:linear-gradient(120deg, transparent, rgba(255,255,255,0.18), transparent);
+    transform:skewX(-20deg);transition:left 0.6s ease;
+  }
+  .landing-example-btn:hover::after{left:130%;}
   .landing-example-btn:hover{background:var(--crimson-deep);transform:translateY(-3px) scale(1.02);box-shadow:0 14px 32px rgba(0,0,0,0.35);}
 
   /* -------- account chip / history -------- */
@@ -1345,6 +1395,10 @@
 <!-- ====== AUTH GATE ====== -->
 <div id="authGate">
   <div class="landing-hero">
+    <div class="landing-hero-headline" id="landingHeroHeadline">
+      <h2 id="landingHeroHeadlineText"></h2>
+      <p>Extemplary handles the entire extemp practice loop — from drawing a question to reviewing exactly how you can improve — so every rep counts.</p>
+    </div>
     <div class="auth-card">
       <h1 class="auth-card-logo mark" aria-label="Extemplary">
         <span class="mark-e-wrap" aria-hidden="true"><svg viewBox="0 0 36 37" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9 2H27C30.3137 2 33 4.68629 33 8V20C33 23.3137 30.3137 26 27 26H15.5L8.5 32.5C8.03 32.94 7.28 32.6 7.28 31.96V26H9C5.68629 26 3 23.3137 3 20V8C3 4.68629 5.68629 2 9 2Z" fill="currentColor"/><text x="18" y="15" text-anchor="middle" dominant-baseline="central" style="font-family:var(--font-display);" font-weight="900" font-size="23" fill="var(--parchment)">E</text></svg></span>xtemplary
@@ -1353,6 +1407,7 @@
       <div class="auth-tabs">
         <button type="button" class="auth-tab active" id="authTabLogin">Log In</button>
         <button type="button" class="auth-tab" id="authTabSignup">Sign Up</button>
+        <span class="auth-tab-indicator" id="authTabIndicator"></span>
       </div>
       <form id="authForm" autocomplete="on">
         <div class="auth-field">
@@ -1374,10 +1429,6 @@
   </div>
 
   <div class="landing-features">
-    <div class="landing-features-head">
-      <h2>Everything you need to practice like it's round six</h2>
-      <p>Extemplary handles the entire extemp practice loop — from drawing a question to reviewing exactly how you can improve — so every rep counts.</p>
-    </div>
     <div class="feature-grid" id="landingFeatureGrid">
       <div class="feature-card wide">
         <div class="fc-body">
@@ -1446,6 +1497,11 @@
         <h3>Vocal delivery analysis</h3>
         <p>Volume, emphasis, tone and pitch variety, pauses, pace (WPM), filler words, and stutters — measured straight from your recording's audio.</p>
       </div>
+      <div class="feature-card">
+        <div class="fc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 8v5l3 2"/></svg></div>
+        <h3>Your whole speaking career, in one place</h3>
+        <p>Every round you ever record — video, transcript, full ballot, and score — lives permanently in your account. Watch your growth add up round after round, tournament after tournament, from any device you sign into.</p>
+      </div>
       <div class="feature-card wide">
         <div class="fc-body">
           <div>
@@ -1512,11 +1568,6 @@
             </div>
           </div>
         </div>
-      </div>
-      <div class="feature-card">
-        <div class="fc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 8v5l3 2"/></svg></div>
-        <h3>Cloud-saved history &amp; trends</h3>
-        <p>Every round — video, transcript, and feedback — is saved to your account, with trends showing your overall strengths and weaknesses over time.</p>
       </div>
     </div>
   </div>
@@ -2388,6 +2439,8 @@
     document.getElementById('authPasswordConfirm').required = (mode === 'signup');
     authSubmitBtn.textContent = mode === 'login' ? 'Log In' : 'Sign Up';
     authError.classList.remove('visible');
+    const indicator = document.getElementById('authTabIndicator');
+    if(indicator) indicator.style.transform = mode === 'signup' ? 'translateX(100%)' : 'translateX(0)';
   }
   authTabLogin.addEventListener('click', () => setAuthMode('login'));
   authTabSignup.addEventListener('click', () => setAuthMode('signup'));
@@ -2484,6 +2537,26 @@
   document.getElementById('historyBackBtn').addEventListener('click', () => showView(viewRecord));
 
   // ----- landing page scroll-reveal animation -----
+  // ----- randomized hero headline (one of three, picked fresh on each load) -----
+  (function setupHeroHeadline(){
+    const variants = [
+      { before: 'Everything you need to ', word: 'break', after: ' into finals' },
+      { before: 'Everything you need to get a ', word: '1st', after: ' in your round' },
+      { before: 'Everything you need to practice, improve, and ', word: 'excel', after: '' }
+    ];
+    const pick = variants[Math.floor(Math.random() * variants.length)];
+    const el = document.getElementById('landingHeroHeadlineText');
+    if(el){
+      el.textContent = '';
+      el.appendChild(document.createTextNode(pick.before));
+      const span = document.createElement('span');
+      span.className = 'hl-word';
+      span.textContent = pick.word;
+      el.appendChild(span);
+      el.appendChild(document.createTextNode(pick.after));
+    }
+  })();
+
   (function setupLandingReveal(){
     const targets = document.querySelectorAll('#authGate .feature-card, #authGate .landing-example');
     if(!targets.length) return;

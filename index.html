@@ -229,6 +229,14 @@
     padding:40px 24px 60px;position:relative;
     perspective:1200px;overflow:hidden;
   }
+  #heroConstellation{
+    position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;
+  }
+  .landing-hero-photo{
+    position:absolute;top:12%;left:12%;right:12%;bottom:12%;width:76%;height:76%;
+    margin:auto;object-fit:cover;border-radius:14px;z-index:0;opacity:0.55;
+    box-shadow:0 20px 60px rgba(0,0,0,0.5);pointer-events:none;
+  }
   .landing-hero-headline{
     max-width:440px;position:relative;z-index:1;
     animation:heroSlideIn 0.8s cubic-bezier(.2,.8,.3,1) both;
@@ -258,7 +266,7 @@
   .auth-card{
     width:100%;max-width:432px;background:var(--parchment);color:var(--charcoal);
     border-radius:8px;box-shadow:0 12px 40px var(--shadow);padding:38px 40px 34px;
-    border:1px solid var(--ink-line);margin-top:18px;
+    border:1px solid var(--ink-line);margin-top:18px;position:relative;z-index:1;
     animation:authCardIn 0.7s cubic-bezier(.2,.8,.3,1) both;
   }
   @keyframes authCardIn{
@@ -348,12 +356,11 @@
   }
   .feature-card{
     background:var(--ink-soft);border:1px solid var(--ink-line);border-radius:10px;padding:24px 22px;
-    opacity:0;transform:translateY(28px);
-    transition:opacity 0.7s cubic-bezier(.2,.7,.3,1), transform 0.35s cubic-bezier(.2,.7,.3,1), box-shadow 0.35s ease, border-color 0.35s ease;
+    opacity:0;
+    transition:box-shadow 0.35s ease, border-color 0.35s ease;
     transform-style:preserve-3d;will-change:transform;
   }
-  .feature-card.in-view{opacity:1;}
-  .feature-card.in-view:not(.tilting){transform:translateY(0);}
+  .feature-card.revealed{opacity:1;}
   .feature-card:hover{border-color:var(--brass);box-shadow:0 20px 46px rgba(0,0,0,0.28);}
   .feature-card .fc-icon{
     width:38px;height:38px;border-radius:9px;background:var(--crimson);color:var(--on-accent);
@@ -390,15 +397,6 @@
     font-weight:600;transition:background 0.2s ease, transform 0.2s ease;
   }
   .demo-signup-btn:hover{background:var(--crimson-deep);transform:translateY(-1px);}
-  .demo-free-tag{
-    display:inline-block;font-family:var(--font-mono);font-size:9.5px;letter-spacing:0.8px;text-transform:uppercase;
-    background:var(--brass);color:#fff;border-radius:10px;padding:2px 8px;margin-left:8px;vertical-align:middle;
-    animation:tagPulse 2.6s ease-in-out infinite;
-  }
-  @keyframes tagPulse{
-    0%,100%{transform:scale(1);}
-    50%{transform:scale(1.07);}
-  }
 
   /* mini timer demo */
   .mini-timer-display{
@@ -454,16 +452,10 @@
     display:inline-flex;align-items:center;justify-content:center;padding:11px 32px;border-radius:4px;
     background:var(--crimson);color:var(--on-accent);border:none;cursor:pointer;
     font-family:var(--font-mono);font-size:13px;letter-spacing:0.5px;text-transform:uppercase;font-weight:600;
-    box-shadow:0 8px 24px var(--shadow);transition:transform 0.25s ease, background 0.25s ease, box-shadow 0.25s ease;
+    transition:transform 0.25s ease, background 0.25s ease;
     position:relative;overflow:hidden;
   }
-  .landing-example-btn::after{
-    content:'';position:absolute;top:0;left:-60%;width:40%;height:100%;
-    background:linear-gradient(120deg, transparent, rgba(255,255,255,0.18), transparent);
-    transform:skewX(-20deg);transition:left 0.6s ease;
-  }
-  .landing-example-btn:hover::after{left:130%;}
-  .landing-example-btn:hover{background:var(--crimson-deep);transform:translateY(-3px) scale(1.02);box-shadow:0 14px 32px rgba(0,0,0,0.35);}
+  .landing-example-btn:hover{background:var(--crimson-deep);transform:translateY(-3px) scale(1.02);}
 
   /* -------- account chip / history -------- */
   .account-chip{
@@ -1179,6 +1171,8 @@
     background:var(--charcoal);color:#f8f6f0;
     box-shadow:0 0 0 1px var(--charcoal);
   }
+  .transcript-highlight-demo .tw{cursor:default;}
+  .transcript-highlight-demo .tw:hover{background:none;}
 
   /* -------- synced video playback panel -------- */
   .playback-section{margin-top:28px;border-top:2px solid var(--charcoal);padding-top:18px;}
@@ -1395,6 +1389,8 @@
 <!-- ====== AUTH GATE ====== -->
 <div id="authGate">
   <div class="landing-hero">
+    <canvas id="heroConstellation"></canvas>
+    <img src="speechbackgr.png" alt="" class="landing-hero-photo" />
     <div class="landing-hero-headline" id="landingHeroHeadline">
       <h2 id="landingHeroHeadlineText"></h2>
       <p>Extemplary handles the entire extemp practice loop — from drawing a question to reviewing exactly how you can improve — so every rep counts.</p>
@@ -1434,11 +1430,10 @@
         <div class="fc-body">
           <div>
             <div class="fc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></div>
-            <h3>Real practice questions<span class="demo-free-tag">1 free try</span></h3>
+            <h3>Real practice questions</h3>
             <p>Draw from authentic-style extemp questions or generate fresh ones on demand, across foreign and domestic topic areas — powered by live current-events research.</p>
           </div>
           <div class="demo-panel" id="demoQuestionPanel">
-            <div class="q-hint" style="margin-bottom:8px;">Choose a category — the AI will draft three real current-events questions, just like in the app.</div>
             <div class="q-cat-row" id="demoQCatRow">
               <button class="btn ghost q-cat-btn" data-cat="Domestic" type="button">Domestic</button>
               <button class="btn ghost q-cat-btn" data-cat="International" type="button">International</button>
@@ -1460,6 +1455,39 @@
               <p>That was your free question draft. Sign up to draft unlimited questions and start practicing.</p>
               <button type="button" class="demo-signup-btn demo-signup-cta">Sign Up Free</button>
             </div>
+            <button type="button" class="btn primary" id="demoGenerateQuestionsBtn" style="width:100%;" disabled>Generate Questions</button>
+          </div>
+        </div>
+      </div>
+      <div class="feature-card wide">
+        <div class="fc-body">
+          <div>
+            <div class="fc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div>
+            <h3>Current event briefings</h3>
+            <p>Get up to speed on the story behind your question with a concise, prep-ready current event briefing — real live research, same as the app.</p>
+          </div>
+          <div class="demo-panel" id="demoBriefingPanel">
+            <div class="bf-timing-row" id="demoBfTimingRow" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+              <button class="bf-timing-btn" data-timing="today" type="button">In a few hours</button>
+              <button class="bf-timing-btn" data-timing="tomorrow" type="button">Tomorrow</button>
+              <button class="bf-timing-btn" data-timing="custom" type="button">Pick a date</button>
+            </div>
+            <div class="bf-custom-row" id="demoBfCustomRow">
+              <input type="datetime-local" id="demoBfCustomDate" />
+            </div>
+            <button type="button" class="btn primary" id="demoBriefingBtn" style="width:100%;" disabled>Generate Briefing</button>
+            <div class="q-error" id="demoBfError" style="display:none;margin-top:8px;"></div>
+            <div id="demoBfLoading" class="hidden" style="text-align:center;padding:14px 0;">
+              <div class="q-hint" id="demoBfLoadingText">Pulling together your briefing…</div>
+              <div class="progress-bar-wrap"><div class="progress-bar-track"><div class="progress-bar-fill" id="demoBfProgressFill"></div></div></div>
+              <div class="progress-phrase" id="demoBfProgressPhrase"></div>
+            </div>
+            <div class="bf-result" id="demoBfResult" style="margin-top:10px;max-height:260px;overflow:auto;"></div>
+            <div class="demo-locked-overlay" id="demoBfLock">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              <p>That was your free briefing. Sign up to generate a fresh briefing before every tournament.</p>
+              <button type="button" class="demo-signup-btn demo-signup-cta">Sign Up Free</button>
+            </div>
           </div>
         </div>
       </div>
@@ -1478,7 +1506,6 @@
               <button type="button" class="btn ghost hidden" id="demoTimerResume">Resume</button>
               <button type="button" class="btn ghost" id="demoTimerReset">Reset</button>
             </div>
-            <div class="q-hint" style="margin-top:10px;text-align:center;">Same 30-minute prep clock you'll use before every recorded round.</div>
           </div>
         </div>
       </div>
@@ -1490,7 +1517,7 @@
       <div class="feature-card">
         <div class="fc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg></div>
         <h3>Word-for-word transcript</h3>
-        <p>Automatic transcription with a stenographer-style layout and auto-detected Intro / Body / Conclusion sections.</p>
+        <p class="transcript-highlight-demo" id="transcriptDemoText">Automatic transcription with a stenographer-style layout and auto-detected Intro / Body / Conclusion sections.</p>
       </div>
       <div class="feature-card">
         <div class="fc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V10M18 20V4M6 20v-4"/></svg></div>
@@ -1534,39 +1561,6 @@
             <p>Scored against an 8-category NSDA-style rubric, with what worked, critical flaws, and evidence-based reasoning for every score. Here's one real category from an actual ballot.</p>
           </div>
           <div class="demo-panel" id="demoCategoryPanel"></div>
-        </div>
-      </div>
-      <div class="feature-card wide">
-        <div class="fc-body">
-          <div>
-            <div class="fc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div>
-            <h3>Current event briefings<span class="demo-free-tag">1 free try</span></h3>
-            <p>Get up to speed on the story behind your question with a concise, prep-ready current event briefing — real live research, same as the app.</p>
-          </div>
-          <div class="demo-panel" id="demoBriefingPanel">
-            <div class="q-hint" style="margin-bottom:8px;">When's your tournament? See a real domestic news briefing, generated live.</div>
-            <div class="bf-timing-row" id="demoBfTimingRow" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
-              <button class="bf-timing-btn" data-timing="today" type="button">In a few hours</button>
-              <button class="bf-timing-btn" data-timing="tomorrow" type="button">Tomorrow</button>
-              <button class="bf-timing-btn" data-timing="custom" type="button">Pick a date</button>
-            </div>
-            <div class="bf-custom-row" id="demoBfCustomRow">
-              <input type="datetime-local" id="demoBfCustomDate" />
-            </div>
-            <button type="button" class="btn primary" id="demoBriefingBtn" style="width:100%;" disabled>Generate Briefing</button>
-            <div class="q-error" id="demoBfError" style="display:none;margin-top:8px;"></div>
-            <div id="demoBfLoading" class="hidden" style="text-align:center;padding:14px 0;">
-              <div class="q-hint" id="demoBfLoadingText">Pulling together your briefing…</div>
-              <div class="progress-bar-wrap"><div class="progress-bar-track"><div class="progress-bar-fill" id="demoBfProgressFill"></div></div></div>
-              <div class="progress-phrase" id="demoBfProgressPhrase"></div>
-            </div>
-            <div class="bf-result" id="demoBfResult" style="margin-top:10px;max-height:260px;overflow:auto;"></div>
-            <div class="demo-locked-overlay" id="demoBfLock">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-              <p>That was your free briefing. Sign up to generate a fresh briefing before every tournament.</p>
-              <button type="button" class="demo-signup-btn demo-signup-cta">Sign Up Free</button>
-            </div>
-          </div>
         </div>
       </div>
     </div>
@@ -2538,6 +2532,32 @@
 
   // ----- landing page scroll-reveal animation -----
   // ----- randomized hero headline (one of three, picked fresh on each load) -----
+  // ----- "Word-for-word transcript" card: silent word-by-word highlight loop -----
+  // ----- using the exact same .tw / .tw-active classes as real synced playback -----
+  (function setupTranscriptHighlightDemo(){
+    const el = document.getElementById('transcriptDemoText');
+    if(!el) return;
+    const words = el.textContent.trim().split(/\s+/);
+    el.innerHTML = words.map(w => `<span class="tw">${w}</span>`).join(' ');
+    const spans = Array.from(el.querySelectorAll('.tw'));
+    let i = 0;
+    function step(){
+      spans.forEach(s => s.classList.remove('tw-active'));
+      if(i < spans.length){
+        spans[i].classList.add('tw-active');
+        // Rough natural-speech pacing: longer words linger a bit longer.
+        const len = spans[i].textContent.length;
+        const dur = 190 + Math.min(len, 10) * 22;
+        i++;
+        setTimeout(step, dur);
+      }else{
+        i = 0;
+        setTimeout(step, 900); // pause at the end before looping
+      }
+    }
+    step();
+  })();
+
   (function setupHeroHeadline(){
     const variants = [
       { before: 'Everything you need to ', word: 'break', after: ' into finals' },
@@ -2558,25 +2578,210 @@
   })();
 
   (function setupLandingReveal(){
-    const targets = document.querySelectorAll('#authGate .feature-card, #authGate .landing-example');
+    const targets = document.querySelectorAll('#authGate .landing-example');
     if(!targets.length) return;
     if(!('IntersectionObserver' in window)){
       targets.forEach(t => t.classList.add('in-view'));
       return;
     }
     const io = new IntersectionObserver((entries) => {
-      entries.forEach((entry, i) => {
+      entries.forEach((entry) => {
         if(entry.isIntersecting){
           const el = entry.target;
-          const delay = el.classList.contains('feature-card')
-            ? Array.prototype.indexOf.call(el.parentNode.children, el) * 70
-            : 0;
-          setTimeout(() => el.classList.add('in-view'), delay);
+          setTimeout(() => el.classList.add('in-view'), 0);
           io.unobserve(el);
         }
       });
     }, { threshold: 0.15 });
     targets.forEach(t => io.observe(t));
+  })();
+
+  // ----- scroll-hijacked alternating slide-in for the feature cards -----
+  // Cards slide in from the left (even index) / right (odd index). While a
+  // card is mid-slide, page scroll is intercepted and instead drives that
+  // card's progress directly from the wheel/touch/key delta, so scroll
+  // speed & direction control the animation instead of a fixed-time tween.
+  (function setupFeatureScrollHijack(){
+    const grid = document.getElementById('landingFeatureGrid');
+    const cards = grid ? Array.from(grid.querySelectorAll('.feature-card')) : [];
+    if(!cards.length) return;
+    if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+      cards.forEach(c => c.classList.add('revealed'));
+      return;
+    }
+
+    const SENS_WHEEL = 0.0016;
+    const SENS_TOUCH = 0.0026;
+    const SENS_KEY = 0.09;
+    const TOP_PAD = () => window.innerHeight * 0.14; // breathing room above each revealed row
+    const state = cards.map((el, i) => ({ el, dir: i % 2 === 0 ? 'left' : 'right', progress: 0 }));
+    let currentIndex = 0;
+    let snapped = false;
+    let autoScrolling = false;
+    let scrollAnim = null;
+
+    function render(i){
+      const s = state[i];
+      const eased = 1 - Math.pow(1 - s.progress, 3); // easeOutCubic — snappier near the end
+      const offsetPct = (1 - eased) * 100;
+      if(s.progress <= 0){
+        s.el.style.transform = `translateX(${s.dir === 'left' ? -100 : 100}%)`;
+        s.el.style.opacity = '0';
+        s.el.classList.remove('revealed');
+      } else if(s.progress >= 1){
+        s.el.style.transform = '';
+        s.el.style.opacity = '';
+        s.el.classList.add('revealed');
+      } else {
+        s.el.style.transform = `translateX(${(s.dir === 'left' ? -offsetPct : offsetPct).toFixed(2)}%)`;
+        s.el.style.opacity = String(Math.min(1, s.progress / 0.7));
+        s.el.classList.remove('revealed');
+      }
+    }
+
+    state.forEach((s, i) => { s.progress = 0; render(i); });
+
+    function easeInOutCubic(t){ return t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2, 3)/2; }
+
+    // Custom eased scroll (not the browser's native "smooth" behavior, which
+    // can feel like a single big jump on long distances) — this always ramps
+    // gently up to speed and back down, however far it has to travel, so
+    // both the very first move into the section and every step after it
+    // read as one continuous, buttery motion instead of a snap.
+    function smoothScrollTo(targetY, duration, onDone){
+      if(scrollAnim) cancelAnimationFrame(scrollAnim);
+      const startY = window.scrollY;
+      const dist = targetY - startY;
+      if(Math.abs(dist) < 1){ if(onDone) onDone(); return; }
+      const startTime = performance.now();
+      function tick(now){
+        const t = Math.min(1, (now - startTime) / duration);
+        window.scrollTo(0, startY + dist * easeInOutCubic(t));
+        if(t < 1){
+          scrollAnim = requestAnimationFrame(tick);
+        } else {
+          scrollAnim = null;
+          if(onDone) onDone();
+        }
+      }
+      scrollAnim = requestAnimationFrame(tick);
+    }
+
+    // Where the page should be scrolled to so that card `index` sits just
+    // below a little breathing room at the top of the viewport.
+    function targetScrollForCard(index){
+      const rect = cards[index].getBoundingClientRect();
+      return window.scrollY + rect.top - TOP_PAD();
+    }
+
+    // Advance the real page scroll — smoothly and incrementally, one
+    // row/card at a time — rather than jumping the whole section into view
+    // in one go, so every box actually scrolls past the user's eyes.
+    function advanceScrollTo(index, done){
+      if(index < 0 || index >= cards.length){ done(); return; }
+      autoScrolling = true;
+      const dist = Math.abs(targetScrollForCard(index) - window.scrollY);
+      const duration = Math.max(320, Math.min(900, dist * 0.9));
+      smoothScrollTo(targetScrollForCard(index), duration, () => {
+        autoScrolling = false;
+        done();
+      });
+    }
+
+    // Once the grid first peeks into view from below, smoothly scroll the
+    // rest of the way to the first card, then engage the hijack.
+    if('IntersectionObserver' in window){
+      const snapObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if(entry.isIntersecting && !snapped){
+            snapped = true;
+            snapObserver.disconnect();
+            advanceScrollTo(0, () => {});
+          }
+        });
+      }, { threshold: 0.01 });
+      snapObserver.observe(grid);
+    }
+
+    function sectionEngaged(){
+      if(!snapped) return false;
+      if(autoScrolling) return false;
+      if(currentIndex >= cards.length) return false;
+      return true;
+    }
+
+    // Apply a raw delta (positive = scrolling down) to the active card only
+    // — no cascading into neighbors within the same tick, since advancing
+    // now also means an animated scroll step, which needs to finish before
+    // the next card's input is processed.
+    function applyDelta(rawDelta, sensitivity){
+      if(currentIndex < 0 || currentIndex >= cards.length) return;
+      const s = state[currentIndex];
+      const next = s.progress + rawDelta * sensitivity;
+      if(next >= 1){
+        s.progress = 1;
+        render(currentIndex);
+        const finishedIndex = currentIndex;
+        const nextIndex = finishedIndex + 1;
+        if(nextIndex >= cards.length){
+          currentIndex = cards.length; // fully done, release scroll for good
+          return;
+        }
+        advanceScrollTo(nextIndex, () => { currentIndex = nextIndex; });
+        return;
+      }
+      if(next <= 0){
+        s.progress = 0;
+        render(currentIndex);
+        if(currentIndex === 0) return; // nothing before the first card
+        const prevIndex = currentIndex - 1;
+        advanceScrollTo(prevIndex, () => {
+          currentIndex = prevIndex;
+          state[prevIndex].progress = 1;
+          render(prevIndex);
+        });
+        return;
+      }
+      s.progress = next;
+      render(currentIndex);
+    }
+
+    window.addEventListener('wheel', (e) => {
+      if(!sectionEngaged()) return;
+      // allow scrolling back up out of the section entirely once the first
+      // card hasn't started sliding yet
+      if(currentIndex === 0 && state[0].progress <= 0 && e.deltaY < 0) return;
+      e.preventDefault();
+      applyDelta(e.deltaY, SENS_WHEEL);
+    }, { passive: false });
+
+    let touchY = null;
+    window.addEventListener('touchstart', (e) => {
+      if(!sectionEngaged()) return;
+      touchY = e.touches[0].clientY;
+    }, { passive: true });
+    window.addEventListener('touchmove', (e) => {
+      if(touchY === null || !sectionEngaged()){ touchY = e.touches[0] ? e.touches[0].clientY : null; return; }
+      const y = e.touches[0].clientY;
+      const delta = touchY - y; // finger moving up == scrolling down
+      if(currentIndex === 0 && state[0].progress <= 0 && delta < 0){ touchY = y; return; }
+      e.preventDefault();
+      applyDelta(delta, SENS_TOUCH);
+      touchY = y;
+    }, { passive: false });
+
+    window.addEventListener('keydown', (e) => {
+      const downKeys = ['ArrowDown', 'PageDown', ' '];
+      const upKeys = ['ArrowUp', 'PageUp'];
+      if(!downKeys.includes(e.key) && !upKeys.includes(e.key)) return;
+      if(!sectionEngaged()) return;
+      const dir = downKeys.includes(e.key) ? 1 : -1;
+      if(currentIndex === 0 && state[0].progress <= 0 && dir < 0) return;
+      e.preventDefault();
+      applyDelta(dir * 100, SENS_KEY);
+    }, { passive: false });
+
+    window.addEventListener('resize', () => { state.forEach((s, i) => render(i)); });
   })();
 
   // ----- "See an Example" from the landing page, before signing in -----
@@ -2689,6 +2894,222 @@
     paint();
   })();
 
+  // ----- constellation / network background for the hero (sign-up) area -----
+  (function setupHeroConstellation(){
+    const canvas = document.getElementById('heroConstellation');
+    if(!canvas) return;
+    const hero = canvas.parentElement;
+    const ctx = canvas.getContext('2d');
+    const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let w = 0, h = 0, dpr = Math.min(window.devicePixelRatio || 1, 2);
+    let nodes = [];       // free-floating scatter nodes, chained to their nearest neighbors
+    let meshNodes = [];   // jittered-grid nodes, connected to grid neighbors — the "fabric"
+    let mouse = { x: null, y: null };
+    let raf = null;
+
+    function nodeCount(){
+      const area = w * h;
+      return Math.max(70, Math.min(240, Math.round(area / 8000)));
+    }
+
+    // Bias x toward the left/right margins (outside the photo) so the side
+    // strips get noticeably denser, longer constellation chains, while the
+    // photo area (roughly the middle 76%) still has some sparse coverage.
+    function biasedX(){
+      const sideBand = w * 0.16; // width of each dense side strip
+      if(Math.random() < 0.72){
+        const left = Math.random() < 0.5;
+        const base = Math.random() * sideBand;
+        return left ? base : w - base;
+      }
+      return Math.random() * w;
+    }
+
+    function makeNode(){
+      return {
+        x: biasedX(),
+        y: Math.random() * h,
+        z: Math.random(), // depth, 0 = far, 1 = near — drives 3D parallax + size
+        vx: (Math.random() - 0.5) * 0.35,
+        vy: (Math.random() - 0.5) * 0.35,
+        r: 1.1 + Math.random() * 1.6
+      };
+    }
+
+    // Scatter mesh points organically across the side bands (with a slight
+    // pull toward the very edges) instead of a rigid grid, then link each
+    // to its several nearest neighbors. Irregular spacing + drifting motion
+    // reads as woven fabric rippling, not a fixed set of vertical bars.
+    function buildMesh(){
+      meshNodes = [];
+      const bandW = w * 0.26;
+      const density = Math.max(50, Math.min(160, Math.round((h * bandW) / 2600)));
+      const bands = [
+        { x0: 0, x1: bandW },
+        { x0: w - bandW, x1: w }
+      ];
+      bands.forEach(band => {
+        for(let i = 0; i < density; i++){
+          const t = Math.random();
+          const x = band.x0 + t * (band.x1 - band.x0);
+          meshNodes.push({
+            x, y: Math.random() * h,
+            vx: (Math.random() - 0.5) * 0.18,
+            vy: (Math.random() - 0.5) * 0.18,
+            z: 0.2 + Math.random() * 0.6,
+            r: 1 + Math.random() * 1.3
+          });
+        }
+      });
+    }
+
+    function resize(){
+      w = hero.clientWidth;
+      h = hero.clientHeight;
+      canvas.width = w * dpr;
+      canvas.height = h * dpr;
+      canvas.style.width = w + 'px';
+      canvas.style.height = h + 'px';
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const target = nodeCount();
+      if(nodes.length === 0){
+        nodes = Array.from({ length: target }, () => makeNode());
+      } else if(nodes.length < target){
+        while(nodes.length < target) nodes.push(makeNode());
+      } else if(nodes.length > target){
+        nodes.length = target;
+      }
+      buildMesh();
+    }
+
+    function drawMesh(){
+      const bandW = w * 0.26;
+      meshNodes.forEach(n => {
+        n.x += n.vx;
+        n.y += n.vy;
+        // keep drifting inside whichever side band it belongs to, bouncing
+        // softly off the inner/outer edges so the web stays put but isn't static
+        const inLeftBand = n.x < bandW + 40;
+        const loBound = inLeftBand ? 0 : w - bandW;
+        const hiBound = inLeftBand ? bandW : w;
+        if(n.x < loBound - 10){ n.x = loBound - 10; n.vx *= -1; }
+        if(n.x > hiBound + 10){ n.x = hiBound + 10; n.vx *= -1; }
+        if(n.y < -10){ n.y = h + 10; } else if(n.y > h + 10){ n.y = -10; }
+      });
+
+      // connect each point to its 3 nearest neighbors — an organic
+      // triangulated web instead of a fixed grid pattern
+      const K = 3;
+      const maxLink = Math.max(90, Math.min(w, h) * 0.14);
+      ctx.lineWidth = 0.6;
+      for(let i = 0; i < meshNodes.length; i++){
+        const a = meshNodes[i];
+        const distances = [];
+        for(let j = 0; j < meshNodes.length; j++){
+          if(i === j) continue;
+          const b = meshNodes[j];
+          const dx = a.x - b.x, dy = a.y - b.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if(dist < maxLink) distances.push({ j, dist });
+        }
+        distances.sort((p, q) => p.dist - q.dist);
+        distances.slice(0, K).forEach(({ j, dist }) => {
+          if(j < i) return;
+          const b = meshNodes[j];
+          const alpha = (1 - dist / maxLink) * 0.32 * ((a.z + b.z) / 2 + 0.3);
+          ctx.strokeStyle = `rgba(140,175,225,${alpha.toFixed(3)})`;
+          ctx.beginPath();
+          ctx.moveTo(a.x, a.y);
+          ctx.lineTo(b.x, b.y);
+          ctx.stroke();
+        });
+      }
+
+      meshNodes.forEach(n => {
+        const size = n.r * (0.7 + n.z * 0.9);
+        ctx.beginPath();
+        ctx.fillStyle = `rgba(170,200,240,${(0.25 + n.z * 0.4).toFixed(3)})`;
+        ctx.arc(n.x, n.y, size, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    }
+
+    function step(animate, t){
+      t = t || 0;
+      ctx.clearRect(0, 0, w, h);
+      const linkDist = Math.max(190, Math.min(w, h) * 0.3);
+
+      // update + parallax toward pointer for a subtle 3D drift
+      nodes.forEach(n => {
+        n.x += n.vx;
+        n.y += n.vy;
+        if(mouse.x !== null){
+          const dx = (mouse.x - w / 2) * 0.02 * n.z;
+          const dy = (mouse.y - h / 2) * 0.02 * n.z;
+          n.x += dx * 0.02;
+          n.y += dy * 0.02;
+        }
+        if(n.x < -20) n.x = w + 20; else if(n.x > w + 20) n.x = -20;
+        if(n.y < -20) n.y = h + 20; else if(n.y > h + 20) n.y = -20;
+      });
+
+      // fabric mesh first, underneath the scatter constellations
+      drawMesh();
+
+      // for each scatter node, connect to its several nearest neighbors
+      // (not just everything in radius) — that's what turns "two dots and
+      // a line" into long strung-together constellations threading through
+      // many points.
+      const K = 5;
+      for(let i = 0; i < nodes.length; i++){
+        const a = nodes[i];
+        const distances = [];
+        for(let j = 0; j < nodes.length; j++){
+          if(i === j) continue;
+          const b = nodes[j];
+          const dx = a.x - b.x, dy = a.y - b.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if(dist < linkDist) distances.push({ j, dist });
+        }
+        distances.sort((p, q) => p.dist - q.dist);
+        distances.slice(0, K).forEach(({ j, dist }) => {
+          if(j < i) return; // avoid drawing each edge twice
+          const b = nodes[j];
+          const alpha = (1 - dist / linkDist) * 0.4 * ((a.z + b.z) / 2 + 0.3);
+          ctx.strokeStyle = `rgba(120,160,220,${alpha.toFixed(3)})`;
+          ctx.lineWidth = 0.7;
+          ctx.beginPath();
+          ctx.moveTo(a.x, a.y);
+          ctx.lineTo(b.x, b.y);
+          ctx.stroke();
+        });
+      }
+
+      // dots, sized/lit by depth for the 3D feel
+      nodes.forEach(n => {
+        const size = n.r * (0.6 + n.z * 1.1);
+        const alpha = 0.35 + n.z * 0.55;
+        ctx.beginPath();
+        ctx.fillStyle = `rgba(160,195,240,${alpha.toFixed(3)})`;
+        ctx.arc(n.x, n.y, size, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      if(animate) raf = requestAnimationFrame((now) => step(true, now));
+    }
+
+    resize();
+    window.addEventListener('resize', resize);
+    hero.addEventListener('mousemove', (e) => {
+      const rect = hero.getBoundingClientRect();
+      mouse.x = e.clientX - rect.left;
+      mouse.y = e.clientY - rect.top;
+    });
+    hero.addEventListener('mouseleave', () => { mouse.x = null; mouse.y = null; });
+
+    step(!reduceMotion); // always paint at least one frame; loop unless reduced motion is requested
+  })();
+
   // ----- subtle 3D tilt on feature cards, mouse-driven -----
   (function setupTilt(){
     if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
@@ -2696,19 +3117,20 @@
     document.querySelectorAll('#authGate .feature-card').forEach(card => {
       let raf = null;
       card.addEventListener('mousemove', (e) => {
+        if(!card.classList.contains('revealed')) return;
         const rect = card.getBoundingClientRect();
         const px = (e.clientX - rect.left) / rect.width - 0.5;
         const py = (e.clientY - rect.top) / rect.height - 0.5;
         if(raf) cancelAnimationFrame(raf);
         raf = requestAnimationFrame(() => {
           card.classList.add('tilting');
-          card.style.transform = `translateY(0) rotateX(${(-py*6).toFixed(2)}deg) rotateY(${(px*6).toFixed(2)}deg)`;
+          card.style.transform = `rotateX(${(-py*6).toFixed(2)}deg) rotateY(${(px*6).toFixed(2)}deg)`;
         });
       });
       card.addEventListener('mouseleave', () => {
         if(raf) cancelAnimationFrame(raf);
         card.classList.remove('tilting');
-        card.style.transform = '';
+        if(card.classList.contains('revealed')) card.style.transform = '';
       });
     });
   })();
@@ -2724,15 +3146,18 @@
     const confirmedWrap = document.getElementById('demoQConfirmed');
     const confirmedText = document.getElementById('demoQConfirmedText');
     const lockEl = document.getElementById('demoQLock');
+    const genBtn = document.getElementById('demoGenerateQuestionsBtn');
     const demoQProgress = createProgressController(
       document.getElementById('demoQProgressFill'),
       document.getElementById('demoQProgressPhrase')
     );
+    let demoQCategory = null;
 
     function lockDemo(){
       lockEl.classList.add('show');
       catRow.style.pointerEvents = 'none';
       catRow.style.opacity = '0.4';
+      genBtn.disabled = true; genBtn.style.opacity = '0.4';
       try{ localStorage.setItem(DEMO_Q_KEY, '1'); }catch(e){}
     }
 
@@ -2740,51 +3165,62 @@
       lockEl.classList.add('show');
       catRow.style.opacity = '0.4';
       catRow.style.pointerEvents = 'none';
+      genBtn.disabled = true; genBtn.style.opacity = '0.4';
     }
 
     catRow.querySelectorAll('.q-cat-btn').forEach(btn => {
-      btn.addEventListener('click', async () => {
+      btn.addEventListener('click', () => {
         if(localStorage.getItem(DEMO_Q_KEY) === '1') return;
-        errEl.style.display = 'none';
-        confirmedWrap.classList.add('hidden');
-        optionsEl.innerHTML = '';
-        catRow.style.pointerEvents = 'none';
-        catRow.style.opacity = '0.5';
-        const category = btn.dataset.cat;
-        loadingText.textContent = `Drafting three ${category.toLowerCase()} questions…`;
-        loading.classList.remove('hidden');
-        demoQProgress.start(QGEN_PHRASES, 90);
-        try{
-          const dateStr = new Date().toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
-          const prompt = buildQuestionGenPrompt(category, dateStr);
-          const candidate = await callGemini(prompt);
-          const questions = extractQuestions(candidate);
-          demoQProgress.finish();
-          await new Promise(r => setTimeout(r, 220));
-          loading.classList.add('hidden');
-          questions.forEach(q => {
-            const card = document.createElement('div');
-            card.className = 'q-option-card';
-            card.textContent = q;
-            card.addEventListener('click', () => {
-              if(localStorage.getItem(DEMO_Q_KEY) === '1') return;
-              confirmedText.textContent = q;
-              confirmedWrap.classList.remove('hidden');
-              optionsEl.innerHTML = '';
-              lockDemo();
-            });
-            optionsEl.appendChild(card);
-          });
-        }catch(err){
-          console.warn('Landing demo question generation failed:', err);
-          demoQProgress.stop();
-          loading.classList.add('hidden');
-          errEl.textContent = "Couldn't draft questions right now — please try again in a moment.";
-          errEl.style.display = 'block';
-          catRow.style.pointerEvents = '';
-          catRow.style.opacity = '';
-        }
+        catRow.querySelectorAll('.q-cat-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        demoQCategory = btn.dataset.cat;
+        genBtn.disabled = false;
       });
+    });
+
+    genBtn.addEventListener('click', async () => {
+      if(localStorage.getItem(DEMO_Q_KEY) === '1' || !demoQCategory) return;
+      errEl.style.display = 'none';
+      confirmedWrap.classList.add('hidden');
+      optionsEl.innerHTML = '';
+      catRow.style.pointerEvents = 'none';
+      catRow.style.opacity = '0.5';
+      genBtn.disabled = true; genBtn.style.opacity = '0.5';
+      const category = demoQCategory;
+      loadingText.textContent = `Drafting three ${category.toLowerCase()} questions…`;
+      loading.classList.remove('hidden');
+      demoQProgress.start(QGEN_PHRASES, 90);
+      try{
+        const dateStr = new Date().toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+        const prompt = buildQuestionGenPrompt(category, dateStr);
+        const candidate = await callGemini(prompt);
+        const questions = extractQuestions(candidate);
+        demoQProgress.finish();
+        await new Promise(r => setTimeout(r, 220));
+        loading.classList.add('hidden');
+        questions.forEach(q => {
+          const card = document.createElement('div');
+          card.className = 'q-option-card';
+          card.textContent = q;
+          card.addEventListener('click', () => {
+            if(localStorage.getItem(DEMO_Q_KEY) === '1') return;
+            confirmedText.textContent = q;
+            confirmedWrap.classList.remove('hidden');
+            optionsEl.innerHTML = '';
+            lockDemo();
+          });
+          optionsEl.appendChild(card);
+        });
+      }catch(err){
+        console.warn('Landing demo question generation failed:', err);
+        demoQProgress.stop();
+        loading.classList.add('hidden');
+        errEl.textContent = "Couldn't draft questions right now — please try again in a moment.";
+        errEl.style.display = 'block';
+        catRow.style.pointerEvents = '';
+        catRow.style.opacity = '';
+        genBtn.disabled = false; genBtn.style.opacity = '';
+      }
     });
   })();
 

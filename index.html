@@ -196,7 +196,7 @@
 
   #previewExitBtn{
     display:none;position:fixed;top:18px;right:18px;z-index:1000;
-    width:38px;height:38px;border-radius:50%;border:none;cursor:pointer;
+    width:38px;height:38px;border-radius:50%;border:3px solid var(--crimson-deep);cursor:pointer;
     background:#2356a8;color:#fff;align-items:center;justify-content:center;
     box-shadow:0 6px 18px rgba(0,0,0,0.35);transition:transform 0.2s ease, background 0.2s ease;
   }
@@ -230,7 +230,7 @@
     perspective:1200px;overflow:hidden;
   }
   #heroConstellation{
-    position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;
+    position:absolute;inset:0;width:100%;height:100%;z-index:-1;pointer-events:none;
   }
   .landing-hero-photo{
     position:absolute;top:12%;left:12%;right:12%;bottom:12%;width:76%;height:76%;
@@ -251,7 +251,7 @@
   }
   .landing-hero-headline h2 .hl-word{color:#4d84cf;}
   .landing-hero-headline p{
-    font-family:var(--font-body);font-size:15px;color:var(--chrome-text-dim);line-height:1.65;margin:0;
+    font-family:var(--font-body);font-size:15px;color:#ffffff;line-height:1.65;margin:0;
     opacity:0;animation:heroFadeUp 0.7s ease 0.35s both;
   }
   @keyframes heroFadeUp{
@@ -285,7 +285,7 @@
   .auth-card-logo{
     font-family:var(--font-display);letter-spacing:0.5px;line-height:1;
     display:flex;align-items:center;justify-content:center;text-align:center;margin:0 0 18px;
-    color:var(--charcoal);font-size:29px;
+    color:var(--charcoal);font-size:38px;
   }
   .auth-card-logo .mark-e-wrap{
     position:relative;top:0.12em;display:inline-flex;align-items:center;justify-content:center;
@@ -293,7 +293,7 @@
   }
   .auth-card-logo .mark-e-wrap svg{width:100%;height:100%;display:block;}
   .auth-card .auth-sub{
-    font-family:var(--font-body);font-size:13px;color:var(--slate);margin:0 0 20px;
+    font-family:var(--font-body);font-size:13px;color:#c0293f;margin:0 0 20px;
     letter-spacing:-0.1px;line-height:1.4;
   }
   .auth-tabs{display:flex;border-bottom:1px solid var(--rule);margin-bottom:18px;position:relative;}
@@ -327,12 +327,6 @@
     text-transform:uppercase;cursor:pointer;font-weight:600;
     position:relative;overflow:hidden;transition:background 0.2s ease;
   }
-  .auth-submit::after{
-    content:'';position:absolute;top:0;left:-60%;width:40%;height:100%;
-    background:linear-gradient(120deg, transparent, rgba(255,255,255,0.16), transparent);
-    transform:skewX(-20deg);transition:left 0.6s ease;
-  }
-  .auth-submit:hover::after{left:130%;}
   .auth-submit:hover{background:var(--crimson-deep);}
 
   .landing-scroll-cue{
@@ -348,16 +342,38 @@
   }
 
   /* ----- feature showcase section ----- */
+  /* Below the constellation/hero area the page shifts from the dark ink
+     theme to a lighter blue/white one, with speechbackgr22.png as the
+     backdrop — full-bleed via .light-zone-bg (since the sections themselves
+     are centered, max-width columns), plus local overrides of the shared
+     color variables so card backgrounds, borders, and text all read
+     correctly against the lighter backdrop. */
+  .landing-features, .landing-example{
+    --ink-soft:#ffffff;
+    --ink-line:#d3e0ef;
+    --chrome-text:#16283c;
+    --chrome-text-dim:#48607a;
+    --shadow:rgba(60,90,130,0.14);
+  }
+  .light-zone{
+    position:relative; overflow:hidden; z-index:1;
+  }
+  .light-zone-bg{
+    position:absolute;left:0;right:0;top:0;height:100%;z-index:-1;
+    background-image:url('speechbackgr22.png');background-repeat:no-repeat;
+    background-color:#e7f0fb;
+    will-change:transform;
+  }
   .landing-features{
-    max-width:1080px;margin:0 auto;padding:90px 24px 70px;
+    max-width:1080px;margin:0 auto;padding:90px 24px 70px;position:relative;z-index:1;
   }
   .feature-grid{
     display:grid;grid-template-columns:repeat(auto-fit, minmax(240px,1fr));gap:20px;
   }
   .feature-card{
-    background:var(--ink-soft);border:1px solid var(--ink-line);border-radius:10px;padding:24px 22px;
+    background:var(--ink-soft);border:3px solid var(--crimson-deep);border-radius:10px;padding:24px 22px;
     opacity:0;
-    transition:box-shadow 0.35s ease, border-color 0.35s ease;
+    transition:transform 0.06s linear, opacity 0.06s linear, box-shadow 0.35s ease, border-color 0.35s ease;
     transform-style:preserve-3d;will-change:transform;
   }
   .feature-card.revealed{opacity:1;}
@@ -369,6 +385,19 @@
   }
   .feature-card:hover .fc-icon{transform:translateZ(34px) scale(1.06);}
   .feature-card .fc-icon svg{width:20px;height:20px;}
+  .vocal-wave-icon{gap:2.5px;}
+  .vocal-wave-icon .vw-bar{
+    width:3px;height:8px;border-radius:2px;background:var(--on-accent);
+    transform:scaleY(0.4);transform-origin:center;
+    transition:transform 0.16s cubic-bezier(.3,.6,.4,1);
+  }
+  .demo-record-mock{
+    margin-top:16px;display:flex;flex-direction:column;align-items:center;gap:10px;
+  }
+  .demo-record-mock .rec-pill{position:static;}
+  .demo-record-btn{width:44px;height:44px;pointer-events:none;}
+  .demo-record-btn .inner{width:15px;height:15px;}
+  .demo-record-btn.recording .inner{width:13px;height:13px;}
   .feature-card h3{font-family:var(--font-display);font-size:17px;margin:0 0 8px;color:var(--chrome-text);transform:translateZ(14px);}
   .feature-card p{font-family:var(--font-body);font-size:13.5px;color:var(--chrome-text-dim);line-height:1.55;margin:0;transform:translateZ(10px);}
   .feature-card.wide{grid-column:1 / -1;}
@@ -387,12 +416,13 @@
     position:absolute;inset:0;background:rgba(20,26,36,0.72);backdrop-filter:blur(2px);
     display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:10px;
     padding:20px;opacity:0;pointer-events:none;transition:opacity 0.35s ease;
+    border:3px solid var(--crimson-deep);
   }
   .demo-locked-overlay.show{opacity:1;pointer-events:auto;}
   .demo-locked-overlay svg{width:26px;height:26px;color:var(--brass);}
   .demo-locked-overlay p{color:#fff;font-family:var(--font-body);font-size:13px;margin:0;max-width:260px;line-height:1.5;}
   .demo-locked-overlay .demo-signup-btn{
-    padding:9px 20px;border-radius:24px;background:var(--crimson);color:var(--on-accent);border:none;
+    padding:9px 20px;border-radius:24px;background:var(--crimson);color:var(--on-accent);border:3px solid var(--crimson-deep);
     font-family:var(--font-mono);font-size:11.5px;letter-spacing:0.5px;text-transform:uppercase;cursor:pointer;
     font-weight:600;transition:background 0.2s ease, transform 0.2s ease;
   }
@@ -442,15 +472,17 @@
 
   /* ----- example ballot CTA section ----- */
   .landing-example{
-    max-width:640px;margin:0 auto;padding:20px 24px 110px;text-align:center;
+    max-width:640px;margin:0 auto 90px;padding:32px 32px 36px;text-align:center;position:relative;z-index:1;
+    background:rgba(255,255,255,0.9);border-radius:16px;box-shadow:0 20px 50px rgba(30,50,80,0.18);
     opacity:0;transform:translateY(24px);transition:opacity 0.7s cubic-bezier(.2,.7,.3,1), transform 0.7s cubic-bezier(.2,.7,.3,1);
+    border:3px solid var(--crimson-deep);
   }
   .landing-example.in-view{opacity:1;transform:translateY(0);}
   .landing-example h2{font-family:var(--font-display);font-size:26px;margin:0 0 10px;color:var(--chrome-text);}
   .landing-example p{font-family:var(--font-body);font-size:14px;color:var(--chrome-text-dim);margin:0 0 22px;line-height:1.6;}
   .landing-example-btn{
     display:inline-flex;align-items:center;justify-content:center;padding:11px 32px;border-radius:4px;
-    background:var(--crimson);color:var(--on-accent);border:none;cursor:pointer;
+    background:var(--crimson);color:var(--on-accent);border:3px solid var(--crimson-deep);cursor:pointer;
     font-family:var(--font-mono);font-size:13px;letter-spacing:0.5px;text-transform:uppercase;font-weight:600;
     transition:transform 0.25s ease, background 0.25s ease;
     position:relative;overflow:hidden;
@@ -1424,6 +1456,8 @@
     </div>
   </div>
 
+  <div class="light-zone" id="lightZone">
+    <div class="light-zone-bg" id="lightZoneBg"></div>
   <div class="landing-features">
     <div class="feature-grid" id="landingFeatureGrid">
       <div class="feature-card wide">
@@ -1513,6 +1547,9 @@
         <div class="fc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></div>
         <h3>Record your round</h3>
         <p>Camera-record your speech right in the browser — no app to install, nothing to upload by hand.</p>
+        <div class="demo-record-mock" aria-hidden="true">
+          <button type="button" class="rec-btn recording demo-record-btn" tabindex="-1"><span class="inner"></span></button>
+        </div>
       </div>
       <div class="feature-card">
         <div class="fc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg></div>
@@ -1520,14 +1557,16 @@
         <p class="transcript-highlight-demo" id="transcriptDemoText">Automatic transcription with a stenographer-style layout and auto-detected Intro / Body / Conclusion sections.</p>
       </div>
       <div class="feature-card">
-        <div class="fc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V10M18 20V4M6 20v-4"/></svg></div>
+        <div class="fc-icon vocal-wave-icon" id="vocalWaveIcon">
+          <span class="vw-bar"></span><span class="vw-bar"></span><span class="vw-bar"></span><span class="vw-bar"></span><span class="vw-bar"></span>
+        </div>
         <h3>Vocal delivery analysis</h3>
         <p>Volume, emphasis, tone and pitch variety, pauses, pace (WPM), filler words, and stutters — measured straight from your recording's audio.</p>
       </div>
       <div class="feature-card">
         <div class="fc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 8v5l3 2"/></svg></div>
-        <h3>Your whole speaking career, in one place</h3>
-        <p>Every round you ever record — video, transcript, full ballot, and score — lives permanently in your account. Watch your growth add up round after round, tournament after tournament, from any device you sign into.</p>
+        <h3>Ballot feedback storage</h3>
+        <p>Every round you ever record — video, transcript, full ballot, and score — lives permanently in your account. Review old practice rounds, track your progress after multiple recordings, look at your improvement long-term, and get general feedback about all of your rounds.</p>
       </div>
       <div class="feature-card wide">
         <div class="fc-body">
@@ -1553,7 +1592,7 @@
           </div>
         </div>
       </div>
-      <div class="feature-card wide">
+      <div class="feature-card wide" data-trigger="top">
         <div class="fc-body stacked">
           <div>
             <div class="fc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 7.2H22l-6 4.6 2.4 7.2L12 16.4l-6.4 4.6 2.4-7.2-6-4.6h7.6z"/></svg></div>
@@ -1570,6 +1609,7 @@
     <h2>See it in action first</h2>
     <p>Not ready to record yet? Watch a fully worked example round — real speech, real ballot, same synced video-and-transcript playback you'll get on your own rounds.</p>
     <button type="button" class="landing-example-btn" id="landingExampleBtn">See an Example</button>
+  </div>
   </div>
 </div>
 
@@ -2534,9 +2574,30 @@
   // ----- randomized hero headline (one of three, picked fresh on each load) -----
   // ----- "Word-for-word transcript" card: silent word-by-word highlight loop -----
   // ----- using the exact same .tw / .tw-active classes as real synced playback -----
+  // Also drives the "Vocal delivery analysis" card's little waveform icon,
+  // pulsing it in time with whichever word is currently highlighted here —
+  // as if it's the one "speaking" the transcript.
   (function setupTranscriptHighlightDemo(){
     const el = document.getElementById('transcriptDemoText');
     if(!el) return;
+    const waveBars = Array.from(document.querySelectorAll('#vocalWaveIcon .vw-bar'));
+    function pulseWave(word){
+      if(!waveBars.length) return;
+      // Rough "amplitude" per bar: louder/taller around the middle of the
+      // word's syllable count, tapering at the edges, plus a little jitter
+      // so it doesn't look mechanically identical bar to bar.
+      const intensity = Math.max(0.35, Math.min(1, (word ? word.length : 3) / 9));
+      waveBars.forEach((bar, idx) => {
+        const mid = (waveBars.length - 1) / 2;
+        const posFalloff = 1 - Math.abs(idx - mid) / (mid + 1) * 0.55;
+        const jitter = 0.75 + Math.random() * 0.5;
+        const scale = Math.max(0.22, Math.min(1, intensity * posFalloff * jitter));
+        bar.style.transform = `scaleY(${scale.toFixed(2)})`;
+      });
+    }
+    function idleWave(){
+      waveBars.forEach(bar => { bar.style.transform = 'scaleY(0.22)'; });
+    }
     const words = el.textContent.trim().split(/\s+/);
     el.innerHTML = words.map(w => `<span class="tw">${w}</span>`).join(' ');
     const spans = Array.from(el.querySelectorAll('.tw'));
@@ -2545,12 +2606,14 @@
       spans.forEach(s => s.classList.remove('tw-active'));
       if(i < spans.length){
         spans[i].classList.add('tw-active');
+        pulseWave(spans[i].textContent);
         // Rough natural-speech pacing: longer words linger a bit longer.
         const len = spans[i].textContent.length;
         const dur = 190 + Math.min(len, 10) * 22;
         i++;
         setTimeout(step, dur);
       }else{
+        idleWave();
         i = 0;
         setTimeout(step, 900); // pause at the end before looping
       }
@@ -2601,6 +2664,25 @@
   // card is mid-slide, page scroll is intercepted and instead drives that
   // card's progress directly from the wheel/touch/key delta, so scroll
   // speed & direction control the animation instead of a fixed-time tween.
+  // ----- shared per-frame scheduler -----
+  // Both the card-hijack (which sometimes WRITES scrollTop) and the photo
+  // parallax (which READS scrollTop) were each running their own independent
+  // requestAnimationFrame loop. Two separate rAF chains aren't guaranteed to
+  // fire in a fixed order relative to each other — so frame to frame, the
+  // parallax's read would sometimes land before the hijack's write and
+  // sometimes after, flip-flopping between two slightly different scroll
+  // values. That flip-flop is what showed up as the image vibrating. Running
+  // both off one shared loop, in a fixed registration order (hijack's scroll
+  // write first, parallax's read second), removes that race entirely.
+  window.__frameTasks = [];
+  (function ensureFrameLoop(){
+    function tick(){
+      for(let i = 0; i < window.__frameTasks.length; i++) window.__frameTasks[i]();
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  })();
+
   (function setupFeatureScrollHijack(){
     const grid = document.getElementById('landingFeatureGrid');
     const cards = grid ? Array.from(grid.querySelectorAll('.feature-card')) : [];
@@ -2610,15 +2692,23 @@
       return;
     }
 
-    const SENS_WHEEL = 0.0016;
-    const SENS_TOUCH = 0.0026;
-    const SENS_KEY = 0.09;
-    const TOP_PAD = () => window.innerHeight * 0.14; // breathing room above each revealed row
+    const SENS_WHEEL = 0.0028;   // drives an active card's slide-in progress — higher = fewer scrolls needed
+    const SENS_TOUCH = 0.0042;
+    const SENS_KEY = 0.14;
+    const APPROACH_STEP_MAX = 46;      // per-event feel, used to size the per-frame cap below
+    const APPROACH_FRAME_CAP = 120;    // max px of physical scroll applied per animation frame — keeps the physical scroll pace the same as before even though input is now coalesced
     const state = cards.map((el, i) => ({ el, dir: i % 2 === 0 ? 'left' : 'right', progress: 0 }));
     let currentIndex = 0;
-    let snapped = false;
-    let autoScrolling = false;
-    let scrollAnim = null;
+    // 'approach': plain, clamped, controlled scrolling toward the next card
+    //             (this is what replaces the old auto-scroll — there is no
+    //             animation here, just direct 1:1 scrolling driven by input).
+    // 'slide':    input instead drives that card's slide-in progress; entered
+    //             only once the card has scrolled all the way up so its
+    //             whole body is on screen ("the very bottom of the screen").
+    let mode = 'approach';
+
+    const scroller = document.getElementById('authGate') || document.scrollingElement || document.documentElement;
+    if(scroller && scroller.style) scroller.style.scrollBehavior = 'auto';
 
     function render(i){
       const s = state[i];
@@ -2641,132 +2731,123 @@
 
     state.forEach((s, i) => { s.progress = 0; render(i); });
 
-    function easeInOutCubic(t){ return t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2, 3)/2; }
+    function authGateVisible(){
+      if(!scroller) return false;
+      if(scroller.classList.contains('hidden')) return false;
+      return window.getComputedStyle(scroller).display !== 'none';
+    }
 
-    // Custom eased scroll (not the browser's native "smooth" behavior, which
-    // can feel like a single big jump on long distances) — this always ramps
-    // gently up to speed and back down, however far it has to travel, so
-    // both the very first move into the section and every step after it
-    // read as one continuous, buttery motion instead of a snap.
-    function smoothScrollTo(targetY, duration, onDone){
-      if(scrollAnim) cancelAnimationFrame(scrollAnim);
-      const startY = window.scrollY;
-      const dist = targetY - startY;
-      if(Math.abs(dist) < 1){ if(onDone) onDone(); return; }
-      const startTime = performance.now();
-      function tick(now){
-        const t = Math.min(1, (now - startTime) / duration);
-        window.scrollTo(0, startY + dist * easeInOutCubic(t));
-        if(t < 1){
-          scrollAnim = requestAnimationFrame(tick);
+    // Only step in once the grid has actually started entering the screen —
+    // otherwise scrolling through the hero/headline above it would get
+    // hijacked too.
+    function nearSection(){
+      const rect = grid.getBoundingClientRect();
+      return rect.top < window.innerHeight && rect.bottom > 0;
+    }
+
+    function captured(){
+      return authGateVisible() && nearSection() && currentIndex < cards.length;
+    }
+
+    // Hard-reset hook: called the moment the user signs in, so the hijack
+    // releases scroll/keyboard immediately rather than waiting on the next
+    // event to notice authGate is gone.
+    window.__releaseFeatureScrollHijack = function(){
+      currentIndex = cards.length;
+      mode = 'approach';
+    };
+
+    function normalizeWheel(e){
+      let d = e.deltaY;
+      if(e.deltaMode === 1) d *= 16;      // lines -> ~px
+      else if(e.deltaMode === 2) d *= window.innerHeight; // pages -> px
+      return Math.max(-90, Math.min(90, d));
+    }
+
+    // Handle one already-normalized, already-coalesced delta for the current
+    // frame (positive = scrolling down).
+    function handleDelta(delta, sens){
+      const card = cards[currentIndex];
+
+      if(mode === 'slide'){
+        const s = state[currentIndex];
+        const next = s.progress + delta * sens;
+        if(next >= 1){
+          s.progress = 1;
+          render(currentIndex);
+          currentIndex++;
+          mode = 'approach';
+        } else if(next <= 0 && delta < 0){
+          s.progress = 0;
+          render(currentIndex);
+          mode = 'approach'; // release — scrolling back up is now plain scroll
         } else {
-          scrollAnim = null;
-          if(onDone) onDone();
+          s.progress = Math.max(0, Math.min(1, next));
+          render(currentIndex);
         }
-      }
-      scrollAnim = requestAnimationFrame(tick);
-    }
-
-    // Where the page should be scrolled to so that card `index` sits just
-    // below a little breathing room at the top of the viewport.
-    function targetScrollForCard(index){
-      const rect = cards[index].getBoundingClientRect();
-      return window.scrollY + rect.top - TOP_PAD();
-    }
-
-    // Advance the real page scroll — smoothly and incrementally, one
-    // row/card at a time — rather than jumping the whole section into view
-    // in one go, so every box actually scrolls past the user's eyes.
-    function advanceScrollTo(index, done){
-      if(index < 0 || index >= cards.length){ done(); return; }
-      autoScrolling = true;
-      const dist = Math.abs(targetScrollForCard(index) - window.scrollY);
-      const duration = Math.max(320, Math.min(900, dist * 0.9));
-      smoothScrollTo(targetScrollForCard(index), duration, () => {
-        autoScrolling = false;
-        done();
-      });
-    }
-
-    // Once the grid first peeks into view from below, smoothly scroll the
-    // rest of the way to the first card, then engage the hijack.
-    if('IntersectionObserver' in window){
-      const snapObserver = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-          if(entry.isIntersecting && !snapped){
-            snapped = true;
-            snapObserver.disconnect();
-            advanceScrollTo(0, () => {});
-          }
-        });
-      }, { threshold: 0.01 });
-      snapObserver.observe(grid);
-    }
-
-    function sectionEngaged(){
-      if(!snapped) return false;
-      if(autoScrolling) return false;
-      if(currentIndex >= cards.length) return false;
-      return true;
-    }
-
-    // Apply a raw delta (positive = scrolling down) to the active card only
-    // — no cascading into neighbors within the same tick, since advancing
-    // now also means an animated scroll step, which needs to finish before
-    // the next card's input is processed.
-    function applyDelta(rawDelta, sensitivity){
-      if(currentIndex < 0 || currentIndex >= cards.length) return;
-      const s = state[currentIndex];
-      const next = s.progress + rawDelta * sensitivity;
-      if(next >= 1){
-        s.progress = 1;
-        render(currentIndex);
-        const finishedIndex = currentIndex;
-        const nextIndex = finishedIndex + 1;
-        if(nextIndex >= cards.length){
-          currentIndex = cards.length; // fully done, release scroll for good
-          return;
-        }
-        advanceScrollTo(nextIndex, () => { currentIndex = nextIndex; });
         return;
       }
-      if(next <= 0){
-        s.progress = 0;
-        render(currentIndex);
-        if(currentIndex === 0) return; // nothing before the first card
-        const prevIndex = currentIndex - 1;
-        advanceScrollTo(prevIndex, () => {
-          currentIndex = prevIndex;
-          state[prevIndex].progress = 1;
-          render(prevIndex);
-        });
-        return;
+
+      // mode === 'approach'
+      if(delta <= 0) return; // let scrolling up pass through as normal scroll
+      const step = Math.max(-APPROACH_FRAME_CAP, Math.min(APPROACH_FRAME_CAP, delta));
+      scroller.scrollTop += step;
+      const rect = card.getBoundingClientRect();
+      const armed = card.dataset.trigger === 'top'
+        ? rect.top <= 0                       // arm as soon as its top reaches the top of the screen
+        : rect.bottom <= window.innerHeight + 2; // default: wait until the whole card is on screen
+      if(armed){
+        mode = 'slide';
       }
-      s.progress = next;
-      render(currentIndex);
     }
+
+    // Raw events only accumulate a pending delta (cheap: no layout reads or
+    // writes) — the actual DOM work (scrollTop writes, getBoundingClientRect
+    // checks, card transforms) happens at most once per animation frame in
+    // flush(). Doing that work synchronously on every single wheel/touch tick
+    // was what caused the glitching under fast scrolling: a rapid burst of
+    // events each forced their own layout + style write, competing for the
+    // same frame and falling behind. Coalescing to one flush per frame fixes
+    // that regardless of how fast input arrives.
+    let pendingDelta = 0;
+    let pendingSens = SENS_WHEEL;
+    const FRAME_DELTA_CAP = 130; // ceiling on how much can accumulate before one flush, regardless of how many wheel/trackpad micro-events fired that frame
+
+    function queueDelta(delta, sens){
+      pendingDelta = Math.max(-FRAME_DELTA_CAP, Math.min(FRAME_DELTA_CAP, pendingDelta + delta));
+      pendingSens = sens;
+    }
+
+    // Registered first, so any scrollTop write this produces is guaranteed
+    // to happen before the parallax's read in the same frame (see the
+    // shared scheduler above).
+    window.__frameTasks.push(function(){
+      if(pendingDelta === 0) return;
+      const d = pendingDelta;
+      pendingDelta = 0;
+      handleDelta(d, pendingSens);
+    });
 
     window.addEventListener('wheel', (e) => {
-      if(!sectionEngaged()) return;
-      // allow scrolling back up out of the section entirely once the first
-      // card hasn't started sliding yet
-      if(currentIndex === 0 && state[0].progress <= 0 && e.deltaY < 0) return;
+      if(!captured()) return;
+      const delta = normalizeWheel(e);
+      if(mode === 'approach' && delta <= 0) return; // scrolling up out of the section: allow it
       e.preventDefault();
-      applyDelta(e.deltaY, SENS_WHEEL);
+      queueDelta(delta, SENS_WHEEL);
     }, { passive: false });
 
     let touchY = null;
     window.addEventListener('touchstart', (e) => {
-      if(!sectionEngaged()) return;
+      if(!captured()) return;
       touchY = e.touches[0].clientY;
     }, { passive: true });
     window.addEventListener('touchmove', (e) => {
-      if(touchY === null || !sectionEngaged()){ touchY = e.touches[0] ? e.touches[0].clientY : null; return; }
+      if(touchY === null || !captured()){ touchY = e.touches[0] ? e.touches[0].clientY : null; return; }
       const y = e.touches[0].clientY;
-      const delta = touchY - y; // finger moving up == scrolling down
-      if(currentIndex === 0 && state[0].progress <= 0 && delta < 0){ touchY = y; return; }
+      const delta = Math.max(-90, Math.min(90, touchY - y)); // finger moving up == scrolling down
+      if(mode === 'approach' && delta <= 0){ touchY = y; return; }
       e.preventDefault();
-      applyDelta(delta, SENS_TOUCH);
+      queueDelta(delta, SENS_TOUCH);
       touchY = y;
     }, { passive: false });
 
@@ -2774,14 +2855,93 @@
       const downKeys = ['ArrowDown', 'PageDown', ' '];
       const upKeys = ['ArrowUp', 'PageUp'];
       if(!downKeys.includes(e.key) && !upKeys.includes(e.key)) return;
-      if(!sectionEngaged()) return;
+      if(!captured()) return;
       const dir = downKeys.includes(e.key) ? 1 : -1;
-      if(currentIndex === 0 && state[0].progress <= 0 && dir < 0) return;
+      if(mode === 'approach' && dir < 0) return;
       e.preventDefault();
-      applyDelta(dir * 100, SENS_KEY);
+      queueDelta(dir * 40, SENS_KEY);
     }, { passive: false });
 
     window.addEventListener('resize', () => { state.forEach((s, i) => render(i)); });
+  })();
+
+  // ----- half-speed parallax for the photo behind the feature/example zone -----
+  // The background moves at ~half the rate of the actual scroll (and of the
+  // sliding cards above it), which is what gives the classic parallax depth:
+  // if the boxes travel 20px because the user scrolled 20px, this layer only
+  // travels ~10px.
+  (function setupLightZoneParallax(){
+    const zone = document.getElementById('lightZone');
+    const bg = document.getElementById('lightZoneBg');
+    if(!zone || !bg) return;
+    const scroller = document.getElementById('authGate') || document.scrollingElement || document.documentElement;
+    const SPEED = 0.1; // 0 = fixed in place, 1 = normal (no parallax) — lower = less sensitive/more lag
+    let sectionDocTop = 0;
+    let lastTranslate = null;
+    let renderedY = 0; // eased, actually-painted offset — smooths out any choppiness in the raw scroll value itself
+
+    function measure(){
+      // Document-relative top of the zone, cached so the effect is anchored
+      // to where the section actually starts rather than drifting with
+      // whatever the scroll position happened to be at setup time.
+      sectionDocTop = scroller.scrollTop + zone.getBoundingClientRect().top;
+      // Buffer the image well beyond the zone's own height so it never runs
+      // out of coverage at either edge, however far/fast the user scrolls.
+      const h = zone.offsetHeight;
+      const w = zone.offsetWidth;
+      const vh = window.innerHeight;
+      const buffer = Math.ceil((h + vh) * (1 - SPEED) * 0.6) + 60;
+      bg.style.top = (-buffer) + 'px';
+      bg.style.height = (h + buffer * 2) + 'px';
+      // Fit to the zone's width only (no stretching) — this is the most
+      // "zoomed out" the photo can be while still covering edge-to-edge
+      // horizontally. Anchored to the top of the zone; if the resulting
+      // height (at its natural aspect ratio) falls short of the zone's
+      // height, the background color simply shows through at the bottom
+      // rather than the photo being stretched or cropped to fill it.
+      bg.style.backgroundSize = `${w}px auto`;
+      bg.style.backgroundPosition = `0px ${buffer}px`;
+      renderedY = (scroller.scrollTop - sectionDocTop) * (1 - SPEED);
+    }
+
+    // A "scroll" event fires on its own schedule (sometimes batched,
+    // sometimes a frame or more behind the compositor's own instant
+    // scrolling), and reacting to it is what produced the original jitter.
+    // Reading the live scroll position fresh every frame — via the shared
+    // scheduler, registered after the hijack's own task so any scrollTop
+    // write this frame is already applied before this reads it — keeps it
+    // perfectly in step with everything else instead of racing it.
+    //
+    // On top of that, the underlying scroll position itself can move in
+    // slightly chunky steps (the card hijack advances it in discrete,
+    // capped increments while a box is approaching), which would otherwise
+    // show up directly in the photo's motion. A short, fast ease (not the
+    // heavier drift used elsewhere) absorbs that chunkiness — it settles
+    // within a couple of frames, quickly enough to still feel snappy and
+    // stop almost immediately once scrolling does, but smooth enough that
+    // no single choppy step is visible on its own.
+    window.__frameTasks.push(function(){
+      const raw = scroller.scrollTop - sectionDocTop; // 0 at the zone's own top, grows as we scroll past it
+      const targetY = raw * (1 - SPEED);
+      renderedY += (targetY - renderedY) * 0.55;
+      if(Math.abs(targetY - renderedY) < 0.15) renderedY = targetY;
+      // Whole-pixel snapping matters here: continuous wheel/trackpad input
+      // produces a fractional-pixel offset almost every frame, and
+      // repositioning a detailed photo at sub-pixel offsets makes the browser
+      // re-filter/re-sample it slightly differently frame to frame — visible
+      // as a faint shimmer/spike. Rounding to whole pixels removes that
+      // resampling entirely.
+      const translateY = Math.round(renderedY);
+      if(translateY !== lastTranslate){
+        bg.style.transform = `translate3d(0, ${translateY}px, 0)`;
+        lastTranslate = translateY;
+      }
+    });
+
+    window.addEventListener('resize', measure);
+    // Recompute once fonts/images settle in, since that can shift layout height.
+    window.addEventListener('load', measure);
+    measure();
   })();
 
   // ----- "See an Example" from the landing page, before signing in -----
@@ -3367,6 +3527,7 @@
     authGate.classList.add('hidden');
     document.body.classList.remove('previewing-example');
     authForm.reset();
+    if(window.__releaseFeatureScrollHijack) window.__releaseFeatureScrollHijack();
   }
   function onSignedOut(){
     currentUser = null;
@@ -3382,6 +3543,7 @@
       // No client library (e.g. offline) — let the person in anyway so the
       // recorder still works, just without saved history.
       authGate.classList.add('hidden');
+      if(window.__releaseFeatureScrollHijack) window.__releaseFeatureScrollHijack();
       return;
     }
     const { data } = await supabaseClient.auth.getSession();

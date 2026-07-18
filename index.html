@@ -176,6 +176,7 @@
     background-size:220% 220%;
     animation:bgDrift 22s ease-in-out infinite;
     overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;
+    overscroll-behavior:contain;
     scroll-behavior:smooth;
   }
   @keyframes bgDrift{
@@ -230,15 +231,15 @@
     perspective:1200px;overflow:hidden;
   }
   #heroConstellation{
-    position:absolute;inset:0;width:100%;height:100%;z-index:-1;pointer-events:none;
+    position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;
   }
   .landing-hero-photo{
     position:absolute;top:12%;left:12%;right:12%;bottom:12%;width:76%;height:76%;
-    margin:auto;object-fit:cover;border-radius:14px;z-index:0;opacity:0.55;
+    margin:auto;object-fit:cover;border-radius:14px;z-index:1;opacity:0.55;
     box-shadow:0 20px 60px rgba(0,0,0,0.5);pointer-events:none;
   }
   .landing-hero-headline{
-    max-width:440px;position:relative;z-index:1;
+    max-width:440px;position:relative;z-index:2;
     animation:heroSlideIn 0.8s cubic-bezier(.2,.8,.3,1) both;
   }
   @keyframes heroSlideIn{
@@ -266,7 +267,7 @@
   .auth-card{
     width:100%;max-width:432px;background:var(--parchment);color:var(--charcoal);
     border-radius:8px;box-shadow:0 12px 40px var(--shadow);padding:38px 40px 34px;
-    border:1px solid var(--ink-line);margin-top:18px;position:relative;z-index:1;
+    border:1px solid var(--ink-line);margin-top:18px;position:relative;z-index:2;
     animation:authCardIn 0.7s cubic-bezier(.2,.8,.3,1) both;
   }
   @keyframes authCardIn{
@@ -361,8 +362,8 @@
   .light-zone-bg{
     position:absolute;left:0;right:0;top:0;height:100%;z-index:-1;
     background-image:url('speechbackgr22.png');background-repeat:no-repeat;
+    background-attachment:fixed;background-position:center center;
     background-color:#e7f0fb;
-    will-change:transform;
   }
   .landing-features{
     max-width:1080px;margin:0 auto;padding:90px 24px 70px;position:relative;z-index:1;
@@ -2788,10 +2789,12 @@
         return;
       }
 
-      // mode === 'approach'
-      if(delta <= 0) return; // let scrolling up pass through as normal scroll
+      // mode === 'approach' — handle both directions ourselves (see note
+      // below on why negative deltas are no longer handed off to native
+      // scroll).
       const step = Math.max(-APPROACH_FRAME_CAP, Math.min(APPROACH_FRAME_CAP, delta));
       scroller.scrollTop += step;
+      if(delta <= 0) return; // moving up: no card-arming check needed
       const rect = card.getBoundingClientRect();
       const armed = card.dataset.trigger === 'top'
         ? rect.top <= 0                       // arm as soon as its top reaches the top of the screen
@@ -2828,10 +2831,23 @@
       handleDelta(d, pendingSens);
     });
 
+    // IMPORTANT: while captured(), every wheel event is hijacked — including
+    // upward ones — rather than only positive deltas. Real trackpads/mice
+    // don't emit perfectly one-signed deltas during a single continuous
+    // gesture (momentum deceleration and sensor noise routinely produce a
+    // stray negative tick mid-swipe); letting those individual ticks fall
+    // through to native scrolling handed control back and forth between two
+    // uncoordinated scroll engines from one event to the next, and it was
+    // that tug-of-war over scrollTop — not the parallax math — that showed
+    // up as visible vibration. Handling both directions through our own
+    // coalesced/frame-batched path (handleDelta, above) keeps a single
+    // authority over scrollTop for the whole gesture; captured() already
+    // naturally releases control once the user has scrolled far enough that
+    // the section is no longer near the viewport, so leaving the section by
+    // scrolling up still works, it's just driven by one consistent engine.
     window.addEventListener('wheel', (e) => {
       if(!captured()) return;
       const delta = normalizeWheel(e);
-      if(mode === 'approach' && delta <= 0) return; // scrolling up out of the section: allow it
       e.preventDefault();
       queueDelta(delta, SENS_WHEEL);
     }, { passive: false });
@@ -2845,7 +2861,6 @@
       if(touchY === null || !captured()){ touchY = e.touches[0] ? e.touches[0].clientY : null; return; }
       const y = e.touches[0].clientY;
       const delta = Math.max(-90, Math.min(90, touchY - y)); // finger moving up == scrolling down
-      if(mode === 'approach' && delta <= 0){ touchY = y; return; }
       e.preventDefault();
       queueDelta(delta, SENS_TOUCH);
       touchY = y;
@@ -2857,7 +2872,6 @@
       if(!downKeys.includes(e.key) && !upKeys.includes(e.key)) return;
       if(!captured()) return;
       const dir = downKeys.includes(e.key) ? 1 : -1;
-      if(mode === 'approach' && dir < 0) return;
       e.preventDefault();
       queueDelta(dir * 40, SENS_KEY);
     }, { passive: false });
@@ -2865,81 +2879,25 @@
     window.addEventListener('resize', () => { state.forEach((s, i) => render(i)); });
   })();
 
-  // ----- half-speed parallax for the photo behind the feature/example zone -----
-  // The background moves at ~half the rate of the actual scroll (and of the
-  // sliding cards above it), which is what gives the classic parallax depth:
-  // if the boxes travel 20px because the user scrolled 20px, this layer only
-  // travels ~10px.
-  (function setupLightZoneParallax(){
-    const zone = document.getElementById('lightZone');
+  // ----- fixed, single, motionless background for the feature/example zone -----
+  // background-attachment:fixed pins the photo to the screen itself rather
+  // than to the page: as the section scrolls past, the image stays exactly
+  // where it is on screen the whole time — it's the section's content that
+  // moves over it, not the other way around. One image, no repeats, no
+  // scroll-linked transform, no per-frame updates of any kind.
+  (function setupLightZoneBackground(){
     const bg = document.getElementById('lightZoneBg');
-    if(!zone || !bg) return;
-    const scroller = document.getElementById('authGate') || document.scrollingElement || document.documentElement;
-    const SPEED = 0.1; // 0 = fixed in place, 1 = normal (no parallax) — lower = less sensitive/more lag
-    let sectionDocTop = 0;
-    let lastTranslate = null;
-    let renderedY = 0; // eased, actually-painted offset — smooths out any choppiness in the raw scroll value itself
+    if(!bg) return;
 
     function measure(){
-      // Document-relative top of the zone, cached so the effect is anchored
-      // to where the section actually starts rather than drifting with
-      // whatever the scroll position happened to be at setup time.
-      sectionDocTop = scroller.scrollTop + zone.getBoundingClientRect().top;
-      // Buffer the image well beyond the zone's own height so it never runs
-      // out of coverage at either edge, however far/fast the user scrolls.
-      const h = zone.offsetHeight;
-      const w = zone.offsetWidth;
-      const vh = window.innerHeight;
-      const buffer = Math.ceil((h + vh) * (1 - SPEED) * 0.6) + 60;
-      bg.style.top = (-buffer) + 'px';
-      bg.style.height = (h + buffer * 2) + 'px';
-      // Fit to the zone's width only (no stretching) — this is the most
-      // "zoomed out" the photo can be while still covering edge-to-edge
-      // horizontally. Anchored to the top of the zone; if the resulting
-      // height (at its natural aspect ratio) falls short of the zone's
-      // height, the background color simply shows through at the bottom
-      // rather than the photo being stretched or cropped to fill it.
-      bg.style.backgroundSize = `${w}px auto`;
-      bg.style.backgroundPosition = `0px ${buffer}px`;
-      renderedY = (scroller.scrollTop - sectionDocTop) * (1 - SPEED);
+      // background-attachment:fixed sizes/positions against the viewport,
+      // not the element's own box, so the width to fit against is the
+      // viewport's width.
+      bg.style.backgroundSize = `${window.innerWidth}px auto`;
     }
 
-    // A "scroll" event fires on its own schedule (sometimes batched,
-    // sometimes a frame or more behind the compositor's own instant
-    // scrolling), and reacting to it is what produced the original jitter.
-    // Reading the live scroll position fresh every frame — via the shared
-    // scheduler, registered after the hijack's own task so any scrollTop
-    // write this frame is already applied before this reads it — keeps it
-    // perfectly in step with everything else instead of racing it.
-    //
-    // On top of that, the underlying scroll position itself can move in
-    // slightly chunky steps (the card hijack advances it in discrete,
-    // capped increments while a box is approaching), which would otherwise
-    // show up directly in the photo's motion. A short, fast ease (not the
-    // heavier drift used elsewhere) absorbs that chunkiness — it settles
-    // within a couple of frames, quickly enough to still feel snappy and
-    // stop almost immediately once scrolling does, but smooth enough that
-    // no single choppy step is visible on its own.
-    window.__frameTasks.push(function(){
-      const raw = scroller.scrollTop - sectionDocTop; // 0 at the zone's own top, grows as we scroll past it
-      const targetY = raw * (1 - SPEED);
-      renderedY += (targetY - renderedY) * 0.55;
-      if(Math.abs(targetY - renderedY) < 0.15) renderedY = targetY;
-      // Whole-pixel snapping matters here: continuous wheel/trackpad input
-      // produces a fractional-pixel offset almost every frame, and
-      // repositioning a detailed photo at sub-pixel offsets makes the browser
-      // re-filter/re-sample it slightly differently frame to frame — visible
-      // as a faint shimmer/spike. Rounding to whole pixels removes that
-      // resampling entirely.
-      const translateY = Math.round(renderedY);
-      if(translateY !== lastTranslate){
-        bg.style.transform = `translate3d(0, ${translateY}px, 0)`;
-        lastTranslate = translateY;
-      }
-    });
-
     window.addEventListener('resize', measure);
-    // Recompute once fonts/images settle in, since that can shift layout height.
+    // Recompute once fonts/images settle in, since that can shift layout width.
     window.addEventListener('load', measure);
     measure();
   })();

@@ -1,5 +1,7 @@
 # **Extemplary**
 
+---
+
 A **free** browser extention for practicing **NSDA Extemporaneous Speaking**. Record a round, receive an AI judge's ballot, recieve feedback & review your speech transcript, and automatically record a saved history of every round you've practiced. Account creation and cloud storage are powered by Supabase.
 
 **[Live demo →](#deployment)** (setting up GitHub Pages — see below)
@@ -8,7 +10,9 @@ A **free** browser extention for practicing **NSDA Extemporaneous Speaking**. Re
 
 ---
 
-## What it does❓
+## What it does
+---
+Sign up → Generate questions → Write a speech → Record your speech → Recieve feedback → Set goals → Practice more → Track your improvement/progress → Correct bad habits/general weaknesses
 
 - **Record a round** — Generate 3 realistic practice questions, run a prep timer, then record on camera for your speech.
 
@@ -16,7 +20,7 @@ A **free** browser extention for practicing **NSDA Extemporaneous Speaking**. Re
 
 - **Vocal Delivery Analysis** — Volume, emphasis, tone/pitch variety, pauses, pace (WPM), filler words, and stutters/repetitions, measured directly from your recording.
 
-- **Annotated transcript** — A transcript with color coded personalized comments (🟥: big mistake, 🟦: comment, 🟩: brilliant move, 🟨: minor error) and auto marked paragraph labels (Intro / Body 1–3 / Conclusion).
+- **Annotated transcript** — An automated transcript with color coded personalized comments (🟥: big mistake, 🟦: comment, 🟩: brilliant move, 🟨: minor error) and auto marked paragraph labels (Intro / Body 1–3 / Conclusion).
 
 - **Watch & Read Along** — An embedded video player synced word-for-word with the transcript. Click any word (or any judge's note) to jump the video to that **exact** moment; the current word highlights live as it plays.
 
@@ -35,7 +39,7 @@ A **free** browser extention for practicing **NSDA Extemporaneous Speaking**. Re
 Note: Extemplary requires camera and microphone access for recording speeches (duh).
 
 ## Free trial before signing up! 
-
+---
 The sign-in screen is also a landing page. Scroll down past the log in info to see a glimpes of what the app can actually do, with several features you can try live, no account required!:
 
 - **1️⃣ Real practice questions** — pick between **domestic, economic, and international** topics and get three relevant extemp questions on the spot (one free try per browser).
@@ -51,7 +55,7 @@ The sign-in screen is also a landing page. Scroll down past the log in info to s
 - 5️⃣ **Example Ballot** — Contains a **complete** example round, with example transcript, video, feedback, comments, rubric, and score. This preview is fully  from the rest of the app. You can look around without ever being signed into anything.
 
 ## Software ⚙️
-
+---
 Everything lives in a single `.html` file — no build step, no custom backend, no framework. A Supabase project provides authentication and cloud storage.
 
 - **Transcription:** Groq's Whisper (`whisper-large-v3`, word-level timestamps)
@@ -64,13 +68,14 @@ Everything lives in a single `.html` file — no build step, no custom backend, 
 - **Local storage:** `localStorage` is used for lightweight preferences (theme, timer settings) and for remembering whether a browser has already used its one free landing-page demo try; everything account-related (ballots, video, session) lives in Supabase, not the browser
 
 ## Getting started 📖
-
+---
 ### Just try it
 Open `Extemplary.html` in any modern (up to date) desktop or mobile browser. That's it — no install, no npm, no server to run.
 
 > **Note:** the example ballot's video uses the YouTube IFrame API, which requires the page be served over `http(s)://` — it won't load correctly if you just double-click the file from disk (`file://`). Your own recorded rounds don't have this restriction; that playback is a plain local `<video>` element. Signing up, logging in, and cloud history also require `https://` (or `localhost`) for the same reason browsers require it for camera access. See [Deployment](#deployment) below to host it properly.
 
 ### Creating an account 👤
+---
 You'll land on the sign-in screen and landing page the first time you open the app.
 
 1. Switch to the **Sign Up** tab, enter an email and a password (requires 6+ characters), and submit.
@@ -80,10 +85,11 @@ You'll land on the sign-in screen and landing page the first time you open the a
 Every round completed while signed in is saved **automatically**. Tap the clock icon in the header at any time to open **My History**: expand any past round to rewatch the video, re-read the transcript, or reread the full judge's feedback, or scroll up to see your average score by category across all your rounds and your standout overall strengths and weaknesses.
 
 ### API keys 🔑
+---
 The app utilizes default Groq and Gemini API keys for transcription, judging, and question/briefing generation. If you hit rate limits or want to use your own, open **Settings → Override Groq API Key** and paste your own key from [console.groq.com](https://console.groq.com).
 
 ## Supabase setup 💾
-
+---
 Accounts and cloud history run on a Supabase project. The app already has a project's URL and public (`anon`) key wired in, but that project needs one piece of one-time setup before sign-ups, history, and video storage will work.
 
 1. Open the corresponding project at [supabase.com/dashboard](https://supabase.com/dashboard).
@@ -96,10 +102,11 @@ Accounts and cloud history run on a Supabase project. The app already has a proj
 If you fork this project and want your *own* Supabase backend rather than the one it ships with, create a new Supabase project, run `setup.sql` there, and swap in your project's URL and anon key where `SUPABASE_URL` / `SUPABASE_ANON_KEY` are defined near the top of the `<script>` in `Extemplary.html`. The anon key is meant to be public — it's Row Level Security, not key secrecy, that protects user data.
 
 ### Email delivery 🌐
+---
 Supabase's built-in email sender is rate-limited to about 2 emails/hour, which doesn't cut it logistically for signups. Providers like Resend, Brevo, or SendGrid all have workable free tiers, though most require verifying either a valid sender domain or a single sender address before they'll deliver to real recipients. Therefore, there is **currently no built in email verification system** for sign ups. However, we are trying to resolve the issue soon.
 
 ## Deployment 📦
-
+---
 To get a real `https://` URL (required for camera access, sign-in, and the example ballot's embedded video to work):
 
 1. Push this repo to GitHub.
@@ -114,22 +121,22 @@ To get a real `https://` URL (required for camera access, sign-in, and the examp
 Viewing the raw file on `github.com/.../blob/...` or via `raw.githubusercontent.com` is **not** the same as hosting it — use GitHub Pages for a real, working page.
 
 ## Browser support 
-
+---
 Requires a modern browser with support for `MediaRecorder`, `getUserMedia`, and the Web Audio API (recent Chrome, Edge, Firefox, or Safari). Camera/microphone access, as well as account sign-in and cloud history, require either `https://` or `localhost` — browsers block media capture on plain `http://`, and Supabase Auth sessions behave unreliably there too.
 
 ## Privacy & data 🛡️
-
+---
 - Audio is sent only to Groq's API for transcription and judging; question and briefing generation is sent only to Google's Gemini API.
 - Account email/password and ballot history (scores, transcripts, feedback, and recorded video) are stored in Supabase, associated only with your account, and protected by Row Level Security — no other user can read or modify your data through the app.
 - Recorded video is stored in **private** storage buckets; it is only ever served back to your browser via short-lived signed links generated while you're signed in, not via public URLs.
 - The landing page's free-try demos (practice questions, current event briefings) run before sign-in and are not saved anywhere — only a "used" flag is kept locally in your browser so the free try isn't repeatable.
 
 ## Disclaimer ⚠️
-
+---
 This is an unofficial practice tool and is not affiliated with or endorsed by the NSDA.
 
 ## License
-
+---
 MIT License
 
 Copyright (c) 2026 Extemplary contributors

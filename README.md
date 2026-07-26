@@ -1,6 +1,6 @@
 # Extemplary
 
-A **free** browser extention for practicing **NSDA Extemporaneous Speaking**. Record a round, get an AI judge's ballot, recieve feedback & review your speech transcript, and create a saved history of every round you've practiced. Account creation and cloud storage are powered by Supabase.
+A **free** browser extention for practicing **NSDA Extemporaneous Speaking**. Record a round, receive an AI judge's ballot, recieve feedback & review your speech transcript, and automatically record a saved history of every round you've practiced. Account creation and cloud storage are powered by Supabase.
 
 **[Live demo →](#deployment)** (setting up GitHub Pages — see below)
 
@@ -22,19 +22,21 @@ A **free** browser extention for practicing **NSDA Extemporaneous Speaking**. Re
 
 - **Accounts & sign-in** — sign up with an email and password to save your progress. Sessions persist automatically: close the tab, come back later, and you're still signed in. Sign out any time from the account menu.
 
-- **Cloud-saved ballot history** — every completed round (video, transcript, full written feedback, and category scores) is saved to your account and available from any device you sign in on, via a **My History** view.
+- **Cloud-saved ballot history** — every completed round (video, transcript, full written feedback, and category scores) is saved and automatically stored onto your account and available from any device you sign in on, via the **My History** page.
 
 - **Trends across your ballots** — the History view aggregates your average score in each rubric category across every round you've recorded, letting you view your overall strengths and weaknesses as a whole, not just per-round feedback.
 
-- **Session score tracking & export** — round-over-round score tracking within a session, plus export to `.txt`, printable ballot, video download, and shareable round links.
+- **Session score tracking & export** — Precise score tracking within a session **and** over many rounds, plus export to `.txt`, printable ballot, video download, and shareable round links.
 
 - **Installable PWA** — works offline for timing/recording; add to your phone's home screen.
 
-## Free trial before signing up!
+Note: Extemplary requires camera and microphone access for recording speeches (duh).
+
+## Free trial before signing up! 
 
 The sign-in screen is also a landing page. Scroll down past the log in info to see a glimpes of what the app can actually do, with several features you can try live, no account required!:
 
-- **1️⃣ Real practice questions** — pick a topic category and get three genuine, AI-drafted extemp questions on the spot (one free try per browser).
+- **1️⃣ Real practice questions** — pick between **domestic, economic, and international** topics and get three relevant extemp questions on the spot (one free try per browser).
 
 - **2️⃣ Current event briefings** — generate a real, current event/news briefing the same way the in-app Tournament Briefing feature does (one free try per browser).
 
@@ -46,7 +48,7 @@ The sign-in screen is also a landing page. Scroll down past the log in info to s
 
 - 5️⃣ **Example Ballot** — Contains a **complete** example round, with example transcript, video, feedback, comments, rubric, and score. This preview is fully  from the rest of the app. You can look around without ever being signed into anything.
 
-## Tech
+## Software ⚙️
 
 Everything lives in a single `.html` file — no build step, no custom backend, no framework. A Supabase project provides authentication and cloud storage.
 
@@ -59,14 +61,14 @@ Everything lives in a single `.html` file — no build step, no custom backend, 
 - **Cloud storage:** a Supabase Postgres table (`ballots`) for scores/transcripts/feedback, and a private Supabase Storage bucket (`ballot-videos`) for recorded videos — both locked down with Row Level Security so each account can only ever access its own data
 - **Local storage:** `localStorage` is used for lightweight preferences (theme, timer settings) and for remembering whether a browser has already used its one free landing-page demo try; everything account-related (ballots, video, session) lives in Supabase, not the browser
 
-## Getting started
+## Getting started 📖
 
 ### Just try it
 Open `Extemplary.html` in any modern desktop or mobile browser. That's it — no install, no npm, no server to run.
 
 > **Note:** the example ballot's video uses the YouTube IFrame API, which requires the page be served over `http(s)://` — it won't load correctly if you just double-click the file from disk (`file://`). Your own recorded rounds don't have this restriction; that playback is a plain local `<video>` element. Signing up, logging in, and cloud history also require `https://` (or `localhost`) for the same reason browsers require it for camera access. See [Deployment](#deployment) below to host it properly.
 
-### Creating an account
+### Creating an account 👤
 You'll land on the sign-in screen and landing page the first time you open the app.
 
 1. Switch to the **Sign Up** tab, enter an email and a password (requires 6+ characters), and submit.
@@ -75,10 +77,10 @@ You'll land on the sign-in screen and landing page the first time you open the a
 
 Every round you finish while signed in is saved automatically. Tap the clock icon in the header at any time to open **My History**: expand any past round to rewatch the video, re-read the transcript, or reread the full judge's feedback, or scroll up to see your average score by category across all your rounds and your standout overall strengths and weaknesses.
 
-### API keys
+### API keys 🔑
 The app utilizes default Groq and Gemini API keys for transcription, judging, and question/briefing generation. If you hit rate limits or want to use your own, open **Settings → Override Groq API Key** and paste your own key from [console.groq.com](https://console.groq.com).
 
-## Supabase setup
+## Supabase setup 💾
 
 Accounts and cloud history run on a Supabase project. The app already has a project's URL and public (`anon`) key wired in, but that project needs one piece of one-time setup before sign-ups, history, and video storage will work.
 
@@ -91,10 +93,10 @@ Accounts and cloud history run on a Supabase project. The app already has a proj
 
 If you fork this project and want your *own* Supabase backend rather than the one it ships with, create a new Supabase project, run `setup.sql` there, and swap in your project's URL and anon key where `SUPABASE_URL` / `SUPABASE_ANON_KEY` are defined near the top of the `<script>` in `Extemplary.html`. The anon key is meant to be public — it's Row Level Security, not key secrecy, that protects user data.
 
-### Email delivery
+### Email delivery 🌐
 Supabase's built-in email sender is rate-limited to about 2 emails/hour, which doesn't cut it logistically for signups. Providers like Resend, Brevo, or SendGrid all have workable free tiers, though most require verifying either a valid sender domain or a single sender address before they'll deliver to real recipients. Therefore, there is **currently no built in email verification system** for sign ups. However, we are trying to resolve the issue soon.
 
-## Deployment
+## Deployment 📦
 
 To get a real `https://` URL (required for camera access, sign-in, and the example ballot's embedded video to work):
 
@@ -109,18 +111,18 @@ To get a real `https://` URL (required for camera access, sign-in, and the examp
 
 Viewing the raw file on `github.com/.../blob/...` or via `raw.githubusercontent.com` is **not** the same as hosting it — use GitHub Pages for a real, working page.
 
-## Browser support
+## Browser support 
 
 Requires a modern browser with support for `MediaRecorder`, `getUserMedia`, and the Web Audio API (recent Chrome, Edge, Firefox, or Safari). Camera/microphone access, as well as account sign-in and cloud history, require either `https://` or `localhost` — browsers block media capture on plain `http://`, and Supabase Auth sessions behave unreliably there too.
 
-## Privacy & data
+## Privacy & data 🛡️
 
 - Audio is sent only to Groq's API for transcription and judging; question and briefing generation is sent only to Google's Gemini API.
 - Account email/password and ballot history (scores, transcripts, feedback, and recorded video) are stored in Supabase, associated only with your account, and protected by Row Level Security — no other user can read or modify your data through the app.
 - Recorded video is stored in **private** storage buckets; it is only ever served back to your browser via short-lived signed links generated while you're signed in, not via public URLs.
 - The landing page's free-try demos (practice questions, current event briefings) run before sign-in and are not saved anywhere — only a "used" flag is kept locally in your browser so the free try isn't repeatable.
 
-## Disclaimer
+## Disclaimer ⚠️
 
 This is an unofficial practice tool and is not affiliated with or endorsed by the NSDA.
 

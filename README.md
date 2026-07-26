@@ -1,35 +1,35 @@
 # Extemplary
 
-A **free** browser-based extention for practicing **NSDA Extemporaneous Speaking**. Record a round, get an AI judge's ballot, recieve feedback & review your speech transcript, and create a saved history of every round you've practiced. Account creation and cloud storage are powered by Supabase.
+A **free** browser extention for practicing **NSDA Extemporaneous Speaking**. Record a round, get an AI judge's ballot, recieve feedback & review your speech transcript, and create a saved history of every round you've practiced. Account creation and cloud storage are powered by Supabase.
 
-**[Live demo →](#deployment)** (set up GitHub Pages — see below)
+**[Live demo →](#deployment)** (setting up GitHub Pages — see below)
 
 ---
 
 ## What it does
 
-- **Record a round** — generates a realistic practice question, runs a prep timer, then records you on camera for your speech.
-- **AI-judged ballot** — transcribes your speech, analyzes vocal delivery straight from the audio waveform, and scores you using a custom made 8-category NSDA extemp rubric (using the model: Llama 3.3 70B on Groq).
+- **Record a round** — generate 3 realistic practice questions, run a prep timer, then record on camera for your speech.
+- **AI-judged ballot** — transcribes your speech, analyzes vocal delivery straight from the audio waveform, and scores you using a custom made **8-category NSDA extemp rubric** (using the model: Llama 3.3 70B on Groq).
 - **Vocal Delivery Analysis** — volume, emphasis, tone/pitch variety, pauses, pace (WPM), filler words, and stutters/repetitions, measured directly from your recording.
-- **Annotated transcript** — a transcript with color coded, clickable judge's notes (🟥 big mistake, 🟦 comment, 🟩 brilliant move, 🟨 minor error) and auto marked section labels (Intro / Body 1–3 / Conclusion).
-- **Watch & Read Along** — an embedded video player synced word-for-word with the transcript. Click any word (or any judge's note) to jump the video to that exact moment; the current word highlights live as it plays.
+- **Annotated transcript** — a transcript with color coded personalized comments (🟥: big mistake, 🟦: comment, 🟩: brilliant move, 🟨: minor error) and auto marked paragraph labels (Intro / Body 1–3 / Conclusion).
+- **Watch & Read Along** — an embedded video player synced word-for-word with the transcript. Click any word (or any judge's note) to jump the video to that **exact** moment; the current word highlights live as it plays.
 - **Example ballot** — a fully worked sample round (real speech, real ballot) so first-time users can see what a finished round looks like before recording their own, including the same synced playback experience.
 - **Accounts & sign-in** — sign up with an email and password to save your progress. Sessions persist automatically: close the tab, come back later, and you're still signed in. Sign out any time from the account menu.
 - **Cloud-saved ballot history** — every completed round (video, transcript, full written feedback, and category scores) is saved to your account and available from any device you sign in on, via a **My History** view.
-- **Trends across your ballots** — the History view aggregates your average score in each rubric category across every round you've recorded, surfacing your overall strengths and weaknesses at a glance, not just per-round feedback.
+- **Trends across your ballots** — the History view aggregates your average score in each rubric category across every round you've recorded, letting you view your overall strengths and weaknesses as a whole, not just per-round feedback.
 - **Session score tracking & export** — round-over-round score tracking within a session, plus export to `.txt`, printable ballot, video download, and shareable round links.
 - **Installable PWA** — works offline for timing/recording; add to your phone's home screen.
 
 ## Try it before you sign up!
 
-The sign-in screen is also a landing page. Scroll down past the log in / sign up card to see a glimpes of what the app can actually do, with several features you can try live, no account required!:
+The sign-in screen is also a landing page. Scroll down past the log in info to see a glimpes of what the app can actually do, with several features you can try live, no account required!:
 
-- **Real practice questions** — pick a topic category and get three genuine, AI-drafted extemp questions on the spot (one free try per browser).
-- **Current event briefings** — generate a real, current event/news briefing the same way the in-app Tournament Briefing feature does (one free try per browser).
-- **A working prep timer** — the actual 30-minute countdown, fully functional, unlimited use.
+- **1️⃣ Real practice questions** — pick a topic category and get three genuine, AI-drafted extemp questions on the spot (one free try per browser).
+- **2️⃣ Current event briefings** — generate a real, current event/news briefing the same way the in-app Tournament Briefing feature does (one free try per browser).
+- **3️⃣ A working prep timer** — the actual 30-minute countdown, fully functional, unlimited use.
 - **Watch & Read Along preview** — a real annotated transcript excerpt with clickable judge's-note highlights, plus the example round's video in its own player.
-- **AI-judged ballot preview** — one full, real category (with score, What Worked, Critical Flaws, and What You Could Have Done) pulled from an actual ballot.
-- **"See an Example"** — opens the complete worked example round full-screen, with an exit button always pinned top-right. This preview is fully sandboxed from the rest of the app — you can look around without ever being signed into anything.
+- **4️⃣ AI-judged ballot preview** — one full, real category (with score, What Worked, Critical Flaws, and What You Could Have Done) pulled from an actual ballot.
+- 5️⃣ **Example Ballot** — Contains a **complete** example round, with example transcript, video, feedback, comments, rubric, and score. This preview is fully sandboxed from the rest of the app — you can look around without ever being signed into anything.
 
 ## Tech
 
@@ -52,7 +52,7 @@ Open `Extemplary.html` in any modern desktop or mobile browser. That's it — no
 > **Note:** the example ballot's video uses the YouTube IFrame API, which requires the page be served over `http(s)://` — it won't load correctly if you just double-click the file from disk (`file://`). Your own recorded rounds don't have this restriction; that playback is a plain local `<video>` element. Signing up, logging in, and cloud history also require `https://` (or `localhost`) for the same reason browsers require it for camera access. See [Deployment](#deployment) below to host it properly.
 
 ### Creating an account
-The first time you open the app you'll land on the sign-in screen and landing page.
+You'll land on the sign-in screen and landing page the first time you open the app.
 
 1. Switch to the **Sign Up** tab, enter an email and a password (6+ characters), and submit.
 2. Depending on the project's auth settings, you may need to check your email and click a confirmation link before your first log in (see [Supabase setup](#supabase-setup) below).

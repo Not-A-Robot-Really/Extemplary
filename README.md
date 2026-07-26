@@ -1,6 +1,6 @@
 # Extemplary
 
-A single-file, browser-based practice tool for **NSDA Extemporaneous Speaking** (extemp). Record a round, get an AI judge's ballot, review your speech with a synced video + transcript player, and build a saved history of every round you've practiced — all from one HTML file, with accounts and cloud storage powered by Supabase.
+A **free** browser-based extention for practicing **NSDA Extemporaneous Speaking**. Record a round, get an AI judge's ballot, recieve feedback & review your speech transcript, and create a saved history of every round you've practiced. Account creation and cloud storage are powered by Supabase.
 
 **[Live demo →](#deployment)** (set up GitHub Pages — see below)
 
@@ -8,8 +8,8 @@ A single-file, browser-based practice tool for **NSDA Extemporaneous Speaking** 
 
 ## What it does
 
-- **Record a round** — draws or generates a question, runs a prep timer, then records you on camera for your speech.
-- **AI-judged ballot** — transcribes your speech (Groq Whisper), analyzes vocal delivery straight from the audio waveform, and scores you against an 8-category NSDA-style rubric (Using the model: Llama 3.3 70B on Groq).
+- **Record a round** — generates a realistic practice question, runs a prep timer, then records you on camera for your speech.
+- **AI-judged ballot** — transcribes your speech, analyzes vocal delivery straight from the audio waveform, and scores you using a custom made 8-category NSDA extemp rubric (using the model: Llama 3.3 70B on Groq).
 - **Vocal Delivery Analysis** — volume, emphasis, tone/pitch variety, pauses, pace (WPM), filler words, and stutters/repetitions, measured directly from your recording.
 - **Annotated transcript** — a transcript with color coded, clickable judge's notes (🟥 big mistake, 🟦 comment, 🟩 brilliant move, 🟨 minor error) and auto marked section labels (Intro / Body 1–3 / Conclusion).
 - **Watch & Read Along** — an embedded video player synced word-for-word with the transcript. Click any word (or any judge's note) to jump the video to that exact moment; the current word highlights live as it plays.
@@ -20,12 +20,12 @@ A single-file, browser-based practice tool for **NSDA Extemporaneous Speaking** 
 - **Session score tracking & export** — round-over-round score tracking within a session, plus export to `.txt`, printable ballot, video download, and shareable round links.
 - **Installable PWA** — works offline for timing/recording; add to your phone's home screen.
 
-## Try it before you sign up
+## Try it before you sign up!
 
-The sign-in screen doubles as a full landing page — scroll down past the log in / sign up card to see what the app can actually do, with several pieces you can try live, no account required:
+The sign-in screen is also a landing page. Scroll down past the log in / sign up card to see a glimpes of what the app can actually do, with several features you can try live, no account required!:
 
 - **Real practice questions** — pick a topic category and get three genuine, AI-drafted extemp questions on the spot (one free try per browser).
-- **Current event briefings** — generate a real, live-researched news briefing the same way the in-app Tournament Briefing feature does (one free try per browser).
+- **Current event briefings** — generate a real, current event/news briefing the same way the in-app Tournament Briefing feature does (one free try per browser).
 - **A working prep timer** — the actual 30-minute countdown, fully functional, unlimited use.
 - **Watch & Read Along preview** — a real annotated transcript excerpt with clickable judge's-note highlights, plus the example round's video in its own player.
 - **AI-judged ballot preview** — one full, real category (with score, What Worked, Critical Flaws, and What You Could Have Done) pulled from an actual ballot.

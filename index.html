@@ -1503,7 +1503,7 @@
   let exampleOpenedFromLanding = false;
   document.getElementById('landingExampleBtn').addEventListener('click', () => {
     exampleOpenedFromLanding = true;
-    // IMPORTANT: do NOT hide authGate here. Hiding it would reveal the real
+    // IMPORTANT NOTICE!: do NOT hide authGate here. Hiding it would reveal the real
     // app's header (History, Settings, Timer, Sign out, etc.) underneath,
     // letting someone use the whole app without ever signing up. Instead,
     // keep authGate in place and just lift the example view's content
@@ -1560,7 +1560,7 @@
     });
   });
 
-  // ----- mini prep timer demo (fully local, unlimited use) -----
+  // ----- mini 30 min prep timer demo (fully local, UNLIMITED use) -----
   (function setupDemoTimer(){
     const DEMO_TIMER_SECONDS = 30 * 60;
     let remaining = DEMO_TIMER_SECONDS;

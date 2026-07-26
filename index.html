@@ -196,7 +196,7 @@
           <div>
             <div class="fc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 7.2H22l-6 4.6 2.4 7.2L12 16.4l-6.4 4.6 2.4-7.2-6-4.6h7.6z"/></svg></div>
             <h3>AI-judged ballot</h3>
-            <p>Scored against an 8-category NSDA-style rubric, with what worked, critical flaws, and evidence-based reasoning for every score. Here's one real category from an actual ballot.</p>
+            <p>Scored against an 8 category NSDA-style rubric, with what worked, critical flaws, and evidence-based reasoning for every score. Here's one real category from an actual ballot.</p>
           </div>
           <div class="demo-panel" id="demoCategoryPanel"></div>
         </div>
@@ -1628,7 +1628,7 @@
       return Math.max(70, Math.min(240, Math.round(area / 8000)));
     }
 
-    // Bias x toward the left/right margins (outside the photo) so the side
+    // NOTE: Bias x toward the left/right margins (outside the photo) so the side
     // strips get noticeably denser, longer constellation chains, while the
     // photo area (roughly the middle 76%) still has some sparse coverage.
     function biasedX(){

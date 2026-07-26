@@ -12,7 +12,7 @@ A **free** browser extention for practicing **NSDA Extemporaneous Speaking**. Re
 
 ## What it does
 ---
-Sign up → Generate questions → Write a speech → Record your speech → Recieve feedback → Set goals → Practice more → Track your improvement/progress → Correct bad habits/general weaknesses
+Sign up → Generate questions → Write a speech → Record your speech → Recieve feedback → Set goals → Practice more → Track your improvement/progress → Correct bad habits & general weaknesses
 
 - **Record a round** — Generate 3 realistic practice questions, run a prep timer, then record on camera for your speech.
 

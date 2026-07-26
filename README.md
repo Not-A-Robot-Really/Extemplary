@@ -6,30 +6,45 @@ A **free** browser extention for practicing **NSDA Extemporaneous Speaking**. Re
 
 ---
 
-## What it does
+## What it does❓
 
 - **Record a round** — generate 3 realistic practice questions, run a prep timer, then record on camera for your speech.
+
 - **AI-judged ballot** — transcribes your speech, analyzes vocal delivery straight from the audio waveform, and scores you using a custom made **8-category NSDA extemp rubric** (using the model: Llama 3.3 70B on Groq).
+
 - **Vocal Delivery Analysis** — volume, emphasis, tone/pitch variety, pauses, pace (WPM), filler words, and stutters/repetitions, measured directly from your recording.
+
 - **Annotated transcript** — a transcript with color coded personalized comments (🟥: big mistake, 🟦: comment, 🟩: brilliant move, 🟨: minor error) and auto marked paragraph labels (Intro / Body 1–3 / Conclusion).
+
 - **Watch & Read Along** — an embedded video player synced word-for-word with the transcript. Click any word (or any judge's note) to jump the video to that **exact** moment; the current word highlights live as it plays.
+
 - **Example ballot** — a fully worked sample round (real speech, real ballot) so first-time users can see what a finished round looks like before recording their own, including the same synced playback experience.
+
 - **Accounts & sign-in** — sign up with an email and password to save your progress. Sessions persist automatically: close the tab, come back later, and you're still signed in. Sign out any time from the account menu.
+
 - **Cloud-saved ballot history** — every completed round (video, transcript, full written feedback, and category scores) is saved to your account and available from any device you sign in on, via a **My History** view.
+
 - **Trends across your ballots** — the History view aggregates your average score in each rubric category across every round you've recorded, letting you view your overall strengths and weaknesses as a whole, not just per-round feedback.
+
 - **Session score tracking & export** — round-over-round score tracking within a session, plus export to `.txt`, printable ballot, video download, and shareable round links.
+
 - **Installable PWA** — works offline for timing/recording; add to your phone's home screen.
 
-## Try it before you sign up!
+## Free trial before signing up!
 
 The sign-in screen is also a landing page. Scroll down past the log in info to see a glimpes of what the app can actually do, with several features you can try live, no account required!:
 
 - **1️⃣ Real practice questions** — pick a topic category and get three genuine, AI-drafted extemp questions on the spot (one free try per browser).
+
 - **2️⃣ Current event briefings** — generate a real, current event/news briefing the same way the in-app Tournament Briefing feature does (one free try per browser).
+
 - **3️⃣ A working prep timer** — the actual 30-minute countdown, fully functional, unlimited use.
+
 - **Watch & Read Along preview** — a real annotated transcript excerpt with clickable judge's-note highlights, plus the example round's video in its own player.
+
 - **4️⃣ AI-judged ballot preview** — one full, real category (with score, What Worked, Critical Flaws, and What You Could Have Done) pulled from an actual ballot.
-- 5️⃣ **Example Ballot** — Contains a **complete** example round, with example transcript, video, feedback, comments, rubric, and score. This preview is fully sandboxed from the rest of the app — you can look around without ever being signed into anything.
+
+- 5️⃣ **Example Ballot** — Contains a **complete** example round, with example transcript, video, feedback, comments, rubric, and score. This preview is fully  from the rest of the app. You can look around without ever being signed into anything.
 
 ## Tech
 
@@ -54,14 +69,14 @@ Open `Extemplary.html` in any modern desktop or mobile browser. That's it — no
 ### Creating an account
 You'll land on the sign-in screen and landing page the first time you open the app.
 
-1. Switch to the **Sign Up** tab, enter an email and a password (6+ characters), and submit.
+1. Switch to the **Sign Up** tab, enter an email and a password (requires 6+ characters), and submit.
 2. Depending on the project's auth settings, you may need to check your email and click a confirmation link before your first log in (see [Supabase setup](#supabase-setup) below).
 3. Once signed in, you'll stay signed in automatically — even after closing the tab or restarting your browser — until you tap **Sign out** in the account menu (top right).
 
 Every round you finish while signed in is saved automatically. Tap the clock icon in the header at any time to open **My History**: expand any past round to rewatch the video, re-read the transcript, or reread the full judge's feedback, or scroll up to see your average score by category across all your rounds and your standout overall strengths and weaknesses.
 
 ### API keys
-The app ships with default Groq and Gemini API keys for transcription, judging, and question/briefing generation. If you hit rate limits or want to use your own, open **Settings → Override Groq API Key** and paste your own key from [console.groq.com](https://console.groq.com).
+The app utilizes default Groq and Gemini API keys for transcription, judging, and question/briefing generation. If you hit rate limits or want to use your own, open **Settings → Override Groq API Key** and paste your own key from [console.groq.com](https://console.groq.com).
 
 ## Supabase setup
 
@@ -76,8 +91,8 @@ Accounts and cloud history run on a Supabase project. The app already has a proj
 
 If you fork this project and want your *own* Supabase backend rather than the one it ships with, create a new Supabase project, run `setup.sql` there, and swap in your project's URL and anon key where `SUPABASE_URL` / `SUPABASE_ANON_KEY` are defined near the top of the `<script>` in `Extemplary.html`. The anon key is meant to be public — it's Row Level Security, not key secrecy, that protects user data.
 
-### Email delivery (if confirmation is on)
-Supabase's built-in email sender is rate-limited to about 2 emails/hour, which isn't enough for real signups. If you turn on email confirmation, connect a custom SMTP provider under **Project Settings → Authentication → SMTP Settings** — providers like Resend, Brevo, or SendGrid all have workable free tiers, though most require verifying either a sender domain or a single sender address before they'll deliver to real recipients. If you'd rather skip email infrastructure entirely, turning **Confirm email** off lets people sign up and start using the app immediately.
+### Email delivery
+Supabase's built-in email sender is rate-limited to about 2 emails/hour, which doesn't cut it logistically for signups. Providers like Resend, Brevo, or SendGrid all have workable free tiers, though most require verifying either a valid sender domain or a single sender address before they'll deliver to real recipients. Therefore, there is **currently no built in email verification system** for sign ups. However, we are trying to resolve the issue soon.
 
 ## Deployment
 
@@ -102,7 +117,7 @@ Requires a modern browser with support for `MediaRecorder`, `getUserMedia`, and 
 
 - Audio is sent only to Groq's API for transcription and judging; question and briefing generation is sent only to Google's Gemini API.
 - Account email/password and ballot history (scores, transcripts, feedback, and recorded video) are stored in Supabase, associated only with your account, and protected by Row Level Security — no other user can read or modify your data through the app.
-- Recorded video is stored in a **private** Storage bucket; it is only ever served back to your browser via short-lived signed links generated while you're signed in, not via public URLs.
+- Recorded video is stored in **private** storage buckets; it is only ever served back to your browser via short-lived signed links generated while you're signed in, not via public URLs.
 - The landing page's free-try demos (practice questions, current event briefings) run before sign-in and are not saved anywhere — only a "used" flag is kept locally in your browser so the free try isn't repeatable.
 
 ## Disclaimer

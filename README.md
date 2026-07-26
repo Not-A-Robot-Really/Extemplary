@@ -1,4 +1,4 @@
-# Extemplary
+# **Extemplary**
 
 A **free** browser extention for practicing **NSDA Extemporaneous Speaking**. Record a round, receive an AI judge's ballot, recieve feedback & review your speech transcript, and automatically record a saved history of every round you've practiced. Account creation and cloud storage are powered by Supabase.
 
@@ -8,27 +8,27 @@ A **free** browser extention for practicing **NSDA Extemporaneous Speaking**. Re
 
 ## What it does❓
 
-- **Record a round** — generate 3 realistic practice questions, run a prep timer, then record on camera for your speech.
+- **Record a round** — Generate 3 realistic practice questions, run a prep timer, then record on camera for your speech.
 
-- **AI-judged ballot** — transcribes your speech, analyzes vocal delivery straight from the audio waveform, and scores you using a custom made **8-category NSDA extemp rubric** (using the model: Llama 3.3 70B on Groq).
+- **AI-judged ballot** — Transcribes your speech, analyzes vocal delivery straight from the audio waveform, and scores you using a custom made **8-category NSDA extemp rubric** (using the model: Llama 3.3 70B on Groq).
 
-- **Vocal Delivery Analysis** — volume, emphasis, tone/pitch variety, pauses, pace (WPM), filler words, and stutters/repetitions, measured directly from your recording.
+- **Vocal Delivery Analysis** — Volume, emphasis, tone/pitch variety, pauses, pace (WPM), filler words, and stutters/repetitions, measured directly from your recording.
 
-- **Annotated transcript** — a transcript with color coded personalized comments (🟥: big mistake, 🟦: comment, 🟩: brilliant move, 🟨: minor error) and auto marked paragraph labels (Intro / Body 1–3 / Conclusion).
+- **Annotated transcript** — A transcript with color coded personalized comments (🟥: big mistake, 🟦: comment, 🟩: brilliant move, 🟨: minor error) and auto marked paragraph labels (Intro / Body 1–3 / Conclusion).
 
-- **Watch & Read Along** — an embedded video player synced word-for-word with the transcript. Click any word (or any judge's note) to jump the video to that **exact** moment; the current word highlights live as it plays.
+- **Watch & Read Along** — An embedded video player synced word-for-word with the transcript. Click any word (or any judge's note) to jump the video to that **exact** moment; the current word highlights live as it plays.
 
-- **Example ballot** — a fully worked sample round (real speech, real ballot) so first-time users can see what a finished round looks like before recording their own, including the same synced playback experience.
+- **Example ballot** — A fully worked sample round (real speech, real ballot) so first-time users can see what a finished round looks like before recording their own, including the same synced playback experience.
 
-- **Accounts & sign-in** — sign up with an email and password to save your progress. Sessions persist automatically: close the tab, come back later, and you're still signed in. Sign out any time from the account menu.
+- **Accounts & sign-in** — Sign up with an email and password to save your progress. Sessions persist automatically: close the tab, come back later, and you're still signed in. Sign out any time from the account menu.
 
-- **Cloud-saved ballot history** — every completed round (video, transcript, full written feedback, and category scores) is saved and automatically stored onto your account and available from any device you sign in on, via the **My History** page.
+- **Cloud-saved ballot history** — Every completed round (video, transcript, full written feedback, and category scores) is saved and automatically stored onto your account and available from any device you sign in on, via the **My History** page. 
 
-- **Trends across your ballots** — the History view aggregates your average score in each rubric category across every round you've recorded, letting you view your overall strengths and weaknesses as a whole, not just per-round feedback.
+- **Trends across your ballots** — The History view aggregates your average score in each rubric category across every round you've recorded, letting you view your overall strengths and weaknesses as a whole, not just per-round feedback.
 
 - **Session score tracking & export** — Precise score tracking within a session **and** over many rounds, plus export to `.txt`, printable ballot, video download, and shareable round links.
 
-- **Installable PWA** — works offline for timing/recording; add to your phone's home screen.
+- **Installable PWA** — Works offline for timing/recording; add to your phone's home screen.
 
 Note: Extemplary requires camera and microphone access for recording speeches (duh).
 
@@ -38,7 +38,7 @@ The sign-in screen is also a landing page. Scroll down past the log in info to s
 
 - **1️⃣ Real practice questions** — pick between **domestic, economic, and international** topics and get three relevant extemp questions on the spot (one free try per browser).
 
-- **2️⃣ Current event briefings** — generate a real, current event/news briefing the same way the in-app Tournament Briefing feature does (one free try per browser).
+- **2️⃣ Current event briefings** — generate current event/news briefing the same way the in-app Tournament Briefing feature does (one free try per browser).
 
 - **3️⃣ A working prep timer** — the actual 30-minute countdown, fully functional, unlimited use.
 
@@ -64,7 +64,7 @@ Everything lives in a single `.html` file — no build step, no custom backend, 
 ## Getting started 📖
 
 ### Just try it
-Open `Extemplary.html` in any modern desktop or mobile browser. That's it — no install, no npm, no server to run.
+Open `Extemplary.html` in any modern (up to date) desktop or mobile browser. That's it — no install, no npm, no server to run.
 
 > **Note:** the example ballot's video uses the YouTube IFrame API, which requires the page be served over `http(s)://` — it won't load correctly if you just double-click the file from disk (`file://`). Your own recorded rounds don't have this restriction; that playback is a plain local `<video>` element. Signing up, logging in, and cloud history also require `https://` (or `localhost`) for the same reason browsers require it for camera access. See [Deployment](#deployment) below to host it properly.
 
@@ -75,7 +75,7 @@ You'll land on the sign-in screen and landing page the first time you open the a
 2. Depending on the project's auth settings, you may need to check your email and click a confirmation link before your first log in (see [Supabase setup](#supabase-setup) below).
 3. Once signed in, you'll stay signed in automatically — even after closing the tab or restarting your browser — until you tap **Sign out** in the account menu (top right).
 
-Every round you finish while signed in is saved automatically. Tap the clock icon in the header at any time to open **My History**: expand any past round to rewatch the video, re-read the transcript, or reread the full judge's feedback, or scroll up to see your average score by category across all your rounds and your standout overall strengths and weaknesses.
+Every round completed while signed in is saved **automatically**. Tap the clock icon in the header at any time to open **My History**: expand any past round to rewatch the video, re-read the transcript, or reread the full judge's feedback, or scroll up to see your average score by category across all your rounds and your standout overall strengths and weaknesses.
 
 ### API keys 🔑
 The app utilizes default Groq and Gemini API keys for transcription, judging, and question/briefing generation. If you hit rate limits or want to use your own, open **Settings → Override Groq API Key** and paste your own key from [console.groq.com](https://console.groq.com).

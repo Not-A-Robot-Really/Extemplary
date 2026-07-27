@@ -523,9 +523,10 @@
   .history-card .hc-cat{font-size:12.5px;border-left:3px solid var(--rule);padding:4px 0 4px 10px;}
   .history-card .hc-cat b{display:inline-block;min-width:36px;}
   .history-card .hc-transcript{
-    font-family:var(--font-mono);font-size:11.5px;line-height:1.6;color:var(--slate);
-    max-height:160px;overflow:auto;border-top:1px dashed var(--rule);padding-top:10px;white-space:pre-wrap;
+    border-top:1px dashed var(--rule);padding-top:14px;margin-top:4px;
   }
+  .history-card .hc-full-ballot{margin-bottom:6px;}
+  .history-card .hc-transcript-body{font-size:13.5px;line-height:1.6;}
   .history-card .hc-actions{display:flex;gap:10px;margin-top:10px;}
   .history-card .hc-actions button{
     font-family:var(--font-mono);font-size:11px;padding:5px 10px;border:1px solid var(--rule);
@@ -533,6 +534,26 @@
   }
   .history-card .hc-actions button:hover{color:var(--crimson);border-color:var(--crimson);}
   .flight .chip b{color:var(--charcoal);}
+
+  /* -------- trend line charts (My History) -------- */
+  .trend-charts{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px;margin-top:18px;}
+  .trend-chart-card{border:1px solid var(--rule);border-radius:4px;padding:10px 12px 6px;background:#ffffff;}
+  .trend-chart-card h5{
+    font-family:var(--font-mono);font-size:10.5px;text-transform:uppercase;letter-spacing:0.5px;
+    color:var(--slate);margin:0 0 4px;display:flex;justify-content:space-between;align-items:baseline;gap:6px;
+  }
+  .trend-chart-card .tc-latest{font-family:var(--font-display);font-size:13px;color:var(--charcoal);font-weight:bold;text-transform:none;letter-spacing:0;}
+  .trend-chart-card svg{width:100%;height:60px;display:block;}
+  .trend-chart-card .tc-axis{font-family:var(--font-mono);font-size:9px;color:var(--slate);opacity:0.75;margin-top:2px;text-align:center;}
+
+  /* -------- overall AI coaching comment (My History) -------- */
+  .history-overall{
+    border:1px solid var(--rule);border-left:4px solid var(--score-cyan);border-radius:4px;
+    padding:14px 18px;margin-bottom:16px;background:rgba(255,255,255,0.4);
+  }
+  .history-overall h3{font-family:var(--font-display);font-size:16px;margin:0 0 6px;}
+  .history-overall p{margin:0;font-size:13.5px;line-height:1.6;}
+  .history-overall.loading{font-family:var(--font-mono);font-size:12px;color:var(--slate);font-style:italic;border-left-color:var(--rule);padding:12px 18px;}
 
   /* -------- video stage -------- */
   .stage{background:var(--ink);border-radius:4px;padding:10px;border:1px solid var(--ink-line);}

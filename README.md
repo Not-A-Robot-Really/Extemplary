@@ -18,7 +18,7 @@ Extemporaneous Speaking refers to a speech event where you deliver a **7 minute*
 
 ## What Extemplary does 🧩
 ---
-Sign up → Generate questions → Write a speech → Record your speech → Recieve feedback → Set goals → Practice more → Track your improvement/progress → Correct bad habits & general weaknesses
+Sign up → Generate questions → Write a speech → Record your speech → Receive feedback → Set goals → Practice more → Track your improvement/progress → Correct bad habits & general weaknesses
 
 - **Record a round** — Generate 3 realistic practice questions, run a prep timer, then record on camera for your speech.
 
@@ -76,13 +76,13 @@ Everything lives in a single `.html` file — no build step, no custom backend, 
 ## Getting started 📖
 ---
 ### Just try it
-Open `Extemplary.html` in any modern (up to date) desktop or mobile browser. That's it — no install, no npm, no server to run.
+Open `Extemplary.html` in any modern (up to date) desktop or mobile browser. No installs needed, no npm, no server to run.
 
 > **Note:** the example ballot's video uses the YouTube IFrame API, which requires the page be served over `http(s)://` — it won't load correctly if you just double-click the file from disk (`file://`). Your own recorded rounds don't have this restriction; that playback is a plain local `<video>` element. Signing up, logging in, and cloud history also require `https://` (or `localhost`) for the same reason browsers require it for camera access. See [Deployment](#deployment) below to host it properly.
 
 ### Creating an account 👤
 ---
-You'll land on the sign-in screen and landing page the first time you open the app.
+You'll land on the sign in screen (landing page) the first time you open the app.
 
 1. Switch to the **Sign Up** tab, enter an email and a password (requires 6+ characters), and submit.
 2. Depending on the project's auth settings, you may need to check your email and click a confirmation link before your first log in (see [Supabase setup](#supabase-setup) below).

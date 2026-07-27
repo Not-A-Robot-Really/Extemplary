@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -85,7 +84,7 @@
             </div>
             <div class="demo-locked-overlay" id="demoQLock">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-              <p>That was your free question draft. Sign up to draft unlimited questions and start practicing.</p>
+              <p>Free question draft used. Sign up to draft unlimited questions and start practicing.</p>
               <button type="button" class="demo-signup-btn demo-signup-cta">Sign Up Free</button>
             </div>
             <button type="button" class="btn primary" id="demoGenerateQuestionsBtn" style="width:100%;" disabled>Generate Questions</button>
@@ -97,7 +96,7 @@
           <div>
             <div class="fc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div>
             <h3>Current event briefings</h3>
-            <p>Get up to date on current domestic, economic, and international events with a concise, fast current event briefing with real live research on the web, same as the app.</p>
+            <p>Get up to speed on the story behind your question with a concise, prep-ready current event briefing — real live research, same as the app.</p>
           </div>
           <div class="demo-panel" id="demoBriefingPanel">
             <div class="bf-timing-row" id="demoBfTimingRow" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
@@ -196,7 +195,7 @@
           <div>
             <div class="fc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 7.2H22l-6 4.6 2.4 7.2L12 16.4l-6.4 4.6 2.4-7.2-6-4.6h7.6z"/></svg></div>
             <h3>AI-judged ballot</h3>
-            <p>Scored against an 8 category NSDA-style rubric, with what worked, critical flaws, and evidence-based reasoning for every score. Here's one real category from an actual ballot.</p>
+            <p>Scored against an 8-category NSDA-style rubric, with what worked, critical flaws, and evidence-based reasoning for every score. Here's one real category from an actual ballot.</p>
           </div>
           <div class="demo-panel" id="demoCategoryPanel"></div>
         </div>
@@ -771,6 +770,7 @@
         <div class="actions" style="justify-content:flex-start;margin-bottom:18px;">
           <button class="btn ghost" id="historyBackBtn">← Back</button>
         </div>
+                <div id="historyOverallFeedback"></div>
         <div id="historyTrends"></div>
         <div id="historyListWrap">
           <div class="history-list" id="historyList"></div>
@@ -893,13 +893,15 @@
       question: row.question || '', total: row.total, rank: row.rank,
       categories: row.categories || [], feedback: row.feedback || '',
       transcript: row.transcript || '', hasVideo: !!row.video_path,
-      videoPath: row.video_path || null
+      videoPath: row.video_path || null,
+      annotations: row.annotations || null,
+      deliveryMetrics: row.delivery_metrics || null
     }));
   }
 
   // Records one completed round (called from renderResults once feedback
   // has been parsed) so it shows up later in "My History".
-  async function recordBallotToHistory(parsed, feedback, transcript, question, round, videoBlob){
+  async function recordBallotToHistory(parsed, feedback, transcript, question, round, videoBlob, annotations, deliveryMetrics){
     if(!currentUser || !supabaseClient) return;
     const id = (crypto.randomUUID && crypto.randomUUID()) || ('b_' + Date.now() + '_' + Math.random().toString(36).slice(2,8));
     let videoPath = null;
@@ -910,11 +912,16 @@
         .upload(videoPath, videoBlob, { contentType: videoBlob.type || 'video/webm', upsert: true });
       if(upErr){ console.warn('Could not upload video', upErr); videoPath = null; }
     }
+    // Save everything the live results view can show — including the
+    // color-coded annotated-transcript data (sections + comments) and the
+    // measured vocal delivery metrics — so "My History" can reconstruct the
+    // full formatted ballot later, not just a plain-text dump.
     const { error } = await supabaseClient.from('ballots').insert({
       id, user_id: currentUser.id, round, ts: new Date().toISOString(),
       question: question || '', total: parsed.total, rank: parsed.rank,
       categories: parsed.categories.map(c => ({name:c.name, score:c.score, max:c.max})),
-      feedback: feedback || '', transcript: transcript || '', video_path: videoPath
+      feedback: feedback || '', transcript: transcript || '', video_path: videoPath,
+      annotations: annotations || null, delivery_metrics: deliveryMetrics || null
     });
     if(error) console.warn('Could not save ballot to cloud history', error);
   }
@@ -951,6 +958,49 @@
     return rows;
   }
 
+  // Builds a small inline SVG line chart (values expected 0-100). Returns
+  // an empty string if there's nothing to plot (need at least 1 point).
+  function buildSparklineSvg(values, color){
+    if(!values || !values.length) return '';
+    const w = 300, h = 80, pad = 10;
+    color = color || '#2356a8';
+    if(values.length === 1){
+      const y = pad + (1 - values[0]/100) * (h - 2*pad);
+      return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
+        <line x1="${pad}" y1="${y.toFixed(1)}" x2="${w-pad}" y2="${y.toFixed(1)}" stroke="${color}" stroke-width="2" stroke-dasharray="4,4"/>
+        <circle cx="${(w/2).toFixed(1)}" cy="${y.toFixed(1)}" r="3" fill="${color}"/>
+      </svg>`;
+    }
+    const stepX = (w - 2*pad) / (values.length - 1);
+    const pts = values.map((v,i) => {
+      const x = pad + i*stepX;
+      const clamped = Math.max(0, Math.min(100, v));
+      const y = pad + (1 - clamped/100) * (h - 2*pad);
+      return [x, y];
+    });
+    const path = pts.map((p,i) => (i===0?'M':'L') + p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
+    const dots = pts.map(p => `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="2.5" fill="${color}"/>`).join('');
+    return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
+      <path d="${path}" fill="none" stroke="${color}" stroke-width="2.25" stroke-linejoin="round" stroke-linecap="round"/>
+      ${dots}
+    </svg>`;
+  }
+
+  // Chronological (oldest → newest) per-round series for the overall score
+  // and each of the graded categories, used to draw the trend line charts.
+  function computeSeries(listDesc){
+    const asc = [...listDesc].sort((a,b) => a.ts - b.ts);
+    const overall = asc.map(e => ({ round:e.round, val: e.total }));
+    const catSeries = {};
+    asc.forEach(e => {
+      (e.categories||[]).forEach(c => {
+        if(!catSeries[c.name]) catSeries[c.name] = [];
+        catSeries[c.name].push({ round:e.round, val:(c.score/(c.max||10))*100, raw:c.score, max:c.max||10 });
+      });
+    });
+    return { asc, overall, catSeries };
+  }
+
   function renderHistoryTrends(list){
     const el = document.getElementById('historyTrends');
     if(!list.length){ el.innerHTML = ''; return; }
@@ -958,6 +1008,28 @@
     if(!rows.length){ el.innerHTML = ''; return; }
     const strengths = rows.slice(0,2);
     const weaknesses = rows.slice(-2).reverse();
+    const { overall, catSeries } = computeSeries(list);
+
+    const overallVals = overall.map(p => p.val).filter(v => v !== null && v !== undefined);
+    const overallChart = overallVals.length ? `
+      <div class="trend-chart-card">
+        <h5>Overall Score <span class="tc-latest">${overallVals[overallVals.length-1].toFixed(0)}/100</span></h5>
+        ${buildSparklineSvg(overallVals, '#16283c')}
+        <div class="tc-axis">${overall.filter(p=>p.val!==null&&p.val!==undefined).map(p=>`R${p.round}`).join(' · ')}</div>
+      </div>` : '';
+
+    const catCharts = Object.keys(catSeries).map(name => {
+      const series = catSeries[name];
+      const vals = series.map(p => p.val);
+      const lastRaw = series[series.length-1];
+      return `
+        <div class="trend-chart-card">
+          <h5>${escHtml(name)} <span class="tc-latest">${lastRaw.raw}/${lastRaw.max}</span></h5>
+          ${buildSparklineSvg(vals, colorFromRatio(vals[vals.length-1]/100))}
+          <div class="tc-axis">${series.map(p=>`R${p.round}`).join(' · ')}</div>
+        </div>`;
+    }).join('');
+
     el.innerHTML = `
       <div class="history-trends">
         <h3>Trends Across ${list.length} Ballot${list.length===1?'':'s'}</h3>
@@ -977,7 +1049,96 @@
             <ul>${weaknesses.map(s=>`<li>${escHtml(s.name)}</li>`).join('')}</ul>
           </div>
         </div>
+        <div class="trend-charts">
+          ${overallChart}
+          ${catCharts}
+        </div>
       </div>`;
+  }
+
+  // ---- overall AI coaching comment (Gemini) ----
+  // Synthesizes a short, whole-history coaching note. To avoid burning API
+  // calls (and to keep the note stable round-to-round), it's only
+  // regenerated at milestone round counts or after a clear breakthrough —
+  // never on every single history view open.
+  function isMilestoneCount(n){
+    if([1,2,3,5,7,10].includes(n)) return true;
+    return n > 10 && (n - 10) % 5 === 0;
+  }
+  function detectBreakthrough(asc){
+    if(asc.length < 2) return false;
+    const latest = asc[asc.length-1];
+    if(latest.total === null || latest.total === undefined) return false;
+    const priorTotals = asc.slice(0,-1).map(e=>e.total).filter(t=>t!==null&&t!==undefined);
+    if(!priorTotals.length) return false;
+    const priorBest = Math.max(...priorTotals);
+    const priorAvg = priorTotals.reduce((a,b)=>a+b,0) / priorTotals.length;
+    return (latest.total - priorBest >= 12) || (latest.total - priorAvg >= 15);
+  }
+  async function loadOverallFeedback(){
+    if(!currentUser || !supabaseClient) return null;
+    const { data, error } = await supabaseClient
+      .from('user_overall_feedback').select('*').eq('user_id', currentUser.id).maybeSingle();
+    if(error){ console.warn('Could not load overall feedback', error); return null; }
+    return data || null;
+  }
+  async function saveOverallFeedback(feedback, basedOnCount){
+    if(!currentUser || !supabaseClient) return;
+    const { error } = await supabaseClient.from('user_overall_feedback').upsert({
+      user_id: currentUser.id, feedback, based_on_count: basedOnCount, updated_at: new Date().toISOString()
+    });
+    if(error) console.warn('Could not save overall feedback', error);
+  }
+  function buildOverallFeedbackPrompt(asc){
+    const rounds = asc.map(e => {
+      const cats = (e.categories||[]).map(c => `${c.name} ${c.score}/${c.max||10}`).join(', ');
+      return `Round ${e.round}: ${e.total !== null && e.total !== undefined ? e.total : '—'}/100 total. Categories — ${cats || 'n/a'}`;
+    }).join('\n');
+    return `You are an expert NSDA Extemporaneous Speaking coach reviewing a student's full practice history across ${asc.length} round${asc.length===1?'':'s'}:\n\n${rounds}\n\nWrite a concise, honest, encouraging OVERALL coaching comment in 2-3 sentences, addressed directly to the student ("you"), synthesizing patterns across ALL of these rounds — not just the most recent one. Name their single biggest recurring strength and, more importantly, their single biggest recurring area to improve, then give one concrete, actionable next step. Write it as natural flowing coaching prose, not a list of category names. Return ONLY the 2-3 sentence comment — no headers, no markdown, no preamble.`;
+  }
+  async function generateOverallCoachingComment(asc){
+    const candidate = await callGemini(buildOverallFeedbackPrompt(asc), 300);
+    return (candidate.content?.parts || []).map(p => p.text || '').join('').trim();
+  }
+  function renderOverallFeedbackBox(text, loading){
+    const el = document.getElementById('historyOverallFeedback');
+    if(!el) return;
+    if(loading && !text){
+      el.innerHTML = `<div class="history-overall loading">Reviewing your full ballot history…</div>`;
+      return;
+    }
+    if(!text){ el.innerHTML = ''; return; }
+    el.innerHTML = `
+      <div class="history-overall">
+        <h3>Coach's Overall Notes</h3>
+        <p>${inlineMd(text)}</p>
+      </div>`;
+  }
+  // Loads (and, when due, regenerates) the overall coaching comment in the
+  // background so opening My History never blocks on a Gemini call.
+  async function refreshOverallFeedback(listDesc){
+    if(!currentUser || !supabaseClient || !listDesc.length) { renderOverallFeedbackBox(null); return; }
+    const asc = [...listDesc].sort((a,b) => a.ts - b.ts);
+    const n = asc.length;
+    let existing = null;
+    try{ existing = await loadOverallFeedback(); }catch(e){ /* ignore, fall through to generation */ }
+    if(existing && existing.feedback) renderOverallFeedbackBox(existing.feedback);
+    else renderOverallFeedbackBox(null, true);
+
+    const upToDate = existing && existing.based_on_count === n;
+    const shouldGenerate = !upToDate && (isMilestoneCount(n) || detectBreakthrough(asc));
+    if(!shouldGenerate) return;
+    try{
+      if(!existing || !existing.feedback) renderOverallFeedbackBox(null, true);
+      const text = await generateOverallCoachingComment(asc);
+      if(text){
+        await saveOverallFeedback(text, n);
+        renderOverallFeedbackBox(text);
+      }
+    }catch(err){
+      console.warn('Could not generate overall coaching comment', err);
+      // Leave whatever was already shown (cached comment, or nothing) — never block the page on this.
+    }
   }
 
   async function renderHistoryList(){
@@ -985,6 +1146,7 @@
     wrap.innerHTML = '<div class="history-empty">Loading your ballots…</div>';
     const list = (await loadHistory()).sort((a,b) => b.ts - a.ts);
     renderHistoryTrends(list);
+    refreshOverallFeedback(list);
     if(!list.length){
       wrap.innerHTML = '<div class="history-empty">No saved ballots yet — finish a practice round and it will show up here.</div>';
       return;
@@ -1004,7 +1166,7 @@
             ${(entry.categories||[]).map(c => `<div class="hc-cat"><b>${c.score}/${c.max||10}</b> ${escHtml(c.name)}</div>`).join('')}
           </div>
           <div class="hc-actions">
-            <button type="button" class="hc-toggle-transcript">Show transcript &amp; full feedback</button>
+            <button type="button" class="hc-toggle-transcript">Show full ballot &amp; transcript</button>
             <button type="button" class="hc-delete">Delete</button>
           </div>
           <div class="hc-transcript hidden"></div>
@@ -1031,16 +1193,26 @@
           }
         }
       });
-      card.querySelector('.hc-toggle-transcript').addEventListener('click', (e) => {
+      const toggleBtn = card.querySelector('.hc-toggle-transcript');
+      toggleBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         const entry = list.find(e2 => e2.id === id);
         const t = card.querySelector('.hc-transcript');
         if(t.classList.contains('hidden')){
-          t.innerHTML = '<strong>Judge Feedback</strong><br>' + basicMarkdown(entry.feedback || '(none)') +
-            '<br><br><strong>Transcript</strong><br>' + escHtml(entry.transcript || '(none)').replace(/\n/g,'<br>');
+          if(!t.dataset.built){
+            t.dataset.built = '1';
+            const parsed = parseBallot(entry.feedback || '');
+            const ballotHtml = buildBallotBodyHtml(parsed, entry.feedback || '(no feedback saved)');
+            const deliveryHtml = buildDeliveryGridHtml(entry.deliveryMetrics);
+            const transcriptHtml = buildTranscriptSectionHtml(entry.transcript || '', entry.annotations);
+            t.innerHTML = `<div class="hc-full-ballot">${ballotHtml}</div>${deliveryHtml}${transcriptHtml}`;
+            attachCommentListeners(t, ()=>{}); // history has no per-word video sync — just show the note on click
+          }
           t.classList.remove('hidden');
+          toggleBtn.textContent = 'Hide full ballot & transcript';
         }else{
           t.classList.add('hidden');
+          toggleBtn.textContent = 'Show full ballot & transcript';
         }
       });
       card.querySelector('.hc-delete').addEventListener('click', (e) => {
@@ -1628,7 +1800,7 @@
       return Math.max(70, Math.min(240, Math.round(area / 8000)));
     }
 
-    // NOTE: Bias x toward the left/right margins (outside the photo) so the side
+    // Bias x toward the left/right margins (outside the photo) so the side
     // strips get noticeably denser, longer constellation chains, while the
     // photo area (roughly the middle 76%) still has some sparse coverage.
     function biasedX(){
@@ -1781,7 +1953,7 @@
         if(n.y < -20) n.y = h + 20; else if(n.y > h + 20) n.y = -20;
       });
 
-      // fabric mesh first, underneath the "scattered constellations"
+      // fabric mesh first, underneath the scatter constellations
       drawMesh();
 
       // for each scatter node, connect to its several nearest neighbors
@@ -5603,6 +5775,166 @@ Formatting rules: plain text only, with the sole exception of wrapping key terms
     return n + (s[(v-20)%10] || s[v] || s[0]);
   }
 
+  // ---- shared ballot-formatting builders (used by My History so saved
+  // ballots render exactly like the live results view — scored category
+  // cards, stamps, delivery metrics, and the color-coded annotated
+  // transcript — instead of a plain text dump) ----
+  function buildBallotBodyHtml(parsed, rawFeedback){
+    let html = '';
+    if(parsed.categories.length >= 5 && parsed.total !== null){
+      html += scoreKeyHtml();
+      parsed.categories.forEach(cat => {
+        const band = bandClass(cat.score, cat.max);
+        html += `
+          <div class="category">
+            <div class="badge-wrap" style="--bc:${band}">
+              <svg viewBox="0 0 64 64"><path d="${CIRCLE_PATH}" fill="none" stroke-width="2.5"/></svg>
+              <div class="score">${cat.score}<small>/${cat.max||10}</small></div>
+            </div>
+            <div>
+              <h3 class="cat-name">${escHtml(cat.name)}</h3>
+              ${cat.whatWorked?`<div class="cat-row worked"><span class="tag">What Worked</span>${inlineMd(cat.whatWorked)}</div>`:''}
+              ${cat.criticalFlaws?`<div class="cat-row flaws"><span class="tag">Critical Flaws</span>${inlineMd(cat.criticalFlaws)}</div>`:''}
+              ${cat.evidence?`<div class="cat-row evidence"><span class="tag">What You Could Have Done</span>${inlineMd(cat.evidence)}</div>`:''}
+            </div>
+          </div>`;
+      });
+      html += `
+        <div class="stamp-row">
+          <div class="verdict-stamp">
+            <div class="label">Composite Score</div>
+            <div class="num">${parsed.total}<small>/100</small></div>
+          </div>`;
+      if(parsed.rank !== null) html += `
+          <div class="rank-stamp">
+            <div class="label">Judge's Rank</div>
+            <div class="num">${ordinal(parsed.rank)}</div>
+          </div>`;
+      html += `
+        </div>`;
+      if(parsed.rankExplanation) html += `
+        <div class="rank-explanation">${inlineMd(parsed.rankExplanation)}</div>`;
+      if(parsed.drill) html += `
+        <div class="drill">
+          <span class="tag">Feedback</span>
+          <p>${inlineMd(parsed.drill)}</p>
+        </div>`;
+    }else{
+      html += `<div class="raw-fallback">${basicMarkdown(rawFeedback)}</div>`;
+    }
+    return html;
+  }
+
+  function buildDeliveryGridHtml(m){
+    if(!m) return '';
+    const cards = computeDeliveryCards(m);
+    if(!cards.length) return '';
+    return `
+      <div class="delivery-section">
+        <div class="ts-head">Vocal Delivery Analysis</div>
+        <div class="ts-meta">Measured directly from the audio waveform · independent of the AI's reading of the text</div>
+        <div class="delivery-grid">
+          ${cards.map(c=>`
+            <div class="delivery-stat" style="--bc:${c.band}">
+              <span class="dv-label">${c.label}</span>
+              <div class="dv-val">${c.val}</div>
+              <div class="dv-sub">${escHtml(String(c.sub))}</div>
+            </div>`).join('')}
+        </div>
+        <div class="delivery-note">${m.audioUnavailable
+          ? 'Volume/tone/pacing could not be measured for this recording, but filler words and stutters are still auto-counted from the transcript text.'
+          : "These figures were measured straight from the audio waveform and word timing, then handed to the AI judge to inform the Speech Quality score above."}</div>
+      </div>`;
+  }
+
+  // Builds the same section-labeled, color-coded-comment transcript markup
+  // as the live results view, but as a standalone HTML string targeting an
+  // arbitrary container (used inside each My History card). Temporarily
+  // clears the shared wordTokenSpans state so escWithWords degrades to
+  // plain escaped text — history entries don't have per-word timestamps
+  // saved, so there's nothing to sync a video to here, just the
+  // color-coded comments and section labels themselves.
+  function buildAnnotatedTranscriptHtml(plainTranscript, ann){
+    if(!plainTranscript) return { html: '<div class="ts-section-text">(no transcript saved)</div>', hasComments:false };
+    const hasSections = ann && Array.isArray(ann.sections) && ann.sections.length;
+    const hasComments = ann && Array.isArray(ann.comments) && ann.comments.length;
+    const savedSpans = wordTokenSpans;
+    wordTokenSpans = [];
+    let html = '', spansCount = 0;
+    try{
+      if(!ann || (!hasSections && !hasComments)){
+        html = `<div class="ts-section-text">${escWithWords(plainTranscript, 0, plainTranscript.length)}</div>`;
+      }else{
+        const normMap = buildNormalizedMap(plainTranscript);
+        const sectionPoints = [];
+        let searchFrom = 0, lastAcceptedPos = -1;
+        (ann.sections||[]).forEach(s=>{
+          if(!s || !s.label || !s.quote) return;
+          let loc = locateQuote(s.quote, normMap, searchFrom);
+          if(!loc){
+            const retry = locateQuote(s.quote, normMap, 0);
+            if(retry && retry.start > lastAcceptedPos) loc = retry;
+          }
+          if(loc){
+            sectionPoints.push({ pos: loc.start, label: String(s.label).trim() });
+            searchFrom = loc.normEnd;
+            lastAcceptedPos = loc.start;
+          }
+        });
+        sectionPoints.sort((a,b)=>a.pos-b.pos);
+
+        const rawSpans = [];
+        (ann.comments||[]).forEach(c=>{
+          if(!c || !c.quote || !c.color || !ANN_COLORS.includes(c.color)) return;
+          const loc = locateQuote(c.quote, normMap, 0);
+          if(loc) rawSpans.push({ start:loc.start, end:loc.end, color:c.color, comment:String(c.comment||'').trim() });
+        });
+        rawSpans.sort((a,b)=>a.start-b.start);
+        const spans = [];
+        let lastEnd = -1;
+        rawSpans.forEach(sp=>{ if(sp.start >= lastEnd){ spans.push(sp); lastEnd = sp.end; } });
+        spansCount = spans.length;
+
+        if(sectionPoints.length === 0){
+          html = `<div class="ts-section-text">${annotateRange(plainTranscript, 0, plainTranscript.length, spans)}</div>`;
+        }else{
+          if(sectionPoints[0].pos > 0){
+            html += `<div class="ts-section-text">${annotateRange(plainTranscript, 0, sectionPoints[0].pos, spans)}</div>`;
+          }
+          for(let i=0;i<sectionPoints.length;i++){
+            const start = sectionPoints[i].pos;
+            const end = (i+1<sectionPoints.length) ? sectionPoints[i+1].pos : plainTranscript.length;
+            if(end <= start) continue;
+            html += `<div class="ts-section">
+              <div class="ts-section-label">${escHtml(sectionPoints[i].label)}</div>
+              <div class="ts-section-text">${annotateRange(plainTranscript, start, end, spans)}</div>
+            </div>`;
+          }
+        }
+      }
+    } finally {
+      wordTokenSpans = savedSpans;
+    }
+    return { html, hasComments: spansCount > 0 };
+  }
+
+  function buildTranscriptSectionHtml(plainTranscript, ann){
+    const { html, hasComments } = buildAnnotatedTranscriptHtml(plainTranscript, ann);
+    const legend = hasComments ? `
+      <div class="ann-legend">
+        <span class="ann-legend-item"><i class="ann-swatch ann-red"></i>Important suggestion / big mistake</span>
+        <span class="ann-legend-item"><i class="ann-swatch ann-blue"></i>Misc. comment</span>
+        <span class="ann-legend-item"><i class="ann-swatch ann-green"></i>Brilliant move</span>
+        <span class="ann-legend-item"><i class="ann-swatch ann-yellow"></i>Minor error</span>
+      </div>` : '';
+    return `
+      <div class="delivery-section">
+        <div class="ts-head">Full Transcript</div>
+        ${legend}
+        <div class="hc-transcript-body">${html}</div>
+      </div>`;
+  }
+
   function renderResults(feedback, transcript){
     autoScrollToWordEnabled = true; // fresh results view: follow along by default again
     const parsed = parseBallot(feedback);
@@ -5674,7 +6006,7 @@ Formatting rules: plain text only, with the sole exception of wrapping key terms
 
     if(parsed.total !== null) flightHistory.push({round:roundNo, total:parsed.total});
     renderFlightStrips();
-    recordBallotToHistory(parsed, feedback, transcript, lastQuestion, roundNo, recordedBlob);
+    recordBallotToHistory(parsed, feedback, transcript, lastQuestion, roundNo, recordedBlob, lastTranscriptAnnotations, lastDeliveryMetrics);
     showView(viewResults);
   }
 

@@ -10,7 +10,13 @@ A **free** browser extention for practicing **NSDA Extemporaneous Speaking**. Re
 
 ---
 
-## What it does
+## What is Extemp? 🗣️
+
+Extemporaneous Speaking refers to a speech event where you deliver a **7 minute** memorized speech on a topic that you will be given **30 minutes** to research. The aim of Extemporaneous Speaking is to deliver the strongest, most well crafted  speech, testing both your presentational skills and your analytical writing skills.
+
+---
+
+## What Extemplary does 🧩
 ---
 Sign up → Generate questions → Write a speech → Record your speech → Recieve feedback → Set goals → Practice more → Track your improvement/progress → Correct bad habits & general weaknesses
 
@@ -38,7 +44,7 @@ Sign up → Generate questions → Write a speech → Record your speech → Rec
 
 Note: Extemplary requires camera and microphone access for recording speeches (duh).
 
-## Free trial before signing up! 
+## Free trial before signing up! 🆓
 ---
 The sign-in screen is also a landing page. Scroll down past the log in info to see a glimpes of what the app can actually do, with several features you can try live, no account required!:
 

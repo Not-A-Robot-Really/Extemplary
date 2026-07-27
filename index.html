@@ -378,7 +378,7 @@
 <!-- ====== HAMBURGER NAV MENU — standalone floating button, top-right of the ====== -->
 <!-- ====== whole screen (not part of the header icon row), opens a slide-in drawer ====== -->
 <button class="nav-hamburger-fab" id="navMenuToggle" type="button" aria-label="Menu" title="Menu" aria-haspopup="true" aria-expanded="false">
-  <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <svg width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
     <line x1="3" y1="6" x2="21" y2="6"/>
     <line x1="3" y1="12" x2="21" y2="12"/>
     <line x1="3" y1="18" x2="21" y2="18"/>
@@ -1166,17 +1166,18 @@
     return rows;
   }
 
-  // Builds a small inline SVG line chart (values expected 0-100). Returns
-  // an empty string if there's nothing to plot (need at least 1 point).
-  function buildSparklineSvg(values, color){
+  // Builds a larger inline SVG line chart (values expected 0-100), used in
+  // the single big chart panel with a dropdown selector. Returns an empty
+  // string if there's nothing to plot (need at least 1 point).
+  function buildTrendChartSvg(values, color){
     if(!values || !values.length) return '';
-    const w = 300, h = 80, pad = 10;
+    const w = 600, h = 220, pad = 24;
     color = color || '#2356a8';
     if(values.length === 1){
       const y = pad + (1 - values[0]/100) * (h - 2*pad);
       return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
-        <line x1="${pad}" y1="${y.toFixed(1)}" x2="${w-pad}" y2="${y.toFixed(1)}" stroke="${color}" stroke-width="2" stroke-dasharray="4,4"/>
-        <circle cx="${(w/2).toFixed(1)}" cy="${y.toFixed(1)}" r="3" fill="${color}"/>
+        <line x1="${pad}" y1="${y.toFixed(1)}" x2="${w-pad}" y2="${y.toFixed(1)}" stroke="${color}" stroke-width="3" stroke-dasharray="7,7"/>
+        <circle cx="${(w/2).toFixed(1)}" cy="${y.toFixed(1)}" r="5" fill="${color}"/>
       </svg>`;
     }
     const stepX = (w - 2*pad) / (values.length - 1);
@@ -1187,9 +1188,11 @@
       return [x, y];
     });
     const path = pts.map((p,i) => (i===0?'M':'L') + p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
-    const dots = pts.map(p => `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="2.5" fill="${color}"/>`).join('');
+    const areaPath = path + ` L${pts[pts.length-1][0].toFixed(1)},${(h-pad).toFixed(1)} L${pts[0][0].toFixed(1)},${(h-pad).toFixed(1)} Z`;
+    const dots = pts.map((p,i) => `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="4.5" fill="${color}" style="animation-delay:${(0.9 + i*0.03).toFixed(2)}s"/>`).join('');
     return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
-      <path d="${path}" fill="none" stroke="${color}" stroke-width="2.25" stroke-linejoin="round" stroke-linecap="round"/>
+      <path d="${areaPath}" fill="${color}" opacity="0.09" stroke="none"/>
+      <path class="tc-line" d="${path}" fill="none" stroke="${color}" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
       ${dots}
     </svg>`;
   }
@@ -1218,50 +1221,92 @@
     const weaknesses = rows.slice(-2).reverse();
     const { overall, catSeries } = computeSeries(list);
 
+    // Build a lookup of every chart the dropdown can show: "overall" plus
+    // one entry per graded category, each carrying its own values/axis/color
+    // so switching the <select> just re-renders the single big chart panel.
+    const chartOptions = [];
     const overallVals = overall.map(p => p.val).filter(v => v !== null && v !== undefined);
-    const overallChart = overallVals.length ? `
-      <div class="trend-chart-card">
-        <h5>Overall Score <span class="tc-latest">${overallVals[overallVals.length-1].toFixed(0)}/100</span></h5>
-        ${buildSparklineSvg(overallVals, '#16283c')}
-        <div class="tc-axis">${overall.filter(p=>p.val!==null&&p.val!==undefined).map(p=>`R${p.round}`).join(' · ')}</div>
-      </div>` : '';
-
-    const catCharts = Object.keys(catSeries).map(name => {
+    if(overallVals.length){
+      chartOptions.push({
+        key: 'overall', label: 'Overall Score',
+        latest: overallVals[overallVals.length-1].toFixed(0) + '/100',
+        values: overallVals, color: '#16283c',
+        axis: overall.filter(p=>p.val!==null&&p.val!==undefined).map(p=>`R${p.round}`).join(' · ')
+      });
+    }
+    Object.keys(catSeries).forEach(name => {
       const series = catSeries[name];
       const vals = series.map(p => p.val);
       const lastRaw = series[series.length-1];
-      return `
-        <div class="trend-chart-card">
-          <h5>${escHtml(name)} <span class="tc-latest">${lastRaw.raw}/${lastRaw.max}</span></h5>
-          ${buildSparklineSvg(vals, colorFromRatio(vals[vals.length-1]/100))}
-          <div class="tc-axis">${series.map(p=>`R${p.round}`).join(' · ')}</div>
-        </div>`;
-    }).join('');
+      chartOptions.push({
+        key: name, label: name,
+        latest: lastRaw.raw + '/' + lastRaw.max,
+        values: vals, color: colorFromRatio(vals[vals.length-1]/100),
+        axis: series.map(p=>`R${p.round}`).join(' · ')
+      });
+    });
+
+    const strengthIcon = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-6"/></svg>';
+    const weaknessIcon = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v10"/><path d="M18 4v16"/><path d="M6 4v6"/></svg>';
 
     el.innerHTML = `
       <div class="history-trends">
         <h3>Trends Across ${list.length} Ballot${list.length===1?'':'s'}</h3>
-        ${rows.map(r => `
-          <div class="trend-row">
-            <span class="trend-name">${escHtml(r.name)}</span>
-            <span class="trend-bar-wrap"><span class="trend-bar" style="width:${r.avgPct.toFixed(0)}%;background:${colorFromRatio(r.avgPct/100)}"></span></span>
-            <span class="trend-avg">${r.avgPct.toFixed(0)}%</span>
-          </div>`).join('')}
+        <div class="trend-rows">
+          ${rows.map(r => `
+            <div class="trend-row">
+              <span class="trend-name">${escHtml(r.name)}</span>
+              <span class="trend-bar-wrap"><span class="trend-bar" data-w="${r.avgPct.toFixed(0)}" style="width:0%;background:${colorFromRatio(r.avgPct/100)}"></span></span>
+              <span class="trend-avg">${r.avgPct.toFixed(0)}%</span>
+            </div>`).join('')}
+        </div>
         <div class="trend-summary">
           <div class="col strength">
-            <h4>Overall Strengths</h4>
+            <h4>${strengthIcon} Overall Strengths</h4>
             <ul>${strengths.map(s=>`<li>${escHtml(s.name)}</li>`).join('')}</ul>
           </div>
           <div class="col weakness">
-            <h4>Overall Weaknesses</h4>
+            <h4>${weaknessIcon} Overall Weaknesses</h4>
             <ul>${weaknesses.map(s=>`<li>${escHtml(s.name)}</li>`).join('')}</ul>
           </div>
         </div>
-        <div class="trend-charts">
-          ${overallChart}
-          ${catCharts}
-        </div>
+        ${chartOptions.length ? `
+        <div class="trend-chart-panel">
+          <div class="tcp-head">
+            <label for="trendChartSelect">View trend</label>
+            <select class="tcp-select" id="trendChartSelect">
+              ${chartOptions.map(c => `<option value="${escHtml(c.key)}">${escHtml(c.label)}</option>`).join('')}
+            </select>
+          </div>
+          <div class="trend-chart-big" id="trendChartBig"></div>
+        </div>` : ''}
       </div>`;
+
+    // Animate the summary bars in on a rAF tick so the width transition fires.
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        el.querySelectorAll('.trend-bar').forEach(bar => { bar.style.width = bar.dataset.w + '%'; });
+      });
+    });
+
+    // Wire the dropdown to (re)render the single big chart panel.
+    function paintChart(key){
+      const c = chartOptions.find(o => o.key === key) || chartOptions[0];
+      const big = document.getElementById('trendChartBig');
+      if(!c || !big) return;
+      big.innerHTML = `
+        <div class="tcb-head">
+          <h5>${escHtml(c.label)}</h5>
+          <span class="tcb-latest">${escHtml(c.latest)}</span>
+        </div>
+        ${buildTrendChartSvg(c.values, c.color)}
+        <div class="tc-axis">${c.axis}</div>`;
+    }
+    const select = document.getElementById('trendChartSelect');
+    if(select){
+      select.addEventListener('change', () => paintChart(select.value));
+      paintChart(chartOptions[0] ? chartOptions[0].key : null);
+    }
   }
 
   // ---- overall AI coaching comment (Gemini) ----
@@ -1318,7 +1363,10 @@
     if(!text){ el.innerHTML = ''; return; }
     el.innerHTML = `
       <div class="history-overall">
-        <h3>Coach's Overall Notes</h3>
+        <div class="ho-head">
+          <span class="ho-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.2 1 2V17h6v-.3c0-.8.4-1.5 1-2A7 7 0 0 0 12 2Z"/></svg></span>
+          <h3>Coach's Overall Notes</h3>
+        </div>
         <p>${inlineMd(text)}</p>
       </div>`;
   }

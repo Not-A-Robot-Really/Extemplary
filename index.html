@@ -1875,12 +1875,12 @@
   // and each of the graded categories, used to draw the trend line charts.
   function computeSeries(listDesc){
     const asc = [...listDesc].sort((a,b) => a.ts - b.ts);
-    const overall = asc.map(e => ({ round:e.round, val: e.total }));
+    const overall = asc.map((e,i) => ({ round:i+1, val: e.total }));
     const catSeries = {};
-    asc.forEach(e => {
+    asc.forEach((e,i) => {
       (e.categories||[]).forEach(c => {
         if(!catSeries[c.name]) catSeries[c.name] = [];
-        catSeries[c.name].push({ round:e.round, val:(c.score/(c.max||10))*100, raw:c.score, max:c.max||10 });
+        catSeries[c.name].push({ round:i+1, val:(c.score/(c.max||10))*100, raw:c.score, max:c.max||10 });
       });
     });
     return { asc, overall, catSeries };
@@ -2027,9 +2027,9 @@
     if(error) console.warn('Could not save overall feedback', error);
   }
   function buildOverallFeedbackPrompt(asc){
-    const rounds = asc.map(e => {
+    const rounds = asc.map((e,i) => {
       const cats = (e.categories||[]).map(c => `${c.name} ${c.score}/${c.max||10}`).join(', ');
-      return `Round ${e.round}: ${e.total !== null && e.total !== undefined ? e.total : '—'}/100 total. Categories — ${cats || 'n/a'}`;
+      return `Round ${i+1}: ${e.total !== null && e.total !== undefined ? e.total : '—'}/100 total. Categories — ${cats || 'n/a'}`;
     }).join('\n');
     return `You are an expert NSDA Extemporaneous Speaking coach reviewing a student's full practice history across ${asc.length} round${asc.length===1?'':'s'}:\n\n${rounds}\n\nWrite a concise, honest, encouraging OVERALL coaching comment in 2-3 sentences, addressed directly to the student ("you"), synthesizing patterns across ALL of these rounds — not just the most recent one. Name their single biggest recurring strength and, more importantly, their single biggest recurring area to improve, then give one concrete, actionable next step. Write it as natural flowing coaching prose, not a list of category names. Return ONLY the 2-3 sentence comment — no headers, no markdown, no preamble.`;
   }
@@ -2092,14 +2092,17 @@
       wrap.innerHTML = '<div class="history-empty">No saved ballots yet — finish a practice round and it will show up here.</div>';
       return;
     }
+    const ascForNumbering = [...list].sort((a,b) => a.ts - b.ts);
+    const roundNumberById = new Map(ascForNumbering.map((e,i) => [e.id, i+1]));
     wrap.innerHTML = list.map(entry => {
       const date = new Date(entry.ts).toLocaleString();
       const scoreColor = entry.total !== null && entry.total !== undefined ? colorFromRatio(entry.total/100) : 'var(--slate)';
+      const roundNum = roundNumberById.get(entry.id) || entry.round;
       return `
       <div class="history-card" data-id="${entry.id}">
         <div class="history-card-head">
           <div class="hc-head-main">
-            <div class="hc-round">Round ${entry.round}</div>
+            <div class="hc-round">Round ${roundNum}</div>
             <div class="hc-meta">
               <span class="hc-date">${date}</span>
               ${entry.question ? `<span class="hc-meta-sep">·</span><span class="hc-question">${escHtml(entry.question)}</span>` : ''}

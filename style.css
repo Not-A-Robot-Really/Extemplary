@@ -869,7 +869,7 @@
 
   /* -------- settings panel -------- */
   .settings-panel{
-    position:fixed;z-index:250;top:0;right:0;
+    position:fixed;z-index:710;top:0;right:0;
     max-height:80vh;overflow-y:auto;overflow-x:hidden;
     background:var(--parchment);border:1px solid var(--charcoal);border-radius:4px;
   }

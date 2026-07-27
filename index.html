@@ -308,6 +308,11 @@
       <span class="acc-email" id="accountEmail"></span>
       <button type="button" id="signOutBtn">Sign out</button>
     </div>
+    <button class="gear-btn" id="streakToggle" type="button" aria-label="Streak Calendar" title="Streak Calendar">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>
+      </svg>
+    </button>
     <button class="gear-btn" id="historyToggle" type="button" aria-label="My Ballot History" title="My Ballot History">
       <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M3 12a9 9 0 1 0 3-6.7"/>
@@ -377,6 +382,14 @@
 
 <!-- ====== HAMBURGER NAV MENU — standalone floating button, top-right of the ====== -->
 <!-- ====== whole screen (not part of the header icon row), opens a slide-in drawer ====== -->
+<!-- ====== STREAK COUNTER — floating top-left, mirrors the hamburger fab ====== -->
+<button class="streak-fab hidden" id="streakFab" type="button" aria-label="Current streak" title="Current streak">
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="none" id="streakFabIcon">
+    <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>
+  </svg>
+  <span class="streak-fab-count" id="streakFabCount">0</span>
+</button>
+
 <button class="nav-hamburger-fab" id="navMenuToggle" type="button" aria-label="Menu" title="Menu" aria-haspopup="true" aria-expanded="false">
   <svg width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
     <line x1="3" y1="6" x2="21" y2="6"/>
@@ -402,6 +415,12 @@
       <span>Home</span>
     </button>
     <div class="nav-menu-divider"></div>
+    <button type="button" class="nav-menu-item" data-target="streakToggle">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>
+      </svg>
+      <span>Streak Calendar</span>
+    </button>
     <button type="button" class="nav-menu-item" data-target="historyToggle">
       <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M3 12a9 9 0 1 0 3-6.7"/>
@@ -921,9 +940,21 @@
         </div>
                 <div id="historyOverallFeedback"></div>
         <div id="historyTrends"></div>
+        <div id="historyGoals"></div>
         <div id="historyListWrap">
           <div class="history-list" id="historyList"></div>
         </div>
+      </div>
+
+      <!-- ====== STREAK CALENDAR VIEW ====== -->
+      <div id="view-streak" class="hidden">
+        <div class="actions" style="justify-content:flex-start;margin-bottom:18px;">
+          <button class="btn ghost" id="streakBackBtn">← Back</button>
+        </div>
+        <div id="streakSummary"></div>
+        <div id="streakCalendarWrap"></div>
+        <div id="streakEventsWrap"></div>
+        <div id="streakGoalsWrap"></div>
       </div>
 
       <div id="view-briefing" class="hidden">
@@ -1058,6 +1089,19 @@
   <div class="cp-text" id="cpText"></div>
 </div>
 
+<!-- Body-level goal-creation modal, shared by the Streak Calendar view and
+     the "My Ballot History" tab so both can open the same form. -->
+<div class="goal-modal-backdrop hidden" id="goalModalBackdrop"></div>
+<div class="goal-modal hidden" id="goalModal">
+  <div class="goal-modal-head">
+    <span>New Goal</span>
+    <button type="button" class="nav-drawer-close" id="goalModalCloseBtn" aria-label="Close">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+  <div class="goal-modal-body" id="goalModalBody"></div>
+</div>
+
 <script>
 (function(){
 
@@ -1147,6 +1191,552 @@
     if(!supabaseClient) return;
     await supabaseClient.from('ballots').delete().eq('id', id);
     if(videoPath) await supabaseClient.storage.from(VIDEO_BUCKET).remove([videoPath]);
+  }
+
+  // ===================================================================
+  // ===== STREAK / CALENDAR / GOALS ====================================
+  // ===================================================================
+  // Two new tables are required in Supabase (same RLS pattern as `ballots`
+  // — user_id, RLS restricting rows to auth.uid()):
+  //
+  //   calendar_events(id uuid pk, user_id uuid, event_date date,
+  //                    title text, notes text, created_at timestamptz)
+  //   user_goals(id uuid pk, user_id uuid, type text, params jsonb,
+  //              target_date date null, status text default 'active',
+  //              created_at timestamptz)
+  //
+  // "Exemplary" day = the best ballot recorded that calendar date scored
+  // at or above EXEMPLARY_THRESHOLD out of 100. This is computed entirely
+  // client-side from the same `ballots` rows already loaded for My History
+  // — no extra table needed for the streak itself.
+  const EXEMPLARY_THRESHOLD = 85;
+  const GOAL_CATEGORIES = [
+    'Creative Hook & Intro', 'Structure', 'Strength of Argument & Analysis',
+    'Flaws in Reasoning', 'Strength of Evidence', 'Clarity',
+    'Conclusion Strength', 'Speech Quality — Vocal Delivery & Fluency'
+  ];
+  const STREAK_MILESTONES = [3, 7, 14, 30, 365];
+
+  function dateKey(d){
+    // Local-time YYYY-MM-DD (never UTC — avoids the classic "yesterday at
+    // 8pm" off-by-one when the user is west of UTC).
+    const y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,'0'), day = String(d.getDate()).padStart(2,'0');
+    return `${y}-${m}-${day}`;
+  }
+  function keyToLocalDate(key){
+    const [y,m,d] = key.split('-').map(Number);
+    return new Date(y, m-1, d);
+  }
+  // date -> best total score that day (or null if no ballots that day)
+  function bestScoreByDay(list){
+    const map = {};
+    list.forEach(e => {
+      if(e.total === null || e.total === undefined) return;
+      const k = dateKey(new Date(e.ts));
+      if(!(k in map) || e.total > map[k]) map[k] = e.total;
+    });
+    return map;
+  }
+  function computeStreak(list){
+    const byDay = bestScoreByDay(list);
+    const today = new Date(); today.setHours(0,0,0,0);
+    let cursor = new Date(today);
+    // Today doesn't have to be exemplary yet for the streak to still be
+    // "alive" — only step back to yesterday as the start if today has no
+    // exemplary result recorded yet.
+    if(!(byDay[dateKey(cursor)] >= EXEMPLARY_THRESHOLD)) cursor.setDate(cursor.getDate()-1);
+    let streak = 0;
+    while(byDay[dateKey(cursor)] >= EXEMPLARY_THRESHOLD){
+      streak++;
+      cursor.setDate(cursor.getDate()-1);
+    }
+    // Best-ever streak, scanning every day that has any ballot.
+    let best = 0, run = 0;
+    const days = Object.keys(byDay).sort();
+    let prevDate = null;
+    days.forEach(k => {
+      const d = keyToLocalDate(k);
+      const isEx = byDay[k] >= EXEMPLARY_THRESHOLD;
+      if(isEx){
+        if(prevDate && (d - prevDate) === 86400000) run++; else run = 1;
+        best = Math.max(best, run);
+      } else {
+        run = 0;
+      }
+      prevDate = d;
+    });
+    best = Math.max(best, streak);
+    return { current: streak, best, byDay };
+  }
+
+  async function loadCalendarEvents(){
+    if(!currentUser || !supabaseClient) return [];
+    const { data, error } = await supabaseClient
+      .from('calendar_events').select('*').eq('user_id', currentUser.id).order('event_date', { ascending:true });
+    if(error){ console.warn('Could not load calendar events', error); return []; }
+    return data || [];
+  }
+  async function addCalendarEvent(eventDate, title, notes){
+    if(!currentUser || !supabaseClient) return null;
+    const id = (crypto.randomUUID && crypto.randomUUID()) || ('ev_' + Date.now());
+    const { error } = await supabaseClient.from('calendar_events').insert({
+      id, user_id: currentUser.id, event_date: eventDate, title, notes: notes || '', created_at: new Date().toISOString()
+    });
+    if(error){ console.warn('Could not save event', error); showToast('Could not save that event'); return null; }
+    return id;
+  }
+  async function deleteCalendarEvent(id){
+    if(!supabaseClient) return;
+    await supabaseClient.from('calendar_events').delete().eq('id', id);
+  }
+
+  async function loadGoals(){
+    if(!currentUser || !supabaseClient) return [];
+    const { data, error } = await supabaseClient
+      .from('user_goals').select('*').eq('user_id', currentUser.id).order('created_at', { ascending:false });
+    if(error){ console.warn('Could not load goals', error); return []; }
+    return data || [];
+  }
+  async function addGoal(type, params, targetDate){
+    if(!currentUser || !supabaseClient) return null;
+    const id = (crypto.randomUUID && crypto.randomUUID()) || ('g_' + Date.now());
+    const { error } = await supabaseClient.from('user_goals').insert({
+      id, user_id: currentUser.id, type, params, target_date: targetDate || null,
+      status:'active', created_at: new Date().toISOString()
+    });
+    if(error){ console.warn('Could not save goal', error); showToast('Could not save that goal'); return null; }
+    showToast('Goal added');
+    return id;
+  }
+  async function deleteGoal(id){
+    if(!supabaseClient) return;
+    await supabaseClient.from('user_goals').delete().eq('id', id);
+  }
+
+  function goalLabel(g){
+    if(g.type === 'streak') return `Hit a ${g.params.days}-day Exemplary streak`;
+    if(g.type === 'score') return `Score above ${g.params.threshold} overall in a speech`;
+    if(g.type === 'category') return `Score above ${g.params.threshold} in ${escHtml(g.params.category)}`;
+    if(g.type === 'rounds') return `Complete ${g.params.count} practice rounds this month`;
+    if(g.type === 'videos') return `Record ${g.params.count} video ballots this month`;
+    if(g.type === 'tournament') return `Compete at ${escHtml(g.params.title || 'the upcoming tournament')}`;
+    return 'Goal';
+  }
+  // Returns {current, target, pct, done}
+  function goalProgress(g, list, streakInfo, events){
+    if(g.type === 'streak'){
+      const cur = Math.min(streakInfo.current, g.params.days);
+      return { current: streakInfo.current, target: g.params.days, pct: Math.min(100, cur/g.params.days*100), done: streakInfo.current >= g.params.days };
+    }
+    if(g.type === 'score'){
+      const best = list.reduce((m,e) => (e.total!==null && e.total!==undefined && e.total>m) ? e.total : m, 0);
+      return { current: best, target: g.params.threshold, pct: Math.min(100, best/g.params.threshold*100), done: best >= g.params.threshold };
+    }
+    if(g.type === 'category'){
+      let best = 0;
+      list.forEach(e => (e.categories||[]).forEach(c => {
+        if(c.name === g.params.category){ const pct = (c.score/(c.max||10))*100; if(pct>best) best = pct; }
+      }));
+      return { current: Math.round(best), target: g.params.threshold, pct: Math.min(100, best/g.params.threshold*100), done: best >= g.params.threshold };
+    }
+    if(g.type === 'rounds' || g.type === 'videos'){
+      const now = new Date();
+      const count = list.filter(e => {
+        const d = new Date(e.ts);
+        return d.getFullYear()===now.getFullYear() && d.getMonth()===now.getMonth() && (g.type==='rounds' || e.hasVideo);
+      }).length;
+      return { current: count, target: g.params.count, pct: Math.min(100, count/g.params.count*100), done: count >= g.params.count };
+    }
+    if(g.type === 'tournament'){
+      const ev = (events||[]).find(e => e.id === g.params.eventId);
+      const passed = ev ? (new Date(ev.event_date) < new Date(new Date().toDateString())) : false;
+      return { current: passed?1:0, target:1, pct: passed?100:0, done: passed };
+    }
+    return { current:0, target:1, pct:0, done:false };
+  }
+
+  // ---- suggested goals (My Ballot History), derived from the user's own
+  // weaknesses and Coach's Overall Notes — no extra AI call needed since
+  // the weakness ranking is already computed from their ballot data. ----
+  function computeSuggestedGoals(list){
+    if(!list.length) return [];
+    const rows = computeTrends(list);
+    if(!rows.length) return [];
+    const weakest = rows[rows.length-1];
+    const secondWeakest = rows.length > 1 ? rows[rows.length-2] : null;
+    const totals = list.map(e=>e.total).filter(t=>t!==null&&t!==undefined);
+    const avgTotal = totals.length ? totals.reduce((a,b)=>a+b,0)/totals.length : 0;
+    const bestTotal = totals.length ? Math.max(...totals) : 0;
+    const streakInfo = computeStreak(list);
+    const suggestions = [];
+    // 1) Category goal targeting the single weakest graded category.
+    suggestions.push({
+      type:'category', params:{ category: weakest.name, threshold: Math.min(95, Math.round(weakest.avgPct + 15)) },
+      why: `Your weakest area across your ballots is ${weakest.name} (avg ${weakest.avgPct.toFixed(0)}%).`
+    });
+    if(secondWeakest){
+      suggestions.push({
+        type:'category', params:{ category: secondWeakest.name, threshold: Math.min(95, Math.round(secondWeakest.avgPct + 15)) },
+        why: `${secondWeakest.name} is also trending as a recurring weak spot (avg ${secondWeakest.avgPct.toFixed(0)}%).`
+      });
+    }
+    // 2) Overall-score goal, a stretch above their current average.
+    suggestions.push({
+      type:'score', params:{ threshold: Math.min(100, Math.round(avgTotal/5)*5 + 10) },
+      why: `Your average overall score is ${avgTotal.toFixed(0)}/100 — this pushes just past your recent best of ${bestTotal.toFixed(0)}.`
+    });
+    // 3) A streak goal calibrated to where they already are.
+    const nextMilestone = STREAK_MILESTONES.find(m => m > streakInfo.current) || STREAK_MILESTONES[STREAK_MILESTONES.length-1];
+    suggestions.push({
+      type:'streak', params:{ days: nextMilestone },
+      why: streakInfo.current > 0
+        ? `You're on a ${streakInfo.current}-day Exemplary streak already — keep it going.`
+        : `Building a short Exemplary streak (${EXEMPLARY_THRESHOLD}+ overall score) is the fastest way to see steady improvement.`
+    });
+    return suggestions.slice(0,3);
+  }
+
+  // ---- goal creation modal (shared by Streak Calendar + My History) ----
+  const goalModalBackdrop = document.getElementById('goalModalBackdrop');
+  const goalModal = document.getElementById('goalModal');
+  const goalModalBody = document.getElementById('goalModalBody');
+  let goalModalOnSaved = null;
+  function closeGoalModal(){
+    goalModal.classList.add('hidden');
+    goalModalBackdrop.classList.add('hidden');
+  }
+  document.getElementById('goalModalCloseBtn').addEventListener('click', closeGoalModal);
+  goalModalBackdrop.addEventListener('click', closeGoalModal);
+
+  function openGoalModal(onSaved, prefill){
+    goalModalOnSaved = onSaved || null;
+    const p = prefill || {};
+    goalModalBody.innerHTML = `
+      <div class="gm-field">
+        <label>Goal type</label>
+        <select id="gmType">
+          <option value="streak">Exemplary streak</option>
+          <option value="score">Overall score in a speech</option>
+          <option value="category">Score in a specific category</option>
+          <option value="rounds">Practice rounds this month</option>
+          <option value="videos">Video ballots this month</option>
+        </select>
+      </div>
+      <div class="gm-field" data-for="streak">
+        <label>Consecutive Exemplary days</label>
+        <select id="gmStreakDays">
+          ${STREAK_MILESTONES.map(d => `<option value="${d}">${d} days</option>`).join('')}
+        </select>
+      </div>
+      <div class="gm-field" data-for="score">
+        <label>Target overall score (out of 100)</label>
+        <input type="number" id="gmScoreThreshold" min="1" max="100" value="90">
+      </div>
+      <div class="gm-field" data-for="category">
+        <label>Category</label>
+        <select id="gmCategory">
+          ${GOAL_CATEGORIES.map(c => `<option value="${escHtml(c)}">${escHtml(c)}</option>`).join('')}
+        </select>
+        <label style="margin-top:10px;">Target score (%)</label>
+        <input type="number" id="gmCategoryThreshold" min="1" max="100" value="85">
+      </div>
+      <div class="gm-field" data-for="rounds">
+        <label>Number of rounds this month</label>
+        <input type="number" id="gmRoundsCount" min="1" max="60" value="5">
+      </div>
+      <div class="gm-field" data-for="videos">
+        <label>Number of video ballots this month</label>
+        <input type="number" id="gmVideosCount" min="1" max="60" value="3">
+      </div>
+      <button type="button" class="btn primary" id="gmSaveBtn" style="width:100%;margin-top:6px;">Save Goal</button>
+    `;
+    const typeSel = document.getElementById('gmType');
+    function syncFields(){
+      goalModalBody.querySelectorAll('.gm-field[data-for]').forEach(f => {
+        f.style.display = (f.dataset.for === typeSel.value) ? 'flex' : 'none';
+      });
+    }
+    typeSel.value = p.type || 'streak';
+    if(p.type === 'category' && p.params){
+      document.getElementById('gmCategory').value = p.params.category;
+      document.getElementById('gmCategoryThreshold').value = p.params.threshold;
+    }
+    if(p.type === 'score' && p.params) document.getElementById('gmScoreThreshold').value = p.params.threshold;
+    if(p.type === 'streak' && p.params) document.getElementById('gmStreakDays').value = p.params.days;
+    typeSel.addEventListener('change', syncFields);
+    syncFields();
+    document.getElementById('gmSaveBtn').addEventListener('click', async () => {
+      const type = typeSel.value;
+      let params = {};
+      if(type === 'streak') params = { days: Number(document.getElementById('gmStreakDays').value) };
+      else if(type === 'score') params = { threshold: Number(document.getElementById('gmScoreThreshold').value) };
+      else if(type === 'category') params = { category: document.getElementById('gmCategory').value, threshold: Number(document.getElementById('gmCategoryThreshold').value) };
+      else if(type === 'rounds') params = { count: Number(document.getElementById('gmRoundsCount').value) };
+      else if(type === 'videos') params = { count: Number(document.getElementById('gmVideosCount').value) };
+      await addGoal(type, params, null);
+      closeGoalModal();
+      if(goalModalOnSaved) goalModalOnSaved();
+    });
+    goalModal.classList.remove('hidden');
+    goalModalBackdrop.classList.remove('hidden');
+  }
+
+  // ---- Goals list markup (shared renderer for both the Streak Calendar
+  // view and the My History tab) ----
+  function renderGoalsList(goals, list, streakInfo, events){
+    if(!goals.length) return '<div class="goals-empty">No goals yet — set one to track your progress.</div>';
+    return goals.map(g => {
+      const prog = goalProgress(g, list, streakInfo, events);
+      return `
+        <div class="goal-card ${prog.done?'done':''}" data-goal-id="${g.id}">
+          <div class="goal-card-main">
+            <div class="goal-card-label">${prog.done ? '✓ ' : ''}${escHtml(goalLabel(g))}</div>
+            <div class="goal-card-bar-wrap"><div class="goal-card-bar" style="width:${prog.pct.toFixed(0)}%"></div></div>
+            <div class="goal-card-progress">${prog.current}/${prog.target}${g.type==='category'?'%':''}</div>
+          </div>
+          <button type="button" class="goal-card-del" data-del-goal="${g.id}" aria-label="Remove goal" title="Remove goal">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>`;
+    }).join('');
+  }
+  function wireGoalDeleteButtons(container, refreshFn){
+    container.querySelectorAll('[data-del-goal]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        await deleteGoal(btn.dataset.delGoal);
+        refreshFn();
+      });
+    });
+  }
+
+  // ---- "My Ballot History" goals + suggested-goals section ----
+  async function renderHistoryGoals(list){
+    const el = document.getElementById('historyGoals');
+    if(!el) return;
+    if(!list.length){ el.innerHTML = ''; return; }
+    const [goals, events] = await Promise.all([loadGoals(), loadCalendarEvents()]);
+    const streakInfo = computeStreak(list);
+    const suggestions = computeSuggestedGoals(list);
+    el.innerHTML = `
+      <div class="history-goals">
+        <div class="hg-head">
+          <h3>Your Goals</h3>
+          <button type="button" class="btn ghost" id="historyAddGoalBtn">+ New Goal</button>
+        </div>
+        <div class="goals-list" id="historyGoalsList">${renderGoalsList(goals, list, streakInfo, events)}</div>
+        ${suggestions.length ? `
+        <div class="suggested-goals">
+          <h4>Suggested for you</h4>
+          <div class="suggested-goals-list">
+            ${suggestions.map((s,i) => `
+              <div class="suggested-goal-card">
+                <div class="sg-text">
+                  <div class="sg-label">${escHtml(goalLabel({type:s.type, params:s.params}))}</div>
+                  <div class="sg-why">${escHtml(s.why)}</div>
+                </div>
+                <button type="button" class="btn primary sg-add" data-sg="${i}">+ Add</button>
+              </div>`).join('')}
+          </div>
+        </div>` : ''}
+      </div>`;
+    document.getElementById('historyAddGoalBtn').addEventListener('click', () => {
+      openGoalModal(() => renderHistoryGoals(list));
+    });
+    wireGoalDeleteButtons(el, () => renderHistoryGoals(list));
+    el.querySelectorAll('.sg-add').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const s = suggestions[Number(btn.dataset.sg)];
+        await addGoal(s.type, s.params, null);
+        renderHistoryGoals(list);
+      });
+    });
+  }
+
+  // ---- Streak Calendar view ----
+  let streakCalMonth = new Date(); streakCalMonth.setDate(1);
+  const flameFilledSvg = '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>';
+  const flameOutlineSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>';
+
+  async function renderStreakView(){
+    const list = await loadHistory();
+    const streakInfo = computeStreak(list);
+    const [events, goals] = await Promise.all([loadCalendarEvents(), loadGoals()]);
+
+    const fabCount = document.getElementById('streakFabCount');
+    const fabIcon = document.getElementById('streakFabIcon');
+    if(fabCount){ fabCount.textContent = streakInfo.current; }
+    if(fabIcon){ fabIcon.style.color = streakInfo.current > 0 ? '#ff8a2b' : ''; }
+
+    document.getElementById('streakSummary').innerHTML = `
+      <div class="streak-summary-card">
+        <div class="ssc-flame">${flameFilledSvg}</div>
+        <div class="ssc-stats">
+          <div class="ssc-stat"><span class="ssc-val">${streakInfo.current}</span><span class="ssc-cap">Current Streak</span></div>
+          <div class="ssc-stat"><span class="ssc-val">${streakInfo.best}</span><span class="ssc-cap">Best Streak</span></div>
+        </div>
+        <div class="ssc-note">A day counts as Exemplary once a ballot that day scores ${EXEMPLARY_THRESHOLD}+ overall.</div>
+      </div>`;
+
+    renderStreakCalendar(streakInfo, events, goals);
+    renderStreakEvents(events);
+    renderStreakGoals(list, streakInfo, events, goals);
+  }
+
+  function renderStreakCalendar(streakInfo, events, goals){
+    const wrap = document.getElementById('streakCalendarWrap');
+    const year = streakCalMonth.getFullYear(), month = streakCalMonth.getMonth();
+    const monthLabel = streakCalMonth.toLocaleDateString('en-US', { month:'long', year:'numeric' });
+    const firstDow = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month+1, 0).getDate();
+    const todayKey = dateKey(new Date());
+
+    const eventsByDay = {};
+    events.forEach(e => { (eventsByDay[e.event_date] = eventsByDay[e.event_date] || []).push(e); });
+    const goalDatesByDay = {};
+    goals.forEach(g => { if(g.target_date) (goalDatesByDay[g.target_date] = goalDatesByDay[g.target_date] || []).push(g); });
+
+    let cells = '';
+    for(let i=0;i<firstDow;i++) cells += `<div class="scal-cell empty"></div>`;
+    for(let d=1; d<=daysInMonth; d++){
+      const cellDate = new Date(year, month, d);
+      const k = dateKey(cellDate);
+      const score = streakInfo.byDay[k];
+      const hasBallot = score !== undefined;
+      const isExemplary = score >= EXEMPLARY_THRESHOLD;
+      const isToday = k === todayKey;
+      const dayEvents = eventsByDay[k] || [];
+      cells += `
+        <div class="scal-cell ${isToday?'today':''}" data-date="${k}">
+          <span class="scal-daynum">${d}</span>
+          <span class="scal-flame ${isExemplary?'lit':(hasBallot?'unlit':'none')}">${hasBallot ? (isExemplary?flameFilledSvg:flameOutlineSvg) : ''}</span>
+          ${dayEvents.length ? `<span class="scal-event-dot" title="${escHtml(dayEvents.map(e=>e.title).join(', '))}"></span>` : ''}
+          ${goalDatesByDay[k] ? `<span class="scal-goal-ring" title="Goal target date"></span>` : ''}
+        </div>`;
+    }
+
+    wrap.innerHTML = `
+      <div class="streak-calendar">
+        <div class="scal-head">
+          <button type="button" class="scal-nav" id="scalPrev" aria-label="Previous month">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <h3>${monthLabel}</h3>
+          <button type="button" class="scal-nav" id="scalNext" aria-label="Next month">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        </div>
+        <div class="scal-dow">${['S','M','T','W','T','F','S'].map(d=>`<span>${d}</span>`).join('')}</div>
+        <div class="scal-grid">${cells}</div>
+        <div class="scal-legend">
+          <span><span class="scal-flame lit" style="width:14px;height:14px;">${flameFilledSvg}</span> Exemplary day</span>
+          <span><span class="scal-flame unlit" style="width:14px;height:14px;">${flameOutlineSvg}</span> Practiced, not exemplary</span>
+          <span><span class="scal-event-dot" style="position:static;display:inline-block;"></span> Tournament</span>
+          <span><span class="scal-goal-ring" style="position:static;display:inline-block;"></span> Goal date</span>
+        </div>
+      </div>`;
+
+    document.getElementById('scalPrev').addEventListener('click', () => {
+      streakCalMonth.setMonth(streakCalMonth.getMonth()-1);
+      renderStreakCalendar(streakInfo, events, goals);
+    });
+    document.getElementById('scalNext').addEventListener('click', () => {
+      streakCalMonth.setMonth(streakCalMonth.getMonth()+1);
+      renderStreakCalendar(streakInfo, events, goals);
+    });
+    wrap.querySelectorAll('.scal-cell[data-date]').forEach(cell => {
+      cell.addEventListener('click', () => {
+        const dEl = document.getElementById('streakEventDateInput');
+        if(dEl) dEl.value = cell.dataset.date;
+        const tEl = document.getElementById('streakEventTitleInput');
+        if(tEl) tEl.focus();
+      });
+    });
+  }
+
+  function renderStreakEvents(events){
+    const wrap = document.getElementById('streakEventsWrap');
+    const now = new Date(new Date().toDateString());
+    const upcoming = events.filter(e => new Date(e.event_date) >= now).sort((a,b)=> new Date(a.event_date)-new Date(b.event_date));
+    const past = events.filter(e => new Date(e.event_date) < now);
+    wrap.innerHTML = `
+      <div class="streak-events">
+        <h3>Tournaments &amp; Events</h3>
+        <div class="se-add-row">
+          <input type="date" id="streakEventDateInput">
+          <input type="text" id="streakEventTitleInput" placeholder="Event name (e.g. State Qualifier)">
+          <button type="button" class="btn primary" id="streakEventAddBtn">Add</button>
+        </div>
+        <div class="se-list">
+          ${upcoming.length ? upcoming.map(e => `
+            <div class="se-item">
+              <div class="se-item-date">${keyToLocalDate(e.event_date).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</div>
+              <div class="se-item-title">${escHtml(e.title)}</div>
+              <button type="button" class="se-item-del" data-del-event="${e.id}" aria-label="Remove event">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>`).join('') : '<div class="goals-empty">No upcoming events — add a tournament date above.</div>'}
+        </div>
+        ${past.length ? `<div class="se-past-toggle" id="sePastToggle">Show ${past.length} past event${past.length===1?'':'s'}</div>
+        <div class="se-list hidden" id="sePastList">
+          ${past.map(e => `
+            <div class="se-item past">
+              <div class="se-item-date">${keyToLocalDate(e.event_date).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</div>
+              <div class="se-item-title">${escHtml(e.title)}</div>
+              <button type="button" class="se-item-del" data-del-event="${e.id}" aria-label="Remove event">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>`).join('')}
+        </div>` : ''}
+      </div>`;
+    const dateInput = document.getElementById('streakEventDateInput');
+    dateInput.value = dateKey(new Date());
+    document.getElementById('streakEventAddBtn').addEventListener('click', async () => {
+      const title = document.getElementById('streakEventTitleInput').value.trim();
+      const d = dateInput.value;
+      if(!title || !d){ showToast('Add a date and a name for the event'); return; }
+      await addCalendarEvent(d, title, '');
+      showToast('Event added');
+      renderStreakView();
+    });
+    wrap.querySelectorAll('[data-del-event]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        await deleteCalendarEvent(btn.dataset.delEvent);
+        showToast('Event removed');
+        renderStreakView();
+      });
+    });
+    const pastToggle = document.getElementById('sePastToggle');
+    if(pastToggle) pastToggle.addEventListener('click', () => {
+      document.getElementById('sePastList').classList.toggle('hidden');
+    });
+  }
+
+  function renderStreakGoals(list, streakInfo, events, goals){
+    const wrap = document.getElementById('streakGoalsWrap');
+    wrap.innerHTML = `
+      <div class="streak-goals">
+        <div class="hg-head">
+          <h3>Goals</h3>
+          <button type="button" class="btn ghost" id="streakAddGoalBtn">+ New Goal</button>
+        </div>
+        <div class="goals-list">${renderGoalsList(goals, list, streakInfo, events)}</div>
+      </div>`;
+    document.getElementById('streakAddGoalBtn').addEventListener('click', () => {
+      openGoalModal(() => renderStreakView());
+    });
+    wireGoalDeleteButtons(wrap, () => renderStreakView());
+  }
+
+  // Keep the top-left streak fab's count fresh once signed in, without
+  // needing the Streak Calendar view to have been opened yet.
+  async function refreshStreakFab(){
+    if(!currentUser) return;
+    const list = await loadHistory();
+    const info = computeStreak(list);
+    const fabCount = document.getElementById('streakFabCount');
+    const fabIcon = document.getElementById('streakFabIcon');
+    if(fabCount) fabCount.textContent = info.current;
+    if(fabIcon) fabIcon.style.color = info.current > 0 ? '#ff8a2b' : '';
   }
 
   // ---- rendering "My History" ----
@@ -1444,6 +2034,7 @@
     const list = (await loadHistory()).sort((a,b) => b.ts - a.ts);
     renderHistoryTrends(list);
     refreshOverallFeedback(list);
+    renderHistoryGoals(list);
     if(!list.length){
       wrap.innerHTML = '<div class="history-empty">No saved ballots yet — finish a practice round and it will show up here.</div>';
       return;
@@ -1643,6 +2234,16 @@
     showView(viewHistory);
   });
   document.getElementById('historyBackBtn').addEventListener('click', () => showView(viewRecord));
+
+  document.getElementById('streakToggle').addEventListener('click', () => {
+    renderStreakView();
+    showView(viewStreak);
+  });
+  document.getElementById('streakBackBtn').addEventListener('click', () => showView(viewRecord));
+  document.getElementById('streakFab').addEventListener('click', () => {
+    renderStreakView();
+    showView(viewStreak);
+  });
 
   // ----- landing page scroll-reveal animation -----
   // ----- randomized hero headline (one of three, picked fresh on each load) -----
@@ -2662,12 +3263,15 @@
     document.body.classList.remove('previewing-example');
     authForm.reset();
     if(window.__releaseFeatureScrollHijack) window.__releaseFeatureScrollHijack();
+    document.getElementById('streakFab')?.classList.remove('hidden');
+    refreshStreakFab();
   }
   function onSignedOut(){
     currentUser = null;
     accountChip.classList.add('hidden');
     authGate.classList.remove('hidden');
     setAuthMode('login');
+    document.getElementById('streakFab')?.classList.add('hidden');
   }
 
   // Restore session on load / whenever it changes (this is what makes
@@ -3118,6 +3722,7 @@ RULES:
   const viewBriefing   = document.getElementById('view-briefing');
   const viewCitation   = document.getElementById('view-citation');
   const viewHistory    = document.getElementById('view-history');
+  const viewStreak     = document.getElementById('view-streak');
   const statusText     = document.getElementById('statusText');
   const statusSub      = document.getElementById('statusSub');
   const processError   = document.getElementById('processError');
@@ -3184,7 +3789,7 @@ RULES:
   let viewBeforeExample = null;
   let viewBeforeBriefing = null;
   function showView(v){
-    [viewRecord, viewReview, viewProcessing, viewResults, viewExample, viewBriefing, viewHistory, viewCitation].forEach(x => x.classList.add('hidden'));
+    [viewRecord, viewReview, viewProcessing, viewResults, viewExample, viewBriefing, viewHistory, viewCitation, viewStreak].forEach(x => x.classList.add('hidden'));
     v.classList.remove('hidden');
     if(v !== viewExample && typeof exampleOpen !== 'undefined' && exampleOpen){
       exampleOpen = false;

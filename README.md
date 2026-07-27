@@ -70,10 +70,10 @@ The sign-in screen is also a landing page. Scroll down past the log in info to s
 
 ## Software ⚙️
 ---
-Everything lives in a single `.html` file — no build step, no custom backend, no framework. A Supabase project provides authentication and cloud storage.
+Supabase provides authentication and cloud storage.
 
 - **Transcription:** Groq's Whisper (`whisper-large-v3`, word-level timestamps)
-- **Judging:** Groq's Llama 3.3 70B Versatile
+- **Judging:** Groq's Llama 3.3 70B (Versatile) 
 - **Question drafting, briefings & citation checking:** Google's Gemini with live Google Search grounding, used both in the signed-in app and for the landing page's live free-try demos
 - **Audio analysis:** Web Audio API (client-side FFT/pitch/volume analysis — no server round-trip)
 - **Video:** `MediaRecorder` for capture, plain `<video>` for review/playback; the example ballot uses the YouTube IFrame API for its sample speech

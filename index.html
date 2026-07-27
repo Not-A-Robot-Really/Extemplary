@@ -141,6 +141,54 @@
           </div>
         </div>
       </div>
+      <div class="feature-card wide">
+        <div class="fc-body">
+          <div>
+            <div class="fc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="10.5" r="7"/><path d="M7.5 10.7l2 2 3.4-3.8"/><line x1="20.5" y1="20.5" x2="15.5" y2="15.5"/></svg></div>
+            <h3>Citation checker</h3>
+            <p>Verify a quote against its source before you say it in-round — Gemini searches the web to confirm it actually checks out. Try a real check below.</p>
+          </div>
+          <div class="demo-panel" id="demoCitationPanel">
+            <div class="question-block" style="margin-bottom:10px;">
+              <label for="demoCcClaimInput" style="font-size:11px;">Claim</label>
+              <textarea id="demoCcClaimInput" rows="2" placeholder="e.g. Trump said inflation went down 25%" style="font-size:13px;"></textarea>
+            </div>
+            <div style="display:flex;gap:10px;margin-bottom:10px;">
+              <div class="question-block" style="flex:1;margin-bottom:0;">
+                <label for="demoCcDateInput" style="font-size:11px;">Date (mm/dd/yyyy)</label>
+                <input type="text" id="demoCcDateInput" placeholder="06/??/2025" maxlength="10" style="font-size:13px;" />
+              </div>
+              <div class="question-block" style="flex:1;margin-bottom:0;">
+                <label for="demoCcSourceInput" style="font-size:11px;">Source</label>
+                <input type="text" id="demoCcSourceInput" placeholder="e.g. CNN" style="font-size:13px;" />
+              </div>
+            </div>
+            <div class="q-error" id="demoCcError" style="display:none;margin-bottom:8px;"></div>
+            <div id="demoCcLoading" class="hidden" style="text-align:center;padding:14px 0;">
+              <div class="q-hint" id="demoCcLoadingText">Searching the web to verify this citation…</div>
+              <div class="progress-bar-wrap"><div class="progress-bar-track"><div class="progress-bar-fill" id="demoCcProgressFill"></div></div></div>
+              <div class="progress-phrase" id="demoCcProgressPhrase"></div>
+            </div>
+            <div id="demoCcResult" class="hidden" style="margin-top:6px;">
+              <div class="cc-verdict-row" style="justify-content:flex-start;">
+                <div class="cc-verdict-stamp" id="demoCcVerdictStamp" style="padding:8px 22px;">
+                  <div class="label">Verdict</div>
+                  <div class="num" id="demoCcVerdictNum" style="font-size:20px;">—</div>
+                </div>
+              </div>
+              <div class="cc-explanation" id="demoCcExplanation" style="font-size:13px;margin-top:8px;"></div>
+              <div class="cc-source-link" id="demoCcSourceLink" style="font-size:12px;"></div>
+            </div>
+            <div class="demo-locked-overlay" id="demoCcLock">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              <p>That was your free citation check. Sign up to verify unlimited claims before every round.</p>
+              <button type="button" class="demo-signup-btn demo-signup-cta">Sign Up Free</button>
+            </div>
+            <button type="button" class="btn primary" id="demoCcCheckBtn" style="width:100%;">Check Citation</button>
+          </div>
+        </div>
+      </div>
+
       <div class="feature-card">
         <div class="fc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></div>
         <h3>Record your round</h3>
@@ -2294,6 +2342,95 @@
         errEl.style.display = 'block';
         btn.disabled = false; btn.style.opacity = '';
         timingRow.style.pointerEvents = ''; timingRow.style.opacity = '';
+      }
+    });
+  })();
+
+  // ----- "Citation checker" landing demo: 1 real free try -----
+  (function setupDemoCitation(){
+    const DEMO_CC_KEY = 'extemplary-demo-citation-used';
+    const claimInput = document.getElementById('demoCcClaimInput');
+    const dateInput = document.getElementById('demoCcDateInput');
+    const sourceInput = document.getElementById('demoCcSourceInput');
+    const btn = document.getElementById('demoCcCheckBtn');
+    const errEl = document.getElementById('demoCcError');
+    const loading = document.getElementById('demoCcLoading');
+    const loadingText = document.getElementById('demoCcLoadingText');
+    const resultEl = document.getElementById('demoCcResult');
+    const verdictStamp = document.getElementById('demoCcVerdictStamp');
+    const verdictNum = document.getElementById('demoCcVerdictNum');
+    const explanationEl = document.getElementById('demoCcExplanation');
+    const sourceLinkEl = document.getElementById('demoCcSourceLink');
+    const lockEl = document.getElementById('demoCcLock');
+    const demoCcProgress = createProgressController(
+      document.getElementById('demoCcProgressFill'),
+      document.getElementById('demoCcProgressPhrase')
+    );
+    const alreadyUsed = () => localStorage.getItem(DEMO_CC_KEY) === '1';
+    const datePattern = /^[0-9?]{2}\/[0-9?]{2}\/[0-9?]{4}$/;
+
+    if(alreadyUsed()){
+      lockEl.classList.add('show');
+      btn.disabled = true; btn.style.opacity = '0.4';
+      [claimInput, dateInput, sourceInput].forEach(el => { el.disabled = true; });
+    }
+
+    btn.addEventListener('click', async () => {
+      if(alreadyUsed()) return;
+      const claim = claimInput.value.trim();
+      const date = dateInput.value.trim();
+      const source = sourceInput.value.trim();
+      errEl.style.display = 'none';
+
+      if(!claim || !date || !datePattern.test(date) || !source){
+        errEl.textContent = !claim ? 'Please enter a claim.'
+          : (!source ? 'Please enter a source.'
+          : 'Please enter a date as mm/dd/yyyy (use ? for unknown digits, e.g. 06/??/2025).');
+        errEl.style.display = 'block';
+        return;
+      }
+
+      resultEl.classList.add('hidden');
+      btn.disabled = true; btn.style.opacity = '0.5';
+      [claimInput, dateInput, sourceInput].forEach(el => { el.disabled = true; });
+      loadingText.textContent = 'Searching the web to verify this citation…';
+      loading.classList.remove('hidden');
+      demoCcProgress.start(typeof CC_PHRASES !== 'undefined' ? CC_PHRASES : ['Reading the claim…', 'Searching for matching coverage…'], 92);
+
+      try{
+        const prompt = buildCitationPrompt(claim, date, source);
+        const candidate = await callGemini(prompt, 700);
+        const result = extractCitationVerdict(candidate);
+
+        demoCcProgress.finish();
+        await new Promise(r => setTimeout(r, 220));
+        loading.classList.add('hidden');
+
+        verdictStamp.className = 'cc-verdict-stamp ' + result.verdict;
+        verdictStamp.style.padding = '8px 22px';
+        verdictNum.textContent = result.verdict === 'true' ? 'TRUE' : result.verdict === 'false' ? 'FALSE' : 'UNVERIFIED';
+        explanationEl.textContent = result.explanation || (result.verdict === 'unverified' ? "Couldn't confirm this either way from what's publicly searchable." : '');
+        if(result.verdict === 'true' && result.sourceUrl){
+          sourceLinkEl.innerHTML = `Source: <a href="${escapeHtml(result.sourceUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(result.sourceTitle || result.sourceUrl)}</a>`;
+        }else if(result.verdict === 'true'){
+          sourceLinkEl.innerHTML = `<span class="q-hint">Confirmed, but no direct link was found via search.</span>`;
+        }else{
+          sourceLinkEl.innerHTML = '';
+        }
+        resultEl.classList.remove('hidden');
+        lockEl.classList.add('show');
+        try{ localStorage.setItem(DEMO_CC_KEY, '1'); }catch(e){}
+      }catch(err){
+        console.warn('Landing demo citation check failed:', err);
+        demoCcProgress.stop();
+        loading.classList.add('hidden');
+        const isNetworkError = err instanceof TypeError || /failed to fetch/i.test(err?.message || '');
+        errEl.textContent = isNetworkError
+          ? "Couldn't reach the citation checker — check your connection (or an ad blocker/extension may be blocking the request) and try again."
+          : "Couldn't check that citation right now — please try again in a moment.";
+        errEl.style.display = 'block';
+        btn.disabled = false; btn.style.opacity = '';
+        [claimInput, dateInput, sourceInput].forEach(el => { el.disabled = false; });
       }
     });
   })();

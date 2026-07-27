@@ -1277,9 +1277,23 @@
     const strengthIcon = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-6"/></svg>';
     const weaknessIcon = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v10"/><path d="M18 4v16"/><path d="M6 4v6"/></svg>';
 
+    // Latest vs. average overall score, so the user can see how the most
+    // recent round stacks up against their own history.
+    const overallValsAll = overall.map(p => p.val).filter(v => v !== null && v !== undefined);
+    const latestOverallScore = overallValsAll.length ? overallValsAll[overallValsAll.length-1] : null;
+    const avgOverallScore = overallValsAll.length ? overallValsAll.reduce((a,b)=>a+b,0) / overallValsAll.length : null;
+
     el.innerHTML = `
       <div class="history-trends">
         <h3>Trends Across ${list.length} Ballot${list.length===1?'':'s'}</h3>
+        ${overallValsAll.length ? `
+        <div class="trend-overall">
+          <span class="to-label">Overall Score</span>
+          <div class="to-stats">
+            <div class="to-stat"><span class="to-val">${latestOverallScore.toFixed(0)}</span><span class="to-cap">Latest</span></div>
+            <div class="to-stat"><span class="to-val">${avgOverallScore.toFixed(0)}</span><span class="to-cap">Average</span></div>
+          </div>
+        </div>` : ''}
         <div class="trend-rows">
           ${rows.map(r => `
             <div class="trend-row">

@@ -12,7 +12,7 @@ A **free** browser extention for practicing **NSDA Extemporaneous Speaking**. Re
 
 ## What is Extemp? 🗣️
 
-Extemporaneous Speaking refers to a speech event where you deliver a **7 minute** memorized speech (no notes!) on a topic that you will be given **30 minutes** to research. The aim of Extemporaneous Speaking is to deliver the strongest, most well crafted  speech with evidence and flawless reasoning, testing both your presentational skills and your analytical writing skills.
+Extemporaneous Speaking refers to a speech event where you deliver a **7 minute** memorized speech (no notes!) on a topic that you will be given **30 minutes** to research. The aim of Extemporaneous Speaking is to deliver the strongest, most well crafted  speech with evidence and flawless reasoning, testing both your presentational and analytical writing skills.
 
 ---
 
@@ -32,7 +32,7 @@ Sign up → Generate questions → Write a speech → Record your speech → Rec
 
 - **Citation checker** — Before you use a stat or quote in-round, paste the claim, the date it happened, and the source it's attributed to, and Gemini searches the web live to verify it. Marks the claim **TRUE**, **FALSE**, or **UNVERIFIED**, with a 2-3 sentence explanation and a link to the real source it found. Not sure of the exact date? Swap any unknown digit for `?` (e.g. `06/??/2025`) and it'll treat that as an approximate range instead of a literal date. You can also use the citation checker to check the citations from other people's speech.
 
-- **Example ballot** — A fully worked sample round (real speech, real ballot) so first-time users can see what a finished round looks like before recording their own, including the same synced playback experience.
+- **Example ballot** — An example sample round (with speech and ballot) so first-time users can see what a finished round looks like before recording their own, including the same synced playback experience.
 
 - **Accounts & sign-in** — Sign up with an email and password to save your progress. Sessions persist automatically: close the tab, come back later, and you're still signed in. Sign out any time from the account menu.
 
@@ -44,7 +44,7 @@ Sign up → Generate questions → Write a speech → Record your speech → Rec
 
 - **Score trend line graphs** — Sparkline charts for your overall score and for each individual rubric category, plotted round-by-round across your whole history, so you can see exactly where you're improving (or backsliding) at a glance.
 
-- **Streak & Calendar** — A day-by-day practice streak tracked automatically: any day you record a ballot, set a goal, or complete one keeps the streak alive. Your current streak lives in a flame counter fixed to the top of the app, and the full **Streak Calendar** view lays out a month-by-month history of active days, your current and best-ever streak, and milestone markers at 3, 7, 14, 30, and 365 days. The same calendar doubles as a lightweight **tournament & event tracker** — add an upcoming competition's date and name and it'll show up in a running, sorted list of what's next (with past events tucked away behind a toggle).
+- **Streak & Calendar** — A tracked practice streak: any day you record a ballot, set a goal, or complete one keeps the streak alive. Your current streak lives in a flame counter fixed to the top of the app, and the full **Streak Calendar** view lays out a month-by-month history of active days, your current and best-ever streak, and milestone markers at 3, 7, 14, 30, and 365 days. The same calendar doubles as a lightweight **tournament & event tracker** — add an upcoming competition's date and name and it'll show up in a running, sorted list of what's next (with past events tucked away behind a toggle).
 
 - **Goals system** — Set concrete goals for yourself right from the Streak Calendar or My History: hit a streak length, beat an overall score threshold, beat a threshold in one specific rubric category, complete a number of practice rounds or live video ballots this month, or simply show up to a tournament on your calendar. Each goal tracks its own live progress bar computed straight from your ballot history. My History also surfaces **Suggested Goals** — no extra AI call needed — auto-generated from your own weakest rubric categories, current average score, and current streak, so there's always a sensible next target waiting for you.
 
@@ -105,7 +105,7 @@ You'll land on the sign in screen (landing page) the first time you open the app
 
 Every round completed while signed in is saved **automatically**. Tap the clock icon in the header at any time to open **My History**: expand any past round to rewatch the video, re-read the transcript, or reread the full judge's feedback, read your Coach's Overall Notes, scroll through your score trend line graphs and category strengths/weaknesses across all your rounds, review or add **Goals** (including auto-suggested ones based on your own weak spots), and jump straight to the Streak Calendar from there.
 
-Tap the flame icon in the header (top left, once you've got a streak going) at any time to open the **Streak Calendar**: see your current and best-ever streak, a full monthly view of active days, upcoming tournaments/events you've added, and your active goals with live progress bars, all in one place.
+Tap the flame icon in the header to open the **Streak Calendar**: see your current and best-ever streak, a full monthly view of active days, upcoming tournaments/events you've added, and your active goals with live progress bars, all in one place.
 
 Tap the magnifying-glass icon in the header any time to open the **Citation Checker** and verify a claim before you use it in a speech.
 

@@ -838,11 +838,17 @@
 
         <!-- Step 1: enter claim + source -->
         <div id="ccSetupStep">
-          <div class="q-hint" style="margin-bottom:14px;">Paste the exact claim as you'd say it in your speech — including the date — then name the source it's attributed to. Gemini will search the web to verify it.</div>
+          <div class="q-hint" style="margin-bottom:14px;">Paste the exact claim as you'd say it in your speech, enter the date it happened, then name the source it's attributed to. Gemini will search the web to verify it.</div>
           <div class="question-block">
-            <label for="ccClaimInput">Claim (include the date, e.g. mm/dd/yy)</label>
-            <textarea id="ccClaimInput" rows="3" placeholder="e.g. On May 23rd, 2026, Trump said inflation went down 25%"></textarea>
-            <div class="q-error" id="ccClaimError">Please enter the claim, including a date.</div>
+            <label for="ccClaimInput">Claim</label>
+            <textarea id="ccClaimInput" rows="3" placeholder="e.g. Trump said inflation went down 25%"></textarea>
+            <div class="q-error" id="ccClaimError">Please enter the claim.</div>
+          </div>
+          <div class="question-block">
+            <label for="ccDateInput">Date of claim</label>
+            <input type="text" id="ccDateInput" placeholder="mm/dd/yyyy" maxlength="10" />
+            <div class="q-hint" style="margin-top:6px;">Not sure of the exact date? Use <b>?</b> for any digit you don't know — e.g. <code>06/??/2025</code> or <code>??/??/2026</code>.</div>
+            <div class="q-error" id="ccDateError">Please enter a date in mm/dd/yyyy format (use ? for unknown digits).</div>
           </div>
           <div class="question-block">
             <label for="ccSourceInput">Source</label>
@@ -3552,8 +3558,10 @@ Formatting rules: plain text only, with the sole exception of wrapping key terms
   const citationBackBtn2  = document.getElementById('citationBackBtn2');
   const ccSetupStep       = document.getElementById('ccSetupStep');
   const ccClaimInput      = document.getElementById('ccClaimInput');
+  const ccDateInput       = document.getElementById('ccDateInput');
   const ccSourceInput     = document.getElementById('ccSourceInput');
   const ccClaimError      = document.getElementById('ccClaimError');
+  const ccDateError       = document.getElementById('ccDateError');
   const ccSourceError     = document.getElementById('ccSourceError');
   const ccCheckBtn        = document.getElementById('ccCheckBtn');
   const ccLoading         = document.getElementById('ccLoading');
@@ -3619,10 +3627,15 @@ Formatting rules: plain text only, with the sole exception of wrapping key terms
   citationBackBtn.addEventListener('click', closeCitationView);
   citationBackBtn2.addEventListener('click', closeCitationView);
 
-  function buildCitationPrompt(claim, source){
+  function buildCitationPrompt(claim, date, source){
+    const hasWildcard = date.includes('?');
+    const dateNote = hasWildcard
+      ? `The speaker is unsure of part of the date and has marked the unknown digits with "?" — treat this as a range/approximation (e.g. "06/??/2025" means "sometime in June 2025") rather than a literal string.`
+      : `Treat this as the exact date being claimed.`;
     return `You are a rigorous fact-checker helping a competitive extemp speaker verify a citation before they use it in a speech.
 
-CLAIM (as the speaker plans to say it, including the date they're attributing it to): "${claim}"
+CLAIM (as the speaker plans to say it): "${claim}"
+DATE ATTRIBUTED TO THIS CLAIM: "${date}" — ${dateNote}
 CITED SOURCE: "${source}"
 
 Use Google Search to determine whether ${source} actually reported or said this, at or around the date given. Search specifically for coverage from ${source} (or reliable reporting ABOUT what ${source} said/reported) that matches the claim's substance and date.
@@ -3678,11 +3691,15 @@ Grading rules:
   async function checkCitation(){
     if(ccBusy) return;
     const claim = ccClaimInput.value.trim();
+    const date = ccDateInput.value.trim();
     const source = ccSourceInput.value.trim();
+    const datePattern = /^[0-9?]{2}\/[0-9?]{2}\/[0-9?]{4}$/;
     let hasError = false;
     ccClaimInput.classList.remove('error'); ccClaimError.style.display = 'none';
+    ccDateInput.classList.remove('error'); ccDateError.style.display = 'none';
     ccSourceInput.classList.remove('error'); ccSourceError.style.display = 'none';
     if(!claim){ ccClaimInput.classList.add('error'); ccClaimError.style.display = 'block'; hasError = true; }
+    if(!date || !datePattern.test(date)){ ccDateInput.classList.add('error'); ccDateError.style.display = 'block'; hasError = true; }
     if(!source){ ccSourceInput.classList.add('error'); ccSourceError.style.display = 'block'; hasError = true; }
     if(hasError) return;
 
@@ -3694,7 +3711,7 @@ Grading rules:
     ccLoading.classList.remove('hidden');
     ccProgress.start(CC_PHRASES, 92);
 
-    const prompt = buildCitationPrompt(claim, source);
+    const prompt = buildCitationPrompt(claim, date, source);
     try{
       const candidate = await callGemini(prompt, 700);
       const result = extractCitationVerdict(candidate);
@@ -3705,7 +3722,7 @@ Grading rules:
 
       ccVerdictStamp.className = 'cc-verdict-stamp ' + result.verdict;
       ccVerdictNum.textContent = result.verdict === 'true' ? 'TRUE' : result.verdict === 'false' ? 'FALSE' : 'UNVERIFIED';
-      ccClaimRecap.innerHTML = `<b>Claim:</b> ${escapeHtml(claim)}<br><b>Source:</b> ${escapeHtml(source)}`;
+      ccClaimRecap.innerHTML = `<b>Claim:</b> ${escapeHtml(claim)}<br><b>Date:</b> ${escapeHtml(date)}<br><b>Source:</b> ${escapeHtml(source)}`;
       ccExplanation.textContent = result.explanation || (result.verdict === 'unverified' ? "Couldn't confirm this either way from what's publicly searchable." : '');
       if(result.verdict === 'true' && result.sourceUrl){
         ccSourceLink.innerHTML = `Source: <a href="${escapeHtml(result.sourceUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(result.sourceTitle || result.sourceUrl)}</a>`;
@@ -3734,6 +3751,7 @@ Grading rules:
   ccCheckAnotherBtn.addEventListener('click', () => {
     ccResultStep.classList.add('hidden');
     ccClaimInput.value = '';
+    ccDateInput.value = '';
     ccSourceInput.value = '';
     ccSetupStep.classList.remove('hidden');
     ccError.style.display = 'none';

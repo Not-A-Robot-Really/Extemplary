@@ -16,7 +16,7 @@ Extemporaneous Speaking refers to a speech event where you deliver a **7 minute*
 
 ---
 
-## What Extemplary does 🧩
+## Features 🧩
 ---
 Sign up → Generate questions → Write a speech → Record your speech → Receive feedback → Set goals → Practice more → Track your improvement/progress → Correct bad habits & general weaknesses
 
@@ -30,13 +30,19 @@ Sign up → Generate questions → Write a speech → Record your speech → Rec
 
 - **Watch & Read Along** — An embedded video player synced word-for-word with the transcript. Click any word (or any judge's note) to jump the video to that **exact** moment; the current word highlights live as it plays.
 
+- **Citation checker** — Before you use a stat or quote in-round, paste the claim, the date it happened, and the source it's attributed to, and Gemini searches the web live to verify it. Marks the claim **TRUE**, **FALSE**, or **UNVERIFIED**, with a 2-3 sentence explanation and a link to the real source it found. Not sure of the exact date? Swap any unknown digit for `?` (e.g. `06/??/2025`) and it'll treat that as an approximate range instead of a literal date.
+
 - **Example ballot** — A fully worked sample round (real speech, real ballot) so first-time users can see what a finished round looks like before recording their own, including the same synced playback experience.
 
 - **Accounts & sign-in** — Sign up with an email and password to save your progress. Sessions persist automatically: close the tab, come back later, and you're still signed in. Sign out any time from the account menu.
 
-- **Cloud-saved ballot history** — Every completed round (video, transcript, full written feedback, and category scores) is saved and automatically stored onto your account and available from any device you sign in on, via the **My History** page. 
+- **Cloud-saved ballot history** — Every completed round (video, transcript, full written feedback, and category scores) is saved and automatically stored onto your account and available from any device you sign in on, via the **My History** page.
 
-- **Trends across your ballots** — The History view aggregates your average score in each rubric category across every round you've recorded, letting you view your overall strengths and weaknesses as a whole, not just per-round feedback.
+- **Coach's Overall Notes** — A short, AI-generated coaching comment sitting at the top of My History that synthesizes patterns across your *entire* practice history — not just your latest round — naming your biggest recurring strength, your biggest recurring area to improve, and one concrete next step. It's regenerated automatically at milestone round counts (1, 2, 3, 5, 7, 10, then every 5 rounds after that) or whenever you post a clear breakthrough round, so it stays current without burning an AI call on every single visit.
+
+- **Trends across your ballots** — The History view aggregates your average score in each rubric category across every round you've recorded, with per-category bars plus your top overall strengths and weaknesses, letting you see the whole picture — not just per-round feedback.
+
+- **Score trend line graphs** — Sparkline charts for your overall score and for each individual rubric category, plotted round-by-round across your whole history, so you can see exactly where you're improving (or backsliding) at a glance.
 
 - **Session score tracking & export** — Precise score tracking within a session **and** over many rounds, plus export to `.txt`, printable ballot, video download, and shareable round links.
 
@@ -58,7 +64,9 @@ The sign-in screen is also a landing page. Scroll down past the log in info to s
 
 - **4️⃣ AI-judged ballot preview** — one full, real category (with score, What Worked, Critical Flaws, and What You Could Have Done) pulled from an actual ballot.
 
-- 5️⃣ **Example Ballot** — Contains a **complete** example round, with example transcript, video, feedback, comments, rubric, and score. This preview is fully  from the rest of the app. You can look around without ever being signed into anything.
+- **5️⃣ Citation checker** — verify one real claim against its source, the exact same way the in-app Citation Checker does (one free try per browser).
+
+- 6️⃣ **Example Ballot** — Contains a **complete** example round, with example transcript, video, feedback, comments, rubric, and score. This preview is fully  from the rest of the app. You can look around without ever being signed into anything.
 
 ## Software ⚙️
 ---
@@ -66,12 +74,12 @@ Everything lives in a single `.html` file — no build step, no custom backend, 
 
 - **Transcription:** Groq's Whisper (`whisper-large-v3`, word-level timestamps)
 - **Judging:** Groq's Llama 3.3 70B Versatile
-- **Question drafting & briefings:** Google's Gemini, used both in the signed-in app and for the landing page's live free-try demos
+- **Question drafting, briefings & citation checking:** Google's Gemini with live Google Search grounding, used both in the signed-in app and for the landing page's live free-try demos
 - **Audio analysis:** Web Audio API (client-side FFT/pitch/volume analysis — no server round-trip)
 - **Video:** `MediaRecorder` for capture, plain `<video>` for review/playback; the example ballot uses the YouTube IFrame API for its sample speech
 - **Accounts:** [Supabase Auth](https://supabase.com/docs/guides/auth) (email + password), loaded client-side via `supabase-js`
-- **Cloud storage:** a Supabase Postgres table (`ballots`) for scores/transcripts/feedback, and a private Supabase Storage bucket (`ballot-videos`) for recorded videos — both locked down with Row Level Security so each account can only ever access its own data
-- **Local storage:** `localStorage` is used for lightweight preferences (theme, timer settings) and for remembering whether a browser has already used its one free landing-page demo try; everything account-related (ballots, video, session) lives in Supabase, not the browser
+- **Cloud storage:** a Supabase Postgres table (`ballots`) for scores/transcripts/feedback, a table (`user_overall_feedback`) for the cached Coach's Overall Notes comment, and a private Supabase Storage bucket (`ballot-videos`) for recorded videos — all locked down with Row Level Security so each account can only ever access its own data
+- **Local storage:** `localStorage` is used for lightweight preferences (theme, timer settings) and for remembering whether a browser has already used its one free landing-page demo try (questions, briefings, citation checker); everything account-related (ballots, video, session) lives in Supabase, not the browser
 
 ## Getting started 📖
 ---
@@ -88,11 +96,13 @@ You'll land on the sign in screen (landing page) the first time you open the app
 2. Depending on the project's auth settings, you may need to check your email and click a confirmation link before your first log in (see [Supabase setup](#supabase-setup) below).
 3. Once signed in, you'll stay signed in automatically — even after closing the tab or restarting your browser — until you tap **Sign out** in the account menu (top right).
 
-Every round completed while signed in is saved **automatically**. Tap the clock icon in the header at any time to open **My History**: expand any past round to rewatch the video, re-read the transcript, or reread the full judge's feedback, or scroll up to see your average score by category across all your rounds and your standout overall strengths and weaknesses.
+Every round completed while signed in is saved **automatically**. Tap the clock icon in the header at any time to open **My History**: expand any past round to rewatch the video, re-read the transcript, or reread the full judge's feedback, read your Coach's Overall Notes, or scroll through your score trend line graphs and category strengths/weaknesses across all your rounds.
+
+Tap the magnifying-glass icon in the header any time to open the **Citation Checker** and verify a claim before you use it in a speech.
 
 ### API keys 🔑
 ---
-The app utilizes default Groq and Gemini API keys for transcription, judging, and question/briefing generation. If you hit rate limits or want to use your own, open **Settings → Override Groq API Key** and paste your own key from [console.groq.com](https://console.groq.com).
+The app utilizes default Groq and Gemini API keys for transcription, judging, and question/briefing/citation generation. If you hit rate limits or want to use your own, open **Settings → Override Groq API Key** and paste your own key from [console.groq.com](https://console.groq.com).
 
 ## Supabase setup 💾
 ---
@@ -101,6 +111,7 @@ Accounts and cloud history run on a Supabase project. The app already has a proj
 1. Open the corresponding project at [supabase.com/dashboard](https://supabase.com/dashboard).
 2. Go to **SQL Editor → New query**, paste in the contents of `setup.sql` (included in this repo), and run it. This creates:
    - A `ballots` table (question, scores, feedback, transcript, video path) with Row Level Security, so each signed-in user can only read, insert, or delete their own rows.
+   - A `user_overall_feedback` table for the cached Coach's Overall Notes comment, also protected by Row Level Security.
    - A private `ballot-videos` Storage bucket with matching policies, so videos are only reachable by their owner via short-lived signed URLs.
 3. Under **Authentication → Providers → Email**, confirm email sign-in is enabled, and decide whether to require **email confirmation** before first login (on by default — recommended for a publicly hosted app; can be turned off for faster testing, and either way needs a working SMTP sender — see below).
 4. Under **Authentication → URL Configuration**, set **Site URL** (and add to **Redirect URLs**) to your deployed GitHub Pages URL, so confirmation emails link back to the right place.
@@ -132,10 +143,10 @@ Requires a modern browser with support for `MediaRecorder`, `getUserMedia`, and 
 
 ## Privacy & data 🛡️
 ---
-- Audio is sent only to Groq's API for transcription and judging; question and briefing generation is sent only to Google's Gemini API.
+- Audio is sent only to Groq's API for transcription and judging; question drafting, briefing generation, and citation checking are sent only to Google's Gemini API.
 - Account email/password and ballot history (scores, transcripts, feedback, and recorded video) are stored in Supabase, associated only with your account, and protected by Row Level Security — no other user can read or modify your data through the app.
 - Recorded video is stored in **private** storage buckets; it is only ever served back to your browser via short-lived signed links generated while you're signed in, not via public URLs.
-- The landing page's free-try demos (practice questions, current event briefings) run before sign-in and are not saved anywhere — only a "used" flag is kept locally in your browser so the free try isn't repeatable.
+- The landing page's free-try demos (practice questions, current event briefings, citation checker) run before sign-in and are not saved anywhere — only a "used" flag is kept locally in your browser so the free try isn't repeatable.
 
 ## Disclaimer ⚠️
 ---

@@ -44,6 +44,10 @@ Sign up → Generate questions → Write a speech → Record your speech → Rec
 
 - **Score trend line graphs** — Sparkline charts for your overall score and for each individual rubric category, plotted round-by-round across your whole history, so you can see exactly where you're improving (or backsliding) at a glance.
 
+- **Streak & Calendar** — A day-by-day practice streak tracked automatically: any day you record a ballot, set a goal, or complete one keeps the streak alive. Your current streak lives in a flame counter fixed to the top of the app, and the full **Streak Calendar** view lays out a month-by-month history of active days, your current and best-ever streak, and milestone markers at 3, 7, 14, 30, and 365 days. The same calendar doubles as a lightweight **tournament & event tracker** — add an upcoming competition's date and name and it'll show up in a running, sorted list of what's next (with past events tucked away behind a toggle).
+
+- **Goals system** — Set concrete goals for yourself right from the Streak Calendar or My History: hit a streak length, beat an overall score threshold, beat a threshold in one specific rubric category, complete a number of practice rounds or live video ballots this month, or simply show up to a tournament on your calendar. Each goal tracks its own live progress bar computed straight from your ballot history. My History also surfaces **Suggested Goals** — no extra AI call needed — auto-generated from your own weakest rubric categories, current average score, and current streak, so there's always a sensible next target waiting for you.
+
 - **Session score tracking & export** — Precise score tracking within a session **and** over many rounds, plus export to `.txt`, printable ballot, video download, and shareable round links.
 
 - **Installable PWA** — Works offline for timing/recording; add to your phone's home screen.
@@ -68,6 +72,8 @@ The sign-in screen is also a landing page. Scroll down past the log in info to s
 
 - 6️⃣ **Example Ballot** — Contains a **complete** example round, with example transcript, video, feedback, comments, rubric, and score. This preview is fully  from the rest of the app. You can look around without ever being signed into anything.
 
+Note: the Streak Calendar and Goals system are account features and aren't part of the free-try preview, since both are built on your ongoing ballot history.
+
 ## Software ⚙️
 ---
 Supabase provides authentication and cloud storage.
@@ -78,8 +84,9 @@ Supabase provides authentication and cloud storage.
 - **Audio analysis:** Web Audio API (client-side FFT/pitch/volume analysis — no server round-trip)
 - **Video:** `MediaRecorder` for capture, plain `<video>` for review/playback; the example ballot uses the YouTube IFrame API for its sample speech
 - **Accounts:** [Supabase Auth](https://supabase.com/docs/guides/auth) (email + password), loaded client-side via `supabase-js`
-- **Cloud storage:** a Supabase Postgres table (`ballots`) for scores/transcripts/feedback, a table (`user_overall_feedback`) for the cached Coach's Overall Notes comment, and a private Supabase Storage bucket (`ballot-videos`) for recorded videos — all locked down with Row Level Security so each account can only ever access its own data
-- **Local storage:** `localStorage` is used for lightweight preferences (theme, timer settings) and for remembering whether a browser has already used its one free landing-page demo try (questions, briefings, citation checker); everything account-related (ballots, video, session) lives in Supabase, not the browser
+- **Cloud storage:** a Supabase Postgres table (`ballots`) for scores/transcripts/feedback, a table (`user_overall_feedback`) for the cached Coach's Overall Notes comment, a table (`calendar_events`) for tournament/event dates behind the Streak Calendar, a table (`user_goals`) for saved goals and their targets, and a private Supabase Storage bucket (`ballot-videos`) for recorded videos — all locked down with Row Level Security so each account can only ever access its own data
+- **Streak calculation:** computed entirely client-side from your existing `ballots` and `user_goals` rows — no separate streak table needed. A day counts as "active" if you recorded a ballot, set a goal, or currently have a goal complete that day.
+- **Local storage:** `localStorage` is used for lightweight preferences (theme, timer settings) and for remembering whether a browser has already used its one free landing-page demo try (questions, briefings, citation checker); everything account-related (ballots, video, session, streak/calendar events, goals) lives in Supabase, not the browser
 
 ## Getting started 📖
 ---
@@ -96,7 +103,9 @@ You'll land on the sign in screen (landing page) the first time you open the app
 2. Depending on the project's auth settings, you may need to check your email and click a confirmation link before your first log in (see [Supabase setup](#supabase-setup) below).
 3. Once signed in, you'll stay signed in automatically — even after closing the tab or restarting your browser — until you tap **Sign out** in the account menu (top right).
 
-Every round completed while signed in is saved **automatically**. Tap the clock icon in the header at any time to open **My History**: expand any past round to rewatch the video, re-read the transcript, or reread the full judge's feedback, read your Coach's Overall Notes, or scroll through your score trend line graphs and category strengths/weaknesses across all your rounds.
+Every round completed while signed in is saved **automatically**. Tap the clock icon in the header at any time to open **My History**: expand any past round to rewatch the video, re-read the transcript, or reread the full judge's feedback, read your Coach's Overall Notes, scroll through your score trend line graphs and category strengths/weaknesses across all your rounds, review or add **Goals** (including auto-suggested ones based on your own weak spots), and jump straight to the Streak Calendar from there.
+
+Tap the flame icon in the header (top left, once you've got a streak going) at any time to open the **Streak Calendar**: see your current and best-ever streak, a full monthly view of active days, upcoming tournaments/events you've added, and your active goals with live progress bars, all in one place.
 
 Tap the magnifying-glass icon in the header any time to open the **Citation Checker** and verify a claim before you use it in a speech.
 
@@ -112,6 +121,8 @@ Accounts and cloud history run on a Supabase project. The app already has a proj
 2. Go to **SQL Editor → New query**, paste in the contents of `setup.sql` (included in this repo), and run it. This creates:
    - A `ballots` table (question, scores, feedback, transcript, video path) with Row Level Security, so each signed-in user can only read, insert, or delete their own rows.
    - A `user_overall_feedback` table for the cached Coach's Overall Notes comment, also protected by Row Level Security.
+   - A `calendar_events` table (event date, title, notes) powering the Streak Calendar's tournament/event tracker, protected by Row Level Security.
+   - A `user_goals` table (goal type, params, target date, status) powering the Goals system, protected by Row Level Security.
    - A private `ballot-videos` Storage bucket with matching policies, so videos are only reachable by their owner via short-lived signed URLs.
 3. Under **Authentication → Providers → Email**, confirm email sign-in is enabled, and decide whether to require **email confirmation** before first login (on by default — recommended for a publicly hosted app; can be turned off for faster testing, and either way needs a working SMTP sender — see below).
 4. Under **Authentication → URL Configuration**, set **Site URL** (and add to **Redirect URLs**) to your deployed GitHub Pages URL, so confirmation emails link back to the right place.
@@ -145,6 +156,7 @@ Requires a modern browser with support for `MediaRecorder`, `getUserMedia`, and 
 ---
 - Audio is sent only to Groq's API for transcription and judging; question drafting, briefing generation, and citation checking are sent only to Google's Gemini API.
 - Account email/password and ballot history (scores, transcripts, feedback, and recorded video) are stored in Supabase, associated only with your account, and protected by Row Level Security — no other user can read or modify your data through the app.
+- Your Streak Calendar data (tournament/event entries) and Goals data (goal type, target, progress source) are likewise stored in Supabase, tied to your account, and protected by Row Level Security.
 - Recorded video is stored in **private** storage buckets; it is only ever served back to your browser via short-lived signed links generated while you're signed in, not via public URLs.
 - The landing page's free-try demos (practice questions, current event briefings, citation checker) run before sign-in and are not saved anywhere — only a "used" flag is kept locally in your browser so the free try isn't repeatable.
 

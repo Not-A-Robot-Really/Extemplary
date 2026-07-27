@@ -438,7 +438,8 @@
 
 <!-- ====== STREAK COUNTER — floating top-right, mirrors the hamburger fab ====== -->
 <!-- ====== HAMBURGER NAV MENU — standalone floating button, top-left of the ====== -->
-<!-- ====== whole screen (not part of the header icon row), opens a slide-in drawer ====== -->
+<!-- ====== whole screen, sits at the top of the left-side menu list, doubling ====== -->
+<!-- ====== as the toggle that minimizes/restores it (no separate close X) ====== -->
 <button class="streak-fab hidden" id="streakFab" type="button" aria-label="Current streak" title="Current streak">
   <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" stroke="none" id="streakFabIcon"><use href="#icon-29"></use></svg>
   <span class="streak-fab-count" id="streakFabCount">0</span>
@@ -448,14 +449,7 @@
   <svg viewBox="0 0 24 24" width="27" height="27" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-30"></use></svg>
 </button>
 
-<div class="nav-drawer-backdrop" id="navDrawerBackdrop"></div>
 <div class="nav-drawer" id="navMenuPanel">
-  <div class="nav-drawer-head">
-    <span>Menu</span>
-    <button type="button" class="nav-drawer-close" id="navDrawerCloseBtn" aria-label="Close menu">
-      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-31"></use></svg>
-    </button>
-  </div>
   <div class="sp-body nav-menu-body">
     <button type="button" class="nav-menu-item" id="navHomeBtn">
       <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-32"></use></svg>
@@ -4986,11 +4980,11 @@ Grading rules:
   // The drawer now stays open/visible at all times by default so the moving
   // wall background is always visible through it. Clicking the hamburger no
   // longer opens/closes a backdrop-dimmed overlay — it just minimizes
-  // (slides away) or restores the drawer in place.
+  // (slides away) or restores the drawer in place. The hamburger button
+  // itself sits at the top of the left-side menu, doing double duty as
+  // both the toggle and the drawer's visual "head" (no separate close X).
   const navMenuToggle   = document.getElementById('navMenuToggle');
   const navMenuPanel    = document.getElementById('navMenuPanel');
-  const navDrawerBackdrop = document.getElementById('navDrawerBackdrop');
-  const navDrawerCloseBtn = document.getElementById('navDrawerCloseBtn');
   let navMenuOpenState = true;
   function openNavMenu(){
     if(typeof shortcutsOpen !== 'undefined' && shortcutsOpen) closeShortcutsPanel();
@@ -5017,8 +5011,6 @@ Grading rules:
     e.stopPropagation();
     if(navMenuOpenState) closeNavMenu(); else openNavMenu();
   });
-  navDrawerCloseBtn.addEventListener('click', closeNavMenu);
-  navDrawerBackdrop.addEventListener('click', closeNavMenu);
   // "Home" returns to the default Official Practice Ballot view, closing
   // whatever overlay view (History, Briefing, Citation Checker, Example
   // Ballot) is currently open — same effect as each view's own Back button.

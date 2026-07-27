@@ -436,15 +436,15 @@
   </div>
 </header>
 
-<!-- ====== HAMBURGER NAV MENU — standalone floating button, top-right of the ====== -->
+<!-- ====== STREAK COUNTER — floating top-right, mirrors the hamburger fab ====== -->
+<!-- ====== HAMBURGER NAV MENU — standalone floating button, top-left of the ====== -->
 <!-- ====== whole screen (not part of the header icon row), opens a slide-in drawer ====== -->
-<!-- ====== STREAK COUNTER — floating top-left, mirrors the hamburger fab ====== -->
 <button class="streak-fab hidden" id="streakFab" type="button" aria-label="Current streak" title="Current streak">
   <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" stroke="none" id="streakFabIcon"><use href="#icon-29"></use></svg>
   <span class="streak-fab-count" id="streakFabCount">0</span>
 </button>
 
-<button class="nav-hamburger-fab" id="navMenuToggle" type="button" aria-label="Menu" title="Menu" aria-haspopup="true" aria-expanded="false">
+<button class="nav-hamburger-fab" id="navMenuToggle" type="button" aria-label="Menu" title="Menu" aria-haspopup="true" aria-expanded="true">
   <svg viewBox="0 0 24 24" width="27" height="27" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-30"></use></svg>
 </button>
 
@@ -4982,12 +4982,16 @@ Grading rules:
   };
   rubricToggle.classList.toggle('hidden', !RUBRIC_VISIBLE_VIEWS.includes(viewRecord));
 
-  // ===== Hamburger nav menu (slide-in drawer from the right) =====
+  // ===== Hamburger nav menu (semi-transparent drawer, shown by default) =====
+  // The drawer now stays open/visible at all times by default so the moving
+  // wall background is always visible through it. Clicking the hamburger no
+  // longer opens/closes a backdrop-dimmed overlay — it just minimizes
+  // (slides away) or restores the drawer in place.
   const navMenuToggle   = document.getElementById('navMenuToggle');
   const navMenuPanel    = document.getElementById('navMenuPanel');
   const navDrawerBackdrop = document.getElementById('navDrawerBackdrop');
   const navDrawerCloseBtn = document.getElementById('navDrawerCloseBtn');
-  let navMenuOpenState = false;
+  let navMenuOpenState = true;
   function openNavMenu(){
     if(typeof shortcutsOpen !== 'undefined' && shortcutsOpen) closeShortcutsPanel();
     if(typeof settingsOpen !== 'undefined' && settingsOpen){
@@ -5001,16 +5005,12 @@ Grading rules:
       timerToggle.classList.remove('active');
     }
     navMenuOpenState = true;
-    navDrawerBackdrop.classList.add('show');
-    navMenuPanel.classList.add('show');
-    navMenuToggle.classList.add('active');
+    navMenuPanel.classList.remove('nav-drawer-collapsed');
     navMenuToggle.setAttribute('aria-expanded', 'true');
   }
   function closeNavMenu(){
     navMenuOpenState = false;
-    navDrawerBackdrop.classList.remove('show');
-    navMenuPanel.classList.remove('show');
-    navMenuToggle.classList.remove('active');
+    navMenuPanel.classList.add('nav-drawer-collapsed');
     navMenuToggle.setAttribute('aria-expanded', 'false');
   }
   navMenuToggle.addEventListener('click', (e) => {

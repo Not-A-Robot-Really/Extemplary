@@ -165,7 +165,7 @@
   .rubric-table th:nth-child(2), .rubric-table td:nth-child(2){width:9%;text-align:center;}
   .rubric-table th:nth-child(3), .rubric-table td:nth-child(3){width:65%;}
   .rubric-table td:nth-child(2){font-family:var(--font-mono);font-weight:bold;}
-  .rubric-table td{line-height:1.5;}
+  .rubric-table td{line-height:1.5;color:#000000;}
   .rubric-table tbody tr:nth-child(even){background:rgba(0,0,0,0.025);}
   .rubric-table tfoot td{
     font-family:var(--font-mono);font-weight:bold;text-transform:uppercase;letter-spacing:0.5px;
@@ -1456,7 +1456,7 @@
 
   /* ================= HAMBURGER NAV MENU ================= */
   .nav-hamburger-fab{
-    position:fixed;top:16px;right:16px;z-index:700;
+    position:fixed;top:16px;left:16px;z-index:700;
     width:46px;height:46px;border-radius:50%;
     display:flex;align-items:center;justify-content:center;
     background:none;border:none;
@@ -1465,24 +1465,27 @@
     transition:opacity .15s, transform .15s;
   }
   .nav-hamburger-fab:hover{opacity:0.8;}
-  .nav-hamburger-fab.active{color:#ffffff;}
-  .nav-hamburger-fab.active svg{opacity:0;}
   .nav-hamburger-fab svg{transition:opacity .15s;}
   .nav-drawer-backdrop{
     position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:680;
     opacity:0;pointer-events:none;transition:opacity .25s ease;
   }
   .nav-drawer-backdrop.show{opacity:1;pointer-events:auto;}
+  /* The drawer is shown by default (semi-transparent, so the moving wall
+     background stays visible behind it) and only tucks itself away when
+     the hamburger button is clicked to minimize it — see
+     .nav-drawer-collapsed below. */
   .nav-drawer{
     position:fixed;top:0;right:0;bottom:0;z-index:690;
     width:300px;max-width:86vw;
-    background:var(--parchment);
+    background:rgba(241,236,223,0.62);
+    backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);
     box-shadow:-6px 0 24px rgba(0,0,0,0.3);
-    transform:translateX(100%);pointer-events:none;
+    transform:translateX(0);pointer-events:auto;
     transition:transform .3s cubic-bezier(.2,.8,.25,1);
     display:flex;flex-direction:column;overflow-y:auto;
   }
-  .nav-drawer.show{transform:translateX(0);pointer-events:auto;}
+  .nav-drawer.nav-drawer-collapsed{transform:translateX(100%);pointer-events:none;}
   .nav-drawer-head{
     background:var(--charcoal);padding:16px 16px 16px 20px;flex-shrink:0;
     display:flex;align-items:center;justify-content:space-between;
@@ -1608,7 +1611,7 @@
   }
   /* ================= STREAK / CALENDAR / GOALS ================= */
   .streak-fab{
-    position:fixed;top:16px;left:16px;z-index:700;
+    position:fixed;top:16px;right:16px;z-index:700;
     display:flex;align-items:center;gap:6px;
     padding:8px 14px 8px 10px;border-radius:24px;border:none;cursor:pointer;
     background:rgba(0,0,0,0.28);color:#ffffff;

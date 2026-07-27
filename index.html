@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <meta name="apple-mobile-web-app-title" content="Extemplary" />
 <title>Extemplary</title>
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 36 37'%3E%3Crect width='36' height='37' rx='8' fill='%230a1c30'/%3E%3Cpath d='M9 2H27C30.3137 2 33 4.68629 33 8V20C33 23.3137 30.3137 26 27 26H15.5L8.5 32.5C8.03 32.94 7.28 32.6 7.28 31.96V26H9C5.68629 26 3 23.3137 3 20V8C3 4.68629 5.68629 2 9 2Z' fill='%23123a63'/%3E%3Ctext x='18' y='15' text-anchor='middle' dominant-baseline='central' font-family='Georgia, Iowan Old Style, Palatino Linotype, Book Antiqua, serif' font-weight='900' font-size='23' fill='%23ffffff'%3EE%3C/text%3E%3C/svg%3E" />
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 36 37'%3E%3Cpath d='M9 2H27C30.3137 2 33 4.68629 33 8V20C33 23.3137 30.3137 26 27 26H15.5L8.5 32.5C8.03 32.94 7.28 32.6 7.28 31.96V26H9C5.68629 26 3 23.3137 3 20V8C3 4.68629 5.68629 2 9 2Z' fill='%232f79c9'/%3E%3Ctext x='18' y='15' text-anchor='middle' dominant-baseline='central' font-family='Georgia, Iowan Old Style, Palatino Linotype, Book Antiqua, serif' font-weight='900' font-size='23' fill='%23ffffff'%3EE%3C/text%3E%3C/svg%3E" />
 <link rel="stylesheet" href="style.css" />
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
@@ -372,8 +372,96 @@
         <line x1="12" y1="17" x2="12.01" y2="17"/>
       </svg>
     </button>
+    <button class="gear-btn" id="navMenuToggle" type="button" aria-label="Menu" title="Menu" aria-haspopup="true" aria-expanded="false">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="3" y1="6" x2="21" y2="6"/>
+        <line x1="3" y1="12" x2="21" y2="12"/>
+        <line x1="3" y1="18" x2="21" y2="18"/>
+      </svg>
+    </button>
   </div>
 </header>
+
+<!-- ====== HAMBURGER NAV MENU (table-of-contents dropdown) ====== -->
+<div class="settings-panel nav-menu-panel hidden" id="navMenuPanel">
+  <div class="sp-head">
+    <span>Menu</span>
+  </div>
+  <div class="sp-body nav-menu-body">
+    <button type="button" class="nav-menu-item" id="navHomeBtn">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 11l9-8 9 8"/>
+        <path d="M5 10v10a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V10"/>
+      </svg>
+      <span>Home</span>
+    </button>
+    <div class="nav-menu-divider"></div>
+    <button type="button" class="nav-menu-item" data-target="historyToggle">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 12a9 9 0 1 0 3-6.7"/>
+        <path d="M3 4v5h5"/>
+        <path d="M12 8v5l3 2"/>
+      </svg>
+      <span>My Ballot History</span>
+    </button>
+    <button type="button" class="nav-menu-item" data-target="timerToggle">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="10" y1="2" x2="14" y2="2"/>
+        <line x1="12" y1="14" x2="12" y2="9"/>
+        <circle cx="12" cy="14" r="8"/>
+      </svg>
+      <span>Prep Timer</span>
+    </button>
+    <button type="button" class="nav-menu-item" data-target="settingsToggle">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+      </svg>
+      <span>Time Signal Settings</span>
+    </button>
+    <button type="button" class="nav-menu-item" data-target="themeToggle">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"/>
+      </svg>
+      <span>Toggle Light / Dark Mode</span>
+    </button>
+    <button type="button" class="nav-menu-item" data-target="shortcutsToggle">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="2" y="5" width="20" height="14" rx="2"/>
+        <line x1="6" y1="9" x2="6" y2="9.01"/><line x1="10" y1="9" x2="10" y2="9.01"/><line x1="14" y1="9" x2="14" y2="9.01"/><line x1="18" y1="9" x2="18" y2="9.01"/>
+        <line x1="6" y1="13" x2="6" y2="13.01"/><line x1="18" y1="13" x2="18" y2="13.01"/>
+        <line x1="9" y1="13" x2="15" y2="13"/>
+      </svg>
+      <span>Keyboard Shortcuts</span>
+    </button>
+    <button type="button" class="nav-menu-item" data-target="briefingToggle">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 4h13a3 3 0 0 1 3 3v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4Z"/>
+        <path d="M18 4v0a3 3 0 0 1 3 3v11a1 1 0 0 1-1 1"/>
+        <line x1="7" y1="8" x2="15" y2="8"/>
+        <line x1="7" y1="12" x2="15" y2="12"/>
+        <line x1="7" y1="16" x2="11" y2="16"/>
+      </svg>
+      <span>Tournament Briefing</span>
+    </button>
+    <button type="button" class="nav-menu-item" data-target="citationToggle">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="10.5" cy="10.5" r="7"/>
+        <path d="M7.5 10.7l2 2 3.4-3.8"/>
+        <line x1="20.5" y1="20.5" x2="15.5" y2="15.5"/>
+      </svg>
+      <span>Citation Checker</span>
+    </button>
+    <button type="button" class="nav-menu-item" data-target="helpToggle">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/>
+        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 2-3 4"/>
+        <line x1="12" y1="17" x2="12.01" y2="17"/>
+      </svg>
+      <span>Example Ballot</span>
+    </button>
+  </div>
+</div>
 
 <main>
   <div class="ballot" id="ballot">
@@ -4242,6 +4330,73 @@ Grading rules:
   });
   window.addEventListener('resize', () => { if(shortcutsOpen) positionShortcutsPanel(); });
 
+  // ===== Hamburger nav menu (table-of-contents dropdown) =====
+  const navMenuToggle = document.getElementById('navMenuToggle');
+  const navMenuPanel  = document.getElementById('navMenuPanel');
+  let navMenuOpenState = false;
+  function positionNavMenuPanel(){
+    const rect = navMenuToggle.getBoundingClientRect();
+    const width = Math.min(250, window.innerWidth - 24);
+    navMenuPanel.style.width = width + 'px';
+    navMenuPanel.style.left = 'auto';
+    let right = window.innerWidth - rect.right;
+    right = Math.max(12, Math.min(right, window.innerWidth - width - 12));
+    navMenuPanel.style.right = right + 'px';
+    navMenuPanel.style.top = (rect.bottom + 8) + 'px';
+  }
+  function openNavMenu(){
+    if(typeof shortcutsOpen !== 'undefined' && shortcutsOpen) closeShortcutsPanel();
+    if(typeof settingsOpen !== 'undefined' && settingsOpen){
+      settingsOpen = false;
+      settingsPanel.classList.add('hidden');
+      settingsToggle.classList.remove('active');
+    }
+    if(typeof timerOpen !== 'undefined' && timerOpen){
+      timerOpen = false;
+      timerPanel.classList.add('hidden');
+      timerToggle.classList.remove('active');
+    }
+    navMenuOpenState = true;
+    positionNavMenuPanel();
+    navMenuPanel.classList.remove('hidden');
+    navMenuToggle.classList.add('active');
+    navMenuToggle.setAttribute('aria-expanded', 'true');
+  }
+  function closeNavMenu(){
+    navMenuOpenState = false;
+    navMenuPanel.classList.add('hidden');
+    navMenuToggle.classList.remove('active');
+    navMenuToggle.setAttribute('aria-expanded', 'false');
+  }
+  navMenuToggle.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if(navMenuOpenState) closeNavMenu(); else openNavMenu();
+  });
+  document.addEventListener('click', (e) => {
+    if(navMenuOpenState && !e.target.closest('#navMenuPanel') && !e.target.closest('#navMenuToggle')){
+      closeNavMenu();
+    }
+  });
+  window.addEventListener('resize', () => { if(navMenuOpenState) positionNavMenuPanel(); });
+  // "Home" returns to the default Official Practice Ballot view, closing
+  // whatever overlay view (History, Briefing, Citation Checker, Example
+  // Ballot) is currently open — same effect as each view's own Back button.
+  document.getElementById('navHomeBtn').addEventListener('click', () => {
+    closeNavMenu();
+    showView(viewRecord);
+  });
+  // Every other menu item just triggers the click of the header icon it
+  // mirrors, so it always stays perfectly in sync with that button's own
+  // open/close/toggle logic — nothing to duplicate or fall out of date.
+  navMenuPanel.querySelectorAll('.nav-menu-item[data-target]').forEach(item => {
+    item.addEventListener('click', () => {
+      const targetId = item.getAttribute('data-target');
+      closeNavMenu();
+      const targetBtn = document.getElementById(targetId);
+      if(targetBtn) targetBtn.click();
+    });
+  });
+
   // ===== Light / dark theme toggle =====
   const themeToggle = document.getElementById('themeToggle');
   const themeIconMoon = document.getElementById('themeIconMoon');
@@ -4278,6 +4433,7 @@ Grading rules:
     const typing = tag === 'input' || tag === 'textarea' || (e.target && e.target.isContentEditable);
     if(e.key === 'Escape'){
       closeShortcutsPanel();
+      if(typeof closeNavMenu === 'function') closeNavMenu();
       if(typeof closeAllExportMenus === 'function') closeAllExportMenus();
       if(typeof settingsOpen !== 'undefined' && settingsOpen){ settingsPanel.classList.add('hidden'); settingsToggle.classList.remove('active'); settingsOpen = false; }
       if(typeof timerOpen !== 'undefined' && timerOpen){ timerPanel.classList.add('hidden'); timerToggle.classList.remove('active'); timerOpen = false; }

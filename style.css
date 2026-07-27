@@ -1352,6 +1352,21 @@
   .export-item:hover{background:var(--parchment-deep);}
   .export-item svg{flex-shrink:0;color:var(--slate);}
 
+  /* ================= HAMBURGER NAV MENU ================= */
+  .nav-menu-panel{width:250px;z-index:600;}
+  .nav-menu-body{padding:8px;display:flex;flex-direction:column;gap:2px;}
+  .nav-menu-item{
+    display:flex;align-items:center;gap:12px;width:100%;
+    background:none;border:none;text-align:left;cursor:pointer;
+    font-family:var(--font-body);font-size:13.5px;font-weight:500;color:var(--charcoal);
+    padding:10px 10px;border-radius:4px;transition:background .12s;
+  }
+  .nav-menu-item:hover{background:var(--parchment-deep);}
+  .nav-menu-item svg{flex-shrink:0;color:var(--slate);}
+  .nav-menu-item:hover svg{color:var(--crimson-deep);}
+  .nav-menu-divider{height:1px;background:var(--rule);margin:6px 4px;}
+
+
   /* ================= PRINT STYLESHEET ================= */
   @media print{
     @page{ margin:0.6in; }

@@ -50,6 +50,8 @@ Sign up → Generate questions → Write a speech → Record your speech → Rec
 
 - **Session score tracking & export** | Precise score tracking within a session **and** over many rounds, plus export to `.txt`, printable ballot, video download, and shareable round links.
 
+- **Extemp Rubric** | A comprehensive rubric that includes all aspects of an extemp speech for grading speeches.
+
 - **Installable PWA** | Works offline for timing/recording; add to your phone's home screen.
 
 Note: Extemplary requires camera and microphone access for recording speeches (duh).

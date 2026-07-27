@@ -38,7 +38,7 @@
     --chrome-text:#182233;
     --chrome-text-dim:#5b6a7c;
     --watermark:rgba(24,34,51,0.10);
-  } 
+  }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
   body{
@@ -137,6 +137,39 @@
     width:0;height:0;border-style:solid;border-width:0 26px 26px 0;
     border-color:transparent var(--parchment-deep) transparent transparent;
     box-shadow:-1px 1px 3px rgba(0,0,0,0.15);
+  }
+
+  /* -------- grading rubric icon (lives on the PAPER itself, top-right
+     corner of the ballot — distinct from the header icon row) -------- */
+  .rubric-toggle-btn{
+    position:absolute;top:14px;right:34px;z-index:3;
+    background:none;border:none;cursor:pointer;
+    color:var(--slate);padding:5px;border-radius:4px;
+    display:flex;align-items:center;justify-content:center;
+    width:27px;height:27px;box-sizing:border-box;
+    transition:color .15s;
+  }
+  .rubric-toggle-btn:hover, .rubric-toggle-btn.active{color:var(--crimson);}
+  body.previewing-example .rubric-toggle-btn{display:none;}
+
+  .rubric-panel{width:min(640px, calc(100vw - 24px));}
+  .rubric-table{width:100%;border-collapse:collapse;font-size:12.5px;table-layout:fixed;}
+  .rubric-table th, .rubric-table td{
+    border:1px solid var(--charcoal);padding:8px 10px;text-align:left;vertical-align:top;
+  }
+  .rubric-table thead th{
+    background:var(--charcoal);color:var(--on-accent);
+    font-family:var(--font-mono);font-size:10px;letter-spacing:1px;text-transform:uppercase;
+  }
+  .rubric-table th:nth-child(1), .rubric-table td:nth-child(1){width:26%;}
+  .rubric-table th:nth-child(2), .rubric-table td:nth-child(2){width:9%;text-align:center;}
+  .rubric-table th:nth-child(3), .rubric-table td:nth-child(3){width:65%;}
+  .rubric-table td:nth-child(2){font-family:var(--font-mono);font-weight:bold;}
+  .rubric-table td{line-height:1.5;}
+  .rubric-table tbody tr:nth-child(even){background:rgba(0,0,0,0.025);}
+  .rubric-table tfoot td{
+    font-family:var(--font-mono);font-weight:bold;text-transform:uppercase;letter-spacing:0.5px;
+    background:var(--parchment-deep);
   }
   .ballot-head{
     padding:22px 28px 16px;

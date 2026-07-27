@@ -503,6 +503,14 @@
 
 <main>
   <div class="ballot" id="ballot">
+    <!-- Grading Rubric icon — sits on the ballot PAPER itself (top-right corner
+         of the paper), separate from the header icon row above. Only shown
+         while the paper is displaying Home/Record, My Ballot History, the
+         Example Ballot, or the post-submission Feedback/Results view (see
+         showView()'s rubricToggle.classList.toggle logic in the JS below). -->
+    <button class="rubric-toggle-btn" id="rubricToggle" type="button" aria-label="Grading Rubric" title="Grading Rubric">
+      <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-70"></use></svg>
+    </button>
     <div class="print-brand" aria-hidden="true">
       <span class="mark-e-wrap" style="width:26px;height:24px;"><svg viewBox="0 0 36 37" fill="none"><use href="#icon-42"></use></svg></span>
       <span class="print-brand-name">xtemplary</span>
@@ -548,6 +556,58 @@
             <div class="shortcut-row"><span>View example ballot</span><kbd>H</kbd></div>
             <div class="shortcut-row"><span>Close any open panel</span><kbd>Esc</kbd></div>
             <div class="shortcut-row"><span>Show this panel</span><kbd>?</kbd></div>
+          </div>
+        </div>
+
+        <!-- Grading Rubric panel (toggled by the rubric icon on the ballot paper) -->
+        <div class="settings-panel hidden rubric-panel" id="rubricPanel">
+          <div class="sp-head">
+            <span>Grading Rubric</span>
+            <span>100 pts</span>
+          </div>
+          <div class="sp-body">
+            <table class="rubric-table">
+              <thead>
+                <tr><th>Category</th><th>Pts</th><th>Criteria</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>1. Creative Hook &amp; Intro</td><td>8</td>
+                  <td>Evaluates the attention-getter (AGD): is it a cliché quote/statistic, or a genuinely creative narrative/analogy?<br>Assesses the link: does the hook transition smoothly into the exact question drawn, or is it forced?<br>Checks for a clear, explicit thesis statement and a formal preview of the 3 distinct main points.</td>
+                </tr>
+                <tr>
+                  <td>2. Structure</td><td>10</td>
+                  <td>Checks the overall skeleton: one AGD, a smooth link into the question, a stated thesis, a formal preview of 3 main points, exactly 3 body paragraphs, then a conclusion — flags any missing or blurred element (no preview, only 2 body points, no distinct conclusion, etc.).<br>Checks transition quality at every seam (intro→body 1, body 1→body 2, body 2→body 3, body 3→conclusion), quoting the actual transition language used or noting its absence, and judging whether it's a real signposted transition versus an abrupt jump.<br>Tracks whether the speaker returns to short callbacks of the opening AGD at intervals through the body, not just bookending it at the start and end.<br>Evaluates the conclusion's "So What?" close — does it explicitly tie back to the AGD with a clear final insight, rather than just summarizing the three points?<br>Estimates what percentage of total speech time was spent on the Introduction, Body 1, Body 2, Body 3, and Conclusion, and compares this against the competitive benchmark of roughly 14% / 26% / 26% / 26% / 7%, explicitly flagging any section that is severely disproportionate.</td>
+                </tr>
+                <tr>
+                  <td>3. Strength of Argument &amp; Analysis</td><td>16</td>
+                  <td>Judges only two things: how convincing the argumentation is, and how good the analysis is (source quality belongs to Category 5; naming specific fallacies belongs to Category 4).<br><b>Strength of argument:</b> for each main point, tests whether it is valid (the conclusion actually follows from the premises), well-supported (real backing, not just assertion), and fair (engages honestly with the strongest opposing view).<br><b>Analysis:</b> applies the "So What?" test to every piece of evidence — does the speaker explicitly explain why it matters and how it proves the point, or is it just dropped in? An unexplained fact is not analysis.<br>Traces each point's logic chain: evidence cited → warrant (the reasoning connecting evidence to claim) → impact/link back to the thesis, flagging any point that skips the warrant.<br>Checks whether each point actually loops back and proves the exact thesis, or only proves a narrower, tangential claim.<br>Renders an explicit verdict: STRONG, MODERATE, or WEAK, justified using the tests above.</td>
+                </tr>
+                <tr>
+                  <td>4. Flaws in Reasoning</td><td>12</td>
+                  <td>Actively hunts for real logical holes rather than generic notes that could apply to any speech.<br>Identifies logical fallacies (slippery slope, hasty generalization, false dilemma, post hoc, straw man, appeal to authority without warrant, etc.), naming the fallacy type and quoting the exact sentence that commits it.<br>Exposes unproven assumptions, weak causal links (correlation asserted as causation), or rhetorical intensity used in place of actual logical connection.<br>Highlights contradictions where one point conflicts with another, or a later claim undercuts an earlier one.<br>Whenever a missing counterargument or missing context is flagged, the specific missing counterargument itself must be supplied, along with how it would have changed or complicated the point.<br>States the severity of each flaw — whether it undermines the entire point or is a minor soft spot.</td>
+                </tr>
+                <tr>
+                  <td>5. Strength of Evidence</td><td>16</td>
+                  <td>Audits the source citations and counts the total unique sources used (benchmark: 1–2 sources per point).<br>Evaluates source quality — are the publications authoritative (e.g. Foreign Affairs, The Economist) or generic?<br>Assesses application — does the cited data actually prove the speaker's claim, or is it just dropped in to sound smart?<br>Checks whether the dates/timeliness of the sources match the urgency of the topic.</td>
+                </tr>
+                <tr>
+                  <td>6. Clarity</td><td>10</td>
+                  <td><b>Most heavily-weighted check:</b> scans the entire transcript line-by-line for awkward, unnatural, clunky, or convoluted phrasing that a judge would have to re-read or a live listener would stumble on.<br>Checks for vague pronouns ("it," "this," "that," "they," "these") whose antecedent is unclear or ambiguous.<br>Assesses conciseness — does the speech say what it needs to efficiently, or does it circle back, over-explain, or pad points with unnecessary throat-clearing?<br>Audits signposting — does the speaker clearly verbally mark the start of the intro, each body point, and the conclusion, so a listener without a transcript can track where they are?<br>Hunts for filler/hedging words that add no content ("really," "very," "just," "kind of," "sort of," "I think," "basically," etc.) and tallies them.<br>Checks accessibility — would a judge unfamiliar with the topic understand every term, acronym, or reference used, or does the speaker assume unexplained background knowledge?<br>Renders an explicit verdict: CLEAR, MODERATELY CLEAR, or UNCLEAR/CONFUSING.</td>
+                </tr>
+                <tr>
+                  <td>7. Conclusion Strength</td><td>8</td>
+                  <td>Grades the summary — does it accurately restate the 3 main body points?<br>Evaluates the final call to action or forward-looking analytical statement.<br>Checks the "clinical round-out" — does the conclusion deliver a satisfying, intentional echo back to the exact creative hook used in the introduction?</td>
+                </tr>
+                <tr>
+                  <td>8. Speech Quality — Vocal Delivery &amp; Fluency</td><td>20</td>
+                  <td>Grades how the speech was delivered, not its content, using real audio metrics (volume, pace, tone, emphasis, pauses) combined with a manual filler-word scan of the transcript, averaged into one holistic score.<br><b>Filler words:</b> scans the entire transcript word-by-word for verbal crutches — the classics (um, uh, ah, er), quantifiers (basically, literally, actually, seriously), qualifiers (like, you know, I mean, I think), and transitionals (so, well, okay, anyway) — only counted when used as a crutch, not when used grammatically.<br><b>Volume &amp; projection:</b> a speaker who is too quiet is penalized; one who hits or exceeds the strong-projection threshold gets full marks.<br><b>Emphasis placement:</b> judges whether the words spoken louder are rhetorically important (theses, key numbers, transition words) versus landing randomly or not at all.<br><b>Tone/pitch variety:</b> rewards natural, controlled vocal variety; penalizes monotone, robotic delivery.<br><b>Pacing &amp; pauses:</b> rewards a controlled, competitive pace with strategic pauses for emphasis; penalizes rushed, dragging, or awkwardly-paused delivery.</td>
+                </tr>
+              </tbody>
+              <tfoot>
+                <tr><td>Total</td><td>100</td><td></td></tr>
+              </tfoot>
+            </table>
           </div>
         </div>
 
@@ -4868,6 +4928,59 @@ Grading rules:
     }
   });
   window.addEventListener('resize', () => { if(shortcutsOpen) positionShortcutsPanel(); });
+
+  // ===== Grading Rubric panel (icon lives on the ballot paper itself) =====
+  const rubricToggle = document.getElementById('rubricToggle');
+  const rubricPanel  = document.getElementById('rubricPanel');
+  if(rubricPanel && rubricPanel.parentElement !== document.body){
+    document.body.appendChild(rubricPanel);
+  }
+  let rubricOpen = false;
+  function positionRubricPanel(){
+    const rect = rubricToggle.getBoundingClientRect();
+    const width = Math.min(640, window.innerWidth - 24);
+    rubricPanel.style.width = width + 'px';
+    rubricPanel.style.left = 'auto';
+    let right = window.innerWidth - rect.right;
+    right = Math.max(12, Math.min(right, window.innerWidth - width - 12));
+    rubricPanel.style.right = right + 'px';
+    rubricPanel.style.top = (rect.bottom + 8) + 'px';
+  }
+  function openRubricPanel(){
+    rubricOpen = true;
+    positionRubricPanel();
+    rubricPanel.classList.remove('hidden');
+    rubricToggle.classList.add('active');
+  }
+  function closeRubricPanel(){
+    rubricOpen = false;
+    rubricPanel.classList.add('hidden');
+    rubricToggle.classList.remove('active');
+  }
+  rubricToggle.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if(rubricOpen) closeRubricPanel(); else openRubricPanel();
+  });
+  document.addEventListener('click', (e) => {
+    if(rubricOpen && !e.target.closest('#rubricPanel') && !e.target.closest('#rubricToggle')){
+      closeRubricPanel();
+    }
+  });
+  window.addEventListener('resize', () => { if(rubricOpen) positionRubricPanel(); });
+
+  // The rubric icon only makes sense on the paper for Home/Record, My Ballot
+  // History, the Example Ballot, and the post-submission Feedback/Results
+  // view — hide it everywhere else (Review, Processing, Streak, Briefing,
+  // Citation Checker) by hooking into showView().
+  const RUBRIC_VISIBLE_VIEWS = [viewRecord, viewResults, viewExample, viewHistory];
+  const _showViewForRubric = showView;
+  showView = function(v){
+    _showViewForRubric(v);
+    const shouldShow = RUBRIC_VISIBLE_VIEWS.includes(v);
+    rubricToggle.classList.toggle('hidden', !shouldShow);
+    if(!shouldShow && rubricOpen) closeRubricPanel();
+  };
+  rubricToggle.classList.toggle('hidden', !RUBRIC_VISIBLE_VIEWS.includes(viewRecord));
 
   // ===== Hamburger nav menu (slide-in drawer from the right) =====
   const navMenuToggle   = document.getElementById('navMenuToggle');

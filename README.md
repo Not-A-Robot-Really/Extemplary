@@ -12,7 +12,7 @@ A **free** browser extention for practicing **NSDA Extemporaneous Speaking**. Re
 
 ## What is Extemp? 🗣️
 
-Extemporaneous Speaking refers to a speech event where you deliver a **7 minute** memorized speech on a topic that you will be given **30 minutes** to research. The aim of Extemporaneous Speaking is to deliver the strongest, most well crafted  speech, testing both your presentational skills and your analytical writing skills.
+Extemporaneous Speaking refers to a speech event where you deliver a **7 minute** memorized speech (no notes!) on a topic that you will be given **30 minutes** to research. The aim of Extemporaneous Speaking is to deliver the strongest, most well crafted  speech with evidence and flawless reasoning, testing both your presentational skills and your analytical writing skills.
 
 ---
 
@@ -26,11 +26,11 @@ Sign up → Generate questions → Write a speech → Record your speech → Rec
 
 - **Vocal Delivery Analysis** — Volume, emphasis, tone/pitch variety, pauses, pace (WPM), filler words, and stutters/repetitions, measured directly from your recording.
 
-- **Annotated transcript** — An automated transcript with color coded personalized comments (🟥: big mistake, 🟦: comment, 🟩: brilliant move, 🟨: minor error) and auto marked paragraph labels (Intro / Body 1–3 / Conclusion).
+- **Annotated transcript** — An automated transcript with color coded, personalized comments (🟥: big mistake, 🟦: comment, 🟩: brilliant move, 🟨: minor error) and auto marked paragraph labels (Intro / Body 1–3 / Conclusion).
 
 - **Watch & Read Along** — An embedded video player synced word-for-word with the transcript. Click any word (or any judge's note) to jump the video to that **exact** moment; the current word highlights live as it plays.
 
-- **Citation checker** — Before you use a stat or quote in-round, paste the claim, the date it happened, and the source it's attributed to, and Gemini searches the web live to verify it. Marks the claim **TRUE**, **FALSE**, or **UNVERIFIED**, with a 2-3 sentence explanation and a link to the real source it found. Not sure of the exact date? Swap any unknown digit for `?` (e.g. `06/??/2025`) and it'll treat that as an approximate range instead of a literal date.
+- **Citation checker** — Before you use a stat or quote in-round, paste the claim, the date it happened, and the source it's attributed to, and Gemini searches the web live to verify it. Marks the claim **TRUE**, **FALSE**, or **UNVERIFIED**, with a 2-3 sentence explanation and a link to the real source it found. Not sure of the exact date? Swap any unknown digit for `?` (e.g. `06/??/2025`) and it'll treat that as an approximate range instead of a literal date. You can also use the citation checker to check the citations from other people's speech.
 
 - **Example ballot** — A fully worked sample round (real speech, real ballot) so first-time users can see what a finished round looks like before recording their own, including the same synced playback experience.
 
@@ -38,7 +38,7 @@ Sign up → Generate questions → Write a speech → Record your speech → Rec
 
 - **Cloud-saved ballot history** — Every completed round (video, transcript, full written feedback, and category scores) is saved and automatically stored onto your account and available from any device you sign in on, via the **My History** page.
 
-- **Coach's Overall Notes** — A short, AI-generated coaching comment sitting at the top of My History that synthesizes patterns across your *entire* practice history — not just your latest round — naming your biggest recurring strength, your biggest recurring area to improve, and one concrete next step. It's regenerated automatically at milestone round counts (1, 2, 3, 5, 7, 10, then every 5 rounds after that) or whenever you post a clear breakthrough round, so it stays current without burning an AI call on every single visit.
+- **Coach's Overall Notes** — A short comment sitting at the top of My History that synthesizes patterns across your *entire* practice history, naming your biggest recurring strength, your biggest recurring area to improve, and one concrete next step. It's regenerated automatically at milestone round counts (1, 2, 3, 5, 7, 10, then every 5 rounds after that) or whenever you post a clear breakthrough round, so it stays current without burning an AI call on every single visit.
 
 - **Trends across your ballots** — The History view aggregates your average score in each rubric category across every round you've recorded, with per-category bars plus your top overall strengths and weaknesses, letting you see the whole picture — not just per-round feedback.
 

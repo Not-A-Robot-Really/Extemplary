@@ -658,8 +658,35 @@
   }
   .question-block textarea:focus{outline:none;border-color:var(--brass);}
   .question-block textarea.error{border-color:var(--crimson);}
+  .question-block input[type=text]{
+    width:100%;font-family:var(--font-body);font-size:14px;
+    padding:11px 13px;border:2px solid var(--rule);border-radius:3px;
+    background:#ffffff;color:var(--charcoal);transition:border-color .15s;
+  }
+  .question-block input[type=text]:focus{outline:none;border-color:var(--brass);}
+  .question-block input[type=text].error{border-color:var(--crimson);}
   .question-block .q-hint{font-size:11px;color:var(--slate);margin-top:5px;font-family:var(--font-mono);}
   .q-error{font-size:12px;color:var(--crimson);margin-top:5px;display:none;}
+
+  /* -------- citation checker -------- */
+  .cc-verdict-row{display:flex;justify-content:center;margin:6px 0 20px;}
+  .cc-verdict-stamp{text-align:center;border:3px solid var(--rule);border-radius:8px;padding:14px 44px;background:#ffffff;}
+  .cc-verdict-stamp .label{font-family:var(--font-mono);font-size:10.5px;letter-spacing:2px;text-transform:uppercase;color:var(--slate);}
+  .cc-verdict-stamp .num{font-family:var(--font-display);font-size:30px;font-weight:bold;letter-spacing:1px;margin-top:2px;color:var(--charcoal);}
+  .cc-verdict-stamp.true{border-color:var(--score-green);}
+  .cc-verdict-stamp.true .num{color:var(--score-green);}
+  .cc-verdict-stamp.false{border-color:var(--score-red);}
+  .cc-verdict-stamp.false .num{color:var(--score-red);}
+  .cc-verdict-stamp.unverified{border-color:var(--slate);}
+  .cc-verdict-stamp.unverified .num{color:var(--slate);}
+  .cc-claim-recap{
+    font-family:var(--font-mono);font-size:12px;color:var(--slate);line-height:1.6;
+    background:rgba(0,0,0,0.03);border-left:3px solid var(--rule);padding:9px 12px;margin-bottom:14px;
+  }
+  .cc-claim-recap b{color:var(--charcoal);}
+  .cc-explanation{font-size:14px;line-height:1.6;margin-bottom:12px;color:var(--charcoal);}
+  .cc-source-link{font-size:13px;margin-bottom:4px;}
+  .cc-source-link a{color:var(--crimson-deep);word-break:break-all;}
 
   .q-mode-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;}
   .q-mode-btn{flex:1;min-width:170px;font-size:13px;padding:10px 14px;border:1px solid transparent;}

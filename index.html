@@ -84,7 +84,7 @@
             </div>
             <div class="demo-locked-overlay" id="demoQLock">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-              <p>Free question draft used. Sign up to draft unlimited questions and start practicing.</p>
+              <p>That was your free question draft. Sign up to draft unlimited questions and start practicing.</p>
               <button type="button" class="demo-signup-btn demo-signup-cta">Sign Up Free</button>
             </div>
             <button type="button" class="btn primary" id="demoGenerateQuestionsBtn" style="width:100%;" disabled>Generate Questions</button>
@@ -308,6 +308,13 @@
         <line x1="7" y1="8" x2="15" y2="8"/>
         <line x1="7" y1="12" x2="15" y2="12"/>
         <line x1="7" y1="16" x2="11" y2="16"/>
+      </svg>
+    </button>
+    <button class="gear-btn" id="citationToggle" type="button" aria-label="Citation Checker" title="Citation Checker — verify a quote against its source">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="10.5" cy="10.5" r="7"/>
+        <path d="M7.5 10.7l2 2 3.4-3.8"/>
+        <line x1="20.5" y1="20.5" x2="15.5" y2="15.5"/>
       </svg>
     </button>
     <button class="gear-btn" id="helpToggle" type="button" aria-label="Example Ballot" title="See an example ballot">
@@ -823,6 +830,59 @@
           </div>
         </div>
 
+      </div>
+
+      <!-- ====== CITATION CHECKER VIEW ====== -->
+      <div id="view-citation" class="hidden">
+        <div class="ballot-title" style="font-size:22px;margin-bottom:16px;">Citation Checker</div>
+
+        <!-- Step 1: enter claim + source -->
+        <div id="ccSetupStep">
+          <div class="q-hint" style="margin-bottom:14px;">Paste the exact claim as you'd say it in your speech — including the date — then name the source it's attributed to. Gemini will search the web to verify it.</div>
+          <div class="question-block">
+            <label for="ccClaimInput">Claim (include the date, e.g. mm/dd/yy)</label>
+            <textarea id="ccClaimInput" rows="3" placeholder="e.g. On May 23rd, 2026, Trump said inflation went down 25%"></textarea>
+            <div class="q-error" id="ccClaimError">Please enter the claim, including a date.</div>
+          </div>
+          <div class="question-block">
+            <label for="ccSourceInput">Source</label>
+            <input type="text" id="ccSourceInput" placeholder="e.g. CNN" />
+            <div class="q-error" id="ccSourceError">Please enter the source this is attributed to.</div>
+          </div>
+          <button class="btn primary" id="ccCheckBtn" type="button" style="width:100%;">Check Citation</button>
+          <div class="actions">
+            <button class="btn ghost" id="citationBackBtn" type="button">Back</button>
+          </div>
+        </div>
+
+        <!-- Step 2: loading -->
+        <div id="ccLoading" class="hidden" style="text-align:center;padding:14px 0;">
+          <div class="q-hint" id="ccLoadingText">Searching the web to verify this citation…</div>
+          <div class="progress-bar-wrap">
+            <div class="progress-bar-track"><div class="progress-bar-fill" id="ccProgressFill"></div></div>
+          </div>
+          <div class="progress-phrase" id="ccProgressPhrase"></div>
+        </div>
+
+        <!-- Step 2 error -->
+        <div class="q-error" id="ccError" style="display:none;"></div>
+
+        <!-- Step 3: result -->
+        <div id="ccResultStep" class="hidden">
+          <div class="cc-verdict-row">
+            <div class="cc-verdict-stamp" id="ccVerdictStamp">
+              <div class="label">Verdict</div>
+              <div class="num" id="ccVerdictNum">—</div>
+            </div>
+          </div>
+          <div class="cc-claim-recap" id="ccClaimRecap"></div>
+          <div class="cc-explanation" id="ccExplanation"></div>
+          <div class="cc-source-link" id="ccSourceLink"></div>
+          <div class="bf-actions">
+            <button class="btn ghost" id="ccCheckAnotherBtn" type="button">Check Another Citation</button>
+            <button class="btn primary" id="citationBackBtn2" type="button">Back</button>
+          </div>
+        </div>
       </div>
 
       <div class="dl-modal hidden" id="dlModal">
@@ -2724,6 +2784,7 @@ RULES:
   const viewResults    = document.getElementById('view-results');
   const viewExample    = document.getElementById('view-example');
   const viewBriefing   = document.getElementById('view-briefing');
+  const viewCitation   = document.getElementById('view-citation');
   const viewHistory    = document.getElementById('view-history');
   const statusText     = document.getElementById('statusText');
   const statusSub      = document.getElementById('statusSub');
@@ -2791,7 +2852,7 @@ RULES:
   let viewBeforeExample = null;
   let viewBeforeBriefing = null;
   function showView(v){
-    [viewRecord, viewReview, viewProcessing, viewResults, viewExample, viewBriefing, viewHistory].forEach(x => x.classList.add('hidden'));
+    [viewRecord, viewReview, viewProcessing, viewResults, viewExample, viewBriefing, viewHistory, viewCitation].forEach(x => x.classList.add('hidden'));
     v.classList.remove('hidden');
     if(v !== viewExample && typeof exampleOpen !== 'undefined' && exampleOpen){
       exampleOpen = false;
@@ -2800,6 +2861,10 @@ RULES:
     if(v !== viewBriefing && typeof briefingOpen !== 'undefined' && briefingOpen){
       briefingOpen = false;
       document.getElementById('briefingToggle')?.classList.remove('active');
+    }
+    if(v !== viewCitation && typeof citationOpen !== 'undefined' && citationOpen){
+      citationOpen = false;
+      document.getElementById('citationToggle')?.classList.remove('active');
     }
   }
 
@@ -3475,6 +3540,205 @@ Formatting rules: plain text only, with the sole exception of wrapping key terms
     bfError.style.display = 'none';
   });
 
+  // ===== CITATION CHECKER =====
+  // Verifies a specific claim-and-source pair (e.g. "On May 23rd, 2026,
+  // Trump said inflation went down 25%, according to CNN") using Gemini +
+  // live Google Search grounding — the same edge-function-backed
+  // callGemini() used by question generation and the tournament briefing
+  // above. Opens in place of the Official Practice Ballot, the same way
+  // helpToggle/briefingToggle do.
+  const citationToggle    = document.getElementById('citationToggle');
+  const citationBackBtn   = document.getElementById('citationBackBtn');
+  const citationBackBtn2  = document.getElementById('citationBackBtn2');
+  const ccSetupStep       = document.getElementById('ccSetupStep');
+  const ccClaimInput      = document.getElementById('ccClaimInput');
+  const ccSourceInput     = document.getElementById('ccSourceInput');
+  const ccClaimError      = document.getElementById('ccClaimError');
+  const ccSourceError     = document.getElementById('ccSourceError');
+  const ccCheckBtn        = document.getElementById('ccCheckBtn');
+  const ccLoading         = document.getElementById('ccLoading');
+  const ccLoadingText     = document.getElementById('ccLoadingText');
+  const ccProgressFill    = document.getElementById('ccProgressFill');
+  const ccProgressPhrase  = document.getElementById('ccProgressPhrase');
+  const ccError           = document.getElementById('ccError');
+  const ccResultStep      = document.getElementById('ccResultStep');
+  const ccVerdictStamp    = document.getElementById('ccVerdictStamp');
+  const ccVerdictNum      = document.getElementById('ccVerdictNum');
+  const ccClaimRecap      = document.getElementById('ccClaimRecap');
+  const ccExplanation     = document.getElementById('ccExplanation');
+  const ccSourceLink      = document.getElementById('ccSourceLink');
+  const ccCheckAnotherBtn = document.getElementById('ccCheckAnotherBtn');
+
+  const ccProgress = createProgressController(ccProgressFill, ccProgressPhrase);
+  const CC_PHRASES = [
+    'Reading the claim…',
+    'Searching for matching coverage…',
+    'Cross-checking the source…',
+    'Comparing dates…',
+    'Weighing the evidence…'
+  ];
+
+  let ccBusy = false;
+  let citationOpen = false;
+  let viewBeforeCitation = null;
+
+  function closeCitationView(){
+    citationOpen = false;
+    citationToggle.classList.remove('active');
+    showView(viewBeforeCitation || viewRecord);
+  }
+  citationToggle.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if(citationOpen){
+      closeCitationView();
+      return;
+    }
+    if(typeof settingsOpen !== 'undefined' && settingsOpen){
+      settingsOpen = false;
+      settingsPanel.classList.add('hidden');
+      settingsToggle.classList.remove('active');
+    }
+    if(typeof timerOpen !== 'undefined' && timerOpen){
+      timerOpen = false;
+      timerPanel.classList.add('hidden');
+      timerToggle.classList.remove('active');
+    }
+    if(typeof exampleOpen !== 'undefined' && exampleOpen){
+      exampleOpen = false;
+      document.getElementById('helpToggle')?.classList.remove('active');
+    }
+    if(typeof briefingOpen !== 'undefined' && briefingOpen){
+      briefingOpen = false;
+      briefingToggle.classList.remove('active');
+    }
+    citationOpen = true;
+    citationToggle.classList.add('active');
+    viewBeforeCitation = [viewRecord, viewReview, viewProcessing, viewResults].find(v => !v.classList.contains('hidden')) || viewRecord;
+    showView(viewCitation);
+  });
+  citationBackBtn.addEventListener('click', closeCitationView);
+  citationBackBtn2.addEventListener('click', closeCitationView);
+
+  function buildCitationPrompt(claim, source){
+    return `You are a rigorous fact-checker helping a competitive extemp speaker verify a citation before they use it in a speech.
+
+CLAIM (as the speaker plans to say it, including the date they're attributing it to): "${claim}"
+CITED SOURCE: "${source}"
+
+Use Google Search to determine whether ${source} actually reported or said this, at or around the date given. Search specifically for coverage from ${source} (or reliable reporting ABOUT what ${source} said/reported) that matches the claim's substance and date.
+
+Respond with ONLY this exact JSON shape, nothing else — no markdown fences, no text before or after:
+{"verdict":"true","explanation":"2-3 sentence explanation of exactly what you found and why the claim does or doesn't check out","sourceUrl":"the single best URL that supports your verdict, or an empty string if none was found","sourceTitle":"a short title or description of that source page, or an empty string"}
+
+Grading rules:
+- "verdict":"true" ONLY if you found a real source — ideally the cited outlet itself, or credible reporting confirming it — that matches the claim's substance AND is consistent with the stated date (within a few days is fine; a flatly wrong date should count against it).
+- "verdict":"false" if you found reporting that contradicts the claim, or found what the source actually said/reported and it does not match what's being attributed to it here.
+- "verdict":"unverified" if you could not find enough information via search to confirm or deny it either way — never guess.
+- Never fabricate a URL — only include sourceUrl if it's a real link you found via search, and leave it as an empty string otherwise.`;
+  }
+
+  // Parses Gemini's JSON verdict, and — critically — never trusts a
+  // model-typed URL at face value: it's only shown to the user if it
+  // actually matches one of the real links Google Search grounding
+  // surfaced for this request (candidate.groundingMetadata.groundingChunks).
+  function extractCitationVerdict(candidate){
+    const raw = (candidate.content?.parts || []).map(p => p.text || '').join('').trim();
+    let cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '').trim();
+    const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+    if(jsonMatch) cleaned = jsonMatch[0];
+    let data;
+    try{
+      data = JSON.parse(cleaned);
+    }catch(e){
+      throw new Error('cc_bad_output');
+    }
+    const verdict = ['true','false','unverified'].includes(data.verdict) ? data.verdict : 'unverified';
+    let sourceUrl = typeof data.sourceUrl === 'string' ? data.sourceUrl.trim() : '';
+    const groundedUrls = (candidate.groundingMetadata?.groundingChunks || [])
+      .map(c => c?.web?.uri).filter(Boolean);
+    if(sourceUrl && !groundedUrls.some(u => u === sourceUrl || u.includes(sourceUrl) || sourceUrl.includes(u))){
+      sourceUrl = groundedUrls[0] || '';
+    }else if(!sourceUrl && groundedUrls.length){
+      sourceUrl = groundedUrls[0];
+    }
+    return {
+      verdict,
+      explanation: typeof data.explanation === 'string' ? data.explanation.trim() : '',
+      sourceUrl,
+      sourceTitle: typeof data.sourceTitle === 'string' ? data.sourceTitle.trim() : ''
+    };
+  }
+
+  function setCcBusy(busy){
+    ccBusy = busy;
+    ccCheckBtn.disabled = busy;
+    if(ccCheckAnotherBtn) ccCheckAnotherBtn.disabled = busy;
+  }
+
+  async function checkCitation(){
+    if(ccBusy) return;
+    const claim = ccClaimInput.value.trim();
+    const source = ccSourceInput.value.trim();
+    let hasError = false;
+    ccClaimInput.classList.remove('error'); ccClaimError.style.display = 'none';
+    ccSourceInput.classList.remove('error'); ccSourceError.style.display = 'none';
+    if(!claim){ ccClaimInput.classList.add('error'); ccClaimError.style.display = 'block'; hasError = true; }
+    if(!source){ ccSourceInput.classList.add('error'); ccSourceError.style.display = 'block'; hasError = true; }
+    if(hasError) return;
+
+    setCcBusy(true);
+    ccSetupStep.classList.add('hidden');
+    ccResultStep.classList.add('hidden');
+    ccError.style.display = 'none';
+    ccLoadingText.textContent = 'Searching the web to verify this citation…';
+    ccLoading.classList.remove('hidden');
+    ccProgress.start(CC_PHRASES, 92);
+
+    const prompt = buildCitationPrompt(claim, source);
+    try{
+      const candidate = await callGemini(prompt, 700);
+      const result = extractCitationVerdict(candidate);
+
+      ccProgress.finish();
+      await new Promise(r => setTimeout(r, 220));
+      ccLoading.classList.add('hidden');
+
+      ccVerdictStamp.className = 'cc-verdict-stamp ' + result.verdict;
+      ccVerdictNum.textContent = result.verdict === 'true' ? 'TRUE' : result.verdict === 'false' ? 'FALSE' : 'UNVERIFIED';
+      ccClaimRecap.innerHTML = `<b>Claim:</b> ${escapeHtml(claim)}<br><b>Source:</b> ${escapeHtml(source)}`;
+      ccExplanation.textContent = result.explanation || (result.verdict === 'unverified' ? "Couldn't confirm this either way from what's publicly searchable." : '');
+      if(result.verdict === 'true' && result.sourceUrl){
+        ccSourceLink.innerHTML = `Source: <a href="${escapeHtml(result.sourceUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(result.sourceTitle || result.sourceUrl)}</a>`;
+      }else if(result.verdict === 'true'){
+        ccSourceLink.innerHTML = `<span class="q-hint">Confirmed, but no direct link was found via search.</span>`;
+      }else{
+        ccSourceLink.innerHTML = '';
+      }
+      ccResultStep.classList.remove('hidden');
+      setCcBusy(false);
+    }catch(err){
+      console.warn('Citation check failed:', err);
+      ccProgress.stop();
+      ccLoading.classList.add('hidden');
+      const wasRateLimited = /:429:/.test(err?.message || '');
+      const waitNote = wasRateLimited ? ' This account is at its per-minute usage limit — please wait about 45 seconds before trying again.' : '';
+      const detail = (err && err.message) ? ' ('+err.message.slice(0,200)+')' : '';
+      ccError.textContent = "Couldn't check that citation right now — check your connection and try again." + waitNote + detail;
+      ccError.style.display = 'block';
+      ccSetupStep.classList.remove('hidden');
+      setCcBusy(false);
+    }
+  }
+
+  ccCheckBtn.addEventListener('click', checkCitation);
+  ccCheckAnotherBtn.addEventListener('click', () => {
+    ccResultStep.classList.add('hidden');
+    ccClaimInput.value = '';
+    ccSourceInput.value = '';
+    ccSetupStep.classList.remove('hidden');
+    ccError.style.display = 'none';
+  });
+
   // Turns the raw "## Header" / "- Label: **key** term" text into clean,
   // asterisk-free plain text for copying or printing to PDF.
   function formatBriefingPlainText(raw){
@@ -3855,6 +4119,7 @@ Formatting rules: plain text only, with the sole exception of wrapping key terms
       if(typeof timerOpen !== 'undefined' && timerOpen){ timerPanel.classList.add('hidden'); timerToggle.classList.remove('active'); timerOpen = false; }
       if(typeof closeYoutubePopover === 'function') closeYoutubePopover();
       if(typeof closeBriefingView === 'function' && typeof briefingOpen !== 'undefined' && briefingOpen) closeBriefingView();
+      if(typeof closeCitationView === 'function' && typeof citationOpen !== 'undefined' && citationOpen) closeCitationView();
       return;
     }
     if(typing) return;

@@ -1200,7 +1200,7 @@
 
     const axisTitles = `
       <text class="axis-label" x="${(marginLeft+plotW/2).toFixed(1)}" y="${h-8}" text-anchor="middle" style="letter-spacing:1px;">ROUND</text>
-      <text class="axis-label" x="${(marginTop+plotH/2).toFixed(1)}" y="14" text-anchor="middle" transform="rotate(-90 ${(marginTop+plotH/2).toFixed(1)} 14)" style="letter-spacing:1px;">SCORE</text>`;
+      <text class="axis-label" x="14" y="${(marginTop+plotH/2).toFixed(1)}" text-anchor="middle" transform="rotate(-90 14 ${(marginTop+plotH/2).toFixed(1)})" style="letter-spacing:1px;">SCORE</text>`;
 
     let dataViz;
     if(n === 1){
@@ -1440,8 +1440,14 @@
       return `
       <div class="history-card" data-id="${entry.id}">
         <div class="history-card-head">
-          <div class="hc-title">Round ${entry.round} <b>· ${date}</b>${entry.question ? ' <b>· '+escHtml(entry.question)+'</b>' : ''}</div>
-          <div class="hc-score" style="color:${scoreColor}">${entry.total!==null && entry.total!==undefined ? entry.total+'/100' : '—'}</div>
+          <div class="hc-head-main">
+            <div class="hc-round">Round ${entry.round}</div>
+            <div class="hc-meta">
+              <span class="hc-date">${date}</span>
+              ${entry.question ? `<span class="hc-meta-sep">·</span><span class="hc-question">${escHtml(entry.question)}</span>` : ''}
+            </div>
+          </div>
+          <div class="hc-score" style="color:${scoreColor}">${entry.total!==null && entry.total!==undefined ? `${entry.total}<span class="hc-score-max">/100</span>` : '—'}</div>
         </div>
         <div class="history-card-body">
           <div class="hc-video-slot"></div>

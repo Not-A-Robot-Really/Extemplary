@@ -1147,13 +1147,18 @@
       transcript: row.transcript || '', hasVideo: !!row.video_path,
       videoPath: row.video_path || null,
       annotations: row.annotations || null,
-      deliveryMetrics: row.delivery_metrics || null
+      deliveryMetrics: row.delivery_metrics || null,
+      // Older rows saved before this distinction existed didn't record a
+      // source, so treat them as live-camera video ballots (the original,
+      // still-default recording method) rather than dropping them from
+      // "video ballots" goal counts.
+      recordSource: (row.delivery_metrics && row.delivery_metrics.recordSource) || 'camera'
     }));
   }
 
   // Records one completed round (called from renderResults once feedback
   // has been parsed) so it shows up later in "My History".
-  async function recordBallotToHistory(parsed, feedback, transcript, question, round, videoBlob, annotations, deliveryMetrics){
+  async function recordBallotToHistory(parsed, feedback, transcript, question, round, videoBlob, annotations, deliveryMetrics, recordSource){
     if(!currentUser || !supabaseClient) return;
     const id = (crypto.randomUUID && crypto.randomUUID()) || ('b_' + Date.now() + '_' + Math.random().toString(36).slice(2,8));
     let videoPath = null;
@@ -1164,6 +1169,12 @@
         .upload(videoPath, videoBlob, { contentType: videoBlob.type || 'video/webm', upsert: true });
       if(upErr){ console.warn('Could not upload video', upErr); videoPath = null; }
     }
+    // Tuck how the video was captured ('camera' = recorded live, 'capture' =
+    // tab/YouTube capture, 'upload' = a pre-existing file) into the existing
+    // delivery_metrics JSON blob, so the "Video ballots this month" goal can
+    // count only rounds that were actually recorded live — distinct from the
+    // "Practice rounds this month" goal, which counts every completed round.
+    const deliveryMetricsWithSource = Object.assign({}, deliveryMetrics || {}, { recordSource: recordSource || 'camera' });
     // Save everything the live results view can show — including the
     // color-coded annotated-transcript data (sections + comments) and the
     // measured vocal delivery metrics — so "My History" can reconstruct the
@@ -1173,7 +1184,7 @@
       question: question || '', total: parsed.total, rank: parsed.rank,
       categories: parsed.categories.map(c => ({name:c.name, score:c.score, max:c.max})),
       feedback: feedback || '', transcript: transcript || '', video_path: videoPath,
-      annotations: annotations || null, delivery_metrics: deliveryMetrics || null
+      annotations: annotations || null, delivery_metrics: deliveryMetricsWithSource
     });
     if(error) console.warn('Could not save ballot to cloud history', error);
   }
@@ -1205,11 +1216,10 @@
   //              target_date date null, status text default 'active',
   //              created_at timestamptz)
   //
-  // "Exemplary" day = the best ballot recorded that calendar date scored
-  // at or above EXEMPLARY_THRESHOLD out of 100. This is computed entirely
-  // client-side from the same `ballots` rows already loaded for My History
-  // — no extra table needed for the streak itself.
-  const EXEMPLARY_THRESHOLD = 85;
+  // An "active" day = any day you recorded a ballot, set a goal, or had a
+  // goal complete. This is computed entirely client-side from the same
+  // `ballots`/`user_goals` rows already loaded for My History — no extra
+  // table needed for the streak itself.
   const GOAL_CATEGORIES = [
     'Creative Hook & Intro', 'Structure', 'Strength of Argument & Analysis',
     'Flaws in Reasoning', 'Strength of Evidence', 'Clarity',
@@ -1227,37 +1237,42 @@
     const [y,m,d] = key.split('-').map(Number);
     return new Date(y, m-1, d);
   }
-  // date -> best total score that day (or null if no ballots that day)
-  function bestScoreByDay(list){
+  // date -> true if anything happened that day: a ballot was recorded, a
+  // goal was set, or (best-effort, since we don't store a completion date)
+  // a goal is currently complete — that last case can only credit today.
+  function activeDaysByDay(list, goals, events){
     const map = {};
-    list.forEach(e => {
-      if(e.total === null || e.total === undefined) return;
-      const k = dateKey(new Date(e.ts));
-      if(!(k in map) || e.total > map[k]) map[k] = e.total;
+    list.forEach(e => { map[dateKey(new Date(e.ts))] = true; }); // any ballot made
+    (goals||[]).forEach(g => {
+      if(g.created_at) map[dateKey(new Date(g.created_at))] = true; // any goal set
     });
+    const anyGoalCompleteNow = (goals||[]).some(g => {
+      if(g.type === 'streak') return false; // avoid circularity with the streak we're computing
+      return goalProgress(g, list, { current:0, best:0 }, events||[]).done;
+    });
+    if(anyGoalCompleteNow) map[dateKey(new Date())] = true; // any goal completed
     return map;
   }
-  function computeStreak(list){
-    const byDay = bestScoreByDay(list);
+  function computeStreak(list, goals, events){
+    const byDay = activeDaysByDay(list, goals, events);
     const today = new Date(); today.setHours(0,0,0,0);
     let cursor = new Date(today);
-    // Today doesn't have to be exemplary yet for the streak to still be
+    // Today doesn't have to have activity yet for the streak to still be
     // "alive" — only step back to yesterday as the start if today has no
-    // exemplary result recorded yet.
-    if(!(byDay[dateKey(cursor)] >= EXEMPLARY_THRESHOLD)) cursor.setDate(cursor.getDate()-1);
+    // recorded activity yet.
+    if(!byDay[dateKey(cursor)]) cursor.setDate(cursor.getDate()-1);
     let streak = 0;
-    while(byDay[dateKey(cursor)] >= EXEMPLARY_THRESHOLD){
+    while(byDay[dateKey(cursor)]){
       streak++;
       cursor.setDate(cursor.getDate()-1);
     }
-    // Best-ever streak, scanning every day that has any ballot.
+    // Best-ever streak, scanning every day that has any activity.
     let best = 0, run = 0;
     const days = Object.keys(byDay).sort();
     let prevDate = null;
     days.forEach(k => {
       const d = keyToLocalDate(k);
-      const isEx = byDay[k] >= EXEMPLARY_THRESHOLD;
-      if(isEx){
+      if(byDay[k]){
         if(prevDate && (d - prevDate) === 86400000) run++; else run = 1;
         best = Math.max(best, run);
       } else {
@@ -1318,7 +1333,7 @@
     if(g.type === 'score') return `Score above ${g.params.threshold} overall in a speech`;
     if(g.type === 'category') return `Score above ${g.params.threshold} in ${escHtml(g.params.category)}`;
     if(g.type === 'rounds') return `Complete ${g.params.count} practice rounds this month`;
-    if(g.type === 'videos') return `Record ${g.params.count} video ballots this month`;
+    if(g.type === 'videos') return `Record ${g.params.count} live video ballots this month`;
     if(g.type === 'tournament') return `Compete at ${escHtml(g.params.title || 'the upcoming tournament')}`;
     return 'Goal';
   }
@@ -1343,7 +1358,13 @@
       const now = new Date();
       const count = list.filter(e => {
         const d = new Date(e.ts);
-        return d.getFullYear()===now.getFullYear() && d.getMonth()===now.getMonth() && (g.type==='rounds' || e.hasVideo);
+        if(d.getFullYear()!==now.getFullYear() || d.getMonth()!==now.getMonth()) return false;
+        if(g.type === 'rounds') return true; // every completed round this month, video or not
+        // 'videos': only rounds actually recorded live via camera this month —
+        // excludes rounds where a video was merely uploaded from a file or
+        // captured from a shared tab/YouTube playback, since those aren't a
+        // live recording of your own delivery.
+        return e.hasVideo && e.recordSource === 'camera';
       }).length;
       return { current: count, target: g.params.count, pct: Math.min(100, count/g.params.count*100), done: count >= g.params.count };
     }
@@ -1358,7 +1379,7 @@
   // ---- suggested goals (My Ballot History), derived from the user's own
   // weaknesses and Coach's Overall Notes — no extra AI call needed since
   // the weakness ranking is already computed from their ballot data. ----
-  function computeSuggestedGoals(list){
+  function computeSuggestedGoals(list, goals, events){
     if(!list.length) return [];
     const rows = computeTrends(list);
     if(!rows.length) return [];
@@ -1367,7 +1388,7 @@
     const totals = list.map(e=>e.total).filter(t=>t!==null&&t!==undefined);
     const avgTotal = totals.length ? totals.reduce((a,b)=>a+b,0)/totals.length : 0;
     const bestTotal = totals.length ? Math.max(...totals) : 0;
-    const streakInfo = computeStreak(list);
+    const streakInfo = computeStreak(list, goals, events);
     const suggestions = [];
     // 1) Category goal targeting the single weakest graded category.
     suggestions.push({
@@ -1390,8 +1411,8 @@
     suggestions.push({
       type:'streak', params:{ days: nextMilestone },
       why: streakInfo.current > 0
-        ? `You're on a ${streakInfo.current}-day Exemplary streak already — keep it going.`
-        : `Building a short Exemplary streak (${EXEMPLARY_THRESHOLD}+ overall score) is the fastest way to see steady improvement.`
+        ? `You're on a ${streakInfo.current}-day streak already — keep it going.`
+        : `Building a short streak — recording a ballot, setting a goal, or hitting one — is the fastest way to build the habit.`
     });
     return suggestions.slice(0,3);
   }
@@ -1419,7 +1440,7 @@
           <option value="score">Overall score in a speech</option>
           <option value="category">Score in a specific category</option>
           <option value="rounds">Practice rounds this month</option>
-          <option value="videos">Video ballots this month</option>
+          <option value="videos">Live video ballots this month</option>
         </select>
       </div>
       <div class="gm-field" data-for="streak">
@@ -1445,7 +1466,7 @@
         <input type="number" id="gmRoundsCount" min="1" max="60" value="5">
       </div>
       <div class="gm-field" data-for="videos">
-        <label>Number of video ballots this month</label>
+        <label>Number of live video ballots this month</label>
         <input type="number" id="gmVideosCount" min="1" max="60" value="3">
       </div>
       <button type="button" class="btn primary" id="gmSaveBtn" style="width:100%;margin-top:6px;">Save Goal</button>
@@ -1515,8 +1536,8 @@
     if(!el) return;
     if(!list.length){ el.innerHTML = ''; return; }
     const [goals, events] = await Promise.all([loadGoals(), loadCalendarEvents()]);
-    const streakInfo = computeStreak(list);
-    const suggestions = computeSuggestedGoals(list);
+    const streakInfo = computeStreak(list, goals, events);
+    const suggestions = computeSuggestedGoals(list, goals, events);
     el.innerHTML = `
       <div class="history-goals">
         <div class="hg-head">
@@ -1559,8 +1580,8 @@
 
   async function renderStreakView(){
     const list = await loadHistory();
-    const streakInfo = computeStreak(list);
     const [events, goals] = await Promise.all([loadCalendarEvents(), loadGoals()]);
+    const streakInfo = computeStreak(list, goals, events);
 
     const fabCount = document.getElementById('streakFabCount');
     const fabIcon = document.getElementById('streakFabIcon');
@@ -1574,7 +1595,6 @@
           <div class="ssc-stat"><span class="ssc-val">${streakInfo.current}</span><span class="ssc-cap">Current Streak</span></div>
           <div class="ssc-stat"><span class="ssc-val">${streakInfo.best}</span><span class="ssc-cap">Best Streak</span></div>
         </div>
-        <div class="ssc-note">A day counts as Exemplary once a ballot that day scores ${EXEMPLARY_THRESHOLD}+ overall.</div>
       </div>`;
 
     renderStreakCalendar(streakInfo, events, goals);
@@ -1600,16 +1620,14 @@
     for(let d=1; d<=daysInMonth; d++){
       const cellDate = new Date(year, month, d);
       const k = dateKey(cellDate);
-      const score = streakInfo.byDay[k];
-      const hasBallot = score !== undefined;
-      const isExemplary = score >= EXEMPLARY_THRESHOLD;
+      const hasActivity = !!streakInfo.byDay[k];
       const isToday = k === todayKey;
       const dayEvents = eventsByDay[k] || [];
       cells += `
         <div class="scal-cell ${isToday?'today':''}" data-date="${k}">
           <span class="scal-daynum">${d}</span>
-          <span class="scal-flame ${isExemplary?'lit':(hasBallot?'unlit':'none')}">${hasBallot ? (isExemplary?flameFilledSvg:flameOutlineSvg) : ''}</span>
-          ${dayEvents.length ? `<span class="scal-event-dot" title="${escHtml(dayEvents.map(e=>e.title).join(', '))}"></span>` : ''}
+          <span class="scal-flame ${hasActivity?'lit':'none'}">${hasActivity ? flameFilledSvg : ''}</span>
+          ${dayEvents.length ? `<span class="scal-event-dot" data-event-names="${escHtml(dayEvents.map(e=>e.title).join(', '))}"></span>` : ''}
           ${goalDatesByDay[k] ? `<span class="scal-goal-ring" title="Goal target date"></span>` : ''}
         </div>`;
     }
@@ -1628,8 +1646,7 @@
         <div class="scal-dow">${['S','M','T','W','T','F','S'].map(d=>`<span>${d}</span>`).join('')}</div>
         <div class="scal-grid">${cells}</div>
         <div class="scal-legend">
-          <span><span class="scal-flame lit" style="width:14px;height:14px;">${flameFilledSvg}</span> Exemplary day</span>
-          <span><span class="scal-flame unlit" style="width:14px;height:14px;">${flameOutlineSvg}</span> Practiced, not exemplary</span>
+          <span><span class="scal-flame lit" style="width:14px;height:14px;">${flameFilledSvg}</span> Active day (ballot, goal set, or goal hit)</span>
           <span><span class="scal-event-dot" style="position:static;display:inline-block;"></span> Tournament</span>
           <span><span class="scal-goal-ring" style="position:static;display:inline-block;"></span> Goal date</span>
         </div>
@@ -1649,6 +1666,33 @@
         if(dEl) dEl.value = cell.dataset.date;
         const tEl = document.getElementById('streakEventTitleInput');
         if(tEl) tEl.focus();
+      });
+    });
+
+    // Tournament name popup: tapping/clicking the brass dot shows the
+    // tournament name(s) for that day in a small bubble (works on touch,
+    // unlike a hover-only title attribute), and doesn't also trigger the
+    // cell's "add event on this date" click behavior.
+    let openEventTooltip = null;
+    function closeEventTooltip(){
+      if(openEventTooltip){ openEventTooltip.remove(); openEventTooltip = null; }
+    }
+    wrap.querySelectorAll('.scal-event-dot[data-event-names]').forEach(dot => {
+      dot.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const wasOpenForThisDot = openEventTooltip && openEventTooltip.dataset.forDot === dot.dataset.eventNames && openEventTooltip._dotEl === dot;
+        closeEventTooltip();
+        if(wasOpenForThisDot) return;
+        const tip = document.createElement('div');
+        tip.className = 'scal-event-tooltip';
+        tip.textContent = dot.dataset.eventNames;
+        tip._dotEl = dot;
+        document.body.appendChild(tip);
+        const r = dot.getBoundingClientRect();
+        tip.style.left = Math.max(8, Math.min(r.left + window.scrollX - tip.offsetWidth/2 + r.width/2, window.innerWidth - tip.offsetWidth - 8)) + 'px';
+        tip.style.top = (r.top + window.scrollY - tip.offsetHeight - 8) + 'px';
+        openEventTooltip = tip;
+        document.addEventListener('click', closeEventTooltip, { once:true });
       });
     });
   }
@@ -1732,7 +1776,8 @@
   async function refreshStreakFab(){
     if(!currentUser) return;
     const list = await loadHistory();
-    const info = computeStreak(list);
+    const [goals, events] = await Promise.all([loadGoals(), loadCalendarEvents()]);
+    const info = computeStreak(list, goals, events);
     const fabCount = document.getElementById('streakFabCount');
     const fabIcon = document.getElementById('streakFabIcon');
     if(fabCount) fabCount.textContent = info.current;
@@ -3553,7 +3598,7 @@ RULES:
   let stream = null;
   let cameraStream = null;
   let captureStream = null;
-  let captureMode = 'camera'; // 'camera' | 'capture'
+  let captureMode = 'camera'; // 'camera' | 'capture' | 'upload'
   let recorder = null;
   let chunks = [];
   let recordedBlob = null;
@@ -4827,6 +4872,7 @@ Grading rules:
     uploadError.classList.add('hidden');
     lastQuestion = q;
     recordedBlob = file;
+    captureMode = 'upload';
     recordedMime = file.type || 'video/mp4';
     reviewVideo.src = URL.createObjectURL(recordedBlob);
     showView(viewReview);
@@ -7286,7 +7332,7 @@ Grading rules:
 
     if(parsed.total !== null) flightHistory.push({round:roundNo, total:parsed.total});
     renderFlightStrips();
-    recordBallotToHistory(parsed, feedback, transcript, lastQuestion, roundNo, recordedBlob, lastTranscriptAnnotations, lastDeliveryMetrics);
+    recordBallotToHistory(parsed, feedback, transcript, lastQuestion, roundNo, recordedBlob, lastTranscriptAnnotations, lastDeliveryMetrics, captureMode);
     showView(viewResults);
   }
 

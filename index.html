@@ -4917,7 +4917,16 @@ Grading rules:
   // mirrors, so it always stays perfectly in sync with that button's own
   // open/close/toggle logic — nothing to duplicate or fall out of date.
   navMenuPanel.querySelectorAll('.nav-menu-item[data-target]').forEach(item => {
-    item.addEventListener('click', () => {
+    item.addEventListener('click', (e) => {
+      // Without this, the original click event keeps bubbling up to
+      // document AFTER targetBtn.click() below has already opened the
+      // panel — and the document-level "click outside closes the panel"
+      // listeners (for settings/timer/shortcuts) see that bubbling click
+      // (whose target is this menu item, i.e. outside the panel) and
+      // immediately close the panel that was just opened. Stopping
+      // propagation here keeps that original click from ever reaching
+      // those document listeners.
+      e.stopPropagation();
       const targetId = item.getAttribute('data-target');
       closeNavMenu();
       const targetBtn = document.getElementById(targetId);

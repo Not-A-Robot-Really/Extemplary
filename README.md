@@ -92,7 +92,7 @@ Open `Extemplary.html` in any modern (up to date) desktop or mobile browser. No 
 ---
 You'll land on the sign in screen (landing page) the first time you open the app.
 
-1. Switch to the **Sign Up** tab, enter an email and a password (requires 6+ characters), and submit.
+1. Locate the **Sign Up** tab, enter an email and a password (requires 6+ characters), and submit.
 2. Depending on the project's auth settings, you may need to check your email and click a confirmation link before your first log in (see [Supabase setup](#supabase-setup) below).
 3. Once signed in, you'll stay signed in automatically — even after closing the tab or restarting your browser — until you tap **Sign out** in the account menu (top right).
 
@@ -164,4 +164,4 @@ The above copyright notice and this permission notice shall be included in all c
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-**API keys:** this repo, as shipped, includes working default Groq, Gemini, and Supabase keys so it runs out of the box. The MIT license does not give rights to those specific keys or the data behind them. If you fork or redeploy this publicly, please swap in your **own** Groq API key, your **own** Gemini API key, and your **own** Supabase project rather than reusing the current ones.
+**API keys:** this repo includes working default Groq, Gemini, and Supabase keys so it runs out of the box. The MIT license does not give rights to those specific keys or the data behind them. If you fork or redeploy this publicly, please swap in your **own** Groq API key, your **own** Gemini API key, and your **own** Supabase project rather than reusing the current ones.

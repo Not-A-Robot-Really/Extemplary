@@ -1875,6 +1875,14 @@
    pointed at. The real page element itself is never touched, so it always
    stays clickable exactly where it already is. The dim layer is purely
    cosmetic and never intercepts clicks (pointer-events: none, always).
+
+   The instructions box is DOCKED to a fixed side rail (left or right edge
+   of the viewport, whichever the current target is furthest from) instead
+   of floating next to/over the spotlighted element. A floating tooltip
+   next to a target can easily land on top of the very thing being shown
+   off (small screens, elements near the edges, tall instructions, etc.);
+   a fixed side rail never overlaps the highlighted area because it lives
+   outside the app's main content column entirely.
    ========================================================================= */
 #tutOverlayRoot{position:fixed;inset:0;z-index:2147483000;pointer-events:none;font-family:var(--font-body, Georgia, serif);}
 #tutDim{position:fixed;inset:0;background:rgba(12,16,24,0.55);opacity:0;transition:opacity .25s ease;pointer-events:none !important;z-index:2147483000;}
@@ -1902,46 +1910,77 @@
   70%{box-shadow:0 0 0 16px rgba(255,207,77,0);transform:scale(1.05);}
   100%{box-shadow:0 0 0 0 rgba(255,207,77,0);transform:scale(0.9);}
 }
+
+/* ---- Docked side panel ------------------------------------------------ */
 #tutBox{
-  position:fixed;top:-9999px;left:-9999px;z-index:2147483004;max-width:360px;min-width:280px;
+  position:fixed;top:50%;right:22px;left:auto;
+  transform:translateY(-50%) translateX(16px);
+  z-index:2147483004;width:336px;max-width:calc(100vw - 44px);
+  max-height:calc(100vh - 44px);overflow-y:auto;
   background:linear-gradient(180deg,#fffdf7,#f8f2e2);
-  border:2px solid #123a63;border-radius:14px;
-  box-shadow:0 14px 40px rgba(0,0,0,0.45);
-  padding:16px 18px 14px;pointer-events:none;
-  opacity:0;transform:translateY(6px);transition:opacity .2s ease, transform .2s ease;
+  border:2px solid #123a63;border-radius:16px;
+  box-shadow:0 18px 48px rgba(0,0,0,0.5), 0 2px 0 rgba(255,255,255,0.6) inset;
+  padding:18px 20px 16px;pointer-events:none;
+  opacity:0;transition:opacity .22s ease, transform .28s cubic-bezier(.2,.8,.2,1), right .28s ease, left .28s ease;
 }
-#tutBox.tut-visible{opacity:1;transform:translateY(0);pointer-events:auto;}
-#tutBox.tut-center{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);}
-#tutBox.tut-center.tut-visible{transform:translate(-50%,-50%);}
-.tut-arrow{
-  position:absolute;width:18px;height:18px;background:#fffdf7;
-  border-left:2px solid #123a63;border-top:2px solid #123a63;
-  transform:rotate(45deg);
+#tutBox.tut-visible{opacity:1;transform:translateY(-50%) translateX(0);pointer-events:auto;}
+/* Docked to the left edge instead, when the spotlighted target sits in
+   the right half of the screen. */
+#tutBox.tut-dock-left{right:auto;left:22px;transform:translateY(-50%) translateX(-16px);}
+#tutBox.tut-dock-left.tut-visible{transform:translateY(-50%) translateX(0);}
+/* No target on this step (welcome/closing screens) — same side rail,
+   just vertically centered with a touch more presence. */
+#tutBox.tut-center{right:22px;left:auto;}
+
+.tut-progress-track{height:4px;border-radius:4px;background:rgba(18,58,99,0.12);margin:-2px -2px 14px;overflow:hidden;}
+.tut-progress-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,#ffcf4d,#f0a93a);transition:width .3s ease;}
+
+.tut-arrow{display:none;} /* docked panel points at nothing; connection is shown by the spotlight glow instead */
+
+.tut-head{display:flex;align-items:center;gap:9px;margin-bottom:8px;}
+.tut-avatar{
+  font-size:20px;line-height:1;flex:0 0 auto;
+  width:34px;height:34px;display:flex;align-items:center;justify-content:center;
+  background:#123a63;border-radius:9px;
 }
-.tut-arrow.tut-arrow-top{top:-10px;left:24px;}
-.tut-arrow.tut-arrow-bottom{bottom:-10px;left:24px;border-left:none;border-top:none;border-right:2px solid #123a63;border-bottom:2px solid #123a63;}
-.tut-arrow.tut-arrow-left{left:-10px;top:20px;}
-.tut-arrow.tut-arrow-right{right:-10px;top:20px;border-left:none;border-top:none;border-right:2px solid #123a63;border-bottom:2px solid #123a63;}
-.tut-head{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
-.tut-avatar{font-size:22px;line-height:1;}
-.tut-title{font-family:var(--font-display,Georgia,serif);font-weight:900;font-size:15px;color:#123a63;}
-.tut-step-count{margin-left:auto;font-family:var(--font-mono,monospace);font-size:10px;color:#8a7a5c;white-space:nowrap;}
-.tut-text{font-size:13.5px;line-height:1.5;color:#2c2416;}
+.tut-title{font-family:var(--font-display,Georgia,serif);font-weight:900;font-size:15px;color:#123a63;line-height:1.25;}
+.tut-step-count{
+  margin-left:auto;font-family:var(--font-mono,monospace);font-size:10px;color:#8a7a5c;white-space:nowrap;
+  background:rgba(138,122,92,0.12);padding:3px 7px;border-radius:20px;flex:0 0 auto;
+}
+.tut-text{font-size:13.5px;line-height:1.6;color:#2c2416;}
 .tut-type-example{
-  display:block;margin:8px 0;padding:8px 10px;background:#123a63;color:#fff8e8;
-  font-family:var(--font-mono,monospace);font-size:11.5px;line-height:1.5;
-  border-radius:8px;white-space:pre-wrap;
+  display:block;margin:10px 0;padding:10px 12px;background:#123a63;color:#fff8e8;
+  font-family:var(--font-mono,monospace);font-size:11.5px;line-height:1.55;
+  border-radius:9px;white-space:pre-wrap;border-left:3px solid #ffcf4d;
 }
-.tut-hint{margin-top:10px;font-size:11.5px;font-weight:700;color:#a3322a;display:flex;align-items:center;gap:6px;}
-.tut-hint .tut-dot{width:8px;height:8px;border-radius:50%;background:#a3322a;animation:tutDotBlink 1s ease-in-out infinite;}
+.tut-hint{
+  margin-top:12px;font-size:11.5px;font-weight:700;color:#a3322a;display:flex;align-items:center;gap:7px;
+  background:rgba(163,50,42,0.08);border:1px solid rgba(163,50,42,0.25);border-radius:9px;padding:8px 10px;
+}
+.tut-hint .tut-dot{width:8px;height:8px;border-radius:50%;background:#a3322a;flex:0 0 auto;animation:tutDotBlink 1s ease-in-out infinite;}
 @keyframes tutDotBlink{0%,100%{opacity:1;}50%{opacity:.25;}}
-.tut-actions{display:flex;justify-content:space-between;align-items:center;margin-top:12px;gap:8px;}
-.tut-btn{border:none;border-radius:8px;padding:8px 14px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;}
+.tut-actions{display:flex;justify-content:space-between;align-items:center;margin-top:14px;gap:8px;}
+.tut-btn{border:none;border-radius:8px;padding:9px 15px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;transition:background .15s ease,transform .1s ease;}
+.tut-btn:active{transform:scale(0.96);}
 .tut-btn-skip{background:transparent;color:#8a7a5c;text-decoration:underline;padding:8px 4px;}
+.tut-btn-skip:hover{color:#6b5f45;}
 .tut-btn-next{background:#123a63;color:#fff8e8;}
 .tut-btn-next:hover{background:#0c2c4c;}
 .tut-btn-choice{background:#1d5c9e;color:#fff;margin-left:6px;}
 .tut-btn-choice.tut-btn-no{background:#7a7264;}
+
+/* On narrower / shorter viewports a side rail eats too much width, so the
+   panel becomes an anchored bottom sheet instead — still never covering
+   the spotlighted area, since the app content sits above it. */
+@media (max-width: 780px), (max-height: 560px){
+  #tutBox, #tutBox.tut-dock-left, #tutBox.tut-center{
+    top:auto;bottom:14px;left:50%;right:auto;
+    width:calc(100vw - 28px);max-width:420px;
+    transform:translateX(-50%) translateY(14px);
+  }
+  #tutBox.tut-visible, #tutBox.tut-dock-left.tut-visible{transform:translateX(-50%) translateY(0);}
+}
 @media (max-width:640px){
   #tutBox{max-width:88vw;min-width:0;left:6vw !important;right:6vw !important;}
 }

@@ -135,37 +135,27 @@
     }
   }
 
+  // Docks the instructions panel to whichever side of the screen the
+  // current target is furthest from (or the right side by default, when
+  // there's no target). Because the panel always lives on a fixed edge
+  // rail instead of floating next to the target, it can never end up on
+  // top of the very thing the step is highlighting — the two things it
+  // needs to avoid overlapping (target rect, panel rect) are pinned to
+  // opposite sides of the viewport by construction.
   function positionBox(target, showRing){
     var e = el();
-    e.box.classList.remove('tut-center');
-    e.box.querySelectorAll('.tut-arrow').forEach(function(a){ a.remove(); });
+    e.box.classList.remove('tut-center', 'tut-dock-left');
     paintHighlight(target, showRing);
+    var vw = window.innerWidth;
+    var dockLeft = false;
     if(!target){
       e.box.classList.add('tut-center');
-      e.box.style.top = ''; e.box.style.left = ''; e.box.style.right = '';
-      return;
-    }
-    var r = target.getBoundingClientRect();
-    var boxRect = e.box.getBoundingClientRect();
-    var vw = window.innerWidth, vh = window.innerHeight;
-    var spaceBelow = vh - r.bottom, spaceAbove = r.top;
-    var top, left, arrowClass;
-    var boxH = boxRect.height || 190, boxW = boxRect.width || 320;
-    if(spaceBelow > boxH + 24 || spaceBelow > spaceAbove){
-      top = Math.min(r.bottom + 18, vh - boxH - 10);
-      arrowClass = 'tut-arrow-top';
     } else {
-      top = Math.max(10, r.top - boxH - 18);
-      arrowClass = 'tut-arrow-bottom';
+      var r = target.getBoundingClientRect();
+      var targetCenter = r.left + r.width/2;
+      dockLeft = targetCenter > vw/2; // target's on the right → dock panel left
+      if(dockLeft) e.box.classList.add('tut-dock-left');
     }
-    left = Math.min(Math.max(10, r.left), vw - boxW - 10);
-    e.box.style.top = top + 'px';
-    e.box.style.left = left + 'px';
-    e.box.style.right = 'auto';
-    var arrow = document.createElement('div');
-    arrow.className = 'tut-arrow ' + arrowClass;
-    arrow.style.left = Math.min(Math.max(16, r.left - left + r.width/2 - 9), boxW - 30) + 'px';
-    e.box.appendChild(arrow);
   }
 
   function applySpotlight(sel){
@@ -194,6 +184,8 @@
     e.title.textContent = step.title;
     e.text.innerHTML = step.html || '';
     e.count.textContent = 'Step ' + (state.idx+1) + ' of ' + state.steps.length;
+    var progressFill = byId('tutProgressFill');
+    if(progressFill) progressFill.style.width = Math.round(((state.idx+1) / state.steps.length) * 100) + '%';
     e.hint.classList.add('hidden');
     e.next.style.display = 'inline-block';
     e.choiceRow.style.display = 'none';

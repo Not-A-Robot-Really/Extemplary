@@ -46,7 +46,7 @@ Sign up → Generate questions → Write a speech → Record your speech → Rec
 
 - **Streak & Calendar** | A tracked practice streak: any day you record a ballot, set a goal, or complete one keeps the streak alive. Your current streak lives in a flame counter fixed to the top of the app, and the full **Streak Calendar** view lays out a month-by-month history of active days, and your current & best streak.
 
-**tournament & event tracker** | Located in the calendar tab, you can add an upcoming competition's date and name on the calendar. It will also show up in list below the calendar.
+- **tournament & event tracker** | Located in the calendar tab, you can add an upcoming competition's date and name on the calendar. It will also show up in list below the calendar.
 
 - **Goals** | Set concrete goals for right from the Streak Calendar or My History: hit a streak length, beat an overall score threshold, beat a threshold in one specific rubric category, complete a number of practice rounds, or live video ballots this month. Each goal tracks its own live progress. My History also contains *Suggested Goals* that are auto-generated from your own weakest rubric categories, current average score, and current streak, so there's always a sensible next target waiting for you.
 

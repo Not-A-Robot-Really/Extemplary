@@ -1688,7 +1688,7 @@
 
   /* ---- calendar grid ---- */
   .streak-calendar{
-    border:2px solid var(--charcoal);border-radius:3px;padding:22px 24px 18px;margin-bottom:22px;
+    border:4px solid var(--charcoal);border-radius:3px;padding:22px 24px 18px;margin-bottom:22px;
     background:rgba(255,255,255,0.65);
     position:relative;overflow:hidden;
   }
@@ -1720,26 +1720,32 @@
   }
   .scal-cell:hover{border-color:var(--crimson);transform:translateY(-1px);}
   .scal-cell.empty{visibility:hidden;cursor:default;}
+  /* Today is filled solid instead of just outlined, so it reads instantly
+     against a full month grid instead of needing a side-by-side compare
+     to spot a thin border. */
   .scal-cell.today{
-    border-color:var(--crimson);border-width:2px;
-    box-shadow:inset 0 0 0 1px rgba(29,92,158,0.15);
+    background:var(--crimson);border-color:var(--crimson-deep);border-width:2px;
   }
+  .scal-cell.today .scal-daynum{color:#fff;opacity:1;font-weight:800;}
   /* Active (streak-lit) days get a faint parchment wash instead of staying
      flat white, so a lit week reads as a warm run of days at a glance
      rather than needing the flame icon alone to carry it. */
   .scal-cell.lit{background:var(--parchment);}
+  .scal-cell.today.lit{background:var(--crimson);}
   .scal-daynum{font-family:var(--font-mono);font-size:10.5px;font-weight:600;color:#000;opacity:0.7;}
   .scal-flame{width:24px;height:24px;display:flex;align-items:center;justify-content:center;}
   .scal-flame svg{width:100%;height:100%;}
   .scal-flame.lit{color:#ff8a2b;}
   .scal-flame.unlit{color:#c7cbd1;}
-  /* Event label reads as a small ticket stub tucked at the bottom of the
-     cell (folded corner + serif-free stamp lettering) rather than a flat
-     solid pill. */
+  .scal-cell.today .scal-flame.unlit{color:rgba(255,255,255,0.5);}
+  /* Event/tournament label: needs to be readable at a glance (e.g. a
+     "STATES" entry), so it's sized like a real word on the page rather
+     than fine print. */
   .scal-event-label{
-    position:absolute;bottom:2px;left:2px;right:2px;font-family:var(--font-mono);font-size:8px;font-weight:700;
-    line-height:1.2;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
-    background:var(--brass);color:#fff;border-radius:2px;padding:1.5px 3px 1.5px 5px;cursor:pointer;
+    position:absolute;bottom:2px;left:2px;right:2px;font-family:var(--font-mono);font-size:12px;font-weight:800;
+    line-height:1.15;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+    text-transform:uppercase;letter-spacing:0.3px;
+    background:var(--brass);color:#fff;border-radius:2px;padding:2.5px 4px;cursor:pointer;
   }
   .scal-goal-ring{
     position:absolute;top:3px;right:3px;width:11px;height:11px;border-radius:50%;
@@ -1810,7 +1816,11 @@
      (conic-gradient, no JS/SVG needed) standing in for the old flat
      bar-in-a-box, sitting on a plain ledger row. Distinct from a generic
      dashboard progress bar, but built entirely from the site's existing
-     ink/brass/crimson palette. */
+     ink/brass/crimson palette. The ring is built as two perfectly
+     concentric absolutely-positioned layers (both inset:0 on the same
+     square box) rather than a fixed-pixel inset on a differently-sized
+     child, so the inner disc can never drift off-center from the outer
+     ring at any size. */
   .streak-goals, .history-goals{
     border:2px solid var(--charcoal);border-radius:3px;padding:22px 24px;margin-bottom:22px;
     background:rgba(255,255,255,0.6);
@@ -1822,33 +1832,36 @@
   }
   .goals-list{display:flex;flex-direction:column;}
   .goal-card{
-    display:flex;align-items:center;gap:16px;padding:13px 2px;
+    display:flex;align-items:center;gap:22px;padding:20px 4px;
     border-bottom:1px solid rgba(0,0,0,0.09);
   }
   .goals-list .goal-card:last-child{border-bottom:none;}
   .goal-card-seal{
-    flex-shrink:0;width:38px;height:38px;border-radius:50%;position:relative;
-    display:flex;align-items:center;justify-content:center;
+    flex-shrink:0;width:84px;height:84px;border-radius:50%;position:relative;
+  }
+  .goal-card-seal-ring{
+    position:absolute;inset:0;border-radius:50%;
     background:conic-gradient(var(--brass) calc(var(--goal-pct,0) * 1%), var(--rule) 0);
   }
-  .goal-card-seal::before{
-    content:"";position:absolute;inset:3px;border-radius:50%;background:#fff;
+  .goal-card-seal-hole{
+    position:absolute;inset:8px;border-radius:50%;background:#fff;
+    display:flex;align-items:center;justify-content:center;
   }
   .goal-card-seal-pct{
-    position:relative;font-family:var(--font-mono);font-size:9.5px;font-weight:700;color:#000;opacity:0.75;
+    font-family:var(--font-mono);font-size:19px;font-weight:700;color:#000;opacity:0.8;
   }
-  .goal-card.done .goal-card-seal{background:conic-gradient(#22c55e calc(var(--goal-pct,0) * 1%), var(--rule) 0);}
+  .goal-card.done .goal-card-seal-ring{background:conic-gradient(#22c55e calc(var(--goal-pct,0) * 1%), var(--rule) 0);}
   .goal-card.done .goal-card-seal-pct{display:none;}
   .goal-card-check{
-    position:relative;flex-shrink:0;width:16px;height:16px;color:#16a34a;display:none;
+    flex-shrink:0;width:30px;height:30px;color:#16a34a;display:none;
   }
   .goal-card.done .goal-card-check{display:inline-flex;}
   .goal-card-main{flex:1;min-width:0;}
   .goal-card-label{
-    font-family:var(--font-body);font-size:14px;font-weight:600;color:#000;margin-bottom:4px;
+    font-family:var(--font-display);font-size:21px;font-weight:700;color:#000;margin-bottom:6px;line-height:1.25;
   }
   .goal-card-progress{
-    font-family:var(--font-mono);font-size:11px;font-weight:600;color:#000;opacity:0.55;letter-spacing:0.2px;
+    font-family:var(--font-mono);font-size:13px;font-weight:600;color:#000;opacity:0.55;letter-spacing:0.2px;
   }
   .goal-card.done .goal-card-progress{color:#16a34a;opacity:0.85;}
   .goal-card-del{
@@ -1857,10 +1870,9 @@
   .goal-card-del:hover{opacity:1;color:var(--crimson);}
 
   /* ---- suggested goals (My History) ----
-     Styled as a small torn ticket stub, echoing the ballot paper's own
-     folded-corner treatment rather than a generic dashed "AI suggestion"
-     box: a perforated left edge (radial-gradient notches) and a stub-like
-     silhouette. */
+     A small lightbulb badge on the left gives each row a reason for the
+     circular shape (this is a suggestion, not a completed goal), instead
+     of an unexplained decorative notch. */
   .suggested-goals{margin-top:20px;padding-top:16px;border-top:1px dashed var(--rule);}
   .suggested-goals h4{
     font-family:var(--font-mono);font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;
@@ -1869,28 +1881,25 @@
   .suggested-goals-list{display:flex;flex-direction:column;gap:10px;}
   .suggested-goal-card{
     position:relative;display:flex;align-items:center;gap:14px;
-    padding:12px 16px 12px 20px;border-radius:3px;
+    padding:12px 16px;border-radius:3px;
     background:var(--parchment);border:1px solid var(--rule);
-    overflow:visible;
   }
-  /* A single punched notch plus a dashed stub-line stand in for a ticket's
-     perforated edge, echoing the ballot's own folded-corner motif instead
-     of a plain dashed rectangle. */
-  .suggested-goal-card::before{
-    content:"";position:absolute;left:-1px;top:50%;transform:translate(-50%,-50%);
-    width:12px;height:12px;border-radius:50%;background:var(--parchment-deep);border:1px solid var(--rule);
+  .sg-icon{
+    flex-shrink:0;width:32px;height:32px;border-radius:50%;
+    background:var(--brass);color:#fff;
+    display:flex;align-items:center;justify-content:center;
   }
-  .suggested-goal-card::after{
-    content:"";position:absolute;left:10px;top:8px;bottom:8px;border-left:1px dashed var(--rule);
-  }
+  .sg-icon svg{width:17px;height:17px;}
   .sg-text{flex:1;min-width:0;}
   .sg-label{font-size:13.5px;font-weight:600;color:#000;}
   .sg-why{font-size:12px;color:#000;opacity:0.6;margin-top:3px;line-height:1.4;}
   .sg-add{
-    flex-shrink:0;font-family:var(--font-mono);font-size:11.5px;font-weight:600;padding:0;
-    background:none;border:none;color:var(--crimson);cursor:pointer;text-decoration:underline;
+    flex-shrink:0;font-family:var(--font-mono);font-size:12px;font-weight:700;
+    padding:9px 16px;border-radius:3px;
+    background:var(--crimson);border:1px solid var(--crimson-deep);color:#fff;cursor:pointer;
+    transition:background .15s;
   }
-  .sg-add:hover{color:var(--crimson-deep);}
+  .sg-add:hover{background:var(--crimson-deep);}
 
   /* ---- goal creation modal ---- */
   .goal-modal-backdrop{

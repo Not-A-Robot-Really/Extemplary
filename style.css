@@ -1866,8 +1866,8 @@
    ONBOARDING TUTORIAL ("cutscene" walkthrough for brand-new accounts)
    ========================================================================= */
 #tutOverlayRoot{position:fixed;inset:0;z-index:100000;pointer-events:none;font-family:var(--font-body, Georgia, serif);}
-#tutDim{position:fixed;inset:0;background:rgba(12,16,24,0.6);opacity:0;transition:opacity .25s ease;pointer-events:auto;z-index:100000;}
-#tutDim.tut-visible{opacity:1;}
+#tutDim{position:fixed;inset:0;background:rgba(12,16,24,0.6);opacity:0;transition:opacity .25s ease;pointer-events:none;z-index:100000;}
+#tutDim.tut-visible{opacity:1;pointer-events:auto;}
 .tut-spot{position:relative !important;z-index:100002 !important;}
 .tut-spot.tut-spot-box{
   outline:3px solid #ffcf4d;

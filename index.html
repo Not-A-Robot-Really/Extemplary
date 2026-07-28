@@ -438,8 +438,14 @@
 
 <!-- ====== STREAK COUNTER — floating top-right, mirrors the hamburger fab ====== -->
 <!-- ====== HAMBURGER NAV MENU — solid header bar, top-left of the screen, ====== -->
-<!-- ====== always visible above the (semi-transparent, collapsible) menu ====== -->
-<!-- ====== list below it, doubling as the toggle that minimizes/restores it ====== -->
+<!-- ====== the dark header slides together with the menu list below it as ====== -->
+<!-- ====== one piece. This separate persistent button stays fixed in place ====== -->
+<!-- ====== and only shows up while the menu is collapsed, so there is always ====== -->
+<!-- ====== a way to bring the menu back. ====== -->
+<button class="nav-hamburger-persistent hidden" id="navMenuPersistentToggle" type="button" aria-label="Open menu" title="Menu">
+  <svg viewBox="0 0 24 24" width="27" height="27" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-30"></use></svg>
+</button>
+
 <button class="streak-fab hidden" id="streakFab" type="button" aria-label="Current streak" title="Current streak">
   <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" stroke="none" id="streakFabIcon"><use href="#icon-29"></use></svg>
   <span class="streak-fab-count" id="streakFabCount">0</span>
@@ -1651,7 +1657,7 @@
     const fabCount = document.getElementById('streakFabCount');
     const fabIcon = document.getElementById('streakFabIcon');
     if(fabCount){ fabCount.textContent = streakInfo.current; }
-    if(fabIcon){ fabIcon.style.color = streakInfo.current > 0 ? '#ff8a2b' : ''; }
+    document.getElementById('streakFab')?.classList.toggle('has-streak', streakInfo.current > 0);
 
     document.getElementById('streakSummary').innerHTML = `
       <div class="streak-summary-card">
@@ -1846,7 +1852,7 @@
     const fabCount = document.getElementById('streakFabCount');
     const fabIcon = document.getElementById('streakFabIcon');
     if(fabCount) fabCount.textContent = info.current;
-    if(fabIcon) fabIcon.style.color = info.current > 0 ? '#ff8a2b' : '';
+    document.getElementById('streakFab')?.classList.toggle('has-streak', info.current > 0);
   }
 
   // ---- rendering "My History" ----
@@ -3735,6 +3741,7 @@
       citationOpen = false;
       document.getElementById('citationToggle')?.classList.remove('active');
     }
+    document.getElementById('streakFab')?.classList.toggle('active', v === viewStreak);
   }
 
   // ===== CAMERA =====
@@ -4986,6 +4993,7 @@ Grading rules:
   // both the toggle and the drawer's visual "head" (no separate close X).
   const navMenuToggle   = document.getElementById('navMenuToggle');
   const navMenuPanel    = document.getElementById('navMenuPanel');
+  const navMenuPersistentToggle = document.getElementById('navMenuPersistentToggle');
   let navMenuOpenState = true;
   function openNavMenu(){
     if(typeof shortcutsOpen !== 'undefined' && shortcutsOpen) closeShortcutsPanel();
@@ -5002,15 +5010,21 @@ Grading rules:
     navMenuOpenState = true;
     navMenuPanel.classList.remove('nav-drawer-collapsed');
     navMenuToggle.setAttribute('aria-expanded', 'true');
+    navMenuPersistentToggle?.classList.add('hidden');
   }
   function closeNavMenu(){
     navMenuOpenState = false;
     navMenuPanel.classList.add('nav-drawer-collapsed');
     navMenuToggle.setAttribute('aria-expanded', 'false');
+    navMenuPersistentToggle?.classList.remove('hidden');
   }
   navMenuToggle.addEventListener('click', (e) => {
     e.stopPropagation();
     if(navMenuOpenState) closeNavMenu(); else openNavMenu();
+  });
+  navMenuPersistentToggle?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    openNavMenu();
   });
   // "Home" returns to the default Official Practice Ballot view, closing
   // whatever overlay view (History, Briefing, Citation Checker, Example

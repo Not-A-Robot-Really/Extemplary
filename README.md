@@ -6,7 +6,7 @@ A **free** browser extention for practicing **NSDA Extemporaneous Speaking**. Re
 
 **[Live demo →](#deployment)**
 
-![Image22](speechbackgr.png)
+![Image22](Images/speechbackgr.png)
 
 ---
 

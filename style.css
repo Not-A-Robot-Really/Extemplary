@@ -388,7 +388,7 @@
   }
   .light-zone-bg{
     position:absolute;left:0;right:0;top:0;height:100%;z-index:-1;
-    background-image:url('speechbackgr22.png');background-repeat:no-repeat;
+    background-image:url('Images/speechbackgr22.png');background-repeat:no-repeat;
     background-attachment:fixed;background-position:center center;
     background-color:#e7f0fb;
   }

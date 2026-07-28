@@ -3758,6 +3758,8 @@
       document.getElementById('citationToggle')?.classList.remove('active');
     }
     document.getElementById('streakToggle')?.classList.toggle('active', v === viewStreak);
+    document.querySelector('.nav-menu-item[data-target="historyToggle"]')?.classList.toggle('active', v === viewHistory);
+    document.getElementById('navHomeBtn')?.classList.toggle('active', v === viewRecord);
   }
 
   // ===== CAMERA =====
@@ -5067,6 +5069,25 @@ Grading rules:
       if(targetBtn) targetBtn.click();
     });
   });
+
+  // Keeps each sidebar row's blue "currently open" highlight in sync with
+  // its mirrored header button's own .active class, whatever toggles that
+  // class (this file already adds/removes .active on open/close for every
+  // button below except themeToggle, which isn't a page/panel that stays
+  // "open"). A MutationObserver means the sidebar never has to duplicate
+  // any open/close logic — it just reflects whatever's already true.
+  navMenuPanel.querySelectorAll('.nav-menu-item[data-target]').forEach(item => {
+    const targetId = item.getAttribute('data-target');
+    if(targetId === 'themeToggle') return;
+    const targetBtn = document.getElementById(targetId);
+    if(!targetBtn) return;
+    const syncActive = () => item.classList.toggle('active', targetBtn.classList.contains('active'));
+    syncActive();
+    new MutationObserver(syncActive).observe(targetBtn, { attributes:true, attributeFilter:['class'] });
+  });
+  // My Ballot History and Home are full view swaps (not buttons with their
+  // own .active class), so their sidebar rows are driven directly off
+  // showView() instead of the MutationObserver above.
 
   // ===== Light / dark theme toggle =====
   const themeToggle = document.getElementById('themeToggle');

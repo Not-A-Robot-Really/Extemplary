@@ -1551,6 +1551,9 @@
   .nav-menu-item:hover{background:var(--parchment-deep);}
   .nav-menu-item svg{flex-shrink:0;color:var(--slate);}
   .nav-menu-item:hover svg{color:var(--crimson-deep);}
+  .nav-menu-item.active{background:var(--crimson);color:#ffffff;}
+  .nav-menu-item.active svg{color:#ffffff;}
+  .nav-menu-item.active:hover{background:var(--crimson);}
   .nav-menu-divider{height:1px;background:var(--rule);margin:8px 6px;}
 
 
@@ -1910,7 +1913,7 @@
   max-height:calc(100vh - 44px);overflow-y:auto;
   background:linear-gradient(180deg,#fffdf7,#f8f2e2);
   border:2px solid #123a63;border-radius:16px;
-  box-shadow:0 18px 48px rgba(0,0,0,0.5), 0 2px 0 rgba(255,255,255,0.6) inset;
+  box-shadow:0 2px 0 rgba(255,255,255,0.6) inset;
   padding:18px 20px 16px;pointer-events:none;
   opacity:0;transition:opacity .22s ease, transform .28s cubic-bezier(.2,.8,.2,1), right .28s ease, left .28s ease;
 }

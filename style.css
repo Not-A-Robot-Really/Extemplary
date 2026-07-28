@@ -1688,7 +1688,7 @@
 
   /* ---- calendar grid ---- */
   .streak-calendar{
-    border:4px solid var(--charcoal);border-radius:3px;padding:22px 24px 18px;margin-bottom:22px;
+    border:2px solid var(--charcoal);border-radius:3px;padding:22px 24px 18px;margin-bottom:22px;
     background:rgba(255,255,255,0.65);
     position:relative;overflow:hidden;
   }
@@ -1700,7 +1700,7 @@
     border-color:transparent var(--parchment-deep) transparent transparent;
     opacity:0.9;
   }
-  .scal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding-bottom:14px;border-bottom:2px solid var(--rule);}
+  .scal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding-bottom:14px;border-bottom:3px solid #0a1c30;}
   .scal-head h3{font-family:var(--font-display);font-size:18px;font-weight:700;margin:0;color:#000;}
   .scal-nav{
     width:30px;height:30px;border-radius:50%;border:1px solid var(--rule);background:#fff;color:#000;
@@ -1714,7 +1714,7 @@
   }
   .scal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
   .scal-cell{
-    position:relative;aspect-ratio:1/1;border-radius:3px;border:1px solid var(--rule);
+    position:relative;aspect-ratio:1/1;border-radius:3px;border:2px solid #0a1c30;
     display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
     cursor:pointer;background:#fff;transition:border-color .15s, background .15s, transform .1s;
   }
@@ -1837,7 +1837,7 @@
   }
   .goals-list .goal-card:last-child{border-bottom:none;}
   .goal-card-seal{
-    flex-shrink:0;width:84px;height:84px;border-radius:50%;position:relative;
+    flex-shrink:0;width:74px;height:74px;border-radius:50%;position:relative;
   }
   .goal-card-seal-ring{
     position:absolute;inset:0;border-radius:50%;
@@ -1848,7 +1848,7 @@
     display:flex;align-items:center;justify-content:center;
   }
   .goal-card-seal-pct{
-    font-family:var(--font-mono);font-size:19px;font-weight:700;color:#000;opacity:0.8;
+    font-family:var(--font-mono);font-size:16.5px;font-weight:700;color:#000;opacity:0.8;
   }
   .goal-card.done .goal-card-seal-ring{background:conic-gradient(#22c55e calc(var(--goal-pct,0) * 1%), var(--rule) 0);}
   .goal-card.done .goal-card-seal-pct{display:none;}
@@ -1858,16 +1858,18 @@
   .goal-card.done .goal-card-check{display:inline-flex;}
   .goal-card-main{flex:1;min-width:0;}
   .goal-card-label{
-    font-family:var(--font-display);font-size:21px;font-weight:700;color:#000;margin-bottom:6px;line-height:1.25;
+    font-family:var(--font-display);font-size:18.5px;font-weight:700;color:#000;margin-bottom:6px;line-height:1.25;
   }
   .goal-card-progress{
-    font-family:var(--font-mono);font-size:13px;font-weight:600;color:#000;opacity:0.55;letter-spacing:0.2px;
+    font-family:var(--font-mono);font-size:11.5px;font-weight:600;color:#000;opacity:0.55;letter-spacing:0.2px;
   }
   .goal-card.done .goal-card-progress{color:#16a34a;opacity:0.85;}
   .goal-card-del{
-    flex-shrink:0;background:none;border:none;color:#000;opacity:0.35;cursor:pointer;padding:6px;border-radius:3px;transition:opacity .12s, color .12s;
+    flex-shrink:0;background:none;border:none;color:#dc2626;opacity:0.85;cursor:pointer;padding:6px;border-radius:3px;
+    font-weight:800;transition:opacity .12s, color .12s, transform .12s;
   }
-  .goal-card-del:hover{opacity:1;color:var(--crimson);}
+  .goal-card-del svg{stroke-width:3.5;}
+  .goal-card-del:hover{opacity:1;color:#b91c1c;transform:scale(1.1);}
 
   /* ---- suggested goals (My History) ----
      A small lightbulb badge on the left gives each row a reason for the

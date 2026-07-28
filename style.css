@@ -62,7 +62,8 @@
   header.topbar{
     padding:22px 24px 16px;
     background:var(--charcoal);
-    border-bottom:1px solid rgba(255,255,255,0.12);
+    opacity:1;
+    border-bottom:1px solid #2c435e;
     display:flex;
     align-items:baseline;
     justify-content:space-between;

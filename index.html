@@ -1617,7 +1617,10 @@
     el.innerHTML = `
       <div class="history-goals">
         <div class="hg-head">
-          <h3>Your Goals</h3>
+          <div class="sec-head-title">
+            <span class="sec-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-71"></use></svg></span>
+            <h3>Your Goals</h3>
+          </div>
           <button type="button" class="btn primary" id="historyAddGoalBtn">+ New Goal</button>
         </div>
         <div class="goals-list" id="historyGoalsList">${renderGoalsList(goals, list, streakInfo, events)}</div>
@@ -1780,7 +1783,12 @@
     const past = events.filter(e => new Date(e.event_date) < now);
     wrap.innerHTML = `
       <div class="streak-events">
-        <h3>Tournaments &amp; Events</h3>
+        <div class="sec-head">
+          <div class="sec-head-title">
+            <span class="sec-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-72"></use></svg></span>
+            <h3>Tournaments &amp; Events</h3>
+          </div>
+        </div>
         <div class="se-add-row">
           <input type="date" id="streakEventDateInput">
           <input type="text" id="streakEventTitleInput" placeholder="Event name (e.g. State Qualifier)">
@@ -1836,7 +1844,10 @@
     wrap.innerHTML = `
       <div class="streak-goals">
         <div class="hg-head">
-          <h3>Goals</h3>
+          <div class="sec-head-title">
+            <span class="sec-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-71"></use></svg></span>
+            <h3>Goals</h3>
+          </div>
           <button type="button" class="btn primary" id="streakAddGoalBtn">+ New Goal</button>
         </div>
         <div class="goals-list">${renderGoalsList(goals, list, streakInfo, events)}</div>

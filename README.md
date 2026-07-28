@@ -92,7 +92,7 @@ Supabase provides authentication and cloud storage.
 
 ## Getting started 📖
 ---
-### Just try it
+### Try it!
 Open `Extemplary.html` in any modern (up to date) desktop or mobile browser. No installs needed, no npm, no server to run.
 
 > **Note:** the example ballot's video uses the YouTube IFrame API, which requires the page be served over. `http(s)://` It won't load correctly if you just double-click the file from disk (`file://`). Your own recorded rounds don't have this restriction; that playback is a plain local `<video>` element. Signing up, logging in, and cloud history also require `https://` (or `localhost`) for the same reason browsers require it for camera access. See [Deployment](#deployment) below to host it properly.

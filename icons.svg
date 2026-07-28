@@ -152,4 +152,6 @@
 <symbol id="icon-68" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></symbol>
 <symbol id="icon-69" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></symbol>
 <symbol id="icon-70" viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="1.5"/><path d="M9 2h6a1 1 0 0 1 1 1v2H8V3a1 1 0 0 1 1-1Z"/><path d="M8.5 11.5l1.5 1.5 3-3"/><line x1="8.5" y1="16.5" x2="15.5" y2="16.5"/></symbol>
+<symbol id="icon-71" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></symbol>
+<symbol id="icon-72" viewBox="0 0 24 24"><path d="M5 21V4"/><path d="M5 4h13l-2.5 4L18 12H5"/></symbol>
 </svg>

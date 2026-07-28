@@ -7617,5 +7617,32 @@ Grading rules:
 
 })();
 </script>
+
+<!-- ============================================================
+     ONBOARDING TUTORIAL — cutscene-style walkthrough shown once,
+     automatically, the first time a brand new account signs up.
+     ============================================================ -->
+<div id="tutOverlayRoot" aria-live="polite">
+  <div id="tutDim"></div>
+  <div id="tutRing" class="tut-ring" style="display:none;"></div>
+  <div id="tutBox" role="dialog" aria-modal="true">
+    <div class="tut-head">
+      <span class="tut-avatar" id="tutAvatar">🎙️</span>
+      <span class="tut-title" id="tutTitle">Welcome!</span>
+      <span class="tut-step-count" id="tutStepCount"></span>
+    </div>
+    <div class="tut-text" id="tutText"></div>
+    <div class="tut-hint hidden" id="tutHint"><span class="tut-dot"></span><span id="tutHintText"></span></div>
+    <div class="tut-actions">
+      <button type="button" class="tut-btn tut-btn-skip" id="tutSkipBtn">Skip tutorial</button>
+      <div id="tutChoiceRow" style="display:none;">
+        <button type="button" class="tut-btn tut-btn-next tut-btn-choice" id="tutYesBtn">Yes</button>
+        <button type="button" class="tut-btn tut-btn-next tut-btn-choice tut-btn-no" id="tutNoBtn">No</button>
+      </div>
+      <button type="button" class="tut-btn tut-btn-next" id="tutNextBtn">Next →</button>
+    </div>
+  </div>
+</div>
+<script src="tutorial.js"></script>
 </body>
 </html>

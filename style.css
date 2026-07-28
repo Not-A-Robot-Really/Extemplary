@@ -1862,3 +1862,72 @@
     .scal-flame{width:19px;height:19px;}
     .streak-summary-card{padding:18px 20px;}
   }
+/* =========================================================================
+   ONBOARDING TUTORIAL ("cutscene" walkthrough for brand-new accounts)
+   ========================================================================= */
+#tutOverlayRoot{position:fixed;inset:0;z-index:100000;pointer-events:none;font-family:var(--font-body, Georgia, serif);}
+#tutDim{position:fixed;inset:0;background:rgba(12,16,24,0.6);opacity:0;transition:opacity .25s ease;pointer-events:auto;z-index:100000;}
+#tutDim.tut-visible{opacity:1;}
+.tut-spot{position:relative !important;z-index:100002 !important;}
+.tut-spot.tut-spot-box{
+  outline:3px solid #ffcf4d;
+  outline-offset:4px;
+  border-radius:12px;
+  box-shadow:0 0 0 4px rgba(255,207,77,0.35), 0 0 0 9999px rgba(12,16,24,0.62) !important;
+  transition:box-shadow .2s ease;
+}
+.tut-ring{
+  position:fixed;z-index:100003;pointer-events:none;
+  width:46px;height:46px;margin:-23px 0 0 -23px;
+  border:3px solid #ffcf4d;border-radius:50%;
+  box-shadow:0 0 0 0 rgba(255,207,77,0.55);
+  animation:tutPulse 1.4s ease-out infinite;
+}
+@keyframes tutPulse{
+  0%{box-shadow:0 0 0 0 rgba(255,207,77,0.55);transform:scale(0.9);}
+  70%{box-shadow:0 0 0 16px rgba(255,207,77,0);transform:scale(1.05);}
+  100%{box-shadow:0 0 0 0 rgba(255,207,77,0);transform:scale(0.9);}
+}
+#tutBox{
+  position:fixed;z-index:100004;max-width:360px;min-width:280px;
+  background:linear-gradient(180deg,#fffdf7,#f8f2e2);
+  border:2px solid #123a63;border-radius:14px;
+  box-shadow:0 14px 40px rgba(0,0,0,0.45);
+  padding:16px 18px 14px;pointer-events:auto;
+  opacity:0;transform:translateY(6px);transition:opacity .2s ease, transform .2s ease;
+}
+#tutBox.tut-visible{opacity:1;transform:translateY(0);}
+#tutBox.tut-center{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);}
+#tutBox.tut-center.tut-visible{transform:translate(-50%,-50%);}
+.tut-arrow{
+  position:absolute;width:18px;height:18px;background:#fffdf7;
+  border-left:2px solid #123a63;border-top:2px solid #123a63;
+  transform:rotate(45deg);
+}
+.tut-arrow.tut-arrow-top{top:-10px;left:24px;}
+.tut-arrow.tut-arrow-bottom{bottom:-10px;left:24px;border-left:none;border-top:none;border-right:2px solid #123a63;border-bottom:2px solid #123a63;}
+.tut-arrow.tut-arrow-left{left:-10px;top:20px;}
+.tut-arrow.tut-arrow-right{right:-10px;top:20px;border-left:none;border-top:none;border-right:2px solid #123a63;border-bottom:2px solid #123a63;}
+.tut-head{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+.tut-avatar{font-size:22px;line-height:1;}
+.tut-title{font-family:var(--font-display,Georgia,serif);font-weight:900;font-size:15px;color:#123a63;}
+.tut-step-count{margin-left:auto;font-family:var(--font-mono,monospace);font-size:10px;color:#8a7a5c;white-space:nowrap;}
+.tut-text{font-size:13.5px;line-height:1.5;color:#2c2416;}
+.tut-type-example{
+  display:block;margin:8px 0;padding:8px 10px;background:#123a63;color:#fff8e8;
+  font-family:var(--font-mono,monospace);font-size:11.5px;line-height:1.5;
+  border-radius:8px;white-space:pre-wrap;
+}
+.tut-hint{margin-top:10px;font-size:11.5px;font-weight:700;color:#a3322a;display:flex;align-items:center;gap:6px;}
+.tut-hint .tut-dot{width:8px;height:8px;border-radius:50%;background:#a3322a;animation:tutDotBlink 1s ease-in-out infinite;}
+@keyframes tutDotBlink{0%,100%{opacity:1;}50%{opacity:.25;}}
+.tut-actions{display:flex;justify-content:space-between;align-items:center;margin-top:12px;gap:8px;}
+.tut-btn{border:none;border-radius:8px;padding:8px 14px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;}
+.tut-btn-skip{background:transparent;color:#8a7a5c;text-decoration:underline;padding:8px 4px;}
+.tut-btn-next{background:#123a63;color:#fff8e8;}
+.tut-btn-next:hover{background:#0c2c4c;}
+.tut-btn-choice{background:#1d5c9e;color:#fff;margin-left:6px;}
+.tut-btn-choice.tut-btn-no{background:#7a7264;}
+@media (max-width:640px){
+  #tutBox{max-width:88vw;min-width:0;left:6vw !important;right:6vw !important;}
+}

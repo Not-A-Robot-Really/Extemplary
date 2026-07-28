@@ -1725,10 +1725,10 @@
   .sec-head{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:18px;padding-bottom:14px;border-bottom:2px solid var(--rule);}
   .sec-head-title{display:flex;align-items:center;gap:11px;}
   .sec-icon{
-    width:34px;height:34px;flex-shrink:0;border-radius:3px;background:var(--crimson);color:var(--on-accent);
+    width:34px;height:34px;flex-shrink:0;color:var(--crimson);
     display:flex;align-items:center;justify-content:center;
   }
-  .sec-icon svg{width:18px;height:18px;}
+  .sec-icon svg{width:100%;height:100%;}
   .sec-head h3{font-family:var(--font-display);font-size:18px;font-weight:700;margin:0;color:#000;}
 
   /* ---- tournaments / events list ---- */

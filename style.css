@@ -1864,20 +1864,29 @@
   }
 /* =========================================================================
    ONBOARDING TUTORIAL ("cutscene" walkthrough for brand-new accounts)
+
+   Important: the app's nav-drawer slides with a CSS transform, which
+   creates its own stacking context — that means bumping z-index on an
+   element INSIDE it can never lift it above things outside it. So instead
+   of trying to raise the highlighted target's own z-index/position (which
+   also fought the drawer's stacking context and — worse — put a
+   click-blocking layer over real buttons), the highlight ring/box below
+   are separate, body-level elements positioned on top of whatever's being
+   pointed at. The real page element itself is never touched, so it always
+   stays clickable exactly where it already is. The dim layer is purely
+   cosmetic and never intercepts clicks (pointer-events: none, always).
    ========================================================================= */
-#tutOverlayRoot{position:fixed;inset:0;z-index:100000;pointer-events:none;font-family:var(--font-body, Georgia, serif);}
-#tutDim{position:fixed;inset:0;background:rgba(12,16,24,0.6);opacity:0;transition:opacity .25s ease;pointer-events:none;z-index:100000;}
-#tutDim.tut-visible{opacity:1;pointer-events:auto;}
-.tut-spot{position:relative !important;z-index:100002 !important;}
-.tut-spot.tut-spot-box{
-  outline:3px solid #ffcf4d;
-  outline-offset:4px;
-  border-radius:12px;
-  box-shadow:0 0 0 4px rgba(255,207,77,0.35), 0 0 0 9999px rgba(12,16,24,0.62) !important;
-  transition:box-shadow .2s ease;
+#tutOverlayRoot{position:fixed;inset:0;z-index:2147483000;pointer-events:none;font-family:var(--font-body, Georgia, serif);}
+#tutDim{position:fixed;inset:0;background:rgba(12,16,24,0.55);opacity:0;transition:opacity .25s ease;pointer-events:none !important;z-index:2147483000;}
+#tutDim.tut-visible{opacity:1;}
+.tut-highlight-box{
+  position:fixed;z-index:2147483002;pointer-events:none;
+  border:3px solid #ffcf4d;border-radius:12px;
+  box-shadow:0 0 0 4px rgba(255,207,77,0.35), 0 0 22px rgba(255,207,77,0.55);
+  transition:top .15s ease, left .15s ease, width .15s ease, height .15s ease;
 }
 .tut-ring{
-  position:fixed;z-index:100003;pointer-events:none;
+  position:fixed;z-index:2147483002;pointer-events:none;
   width:46px;height:46px;margin:-23px 0 0 -23px;
   border:3px solid #ffcf4d;border-radius:50%;
   box-shadow:0 0 0 0 rgba(255,207,77,0.55);
@@ -1889,7 +1898,7 @@
   100%{box-shadow:0 0 0 0 rgba(255,207,77,0);transform:scale(0.9);}
 }
 #tutBox{
-  position:fixed;top:-9999px;left:-9999px;z-index:100004;max-width:360px;min-width:280px;
+  position:fixed;top:-9999px;left:-9999px;z-index:2147483004;max-width:360px;min-width:280px;
   background:linear-gradient(180deg,#fffdf7,#f8f2e2);
   border:2px solid #123a63;border-radius:14px;
   box-shadow:0 14px 40px rgba(0,0,0,0.45);

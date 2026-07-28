@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Extemplary: first-run onboarding tutorial ("cutscene" walkthrough)
+   Extemplary — first-run onboarding tutorial ("cutscene" walkthrough)
 
    Runs ONLY the first time a brand-new account is created. Never runs for
    people logging in to an existing account, and never runs again once
@@ -74,7 +74,7 @@
 
   function el(){ // dom refs, grabbed lazily since app builds some content late
     return {
-      dim: byId('tutDim'), box: byId('tutBox'), ring: byId('tutRing'),
+      dim: byId('tutDim'), box: byId('tutBox'), ring: byId('tutRing'), hlbox: byId('tutHighlightBox'),
       title: byId('tutTitle'), text: byId('tutText'), avatar: byId('tutAvatar'),
       count: byId('tutStepCount'), hint: byId('tutHint'), hintText: byId('tutHintText'),
       next: byId('tutNextBtn'), skip: byId('tutSkipBtn'), choiceRow: byId('tutChoiceRow'),
@@ -83,16 +83,35 @@
   }
 
   function clearSpotlight(){
-    document.querySelectorAll('.tut-spot-box').forEach(function(n){
-      n.classList.remove('tut-spot-box','tut-spot');
-    });
-    el().ring.style.display = 'none';
+    var e = el();
+    e.ring.style.display = 'none';
+    e.hlbox.style.display = 'none';
+  }
+
+  // Draws the highlight ring + glow box around a target purely as
+  // separate, always-on-top overlay elements — the target itself is
+  // never given a new position/z-index/class, so it's never at risk of
+  // being covered by (or blocking clicks through) anything else, and it
+  // stays 100% clickable exactly where the app already put it.
+  function paintHighlight(target){
+    var e = el();
+    if(!target){ e.ring.style.display = 'none'; e.hlbox.style.display = 'none'; return; }
+    var r = target.getBoundingClientRect();
+    e.hlbox.style.display = 'block';
+    e.hlbox.style.top = (r.top - 4) + 'px';
+    e.hlbox.style.left = (r.left - 4) + 'px';
+    e.hlbox.style.width = (r.width + 8) + 'px';
+    e.hlbox.style.height = (r.height + 8) + 'px';
+    e.ring.style.display = 'block';
+    e.ring.style.top = (r.top + r.height/2) + 'px';
+    e.ring.style.left = (r.left + r.width/2) + 'px';
   }
 
   function positionBox(target){
     var e = el();
     e.box.classList.remove('tut-center');
     e.box.querySelectorAll('.tut-arrow').forEach(function(a){ a.remove(); });
+    paintHighlight(target);
     if(!target){
       e.box.classList.add('tut-center');
       e.box.style.top = ''; e.box.style.left = ''; e.box.style.right = '';
@@ -119,18 +138,11 @@
     arrow.className = 'tut-arrow ' + arrowClass;
     arrow.style.left = Math.min(Math.max(16, r.left - left + r.width/2 - 9), boxW - 30) + 'px';
     e.box.appendChild(arrow);
-
-    e.ring.style.display = 'block';
-    e.ring.style.top = (r.top + r.height/2) + 'px';
-    e.ring.style.left = (r.left + r.width/2) + 'px';
   }
 
   function applySpotlight(sel){
     var t = sel ? q(sel) : null;
-    if(t){
-      t.classList.add('tut-spot','tut-spot-box');
-      t.scrollIntoView({ block:'center', behavior:'smooth' });
-    }
+    if(t) t.scrollIntoView({ block:'center', behavior:'smooth' });
     return t;
   }
 
@@ -143,7 +155,7 @@
     e.box.classList.add('tut-visible');
     e.avatar.textContent = step.avatar || '🎙️';
     e.title.textContent = step.title;
-    e.text.innerHTML = step.html;
+    e.text.innerHTML = step.html || '';
     e.count.textContent = 'Step ' + (state.idx+1) + ' of ' + state.steps.length;
     e.hint.classList.add('hidden');
     e.next.style.display = 'inline-block';
@@ -155,6 +167,7 @@
 
     var target = applySpotlight(step.spotlight);
     positionBox(target);
+    setTimeout(function(){ positionBox(step.spotlight ? q(step.spotlight) : null); }, 320);
 
     if(repositionHandler){ window.removeEventListener('resize', repositionHandler); window.removeEventListener('scroll', repositionHandler, true); }
     repositionHandler = function(){ var t = step.spotlight ? q(step.spotlight) : null; positionBox(t); };
@@ -256,7 +269,8 @@
       before: function(){ openSidebar(); },
       spotlight: '.nav-menu-item[data-target="streakToggle"]',
       waitForClick: '.nav-menu-item[data-target="streakToggle"]',
-      hintText: 'Click "Calendar" in the sidebar.'
+      hintText: 'Click "Calendar" in the sidebar.',
+      html: "First stop: your Calendar. Click the highlighted <b>Calendar</b> item in the sidebar to open it."
     });
 
     // ---- Calendar / streak tab ------------------------------------------------
@@ -306,7 +320,8 @@
       before: function(){ openSidebar(); },
       spotlight: '.nav-menu-item[data-target="historyToggle"]',
       waitForClick: '.nav-menu-item[data-target="historyToggle"]',
-      hintText: 'Click "My Ballot History" in the sidebar.'
+      hintText: 'Click "My Ballot History" in the sidebar.',
+      html: "Next: your Ballot History. Click the highlighted <b>My Ballot History</b> item in the sidebar."
     });
 
     steps.push({
@@ -334,9 +349,10 @@
       title: 'Back to Home',
       avatar: '🧭',
       before: function(){ openSidebar(); },
-      spotlight: '.nav-menu-item[data-target="historyToggle"], #navHomeBtn',
+      spotlight: '#navHomeBtn',
       waitForClick: '#navHomeBtn',
-      hintText: 'Click "Home" in the sidebar.'
+      hintText: 'Click "Home" in the sidebar.',
+      html: "Let's head back to the main recording page. Open the sidebar and click <b>Home</b>."
     });
 
     // ---- Quick cutscenes: timer / theme / shortcuts -----------------------
@@ -403,7 +419,8 @@
       before: function(){ openSidebar(); },
       spotlight: '.nav-menu-item[data-target="helpToggle"]',
       waitForClick: '.nav-menu-item[data-target="helpToggle"]',
-      hintText: 'Click "Example Ballot" in the sidebar.'
+      hintText: 'Click "Example Ballot" in the sidebar.',
+      html: "Click the highlighted <b>Example Ballot</b> item in the sidebar."
     });
 
     steps.push({
@@ -419,7 +436,8 @@
       before: function(){ openSidebar(); },
       spotlight: '#navHomeBtn',
       waitForClick: '#navHomeBtn',
-      hintText: 'Click "Home" in the sidebar.'
+      hintText: 'Click "Home" in the sidebar.',
+      html: "Open the sidebar and click <b>Home</b> to head back to the main recording page."
     });
 
     // ---- Citation checker (forced use, exact example text) -----------------
@@ -457,7 +475,8 @@
       before: function(){ openSidebar(); },
       spotlight: '#navHomeBtn',
       waitForClick: '#navHomeBtn',
-      hintText: 'Click "Home" in the sidebar.'
+      hintText: 'Click "Home" in the sidebar.',
+      html: "Last stop before recording — open the sidebar and click <b>Home</b>."
     });
 
     // ---- Recording a round --------------------------------------------------

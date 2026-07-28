@@ -72,6 +72,97 @@
     if(panel) panel.classList.remove('nav-drawer-collapsed');
   }
 
+  /* ---------------------------------------------------------------------
+     Fake "skeleton" preview of My Ballot History for brand-new accounts.
+     A new user has zero recorded rounds, so the real page would show
+     nothing for Coach's Notes / Trends / Goals / round list — but the
+     tour still wants to point at those sections and describe what they
+     become once you've recorded ~7 speeches. Rather than invent fake
+     copy (which reads as real and can be confusing/wrong), this paints
+     plain placeholder blocks in the exact real layout: same headings,
+     same card/bar counts, but every line of actual text or data is just
+     a colored rectangle. Widths/colors are randomized per render so it
+     reads as clearly-a-placeholder rather than a specific data point.
+     Purely cosmetic — real renderHistoryList() overwrites all of this
+     the moment History is opened for real after the tour.
+     --------------------------------------------------------------------- */
+  function skelPct(min, max){ return Math.round(min + Math.random() * (max - min)); }
+  function skelColor(){
+    var palette = ['#8a9bb5', '#b58a9b', '#9bb58a', '#c9a86a', '#7a8ca8', '#a87a8c'];
+    return palette[Math.floor(Math.random() * palette.length)];
+  }
+  function skelBarRow(){
+    return '<div class="tut-skel-block tut-skel-bar" style="width:' + skelPct(40, 92) + '%;height:14px;background:' + skelColor() + ';opacity:0.55;"></div>';
+  }
+  function paintHistorySkeleton(){
+    var overallEl = byId('historyOverallFeedback');
+    if(overallEl){
+      overallEl.innerHTML =
+        '<div class="history-overall tut-skel">' +
+          '<div class="ho-head">' +
+            '<span class="ho-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-67"></use></svg></span>' +
+            '<h3>Coach\u2019s Overall Notes</h3>' +
+          '</div>' +
+          '<div class="tut-skel-block tut-skel-line" style="width:96%;"></div>' +
+          '<div class="tut-skel-block tut-skel-line" style="width:88%;"></div>' +
+          '<div class="tut-skel-block tut-skel-line" style="width:63%;"></div>' +
+        '</div>';
+    }
+    var trendsEl = byId('historyTrends');
+    if(trendsEl){
+      var rows = '';
+      for(var i=0;i<4;i++){
+        rows += '<div class="tut-skel-goal-card">' +
+          '<div class="tut-skel-block tut-skel-line" style="width:' + skelPct(30,55) + '%;margin:0;"></div>' +
+          '<div class="tut-skel-block" style="width:44px;height:16px;background:' + skelColor() + ';opacity:0.6;"></div>' +
+        '</div>';
+      }
+      var bars = '';
+      for(var j=0;j<9;j++){
+        bars += '<div class="tut-skel-block tut-skel-bar" style="width:9%;height:' + skelPct(20,100) + '%;background:' + skelColor() + ';opacity:0.6;"></div>';
+      }
+      trendsEl.innerHTML =
+        '<div class="tut-skel-trends">' +
+          '<h3>Trends Across Your Ballots</h3>' +
+          '<div class="tut-skel-trend-rows">' + rows + '</div>' +
+          '<div class="tut-skel-chart">' + bars + '</div>' +
+        '</div>';
+    }
+    var goalsEl = byId('historyGoals');
+    if(goalsEl){
+      var cards = '';
+      for(var k=0;k<2;k++){
+        cards += '<div class="tut-skel-goal-card">' +
+          '<div class="tut-skel-block tut-skel-line" style="width:' + skelPct(45,70) + '%;margin:0;"></div>' +
+          '<div class="tut-skel-block" style="width:70px;height:26px;background:' + skelColor() + ';opacity:0.6;border-radius:20px;"></div>' +
+        '</div>';
+      }
+      goalsEl.innerHTML =
+        '<div class="tut-skel-goals">' +
+          '<h3>Your Goals</h3>' +
+          cards +
+        '</div>';
+    }
+    var listWrapEl = byId('historyListWrap');
+    if(listWrapEl){
+      var cardsHtml = '';
+      for(var m=0;m<3;m++){
+        var catRows = '';
+        var catCount = skelPct(3,5);
+        for(var n=0;n<catCount;n++){ catRows += skelBarRow(); }
+        cardsHtml += '<div class="tut-skel-card">' +
+          '<div class="tut-skel-card-top">' +
+            '<div class="tut-skel-block tut-skel-line" style="width:120px;margin:0;"></div>' +
+            '<div class="tut-skel-block" style="width:56px;height:26px;background:' + skelColor() + ';opacity:0.6;"></div>' +
+          '</div>' +
+          '<div class="tut-skel-cats">' + catRows + '</div>' +
+        '</div>';
+      }
+      var list = byId('historyList');
+      if(list) list.innerHTML = cardsHtml;
+    }
+  }
+
   function el(){ // dom refs, grabbed lazily since app builds some content late
     return {
       dim: byId('tutDim'), box: byId('tutBox'), ring: byId('tutRing'), hlbox: byId('tutHighlightBox'),
@@ -393,22 +484,25 @@
     steps.push({
       title: "Coach's Overall Notes",
       avatar: '📜',
+      before: function(){ paintHistorySkeleton(); },
       spotlight: '#historyOverallFeedback',
-      html: "Once you've recorded a few rounds, this area fills in with comprehensive feedback that finds patterns across your entire practice history, including your biggest recurring strength, your biggest recurring weakness, and one concrete next step. It refreshes automatically at milestone round counts."
+      html: "Once you've recorded a few rounds — around 7 speeches in — this area fills in with comprehensive feedback that finds patterns across your entire practice history, including your biggest recurring strength, your biggest recurring weakness, and one concrete next step. It refreshes automatically at milestone round counts. Here's a preview of the layout you'll see once there's real data (the actual page is empty right now since you haven't recorded anything yet)."
     });
 
     steps.push({
       title: 'Trends across your ballots',
       avatar: '📈',
+      before: function(){ paintHistorySkeleton(); },
       spotlight: '#historyTrends',
-      html: "This section aggregates your average score in every rubric category, plus sparkline trend graphs for your overall score and each category so you can see exactly where you're improving (or regressing) round by round."
+      html: "This section aggregates your average score in every rubric category, plus sparkline trend graphs for your overall score and each category so you can see exactly where you're improving (or regressing) round by round. Again, this is just a placeholder preview of the layout — it'll fill in with your real numbers after a few recorded rounds."
     });
 
     steps.push({
       title: 'Your goals & full round list',
       avatar: '📋',
+      before: function(){ paintHistorySkeleton(); },
       spotlight: '#historyListWrap',
-      html: "Below that: your active goals (with Suggested Goals generated from your own weak spots), then every completed round. Expand any round to rewatch the video, re-read the transcript, or reread the full judge's feedback."
+      html: "Below that: your active goals (with Suggested Goals generated from your own weak spots), then every completed round. Expand any round to rewatch the video, re-read the transcript, or reread the full judge's feedback. What you're seeing now is a placeholder preview — this fills in with your actual goals and rounds."
     });
 
     steps.push({

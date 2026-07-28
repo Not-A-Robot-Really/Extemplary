@@ -58,7 +58,7 @@ Note: Extemplary requires camera and microphone access for recording speeches (d
 
 ## Free trial before signing up! 🆓
 ---
-The sign-in screen is also a landing page. Scroll down past the log in info to see a glimpes of what the app can actually do, with several features you can try live, no account required!:
+Scroll down past the log in info to see what the app can actually do. There are with several features you can try live, no account required!:
 
 - **1️⃣ Real practice questions** | pick between **domestic, economic, and international** topics and get three relevant extemp questions on the spot (one free try per browser).
 

@@ -1889,26 +1889,17 @@
 #tutDim.tut-visible{opacity:1;}
 .tut-highlight-box{
   position:fixed;z-index:2147483002;pointer-events:none;
-  border:3px solid #ffcf4d;border-radius:12px;
+  border-radius:12px;
   /* The oversized 9999px spread IS the spotlight cutout: it paints the
      dim overlay for the entire viewport, clipped to this box's rounded
      rect, so only the outlined area stays at normal brightness while
      everything else reads dim — instead of the old flat page-wide
      overlay that dimmed the highlighted box too. */
-  box-shadow:0 0 0 4px rgba(255,207,77,0.35), 0 0 22px rgba(255,207,77,0.55), 0 0 0 9999px rgba(12,16,24,0.65);
+  box-shadow:0 0 0 9999px rgba(12,16,24,0.65);
   transition:top .15s ease, left .15s ease, width .15s ease, height .15s ease;
 }
 .tut-ring{
-  position:fixed;z-index:2147483002;pointer-events:none;
-  width:46px;height:46px;margin:-23px 0 0 -23px;
-  border:3px solid #ffcf4d;border-radius:50%;
-  box-shadow:0 0 0 0 rgba(255,207,77,0.55);
-  animation:tutPulse 1.4s ease-out infinite;
-}
-@keyframes tutPulse{
-  0%{box-shadow:0 0 0 0 rgba(255,207,77,0.55);transform:scale(0.9);}
-  70%{box-shadow:0 0 0 16px rgba(255,207,77,0);transform:scale(1.05);}
-  100%{box-shadow:0 0 0 0 rgba(255,207,77,0);transform:scale(0.9);}
+  display:none;
 }
 
 /* ---- Docked side panel ------------------------------------------------ */
@@ -1933,9 +1924,49 @@
 #tutBox.tut-center{right:22px;left:auto;}
 
 .tut-progress-track{height:4px;border-radius:4px;background:rgba(18,58,99,0.12);margin:-2px -2px 14px;overflow:hidden;}
-.tut-progress-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,#ffcf4d,#f0a93a);transition:width .3s ease;}
+.tut-progress-fill{height:100%;border-radius:4px;background:#123a63;transition:width .3s ease;}
 
 .tut-arrow{display:none;} /* docked panel points at nothing; connection is shown by the spotlight glow instead */
+
+/* ---- Tutorial-only skeleton preview of "My Ballot History" -----------
+   Shown during onboarding when the account has no recorded rounds yet, so
+   the tour doesn't point at real coach-feedback/trends/goals copy that
+   simply doesn't exist for a brand-new user. Keeps the true layout
+   (headings, card shapes, bar counts) but swaps every piece of real text
+   for plain colored placeholder blocks. Purely decorative — the real
+   renderHistoryList() always overwrites this the next time the section
+   is actually opened. */
+.tut-skel-block{
+  background:rgba(0,0,0,0.08);border-radius:4px;display:inline-block;
+}
+.tut-skel-line{height:12px;margin:6px 0;}
+.tut-skel-bar{border-radius:3px;}
+.history-overall.tut-skel{
+  background:var(--crimson);border:1px solid var(--crimson-deep);border-radius:3px;
+  padding:20px 24px 20px 26px;margin-bottom:22px;
+}
+.history-overall.tut-skel .ho-head{display:flex;align-items:center;gap:9px;margin-bottom:12px;}
+.history-overall.tut-skel h3{font-family:var(--font-display);font-size:17px;font-weight:700;margin:0;color:#ffffff;}
+.history-overall.tut-skel .tut-skel-block{background:rgba(255,255,255,0.28);}
+.tut-skel-trends h3, .tut-skel-goals h3{
+  font-family:var(--font-display);font-size:17px;font-weight:700;margin:0 0 14px;color:#000;
+}
+.tut-skel-trends{margin-bottom:22px;}
+.tut-skel-trend-rows{display:flex;flex-direction:column;gap:10px;margin-bottom:18px;}
+.tut-skel-chart{
+  border:1px solid var(--rule);border-radius:3px;padding:16px;
+  display:flex;align-items:flex-end;gap:8px;height:120px;background:rgba(255,255,255,0.5);
+}
+.tut-skel-goals{margin-bottom:22px;}
+.tut-skel-goal-card{
+  border:1px solid var(--rule);border-radius:3px;padding:14px 16px;margin-bottom:10px;
+  display:flex;align-items:center;justify-content:space-between;gap:14px;background:rgba(255,255,255,0.5);
+}
+.tut-skel-card{
+  border:1px solid var(--rule);border-radius:3px;padding:16px 20px;margin-bottom:14px;background:rgba(255,255,255,0.5);
+}
+.tut-skel-card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.tut-skel-cats{display:flex;flex-direction:column;gap:8px;}
 
 .tut-head{display:flex;align-items:center;gap:9px;margin-bottom:8px;}
 .tut-avatar{

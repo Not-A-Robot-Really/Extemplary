@@ -1675,8 +1675,8 @@
      crimson fill with a crimson-deep border, no drop shadow. */
   .streak-summary-card{
     display:flex;align-items:center;gap:22px;flex-wrap:wrap;
-    border:1px solid var(--ink-line);border-radius:3px;padding:22px 26px;margin-bottom:22px;
-    background:var(--charcoal);color:#fff;
+    border:1px solid var(--crimson-deep);border-radius:3px;padding:22px 26px;margin-bottom:22px;
+    background:var(--crimson);color:#fff;
   }
   .ssc-flame{width:44px;height:44px;flex-shrink:0;color:#ff8a2b;}
   .ssc-flame svg{width:100%;height:100%;}
@@ -1690,14 +1690,23 @@
   .streak-calendar{
     border:2px solid var(--charcoal);border-radius:3px;padding:22px 24px 18px;margin-bottom:22px;
     background:rgba(255,255,255,0.65);
+    position:relative;overflow:hidden;
+  }
+  /* Small folded-corner echo of the ballot paper itself, so the calendar
+     reads as part of the same stationery instead of a bolted-on widget. */
+  .streak-calendar::before{
+    content:"";position:absolute;top:0;right:0;
+    width:0;height:0;border-style:solid;border-width:0 18px 18px 0;
+    border-color:transparent var(--parchment-deep) transparent transparent;
+    opacity:0.9;
   }
   .scal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding-bottom:14px;border-bottom:2px solid var(--rule);}
   .scal-head h3{font-family:var(--font-display);font-size:18px;font-weight:700;margin:0;color:#000;}
   .scal-nav{
     width:30px;height:30px;border-radius:50%;border:1px solid var(--rule);background:#fff;color:#000;
-    display:flex;align-items:center;justify-content:center;cursor:pointer;transition:border-color .15s, color .15s;
+    display:flex;align-items:center;justify-content:center;cursor:pointer;transition:border-color .15s, color .15s, transform .15s;
   }
-  .scal-nav:hover{border-color:var(--crimson);color:var(--crimson);}
+  .scal-nav:hover{border-color:var(--crimson);color:var(--crimson);transform:scale(1.06);}
   .scal-dow{display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:4px;}
   .scal-dow span{
     text-align:center;font-family:var(--font-mono);font-size:10.5px;font-weight:700;text-transform:uppercase;
@@ -1707,20 +1716,30 @@
   .scal-cell{
     position:relative;aspect-ratio:1/1;border-radius:3px;border:1px solid var(--rule);
     display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
-    cursor:pointer;background:#fff;transition:border-color .15s, background .15s;
+    cursor:pointer;background:#fff;transition:border-color .15s, background .15s, transform .1s;
   }
-  .scal-cell:hover{border-color:var(--crimson);}
+  .scal-cell:hover{border-color:var(--crimson);transform:translateY(-1px);}
   .scal-cell.empty{visibility:hidden;cursor:default;}
-  .scal-cell.today{border-color:var(--crimson);border-width:2px;}
+  .scal-cell.today{
+    border-color:var(--crimson);border-width:2px;
+    box-shadow:inset 0 0 0 1px rgba(29,92,158,0.15);
+  }
+  /* Active (streak-lit) days get a faint parchment wash instead of staying
+     flat white, so a lit week reads as a warm run of days at a glance
+     rather than needing the flame icon alone to carry it. */
+  .scal-cell.lit{background:var(--parchment);}
   .scal-daynum{font-family:var(--font-mono);font-size:10.5px;font-weight:600;color:#000;opacity:0.7;}
   .scal-flame{width:24px;height:24px;display:flex;align-items:center;justify-content:center;}
   .scal-flame svg{width:100%;height:100%;}
   .scal-flame.lit{color:#ff8a2b;}
   .scal-flame.unlit{color:#c7cbd1;}
+  /* Event label reads as a small ticket stub tucked at the bottom of the
+     cell (folded corner + serif-free stamp lettering) rather than a flat
+     solid pill. */
   .scal-event-label{
     position:absolute;bottom:2px;left:2px;right:2px;font-family:var(--font-mono);font-size:8px;font-weight:700;
     line-height:1.2;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
-    background:var(--brass);color:#fff;border-radius:2px;padding:1.5px 3px;cursor:pointer;
+    background:var(--brass);color:#fff;border-radius:2px;padding:1.5px 3px 1.5px 5px;cursor:pointer;
   }
   .scal-goal-ring{
     position:absolute;top:3px;right:3px;width:11px;height:11px;border-radius:50%;
@@ -1787,10 +1806,11 @@
   }
 
   /* ---- goals (shared: Streak Calendar view + My History tab) ----
-     Reads as a small ledger/checklist in the same voice as the rest of
-     the ballot — a plain rule under each row, a mono percentage instead
-     of a badge, and a thin progress rule instead of a boxed bar — rather
-     than a separate "widget" dropped into the page. */
+     Each goal reads like a small wax-seal stamp: a round progress ring
+     (conic-gradient, no JS/SVG needed) standing in for the old flat
+     bar-in-a-box, sitting on a plain ledger row. Distinct from a generic
+     dashboard progress bar, but built entirely from the site's existing
+     ink/brass/crimson palette. */
   .streak-goals, .history-goals{
     border:2px solid var(--charcoal);border-radius:3px;padding:22px 24px;margin-bottom:22px;
     background:rgba(255,255,255,0.6);
@@ -1802,24 +1822,33 @@
   }
   .goals-list{display:flex;flex-direction:column;}
   .goal-card{
-    display:flex;align-items:center;gap:16px;padding:14px 2px;
+    display:flex;align-items:center;gap:16px;padding:13px 2px;
     border-bottom:1px solid rgba(0,0,0,0.09);
   }
   .goals-list .goal-card:last-child{border-bottom:none;}
-  .goal-card-main{flex:1;min-width:0;}
-  .goal-card-label{
-    display:flex;align-items:baseline;gap:8px;
-    font-family:var(--font-body);font-size:14px;font-weight:600;color:#000;margin-bottom:8px;
+  .goal-card-seal{
+    flex-shrink:0;width:38px;height:38px;border-radius:50%;position:relative;
+    display:flex;align-items:center;justify-content:center;
+    background:conic-gradient(var(--brass) calc(var(--goal-pct,0) * 1%), var(--rule) 0);
   }
+  .goal-card-seal::before{
+    content:"";position:absolute;inset:3px;border-radius:50%;background:#fff;
+  }
+  .goal-card-seal-pct{
+    position:relative;font-family:var(--font-mono);font-size:9.5px;font-weight:700;color:#000;opacity:0.75;
+  }
+  .goal-card.done .goal-card-seal{background:conic-gradient(#22c55e calc(var(--goal-pct,0) * 1%), var(--rule) 0);}
+  .goal-card.done .goal-card-seal-pct{display:none;}
   .goal-card-check{
-    flex-shrink:0;width:15px;height:15px;color:#16a34a;display:none;
+    position:relative;flex-shrink:0;width:16px;height:16px;color:#16a34a;display:none;
   }
   .goal-card.done .goal-card-check{display:inline-flex;}
-  .goal-card-bar-wrap{background:var(--rule);border-radius:2px;height:3px;overflow:hidden;}
-  .goal-card-bar{height:100%;background:var(--brass);border-radius:2px;transition:width .5s ease;}
-  .goal-card.done .goal-card-bar{background:#22c55e;}
+  .goal-card-main{flex:1;min-width:0;}
+  .goal-card-label{
+    font-family:var(--font-body);font-size:14px;font-weight:600;color:#000;margin-bottom:4px;
+  }
   .goal-card-progress{
-    font-family:var(--font-mono);font-size:11px;font-weight:600;color:#000;opacity:0.55;margin-top:6px;letter-spacing:0.2px;
+    font-family:var(--font-mono);font-size:11px;font-weight:600;color:#000;opacity:0.55;letter-spacing:0.2px;
   }
   .goal-card.done .goal-card-progress{color:#16a34a;opacity:0.85;}
   .goal-card-del{
@@ -1827,18 +1856,33 @@
   }
   .goal-card-del:hover{opacity:1;color:var(--crimson);}
 
-  /* ---- suggested goals (My History) ---- */
-  .suggested-goals{margin-top:18px;padding-top:16px;border-top:1px dashed var(--rule);}
+  /* ---- suggested goals (My History) ----
+     Styled as a small torn ticket stub, echoing the ballot paper's own
+     folded-corner treatment rather than a generic dashed "AI suggestion"
+     box: a perforated left edge (radial-gradient notches) and a stub-like
+     silhouette. */
+  .suggested-goals{margin-top:20px;padding-top:16px;border-top:1px dashed var(--rule);}
   .suggested-goals h4{
     font-family:var(--font-mono);font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;
     margin:0 0 12px;color:#000;opacity:0.7;
   }
-  .suggested-goals-list{display:flex;flex-direction:column;}
+  .suggested-goals-list{display:flex;flex-direction:column;gap:10px;}
   .suggested-goal-card{
-    display:flex;align-items:center;gap:14px;padding:12px 2px;
-    border-bottom:1px solid rgba(0,0,0,0.07);
+    position:relative;display:flex;align-items:center;gap:14px;
+    padding:12px 16px 12px 20px;border-radius:3px;
+    background:var(--parchment);border:1px solid var(--rule);
+    overflow:visible;
   }
-  .suggested-goals-list .suggested-goal-card:last-child{border-bottom:none;}
+  /* A single punched notch plus a dashed stub-line stand in for a ticket's
+     perforated edge, echoing the ballot's own folded-corner motif instead
+     of a plain dashed rectangle. */
+  .suggested-goal-card::before{
+    content:"";position:absolute;left:-1px;top:50%;transform:translate(-50%,-50%);
+    width:12px;height:12px;border-radius:50%;background:var(--parchment-deep);border:1px solid var(--rule);
+  }
+  .suggested-goal-card::after{
+    content:"";position:absolute;left:10px;top:8px;bottom:8px;border-left:1px dashed var(--rule);
+  }
   .sg-text{flex:1;min-width:0;}
   .sg-label{font-size:13.5px;font-weight:600;color:#000;}
   .sg-why{font-size:12px;color:#000;opacity:0.6;margin-top:3px;line-height:1.4;}

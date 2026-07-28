@@ -371,11 +371,11 @@
     var step = state.steps[state.idx];
     if(step.after) step.after();
     state.idx++;
-    if(state.idx >= state.steps.length){ finish(); return; }
+    if(state.idx >= state.steps.length){ finish(true); return; }
     render();
   }
 
-  function finish(){
+  function finish(completed){
     if(state && state.cleanupClick) state.cleanupClick();
     if(state && state.cleanupPoll) state.cleanupPoll();
     if(repositionTimer){ clearInterval(repositionTimer); repositionTimer = null; }
@@ -384,11 +384,47 @@
     var e = el();
     e.dim.classList.remove('tut-visible');
     e.box.classList.remove('tut-visible');
+    if(completed) fireConfetti();
     if(state && state.email) localStorage.setItem(doneKeyFor(state.email), '1');
     state = null;
   }
 
-  function skip(){ finish(); }
+  function skip(){ finish(false); }
+
+  // Small celebratory confetti burst, shown once, only when someone
+  // actually finishes every step (not when they skip out early). Plain
+  // CSS-animated divs — no canvas/deps — that clean themselves up after
+  // the animation ends so nothing lingers in the DOM.
+  function fireConfetti(){
+    var colors = ['#123a63', '#a3322a', '#2f8f5b', '#c9932f', '#6a4c93', '#1e88a8'];
+    var root = document.createElement('div');
+    root.className = 'tut-confetti-root';
+    var count = 90;
+    for(var i=0;i<count;i++){
+      var piece = document.createElement('span');
+      piece.className = 'tut-confetti-piece';
+      var left = Math.random()*100;
+      var delay = Math.random()*0.35;
+      var duration = 2.2 + Math.random()*1.3;
+      var drift = (Math.random()*2-1)*140;
+      var rotate = 360 + Math.random()*360;
+      var size = 6 + Math.random()*6;
+      var color = colors[Math.floor(Math.random()*colors.length)];
+      var isRound = Math.random() < 0.35;
+      piece.style.left = left + 'vw';
+      piece.style.width = size + 'px';
+      piece.style.height = (isRound ? size : size*2.4) + 'px';
+      piece.style.background = color;
+      piece.style.borderRadius = isRound ? '50%' : '2px';
+      piece.style.animationDelay = delay + 's';
+      piece.style.animationDuration = duration + 's';
+      piece.style.setProperty('--tut-confetti-drift', drift + 'px');
+      piece.style.setProperty('--tut-confetti-rotate', rotate + 'deg');
+      root.appendChild(piece);
+    }
+    document.body.appendChild(root);
+    setTimeout(function(){ if(root.parentNode) root.parentNode.removeChild(root); }, 3900);
+  }
 
   function start(email){
     if(!email) return;
@@ -600,7 +636,24 @@
       html: "Open the sidebar and click <b>Home</b> to head back to the main recording page."
     });
 
-    // ---- Citation checker (forced use, exact example text) -----------------
+    // ---- Grading rubric icon on the paper -----------------------------------
+    steps.push({
+      title: 'The Grading Rubric',
+      avatar: '📐',
+      spotlight: '#rubricToggle',
+      waitForClick: '#rubricToggle',
+      hintText: 'Click the highlighted rubric icon on the paper.',
+      html: "See that small icon in the top-right corner of the ballot paper? That opens the full <b>Grading Rubric</b> — the exact 8-category, 100-point breakdown every speech gets judged against. Click it now."
+    });
+
+    steps.push({
+      title: 'Every category, every point',
+      avatar: '📐',
+      spotlight: '#rubricPanel',
+      html: "This is the full rubric: Creative Hook &amp; Intro, Structure, Strength of Argument &amp; Analysis, Flaws in Reasoning, Strength of Evidence, and more — each with its own point value and the exact criteria the AI judge checks for. It's the same rubric used to score every round you record, so it's worth a skim before your first one. You can reopen this any time from the same icon on the paper."
+    });
+
+
     steps.push({
       title: 'The Citation Checker',
       avatar: '🔎',

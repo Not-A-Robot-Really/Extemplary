@@ -86,6 +86,19 @@
     var e = el();
     e.ring.style.display = 'none';
     e.hlbox.style.display = 'none';
+    e.dim.classList.add('tut-visible');
+  }
+
+  // Returns a fresh, up-to-date target for the current step (never a
+  // cached reference), and treats zero-size/hidden elements as "no
+  // target" so the spotlight never gets stuck on something invisible.
+  function liveTarget(sel){
+    if(!sel) return null;
+    var t = q(sel);
+    if(!t) return null;
+    var r = t.getBoundingClientRect();
+    if(r.width < 1 || r.height < 1) return null;
+    return t;
   }
 
   // Draws the highlight ring + glow box around a target purely as
@@ -93,25 +106,40 @@
   // never given a new position/z-index/class, so it's never at risk of
   // being covered by (or blocking clicks through) anything else, and it
   // stays 100% clickable exactly where the app already put it.
-  function paintHighlight(target){
+  //
+  // The highlight box itself does the dimming: a huge, rounded-corner
+  // box-shadow spread (see .tut-highlight-box in style.css) darkens the
+  // whole viewport EXCEPT the rectangle it's drawn around, so whatever is
+  // inside the outline reads at full brightness and everything else stays
+  // dim, instead of the old flat overlay dimming the target too. The
+  // pulsing ring is only drawn when the current step actually needs a
+  // real click on the target — for pure "look at this" steps it's just
+  // visual clutter that can block the very thing being shown off, so it's
+  // left out.
+  function paintHighlight(target, showRing){
     var e = el();
-    if(!target){ e.ring.style.display = 'none'; e.hlbox.style.display = 'none'; return; }
+    if(!target){ e.ring.style.display = 'none'; e.hlbox.style.display = 'none'; e.dim.classList.add('tut-visible'); return; }
+    e.dim.classList.remove('tut-visible');
     var r = target.getBoundingClientRect();
     e.hlbox.style.display = 'block';
     e.hlbox.style.top = (r.top - 4) + 'px';
     e.hlbox.style.left = (r.left - 4) + 'px';
     e.hlbox.style.width = (r.width + 8) + 'px';
     e.hlbox.style.height = (r.height + 8) + 'px';
-    e.ring.style.display = 'block';
-    e.ring.style.top = (r.top + r.height/2) + 'px';
-    e.ring.style.left = (r.left + r.width/2) + 'px';
+    if(showRing){
+      e.ring.style.display = 'block';
+      e.ring.style.top = (r.top + r.height/2) + 'px';
+      e.ring.style.left = (r.left + r.width/2) + 'px';
+    } else {
+      e.ring.style.display = 'none';
+    }
   }
 
-  function positionBox(target){
+  function positionBox(target, showRing){
     var e = el();
     e.box.classList.remove('tut-center');
     e.box.querySelectorAll('.tut-arrow').forEach(function(a){ a.remove(); });
-    paintHighlight(target);
+    paintHighlight(target, showRing);
     if(!target){
       e.box.classList.add('tut-center');
       e.box.style.top = ''; e.box.style.left = ''; e.box.style.right = '';
@@ -147,6 +175,15 @@
   }
 
   var repositionHandler = null;
+  var repositionTimer = null;
+
+  // Whether the current step actually requires clicking the spotlighted
+  // element. That's the only time the pulsing orange ring earns its keep
+  // as a "click here" cue — for plain look-at-this steps it just sits on
+  // top of the very thing being shown off, so we leave it off.
+  function stepNeedsRing(step){
+    return !!step.waitForClick;
+  }
 
   function render(){
     var step = state.steps[state.idx];
@@ -165,14 +202,26 @@
     clearSpotlight();
     if(step.before) step.before();
 
+    var showRing = stepNeedsRing(step);
     var target = applySpotlight(step.spotlight);
-    positionBox(target);
-    setTimeout(function(){ positionBox(step.spotlight ? q(step.spotlight) : null); }, 320);
+    positionBox(target, showRing);
 
+    // Keep tracking the target continuously (not just once), since
+    // several steps spotlight things that resize or shift mid-step — a
+    // goal-builder box growing as fields fill in, a question box that
+    // disappears once a new question is generated, etc. Re-querying the
+    // DOM fresh every tick (via liveTarget) instead of reusing a cached
+    // element reference means the outline stays accurate to whatever's
+    // really on screen right now, and gracefully clears itself if the
+    // target vanishes.
     if(repositionHandler){ window.removeEventListener('resize', repositionHandler); window.removeEventListener('scroll', repositionHandler, true); }
-    repositionHandler = function(){ var t = step.spotlight ? q(step.spotlight) : null; positionBox(t); };
+    if(repositionTimer){ clearInterval(repositionTimer); repositionTimer = null; }
+    repositionHandler = function(){ positionBox(liveTarget(step.spotlight), stepNeedsRing(step)); };
     window.addEventListener('resize', repositionHandler);
     window.addEventListener('scroll', repositionHandler, true);
+    if(step.spotlight){
+      repositionTimer = setInterval(repositionHandler, 200);
+    }
 
     // advance modes
     if(step.choice){
@@ -212,12 +261,30 @@
     } else {
       e.next.onclick = advance;
       e.next.textContent = step.nextLabel || 'Next →';
+      // Plain informational steps still often invite a click on the
+      // spotlighted icon/button ("click this any time…"). If the user
+      // actually clicks it, treat that as their way of saying "got it"
+      // and move on automatically instead of leaving them stuck looking
+      // for a Next button — without taking Next away from anyone who'd
+      // rather just read and move on themselves.
+      if(step.spotlight){
+        var autoHandler = function(ev){
+          var t = liveTarget(step.spotlight);
+          if(t && (t === ev.target || t.contains(ev.target))){
+            document.removeEventListener('click', autoHandler, true);
+            setTimeout(advance, 250);
+          }
+        };
+        document.addEventListener('click', autoHandler, true);
+        state.cleanupClick = function(){ document.removeEventListener('click', autoHandler, true); };
+      }
     }
   }
 
   function advance(){
     if(state.cleanupClick){ state.cleanupClick(); state.cleanupClick = null; }
     if(state.cleanupPoll){ state.cleanupPoll(); state.cleanupPoll = null; }
+    if(repositionTimer){ clearInterval(repositionTimer); repositionTimer = null; }
     var step = state.steps[state.idx];
     if(step.after) step.after();
     state.idx++;
@@ -228,6 +295,7 @@
   function finish(){
     if(state && state.cleanupClick) state.cleanupClick();
     if(state && state.cleanupPoll) state.cleanupPoll();
+    if(repositionTimer){ clearInterval(repositionTimer); repositionTimer = null; }
     if(repositionHandler){ window.removeEventListener('resize', repositionHandler); window.removeEventListener('scroll', repositionHandler, true); }
     clearSpotlight();
     var e = el();

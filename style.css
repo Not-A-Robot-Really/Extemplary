@@ -1882,7 +1882,12 @@
 .tut-highlight-box{
   position:fixed;z-index:2147483002;pointer-events:none;
   border:3px solid #ffcf4d;border-radius:12px;
-  box-shadow:0 0 0 4px rgba(255,207,77,0.35), 0 0 22px rgba(255,207,77,0.55);
+  /* The oversized 9999px spread IS the spotlight cutout: it paints the
+     dim overlay for the entire viewport, clipped to this box's rounded
+     rect, so only the outlined area stays at normal brightness while
+     everything else reads dim — instead of the old flat page-wide
+     overlay that dimmed the highlighted box too. */
+  box-shadow:0 0 0 4px rgba(255,207,77,0.35), 0 0 22px rgba(255,207,77,0.55), 0 0 0 9999px rgba(12,16,24,0.65);
   transition:top .15s ease, left .15s ease, width .15s ease, height .15s ease;
 }
 .tut-ring{

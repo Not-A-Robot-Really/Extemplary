@@ -196,10 +196,16 @@
       e.next.style.display = 'none';
       e.hint.classList.remove('hidden');
       e.hintText.textContent = step.hintText || 'Waiting for you…';
+      var baseHint = step.hintText || 'Waiting for you…';
       var poll = setInterval(function(){
         if(step.waitForCondition()){
           clearInterval(poll);
           setTimeout(advance, 300);
+          return;
+        }
+        if(step.watchError){
+          var err = step.watchError();
+          e.hintText.textContent = err ? err : baseHint;
         }
       }, 250);
       state.cleanupPoll = function(){ clearInterval(poll); };
@@ -251,7 +257,7 @@
     steps.push({
       title: 'Welcome to Extemplary! 🎉',
       avatar: '🎙️',
-      html: "Your account is all set up. I'm going to walk you through every part of the site — the sidebar, your Calendar, Ballot History, the recording tools, and how to run a full practice round. It only takes a few minutes, and you can bail out any time with <b>Skip tutorial</b>."
+      html: "Your account is all set up! I'm going to walk you through every function of the site: the sidebar, calendar, Ballot History, the recording tools, and how to run a full practice round. It only takes a few minutes, and you can exit out any time with <b>Skip tutorial</b>."
     });
 
     // ---- Sidebar orientation -------------------------------------------------
@@ -260,7 +266,7 @@
       avatar: '🧭',
       before: function(){ openSidebar(); },
       spotlight: '#navMenuPanel',
-      html: "This sidebar is home base. Every page in Extemplary — Home, Calendar, My Ballot History, Timer, Time Signals, Light/Dark Mode, Shortcuts, Current Events, and the Citation Checker — is reachable from here. We'll use it to get around for the rest of this tutorial."
+      html: "This sidebar is home base. Every page in ExtemplaryDar is accessable from here. We'll use it to get around for the rest of this tutorial."
     });
 
     steps.push({
@@ -278,14 +284,14 @@
       title: 'Your Streak Calendar',
       avatar: '🔥',
       spotlight: '#streakSummary',
-      html: "Any day you record a ballot, set a goal, or complete a round keeps your streak alive — it's tracked here and in the flame counter in the header. This calendar also lays out milestone markers at 3, 7, 14, 30, and 365 days."
+      html: "Any day you record a ballot, set a goal, or complete a round keeps your streak alive or starts a new one. It is tracked here and flame counter at the top left. This calendar also lays out milestone markers at 3, 7, 14, 30, and 365 days."
     });
 
     steps.push({
       title: 'Tournaments & events',
       avatar: '🗓️',
       spotlight: '#streakEventsWrap',
-      html: "The same calendar doubles as a lightweight tournament tracker. Add an upcoming competition's date and name here, and it'll show up in a running, sorted list of what's next — with past events tucked behind a toggle."
+      html: "The same calendar doubles as tournament tracker. Add an upcoming competition's date and name here, and it'll show up in a sorted list of what's next."
     });
 
     steps.push({
@@ -294,7 +300,7 @@
       spotlight: '#streakAddGoalBtn',
       waitForClick: '#streakAddGoalBtn',
       hintText: 'Click "+ New Goal".',
-      html: "Goals are concrete targets you track from your own ballot history — a streak length, an overall score, a category score, or a number of rounds this month. Let's create your first one."
+      html: "Goals are explicit milestones you can use to progress through your Extemp journey! Goals can be anything from a streak length, an overall score, a category score, or a number of rounds this month. Let's create your first one."
     });
 
     steps.push({
@@ -303,14 +309,14 @@
       spotlight: '#goalModalBody',
       waitForCondition: function(){ var m = byId('goalModal'); return m && m.classList.contains('hidden'); },
       hintText: 'Pick any goal type you like, then click "Save Goal".',
-      html: "Pick a goal type from the dropdown — it doesn't matter which one for now — fill in the target, and hit <b>Save Goal</b>."
+      html: "Pick a goal type from the dropdown, fill in the target, and hit <b>Save Goal</b>."
     });
 
     steps.push({
       title: 'Nice — goal set! ✅',
       avatar: '🎯',
       spotlight: '#streakGoalsWrap',
-      html: "Your goal now tracks a live progress bar computed straight from your ballot history. My History also surfaces auto-suggested goals based on your own weakest categories — you'll see those in a minute."
+      html: "Your goal now tracks a live progress bar computed straight from your ballot history. My History also surfaces auto-suggested goals based on your own weakest categories."
     });
 
     // ---- History ----------------------------------------------------------
@@ -321,21 +327,21 @@
       spotlight: '.nav-menu-item[data-target="historyToggle"]',
       waitForClick: '.nav-menu-item[data-target="historyToggle"]',
       hintText: 'Click "My Ballot History" in the sidebar.',
-      html: "Next: your Ballot History. Click the highlighted <b>My Ballot History</b> item in the sidebar."
+      html: "This is the Ballot History. Click the highlighted <b>My Ballot History</b> item in the sidebar."
     });
 
     steps.push({
       title: "Coach's Overall Notes",
       avatar: '📜',
       spotlight: '#historyOverallFeedback',
-      html: "Once you've recorded a few rounds, this area fills in with comprehensive feedback that finds patterns across your entire practice history — your biggest recurring strength, your biggest recurring weakness, and one concrete next step. It refreshes automatically at milestone round counts."
+      html: "Once you've recorded a few rounds, this area fills in with comprehensive feedback that finds patterns across your entire practice history, including your biggest recurring strength, your biggest recurring weakness, and one concrete next step. It refreshes automatically at milestone round counts."
     });
 
     steps.push({
       title: 'Trends across your ballots',
       avatar: '📈',
       spotlight: '#historyTrends',
-      html: "This section aggregates your average score in every rubric category, plus sparkline trend graphs for your overall score and each category — so you can see exactly where you're improving (or backsliding) round by round."
+      html: "This section aggregates your average score in every rubric category, plus sparkline trend graphs for your overall score and each category so you can see exactly where you're improving (or regressing) round by round."
     });
 
     steps.push({
@@ -360,21 +366,21 @@
       title: 'The 30-minute prep timer',
       avatar: '⏱️',
       spotlight: '#timerToggle',
-      html: "Extemp gives you 30 minutes to prep a speech. Click this clock icon any time to open a real countdown timer — start, pause, resume, or reset it, right from the header or the sidebar."
+      html: "Extemp gives you 30 minutes to prep a speech. Click this clock icon any time to open a real countdown timer. You can start, pause, resume, or reset right from the header or the sidebar."
     });
 
     steps.push({
       title: 'Light / Dark mode',
       avatar: '🌗',
       spotlight: '#themeToggle',
-      html: "Prefer a darker screen for late-night prep? Click this toggle any time to flip between light and dark mode — your preference is remembered."
+      html: "Prefer a lighter screen? Click this toggle any time to flip between light and dark mode. This will be automatically saved."
     });
 
     steps.push({
       title: 'Keyboard shortcuts',
       avatar: '⌨️',
       spotlight: '#shortcutsToggle',
-      html: "There's a full set of keyboard shortcuts for power users — starting/stopping the timer, recording, and navigating the ballot without touching your mouse. Click here any time to see the full list."
+      html: "There's a full set of keyboard shortcuts for convenience sakes. Click here any time to see the full list."
     });
 
     // ---- Time signal settings ------------------------------------------------
@@ -382,7 +388,7 @@
       title: 'Time Signal settings',
       avatar: '🔔',
       spotlight: '#settingsToggle',
-      html: "This is where you customize <b>time signals</b> — little on-screen alerts that pop up at specific points while you're recording (e.g. \"1 minute left\"). Add, relabel, recolor, or remove signals here, or reset to the defaults. This is also where you can paste your own Groq/Gemini API keys if you ever hit rate limits.<br><br>Your signals fire for real while you're actually recording: the on-screen clock turns amber at 6:00 and red with a hard-stop warning at 7:00, so you always know exactly how much time is left, even without opening this panel."
+      html: "This is where you customize <b>time signals</b>, little on-screen alerts that pop up at specific points while you're recording (e.g. \"1 minute left\"). Add, relabel, recolor, or remove signals here, or reset to the defaults. This is also where you can paste your own Groq/Gemini API keys if you ever hit rate limits.<br><br>Your signals fire for real while you're actually recording: the on-screen clock turns amber at 6:00 and red with a hard-stop warning at 7:00, so you always know exactly how much time is left, even without opening this panel."
     });
 
     // ---- Tournament Briefing (forced use) ---------------------------------
@@ -427,7 +433,7 @@
       title: 'Here\'s what an example ballot feedback looks like!',
       avatar: '📄',
       spotlight: '#exampleResultsContent',
-      html: "This is a full sample round — speech, video, annotated transcript, and judge's feedback — so you know exactly what a finished round looks like before you ever record your own. Click any word in the transcript (or any judge's note) and the video jumps right to that moment."
+      html: "This is a full sample round with speech, video, annotated transcript, and judge's feedback so you know exactly what a finished round looks like before you ever record your own. Click any word in the transcript (or any judge's note) and the video jumps right to that moment."
     });
 
     steps.push({
@@ -448,7 +454,7 @@
       spotlight: '.nav-menu-item[data-target="citationToggle"]',
       waitForClick: '.nav-menu-item[data-target="citationToggle"]',
       hintText: 'Click "Citation Checker" in the sidebar.',
-      html: "Before you use a stat or quote in-round, you can verify it here — Extemplary searches the web live and marks it TRUE, FALSE, or UNVERIFIED."
+      html: "You can verify the legitimacy of any evidence mentioned in a speech here. It searches the web live and marks it TRUE, FALSE, or UNVERIFIED."
     });
 
     steps.push({
@@ -456,17 +462,24 @@
       avatar: '🔎',
       spotlight: '#ccSetupStep',
       waitForCondition: function(){ var r = byId('ccResultStep'); return r && !r.classList.contains('hidden'); },
+      watchError: function(){
+        var dErr = byId('ccDateError'), cErr = byId('ccClaimError'), sErr = byId('ccSourceError');
+        if(dErr && dErr.style.display === 'block') return 'That date needs the mm/dd/yyyy format exactly — try 07/25/2026.';
+        if(cErr && cErr.style.display === 'block') return "Don't forget to fill in the Claim field.";
+        if(sErr && sErr.style.display === 'block') return "Don't forget to fill in the Source field.";
+        return null;
+      },
       hintText: 'Fill in all three fields, then click "Check Citation".',
-      html: 'Copy these into the three fields, then click <b>Check Citation</b>:' +
-        '<span class="tut-type-example">Claim: 500 freshman at Howard University have been unenrolled from the prestigious, historically Black Washington, D.C., university for the 2026-27 school year due to tuition issues.\nDate: 7/25/26\nSource: CNN</span>' +
-        "Tip: if you're ever unsure of an exact date, swap any unknown digit for <code>?</code> (e.g. 06/??/2025) to check an approximate range instead."
+      html: 'Type each of these into its matching field, then click <b>Check Citation</b>. Note the date field requires the mm/dd/yyyy format shown below:' +
+        '<span class="tut-type-example">Claim:\n500 freshman at Howard University have been unenrolled from the prestigious, historically Black Washington, D.C., university for the 2026-27 school year due to tuition issues.\n\nDate (mm/dd/yyyy):\n07/25/2026\n\nSource:\nCNN</span>' +
+        "Tip: if you're ever unsure of an exact date, swap any unknown digit for <code>?</code> (e.g. 06/??/2026) to check an approximate range instead."
     });
 
     steps.push({
       title: 'Verdict!',
       avatar: '🔎',
       spotlight: '#ccResultStep',
-      html: "That's a real verdict — TRUE, FALSE, or UNVERIFIED — with a short explanation and a link to the actual source Extemplary found. Use this on any claim before it goes in a speech, or to check a citation from someone else's."
+      html: "That's a real verdict (TRUE) with a short explanation and a link to the actual source Extemplary found. Use this on any claim before it goes in a speech, or to check a citation from someone else's."
     });
 
     steps.push({
@@ -476,7 +489,7 @@
       spotlight: '#navHomeBtn',
       waitForClick: '#navHomeBtn',
       hintText: 'Click "Home" in the sidebar.',
-      html: "Last stop before recording — open the sidebar and click <b>Home</b>."
+      html: "Open the sidebar and click <b>Home</b>."
     });
 
     // ---- Recording a round --------------------------------------------------
@@ -484,7 +497,7 @@
       title: 'Recording a practice round',
       avatar: '🎬',
       spotlight: '#view-record',
-      html: "Here's the full flow: get a question (custom, or drawn for you), a 30-minute prep timer, then record yourself on camera. When you submit, Extemplary transcribes your speech, analyzes your vocal delivery, and scores you against an 8-category NSDA extemp rubric — with an annotated, color-coded transcript and a synced video player."
+      html: "Here's the brief overcourse of what an Extemp round looks like. You receive a question (custom, or drawn for you), you have 30 minutes to prepare, then record yourself on camera. When you submit, Extemplary transcribes your speech and scores you against an 8-category NSDA extemp rubric, which you can view by clicking the paper icon on the top right— with an annotated."
     });
 
     steps.push({
@@ -493,7 +506,7 @@
       spotlight: '#qModeReceiveBtn',
       waitForClick: '#qModeReceiveBtn',
       hintText: 'Click "Receive a question".',
-      html: "Instead of typing your own question, let's have Extemplary draw one for you — exactly like a real tournament draw."
+      html: "Instead of typing your own question, let's have Extemplary draw one for you, exactly like a real tournament draw."
     });
 
     steps.push({
@@ -511,14 +524,14 @@
       spotlight: '#qPickStep',
       waitForCondition: function(){ var c = byId('qConfirmedStep'); return c && !c.classList.contains('hidden'); },
       hintText: 'Click one of the 3 questions to draw it.',
-      html: "Just like a tournament draw, pick one of the three questions — that's the one you'll speak on."
+      html: "Just like a tournament draw, pick one of the three questions to be the one you'll speak about."
     });
 
     steps.push({
       title: 'Ready to record?',
       avatar: '🎬',
       spotlight: '#recBtn',
-      html: "That's your question locked in. This red button starts your camera recording whenever you're ready to deliver your speech. Want to start recording now?",
+      html: "Your question is locked in. This red button starts your camera recording whenever you're ready to deliver your speech. Want to start recording now?",
       choice: {
         yes: function(){ var b = byId('recBtn'); if(b) b.click(); },
         no: function(){}
@@ -528,7 +541,7 @@
     steps.push({
       title: "You're all set! 🎓",
       avatar: '🎉',
-      html: "That's every major feature of Extemplary — the sidebar, Calendar & Goals, Ballot History, the Timer, Light/Dark Mode, Shortcuts, Time Signals, Tournament Briefing, the Example Ballot, the Citation Checker, and recording a round with a drawn question. Good luck out there!",
+      html: "That's every major feature of Extemplary. Good luck on your Extemp journey!",
       hideSkip: true
     });
 

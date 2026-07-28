@@ -725,6 +725,11 @@
   #themeToggle.active{transform:none;}
   #briefingToggle.active{transform:none;}
   #citationToggle.active{transform:none;color:var(--score-green);}
+  /* Header flame icon: never rotates, and only turns orange while the
+     user is on the Calendar page (.active) AND currently has an active
+     streak (.has-streak) — both classes toggled in the JS. */
+  #streakToggle.active{transform:none;}
+  #streakToggle.active.has-streak{color:#ff8a2b;}
   #timerToggle{position:relative;}
   .timer-badge{
     font-family:var(--font-mono);font-size:10px;font-weight:bold;letter-spacing:0.3px;
@@ -1640,11 +1645,8 @@
   .streak-fab:hover{opacity:0.85;}
   .streak-fab svg{color:inherit;flex-shrink:0;}
   .streak-fab-count{font-family:var(--font-display);font-size:18px;font-weight:800;line-height:1;}
-  /* Turns the streak icon orange only while the user is on the Streak
-     Calendar page (.active, toggled in showView()) AND currently has an
-     active streak (.has-streak, toggled in renderStreakView() /
-     refreshStreakFab()). Both classes must be present together. */
-  .streak-fab.active.has-streak{color:#ff8a2b;}
+  /* The floating top-right "🔥2" flame is always orange. */
+  #streakFabIcon{color:#ff8a2b;}
 
   /* ---- streak summary card (top of Streak Calendar view) ---- */
   .streak-summary-card{

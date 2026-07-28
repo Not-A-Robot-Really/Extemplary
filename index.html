@@ -1662,7 +1662,7 @@
     const fabCount = document.getElementById('streakFabCount');
     const fabIcon = document.getElementById('streakFabIcon');
     if(fabCount){ fabCount.textContent = streakInfo.current; }
-    document.getElementById('streakFab')?.classList.toggle('has-streak', streakInfo.current > 0);
+    document.getElementById('streakToggle')?.classList.toggle('has-streak', streakInfo.current > 0);
 
     document.getElementById('streakSummary').innerHTML = `
       <div class="streak-summary-card">
@@ -1857,7 +1857,7 @@
     const fabCount = document.getElementById('streakFabCount');
     const fabIcon = document.getElementById('streakFabIcon');
     if(fabCount) fabCount.textContent = info.current;
-    document.getElementById('streakFab')?.classList.toggle('has-streak', info.current > 0);
+    document.getElementById('streakToggle')?.classList.toggle('has-streak', info.current > 0);
   }
 
   // ---- rendering "My History" ----
@@ -3746,7 +3746,7 @@
       citationOpen = false;
       document.getElementById('citationToggle')?.classList.remove('active');
     }
-    document.getElementById('streakFab')?.classList.toggle('active', v === viewStreak);
+    document.getElementById('streakToggle')?.classList.toggle('active', v === viewStreak);
   }
 
   // ===== CAMERA =====

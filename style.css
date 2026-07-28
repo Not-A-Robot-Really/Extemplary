@@ -1455,14 +1455,13 @@
   .export-item svg{flex-shrink:0;color:var(--slate);}
 
   /* ================= HAMBURGER NAV MENU ================= */
-  /* Solid, non-transparent header bar (same treatment as the old
-     .nav-drawer-head) that houses the hamburger button. It stays fixed in
-     place at all times — it does not slide away with the menu list below
-     it — so the toggle is always reachable even when the menu is
-     minimized. */
+  /* Solid, non-transparent header bar that houses the hamburger button.
+     It is now nested inside .nav-drawer (see index.html) so it is a true
+     part of the menu bar and slides away together with the list below it
+     instead of staying stuck in place on its own. */
   .nav-drawer-head{
-    position:fixed;top:0;left:0;z-index:700;
-    width:300px;max-width:86vw;
+    position:sticky;top:0;z-index:700;
+    width:100%;
     background:var(--charcoal);
     padding:14px 16px;flex-shrink:0;
     display:flex;align-items:center;
@@ -1487,8 +1486,7 @@
     position:fixed;top:0;left:0;bottom:0;z-index:690;
     width:300px;max-width:86vw;
     background:var(--parchment);
-    box-shadow:6px 0 24px rgba(0,0,0,0.3);
-    padding-top:72px;
+    box-shadow:none;
     transform:translateX(0);pointer-events:auto;
     transition:transform .3s cubic-bezier(.2,.8,.25,1);
     display:flex;flex-direction:column;overflow-y:auto;

@@ -1455,8 +1455,20 @@
   .export-item svg{flex-shrink:0;color:var(--slate);}
 
   /* ================= HAMBURGER NAV MENU ================= */
+  /* Solid, non-transparent header bar (same treatment as the old
+     .nav-drawer-head) that houses the hamburger button. It stays fixed in
+     place at all times — it does not slide away with the menu list below
+     it — so the toggle is always reachable even when the menu is
+     minimized. */
+  .nav-drawer-head{
+    position:fixed;top:0;left:0;z-index:700;
+    width:300px;max-width:86vw;
+    background:var(--charcoal);
+    padding:14px 16px;flex-shrink:0;
+    display:flex;align-items:center;
+    border-bottom:2px solid var(--crimson);
+  }
   .nav-hamburger-fab{
-    position:fixed;top:16px;left:16px;z-index:700;
     width:46px;height:46px;border-radius:50%;
     display:flex;align-items:center;justify-content:center;
     background:none;border:none;
@@ -1466,16 +1478,15 @@
   }
   .nav-hamburger-fab:hover{opacity:0.8;}
   .nav-hamburger-fab svg{transition:opacity .15s;}
-  /* The drawer is shown by default (fully transparent — no box — so the
+  /* The drawer/menu list is shown by default (semi-transparent, so the
      moving wall background stays visible behind it) and only tucks itself
      away when the hamburger button is clicked to minimize it — see
-     .nav-drawer-collapsed below. The hamburger button itself sits fixed at
-     the top-left and doubles as the drawer's head/toggle, so there's no
-     separate title bar or close (X) button anymore. */
+     .nav-drawer-collapsed below. */
   .nav-drawer{
     position:fixed;top:0;left:0;bottom:0;z-index:690;
     width:300px;max-width:86vw;
-    background:var(--parchment);
+    background:rgba(241,236,223,0.62);
+    backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);
     box-shadow:6px 0 24px rgba(0,0,0,0.3);
     padding-top:72px;
     transform:translateX(0);pointer-events:auto;

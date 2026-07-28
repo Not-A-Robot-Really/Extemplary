@@ -1640,10 +1640,11 @@
   .streak-fab:hover{opacity:0.85;}
   .streak-fab svg{color:inherit;flex-shrink:0;}
   .streak-fab-count{font-family:var(--font-display);font-size:18px;font-weight:800;line-height:1;}
-  /* Turns the streak icon orange whenever the user currently has an
-     active streak (.has-streak) — same simple pattern as the citation
-     checker icon turning green while active. */
-  .streak-fab.has-streak{color:#ff8a2b;}
+  /* Turns the streak icon orange only while the user is on the Streak
+     Calendar page (.active, toggled in showView()) AND currently has an
+     active streak (.has-streak, toggled in renderStreakView() /
+     refreshStreakFab()). Both classes must be present together. */
+  .streak-fab.active.has-streak{color:#ff8a2b;}
 
   /* ---- streak summary card (top of Streak Calendar view) ---- */
   .streak-summary-card{

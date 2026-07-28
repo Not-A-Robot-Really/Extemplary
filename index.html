@@ -1587,7 +1587,10 @@
       return `
         <div class="goal-card ${prog.done?'done':''}" data-goal-id="${g.id}">
           <div class="goal-card-main">
-            <div class="goal-card-label">${prog.done ? '✓ ' : ''}${escHtml(goalLabel(g))}</div>
+            <div class="goal-card-label">
+              <svg class="goal-card-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              <span>${escHtml(goalLabel(g))}</span>
+            </div>
             <div class="goal-card-bar-wrap"><div class="goal-card-bar" style="width:${prog.pct.toFixed(0)}%"></div></div>
             <div class="goal-card-progress">${prog.current}/${prog.target}${g.type==='category'?'%':''}</div>
           </div>
@@ -1634,7 +1637,7 @@
                   <div class="sg-label">${escHtml(goalLabel({type:s.type, params:s.params}))}</div>
                   <div class="sg-why">${escHtml(s.why)}</div>
                 </div>
-                <button type="button" class="btn primary sg-add" data-sg="${i}">+ Add</button>
+                <button type="button" class="sg-add" data-sg="${i}">+ Add</button>
               </div>`).join('')}
           </div>
         </div>` : ''}

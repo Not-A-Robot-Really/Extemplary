@@ -38,15 +38,17 @@ Sign up → Generate questions → Write a speech → Record your speech → Rec
 
 - **Cloud-saved ballot history** | Every completed round (video, transcript, full written feedback, and category scores) is saved and automatically stored onto your account and available from any device you sign in on, via the **My History** page.
 
-- **Coach's Overall Notes** | Comprehensive feedback of your Extemp journey that finds patterns across your *entire* practice history, naming your biggest recurring strength, your biggest recurring area to improve, and one concrete next step. It's regenerated automatically at milestone round counts (1, 2, 3, 5, 7, 10, then every 5 rounds after that) or whenever you post a clear breakthrough round, so it stays current without burning an AI call on every single visit.
+- **Coach's Overall Notes** | Comprehensive feedback of your Extemp journey that finds patterns across your *entire* practice history, naming your biggest recurring strength, your biggest recurring area to improve, and one concrete next step. It's regenerated automatically at milestone round counts (1, 2, 3, 5, 7, 10, then every 5 rounds after that) or whenever you record a key round.
 
 - **Trends across your ballots** | The History view aggregates your average score in each rubric category across every round you've recorded, with per-category bars plus your top overall strengths and weaknesses.
 
 - **Score trend line graphs** | Sparkline charts for your overall score and for each individual rubric category, plotted round-by-round across your whole history, so you can see exactly where you're improving (or backsliding) at a glance.
 
-- **Streak & Calendar** | A tracked practice streak: any day you record a ballot, set a goal, or complete one keeps the streak alive. Your current streak lives in a flame counter fixed to the top of the app, and the full **Streak Calendar** view lays out a month-by-month history of active days, your current and best-ever streak, and milestone markers at 3, 7, 14, 30, and 365 days. The same calendar doubles as a lightweight **tournament & event tracker**. Add an upcoming competition's date and name and it'll show up in a running, sorted list of what's next (with past events tucked away behind a toggle).
+- **Streak & Calendar** | A tracked practice streak: any day you record a ballot, set a goal, or complete one keeps the streak alive. Your current streak lives in a flame counter fixed to the top of the app, and the full **Streak Calendar** view lays out a month-by-month history of active days, and your current & best streak.
 
-- **Goals system** | Set concrete goals for yourself right from the Streak Calendar or My History: hit a streak length, beat an overall score threshold, beat a threshold in one specific rubric category, complete a number of practice rounds or live video ballots this month, or simply show up to a tournament on your calendar. Each goal tracks its own live progress bar computed straight from your ballot history. My History also surfaces **Suggested Goals** auto-generated from your own weakest rubric categories, current average score, and current streak, so there's always a sensible next target waiting for you.
+**tournament & event tracker** | Located in the calendar tab, you can add an upcoming competition's date and name on the calendar. It will also show up in list below the calendar.
+
+- **Goals** | Set concrete goals for right from the Streak Calendar or My History: hit a streak length, beat an overall score threshold, beat a threshold in one specific rubric category, complete a number of practice rounds, or live video ballots this month. Each goal tracks its own live progress. My History also contains *Suggested Goals* that are auto-generated from your own weakest rubric categories, current average score, and current streak, so there's always a sensible next target waiting for you.
 
 - **Session score tracking & export** | Precise score tracking within a session **and** over many rounds, plus export to `.txt`, printable ballot, video download, and shareable round links.
 
@@ -54,11 +56,13 @@ Sign up → Generate questions → Write a speech → Record your speech → Rec
 
 - **Installable PWA** | Works offline for timing/recording; add to your phone's home screen.
 
+- **Tutorial** | The first time you create an account, a step by step walkthrough gides you through every part of the app, allowing the user to try every feature the site offers. During the tutorial, My History's Coach's Notes, Trends, and Goals sections show a placeholder skeleton preview instead of a blank page.
+
 Note: Extemplary requires camera and microphone access for recording speeches (duh).
 
 ## Free trial before signing up! 🆓
 ---
-Scroll down past the log in info to see what the app can actually do. There are with several features you can try live, no account required!:
+The sign-in screen is also a landing page. Scroll down past the log in info to see a glimpes of what the app can actually do, with several features you can try live, no account required!:
 
 - **1️⃣ Real practice questions** | pick between **domestic, economic, and international** topics and get three relevant extemp questions on the spot (one free try per browser).
 

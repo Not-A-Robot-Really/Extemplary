@@ -1783,7 +1783,11 @@
     margin-top:10px;font-family:var(--font-mono);font-size:11.5px;font-weight:600;color:var(--brass);cursor:pointer;text-decoration:underline;
   }
 
-  /* ---- goals (shared: Streak Calendar view + My History tab) ---- */
+  /* ---- goals (shared: Streak Calendar view + My History tab) ----
+     Reads as a small ledger/checklist in the same voice as the rest of
+     the ballot — a plain rule under each row, a mono percentage instead
+     of a badge, and a thin progress rule instead of a boxed bar — rather
+     than a separate "widget" dropped into the page. */
   .streak-goals, .history-goals{
     border:2px solid var(--charcoal);border-radius:3px;padding:22px 24px;margin-bottom:22px;
     background:rgba(255,255,255,0.6);
@@ -1793,42 +1797,53 @@
   .goals-empty{
     font-family:var(--font-mono);font-size:12px;color:#000;opacity:0.6;text-align:center;padding:18px 10px;
   }
-  .goals-list{display:flex;flex-direction:column;gap:10px;}
+  .goals-list{display:flex;flex-direction:column;}
   .goal-card{
-    display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--rule);border-left:3px solid var(--brass);
-    border-radius:3px;background:#fff;transition:border-color .15s;
+    display:flex;align-items:center;gap:16px;padding:14px 2px;
+    border-bottom:1px solid rgba(0,0,0,0.09);
   }
-  .goal-card:hover{border-color:var(--crimson);border-left-color:var(--brass);}
-  .goal-card.done{border-color:#22c55e;border-left-color:#22c55e;background:rgba(34,197,94,0.06);}
+  .goals-list .goal-card:last-child{border-bottom:none;}
   .goal-card-main{flex:1;min-width:0;}
-  .goal-card-label{font-family:var(--font-mono);font-size:12.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.3px;color:#000;margin-bottom:7px;}
-  .goal-card.done .goal-card-label{color:#16a34a;}
-  .goal-card-bar-wrap{background:var(--rule);border-radius:3px;height:7px;overflow:hidden;}
-  .goal-card-bar{height:100%;background:var(--brass);border-radius:3px;transition:width .5s ease;}
+  .goal-card-label{
+    display:flex;align-items:baseline;gap:8px;
+    font-family:var(--font-body);font-size:14px;font-weight:600;color:#000;margin-bottom:8px;
+  }
+  .goal-card-check{
+    flex-shrink:0;width:15px;height:15px;color:#16a34a;display:none;
+  }
+  .goal-card.done .goal-card-check{display:inline-flex;}
+  .goal-card-bar-wrap{background:var(--rule);border-radius:2px;height:3px;overflow:hidden;}
+  .goal-card-bar{height:100%;background:var(--brass);border-radius:2px;transition:width .5s ease;}
   .goal-card.done .goal-card-bar{background:#22c55e;}
   .goal-card-progress{
-    font-family:var(--font-mono);font-size:10.5px;font-weight:600;color:#000;opacity:0.6;margin-top:5px;
+    font-family:var(--font-mono);font-size:11px;font-weight:600;color:#000;opacity:0.55;margin-top:6px;letter-spacing:0.2px;
   }
+  .goal-card.done .goal-card-progress{color:#16a34a;opacity:0.85;}
   .goal-card-del{
-    flex-shrink:0;background:none;border:none;color:#000;opacity:0.4;cursor:pointer;padding:6px;border-radius:3px;transition:opacity .12s, color .12s;
+    flex-shrink:0;background:none;border:none;color:#000;opacity:0.35;cursor:pointer;padding:6px;border-radius:3px;transition:opacity .12s, color .12s;
   }
   .goal-card-del:hover{opacity:1;color:var(--crimson);}
 
   /* ---- suggested goals (My History) ---- */
-  .suggested-goals{margin-top:20px;padding-top:18px;border-top:1px dashed var(--rule);}
+  .suggested-goals{margin-top:18px;padding-top:16px;border-top:1px dashed var(--rule);}
   .suggested-goals h4{
     font-family:var(--font-mono);font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;
     margin:0 0 12px;color:#000;opacity:0.7;
   }
-  .suggested-goals-list{display:flex;flex-direction:column;gap:10px;}
+  .suggested-goals-list{display:flex;flex-direction:column;}
   .suggested-goal-card{
-    display:flex;align-items:center;gap:14px;padding:12px 14px;border:1px dashed var(--brass);border-radius:3px;
-    background:rgba(61,110,163,0.05);
+    display:flex;align-items:center;gap:14px;padding:12px 2px;
+    border-bottom:1px solid rgba(0,0,0,0.07);
   }
+  .suggested-goals-list .suggested-goal-card:last-child{border-bottom:none;}
   .sg-text{flex:1;min-width:0;}
   .sg-label{font-size:13.5px;font-weight:600;color:#000;}
-  .sg-why{font-size:12px;color:#000;opacity:0.65;margin-top:3px;line-height:1.4;}
-  .sg-add{flex-shrink:0;font-size:12px;padding:8px 14px;}
+  .sg-why{font-size:12px;color:#000;opacity:0.6;margin-top:3px;line-height:1.4;}
+  .sg-add{
+    flex-shrink:0;font-family:var(--font-mono);font-size:11.5px;font-weight:600;padding:0;
+    background:none;border:none;color:var(--crimson);cursor:pointer;text-decoration:underline;
+  }
+  .sg-add:hover{color:var(--crimson-deep);}
 
   /* ---- goal creation modal ---- */
   .goal-modal-backdrop{

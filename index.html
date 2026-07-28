@@ -2178,14 +2178,14 @@
       return `
       <div class="history-card" data-id="${entry.id}">
         <div class="history-card-head">
-          <div class="hc-head-main">
-            <div class="hc-round">Round ${roundNum}</div>
-            <div class="hc-meta">
+          <div class="hc-top">
+            <div class="hc-top-left">
+              <span class="hc-round">Round ${roundNum}</span>
               <span class="hc-date">${date}</span>
-              ${entry.question ? `<span class="hc-meta-sep">·</span><span class="hc-question">${escHtml(entry.question)}</span>` : ''}
             </div>
+            <div class="hc-score" style="color:${scoreColor}">${entry.total!==null && entry.total!==undefined ? `${entry.total}<span class="hc-score-max">/100</span>` : '—'}</div>
           </div>
-          <div class="hc-score" style="color:${scoreColor}">${entry.total!==null && entry.total!==undefined ? `${entry.total}<span class="hc-score-max">/100</span>` : '—'}</div>
+          ${entry.question ? `<div class="hc-question">${escHtml(entry.question)}</div>` : ''}
         </div>
         <div class="history-card-body">
           <div class="hc-video-slot"></div>

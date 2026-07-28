@@ -580,17 +580,36 @@
   .history-card{border:1px solid var(--rule);border-radius:3px;overflow:hidden;background:rgba(255,255,255,0.5);transition:border-color .15s;}
   .history-card:hover{border-color:var(--brass);}
   .history-card-head{
-    display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px 20px;cursor:pointer;
+    display:flex;flex-direction:column;gap:14px;padding:18px 20px;cursor:pointer;
   }
   .history-card-head:hover{background:rgba(255,255,255,0.35);}
-  .hc-head-main{display:flex;flex-direction:column;gap:5px;min-width:0;}
-  .hc-round{font-family:var(--font-display);font-size:19px;font-weight:700;color:#000;letter-spacing:0.2px;}
-  .hc-meta{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px;font-family:var(--font-mono);font-size:12px;color:#000;}
-  .hc-meta .hc-date{opacity:0.65;}
-  .hc-meta .hc-meta-sep{opacity:0.4;}
-  .hc-meta .hc-question{font-weight:500;color:#000;}
+
+  /* ---- top row: round badge + date on the left, score on the right ---- */
+  .hc-top{display:flex;align-items:center;justify-content:space-between;gap:16px;}
+  .hc-top-left{display:flex;align-items:center;gap:10px;flex-wrap:wrap;min-width:0;}
+  .hc-round{
+    font-family:var(--font-mono);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;
+    color:var(--on-accent);background:var(--charcoal);border-radius:3px;padding:4px 9px;flex-shrink:0;
+  }
+  .hc-date{font-family:var(--font-mono);font-size:12px;color:#000;opacity:0.6;}
   .history-card-head .hc-score{font-family:var(--font-display);font-size:30px;font-weight:800;flex-shrink:0;line-height:1;}
   .history-card-head .hc-score .hc-score-max{font-size:15px;font-weight:600;opacity:0.55;margin-left:1px;}
+
+  /* ---- question pull-quote: the day's topic, set apart and larger,
+     like a headline pulled from the round rather than a metadata line ---- */
+  .hc-question{
+    position:relative;text-align:center;padding:14px 34px 2px;
+    border-top:1px dashed var(--rule);
+    font-family:var(--font-display);font-size:17.5px;font-weight:700;font-style:italic;
+    line-height:1.45;color:var(--charcoal);
+  }
+  .hc-question::before, .hc-question::after{
+    position:absolute;top:8px;font-family:Georgia,serif;font-size:30px;font-weight:700;font-style:normal;
+    color:var(--brass);opacity:0.55;line-height:1;
+  }
+  .hc-question::before{content:'\201C';left:0;}
+  .hc-question::after{content:'\201D';right:0;}
+
   .history-card-body{padding:0 20px 22px;display:none;}
   .history-card-body.open{display:block;}
   .history-card video{width:100%;max-height:280px;border-radius:3px;background:#000;margin-bottom:14px;display:block;}

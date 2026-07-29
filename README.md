@@ -39,7 +39,7 @@ Sign up → Generate questions → Write a speech → Record your speech → Rec
 
 - **Cloud-saved ballot history** | Every completed round (video, transcript, full written feedback, and category scores) is saved and automatically stored onto your account and available from any device you sign in on, via the **My History** page.
 
-- **Coach's Overall Notes** | Comprehensive feedback of your Extemp journey that finds patterns across your *entire* practice history, naming your biggest recurring strength, your biggest recurring area to improve, and one concrete next step. It's regenerated automatically at milestone round counts (1, 2, 3, 5, 7, 10, then every 5 rounds after that) or whenever you record a key round.
+- **Coach's Overall Notes** | Comprehensive feedback of your Extemp journey that finds patterns across your *entire* practice history, naming your biggest recurring strength, your biggest recurring area to improve, and one concrete next step. It's designed to update automatically at designated milestone rounds or whenever you record a particularly brillian round.
 
 - **Trends across your ballots** | The History view aggregates your average score in each rubric category across every round you've recorded, with per-category bars plus your top overall strengths and weaknesses.
 
@@ -118,7 +118,7 @@ Tap the magnifying-glass icon in the header any time to open the **Citation Chec
 
 ### API keys 🔑
 ---
-The app utilizes default Groq and Gemini API keys for transcription, judging, and question/briefing/citation generation. If you hit rate limits or want to use your own, open **Settings → Override Groq API Key** and paste your own key from [console.groq.com](https://console.groq.com).
+The app utilizes default Groq and Gemini API keys for transcription, judging, and question/briefing/citation generation. **As of now, the API keys now cannot be replaced by your own**.
 
 ## Supabase setup 💾
 ---

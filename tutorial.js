@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Extemplary — first-run onboarding tutorial ("cutscene" walkthrough)
+   Extemplary: first-run onboarding tutorial ("cutscene" walkthrough)
 
    Runs ONLY the first time a brand-new account is created. Never runs for
    people logging in to an existing account, and never runs again once
@@ -470,7 +470,7 @@
     } else if(step.waitForClick){
       e.next.style.display = 'none';
       e.hint.classList.remove('hidden');
-      e.hintText.textContent = step.hintText || 'Go ahead — click it!';
+      e.hintText.textContent = step.hintText || 'Go ahead! click it!';
       var handler = function(ev){
         if(ev.target.closest(step.waitForClick)){
           document.removeEventListener('click', handler, true);
@@ -672,7 +672,7 @@
     });
 
     steps.push({
-      title: 'Nice — goal set! ✅',
+      title: 'Nice! goal set! ✅',
       avatar: '🎯',
       spotlight: '#streakGoalsWrap',
       html: "Your goal now tracks a live progress bar computed straight from your ballot history. My History also surfaces auto-suggested goals based on your own weakest categories."
@@ -694,7 +694,7 @@
       avatar: '📜',
       before: function(){ paintHistorySkeleton(); },
       spotlight: '#historyOverallFeedback',
-      html: "Once you've recorded a few rounds — around 7 speeches in — this area fills in with comprehensive feedback that finds patterns across your entire practice history, including your biggest recurring strength, your biggest recurring weakness, and one concrete next step. It refreshes automatically at milestone round counts. Here's a preview of the layout you'll see once there's real data (the actual page is empty right now since you haven't recorded anything yet)."
+      html: "Once you've recorded a few rounds (around 7 speeches in), this area fills in with comprehensive feedback that finds patterns across your entire practice history, including your biggest recurring strength, your biggest recurring weakness, and one concrete next step. It refreshes automatically at milestone round counts. Here's a preview of the layout you'll see once there's real data (the actual page is empty right now since you haven't recorded anything yet)."
     });
 
     steps.push({
@@ -702,7 +702,7 @@
       avatar: '📈',
       before: function(){ paintHistorySkeleton(); },
       spotlight: '#historyTrends',
-      html: "This section aggregates your average score in every rubric category, plus sparkline trend graphs for your overall score and each category so you can see exactly where you're improving (or regressing) round by round. Again, this is just a placeholder preview of the layout — it'll fill in with your real numbers after a few recorded rounds."
+      html: "This section aggregates your average score in every rubric category, plus sparkline trend graphs for your overall score and each category so you can see exactly where you're improving (or regressing) round by round. Again, this is just a placeholder preview of the layout. It'll fill in with your real numbers after a few recorded rounds."
     });
 
     steps.push({
@@ -718,7 +718,7 @@
       avatar: '📋',
       before: function(){ paintHistorySkeleton(); },
       spotlight: '#historyListWrap',
-      html: "Below that: your active goals (with Suggested Goals generated from your own weak spots), then every completed round. Expand any round to rewatch the video, re-read the transcript, or reread the full judge's feedback. What you're seeing now is a placeholder preview — this fills in with your actual goals and rounds."
+      html: "Below that: your active goals (with Suggested Goals generated from your own weak spots), then every completed round. Expand any round to rewatch the video, re-read the transcript, or reread the full judge's feedback. What you're seeing now is a placeholder preview. This will be filled in with your actual goals and rounds."
     });
 
     steps.push({
@@ -769,7 +769,7 @@
       spotlight: '.nav-menu-item[data-target="briefingToggle"]',
       waitForClick: '.nav-menu-item[data-target="briefingToggle"]',
       hintText: 'Click "Current Events Summary" in the sidebar.',
-      html: "Let's generate a real briefing — a current-events overview covering domestic, international, and economic news, plus the kinds of questions likely to come up."
+      html: "Let's generate a real briefing, a current-events overview covering domestic, international, and economic news, plus the kinds of questions likely to come up."
     });
 
     steps.push({
@@ -778,7 +778,7 @@
       spotlight: '.bf-timing-btn[data-timing="today"]',
       waitForClick: '.bf-timing-btn[data-timing="today"]',
       hintText: 'Click "In a few hours".',
-      html: 'Click <b>"In a few hours"</b> — this tells the AI your tournament is coming up soon so it can focus on the most relevant recent news.'
+      html: 'Click <b>"In a few hours"</b>. this tells the AI your tournament is coming up soon so it can focus on the most relevant recent news.'
     });
 
     steps.push({
@@ -794,7 +794,7 @@
       title: 'Your briefing is ready',
       avatar: '🗞️',
       spotlight: '#bfResultContent',
-      html: "That's a real, current briefing — you can regenerate it, copy the transcript, or download it as a PDF. Use this the morning of a tournament to walk in already caught up on the news."
+      html: "That's a real, updated briefing. You can regenerate it, copy the transcript, or download it as a PDF. Use this the morning of a tournament to walk in already caught up on the news."
     });
 
     // ---- Example ballot -----------------------------------------------------
@@ -832,14 +832,14 @@
       spotlight: '#rubricToggle',
       waitForClick: '#rubricToggle',
       hintText: 'Click the highlighted rubric icon on the paper.',
-      html: "See that small icon in the top-right corner of the ballot paper? That opens the full <b>Grading Rubric</b> — the exact 8-category, 100-point breakdown every speech gets judged against. Click it now."
+      html: "See that small icon in the top-right corner of the ballot paper? That opens the full <b>Grading Rubric</b>, the one every speech gets judged against. Click it now."
     });
 
     steps.push({
       title: 'Every category, every point',
       avatar: '📐',
       spotlight: '#rubricPanel',
-      html: "This is the full rubric: Creative Hook &amp; Intro, Structure, Strength of Argument &amp; Analysis, Flaws in Reasoning, Strength of Evidence, and more — each with its own point value and the exact criteria the AI judge checks for. It's the same rubric used to score every round you record, so it's worth a skim before your first one. You can reopen this any time from the same icon on the paper."
+      html: "This is the full rubric: Creative Hook; Intro, Structure, Strength of Argument &amp; Analysis, Flaws in Reasoning, Strength of Evidence, and more. Each category has its own point value and the exact criteria the AI judge checks for. It's the same rubric used to score every round you record, so it's worth a skim before your first one. You can reopen this any time from the same icon on the paper."
     });
 
 
@@ -854,13 +854,13 @@
     });
 
     steps.push({
-      title: 'Try it — type this exact example',
+      title: 'Try it! Type this exact example',
       avatar: '🔎',
       spotlight: '#ccSetupStep',
       waitForCondition: function(){ var r = byId('ccResultStep'); return r && !r.classList.contains('hidden'); },
       watchError: function(){
         var dErr = byId('ccDateError'), cErr = byId('ccClaimError'), sErr = byId('ccSourceError');
-        if(dErr && dErr.style.display === 'block') return 'That date needs the mm/dd/yyyy format exactly — try 07/25/2026.';
+        if(dErr && dErr.style.display === 'block') return 'That date needs the mm/dd/yyyy format exactly. Try 07/25/2026.';
         if(cErr && cErr.style.display === 'block') return "Don't forget to fill in the Claim field.";
         if(sErr && sErr.style.display === 'block') return "Don't forget to fill in the Source field.";
         return null;
@@ -893,7 +893,7 @@
       title: 'Recording a practice round',
       avatar: '🎬',
       spotlight: '#view-record',
-      html: "Here's the brief overcourse of what an Extemp round looks like. You receive a question (custom, or drawn for you), you have 30 minutes to prepare, then record yourself on camera. When you submit, Extemplary transcribes your speech and scores you against an 8-category NSDA extemp rubric, which you can view by clicking the paper icon on the top right— with an annotated."
+      html: "Here's the brief overcourse of what an Extemp round looks like. You receive a question (custom, or drawn for you), you have 30 minutes to prepare, then record yourself on camera. When you submit, Extemplary transcribes your speech and scores you against an 8-category NSDA extemp rubric, which you can view by clicking the paper icon on the top right."
     });
 
     steps.push({
@@ -927,7 +927,7 @@
       spotlight: '#qCategoryStep',
       waitForCondition: function(){ var p = byId('qPickStep'); return p && !p.classList.contains('hidden'); },
       hintText: 'Click Domestic, International, or Economic.',
-      html: "Pick any category — <b>International</b>, <b>Domestic</b>, or <b>Economic</b> — and the AI will draft three real current-events questions for you."
+      html: "Pick any category: <b>International</b>, <b>Domestic</b>, or <b>Economic</b>, and Extemplary will draft three real current-events questions for you."
     });
 
     steps.push({

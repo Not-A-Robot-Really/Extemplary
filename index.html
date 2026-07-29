@@ -5285,6 +5285,14 @@ Grading rules:
   // view — hide it everywhere else (Review, Processing, Streak, Briefing,
   // Citation Checker) by hooking into showView().
   const RUBRIC_VISIBLE_VIEWS = [viewRecord, viewResults, viewExample, viewHistory];
+  // The ballot header itself (title/Event/Round/Speaker/Judge/mode label)
+  // only makes sense for a single round in progress or on display — Home,
+  // a finished Results ballot, and the sample Example ballot. It's hidden
+  // everywhere else (My Ballot History's multi-round list, Streak Calendar,
+  // Tournament Briefing, Citation Checker, Review, Processing) so stale
+  // "Round 1 / Regular Practice" framing doesn't linger on unrelated pages.
+  const BALLOT_HEAD_VISIBLE_VIEWS = [viewRecord, viewResults, viewExample];
+  const ballotHeadEl = document.querySelector('.ballot-head');
   let currentViewEl = viewRecord;
   const _showViewForRubric = showView;
   showView = function(v){
@@ -5293,8 +5301,10 @@ Grading rules:
     const shouldShow = RUBRIC_VISIBLE_VIEWS.includes(v);
     rubricToggle.classList.toggle('hidden', !shouldShow);
     if(!shouldShow && rubricOpen) closeRubricPanel();
+    if(ballotHeadEl) ballotHeadEl.classList.toggle('hidden', !BALLOT_HEAD_VISIBLE_VIEWS.includes(v));
   };
   rubricToggle.classList.toggle('hidden', !RUBRIC_VISIBLE_VIEWS.includes(viewRecord));
+  if(ballotHeadEl) ballotHeadEl.classList.toggle('hidden', !BALLOT_HEAD_VISIBLE_VIEWS.includes(viewRecord));
 
   // ===== Hamburger nav menu (semi-transparent drawer, shown by default) =====
   // The drawer now stays open/visible at all times by default so the moving

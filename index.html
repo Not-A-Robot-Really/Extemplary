@@ -1479,13 +1479,19 @@
     await supabaseClient.from('user_goals').delete().eq('id', id);
   }
 
+  // Short label suffix reflecting a goal's practice-type scope (blank for "all").
+  function goalPracticeTypeSuffix(pt){
+    if(pt === 'regular') return ' (Regular Practice)';
+    if(pt === 'introdrill') return ' (Rapid Drill: Introduction)';
+    return '';
+  }
   function goalLabel(g){
+    const suffix = goalPracticeTypeSuffix(g.params && g.params.practiceType);
     if(g.type === 'streak') return `Hit a ${g.params.days}-day Exemplary streak`;
-    if(g.type === 'score') return `Score above ${g.params.threshold} overall in a speech`;
-    if(g.type === 'category') return `Score above ${g.params.threshold} in ${escHtml(g.params.category)}`;
-    if(g.type === 'rounds') return `Complete ${g.params.count} practice rounds this month`;
-    if(g.type === 'videos') return `Record ${g.params.count} live video ballots this month`;
-    if(g.type === 'introdrill') return `Complete ${g.params.count} Rapid Drill: Introduction rounds this month`;
+    if(g.type === 'score') return `Score above ${g.params.threshold} overall in a speech${suffix}`;
+    if(g.type === 'category') return `Score above ${g.params.threshold} in ${escHtml(g.params.category)}${suffix}`;
+    if(g.type === 'rounds') return `Complete ${g.params.count} practice rounds this month${suffix}`;
+    if(g.type === 'videos') return `Record ${g.params.count} live video ballots this month${suffix}`;
     if(g.type === 'tournament') return `Compete at ${escHtml(g.params.title || 'the upcoming tournament')}`;
     return 'Goal';
   }
@@ -1495,20 +1501,26 @@
       const cur = Math.min(streakInfo.current, g.params.days);
       return { current: streakInfo.current, target: g.params.days, pct: Math.min(100, cur/g.params.days*100), done: streakInfo.current >= g.params.days };
     }
+    // Every other goal type (besides streak/tournament, which aren't tied to
+    // individual ballots) is measured only against the practice type chosen
+    // when the goal was created — "Regular Practice", "Rapid Drill:
+    // Introduction", or "All" (the default for goals saved before this
+    // filter existed).
+    const scopedList = filterByPracticeType(list, (g.params && g.params.practiceType) || 'all');
     if(g.type === 'score'){
-      const best = list.reduce((m,e) => (e.total!==null && e.total!==undefined && e.total>m) ? e.total : m, 0);
+      const best = scopedList.reduce((m,e) => (e.total!==null && e.total!==undefined && e.total>m) ? e.total : m, 0);
       return { current: best, target: g.params.threshold, pct: Math.min(100, best/g.params.threshold*100), done: best >= g.params.threshold };
     }
     if(g.type === 'category'){
       let best = 0;
-      list.forEach(e => (e.categories||[]).forEach(c => {
+      scopedList.forEach(e => (e.categories||[]).forEach(c => {
         if(c.name === g.params.category){ const pct = (c.score/(c.max||10))*100; if(pct>best) best = pct; }
       }));
       return { current: Math.round(best), target: g.params.threshold, pct: Math.min(100, best/g.params.threshold*100), done: best >= g.params.threshold };
     }
     if(g.type === 'rounds' || g.type === 'videos'){
       const now = new Date();
-      const count = list.filter(e => {
+      const count = scopedList.filter(e => {
         const d = new Date(e.ts);
         if(d.getFullYear()!==now.getFullYear() || d.getMonth()!==now.getMonth()) return false;
         if(g.type === 'rounds') return true; // every completed round this month, video or not
@@ -1517,15 +1529,6 @@
         // captured from a shared tab/YouTube playback, since those aren't a
         // live recording of your own delivery.
         return e.hasVideo && e.recordSource === 'camera';
-      }).length;
-      return { current: count, target: g.params.count, pct: Math.min(100, count/g.params.count*100), done: count >= g.params.count };
-    }
-    if(g.type === 'introdrill'){
-      const now = new Date();
-      const count = list.filter(e => {
-        const d = new Date(e.ts);
-        if(d.getFullYear()!==now.getFullYear() || d.getMonth()!==now.getMonth()) return false;
-        return !!e.isIntroDrill;
       }).length;
       return { current: count, target: g.params.count, pct: Math.min(100, count/g.params.count*100), done: count >= g.params.count };
     }
@@ -1602,7 +1605,6 @@
           <option value="category">Score in a specific category</option>
           <option value="rounds">Practice rounds this month</option>
           <option value="videos">Live video ballots this month</option>
-          <option value="introdrill">Practice type: Rapid Drill: Introduction rounds this month</option>
         </select>
       </div>
       <div class="gm-field" data-for="streak">
@@ -1631,9 +1633,13 @@
         <label>Number of live video ballots this month</label>
         <input type="number" id="gmVideosCount" min="1" max="60" value="3">
       </div>
-      <div class="gm-field" data-for="introdrill">
-        <label>Number of Rapid Drill: Introduction rounds this month</label>
-        <input type="number" id="gmIntroDrillCount" min="1" max="60" value="5">
+      <div class="gm-field" id="gmPracticeTypeField">
+        <label>Practice type</label>
+        <select id="gmPracticeType">
+          <option value="all">All</option>
+          <option value="regular">Regular Practice</option>
+          <option value="introdrill">Rapid Drill: Introduction</option>
+        </select>
       </div>
       <button type="button" class="btn primary" id="gmSaveBtn" style="width:100%;margin-top:6px;">Save Goal</button>
     `;
@@ -1642,6 +1648,10 @@
       goalModalBody.querySelectorAll('.gm-field[data-for]').forEach(f => {
         f.style.display = (f.dataset.for === typeSel.value) ? 'flex' : 'none';
       });
+      // The practice-type filter applies to every goal type except streak
+      // (a streak isn't tied to any one round's practice mode).
+      const ptField = document.getElementById('gmPracticeTypeField');
+      if(ptField) ptField.style.display = (typeSel.value === 'streak') ? 'none' : 'flex';
     }
     typeSel.value = p.type || 'streak';
     if(p.type === 'category' && p.params){
@@ -1650,7 +1660,7 @@
     }
     if(p.type === 'score' && p.params) document.getElementById('gmScoreThreshold').value = p.params.threshold;
     if(p.type === 'streak' && p.params) document.getElementById('gmStreakDays').value = p.params.days;
-    if(p.type === 'introdrill' && p.params) document.getElementById('gmIntroDrillCount').value = p.params.count;
+    if(p.params && p.params.practiceType) document.getElementById('gmPracticeType').value = p.params.practiceType;
     typeSel.addEventListener('change', syncFields);
     syncFields();
     document.getElementById('gmSaveBtn').addEventListener('click', async () => {
@@ -1661,7 +1671,7 @@
       else if(type === 'category') params = { category: document.getElementById('gmCategory').value, threshold: Number(document.getElementById('gmCategoryThreshold').value) };
       else if(type === 'rounds') params = { count: Number(document.getElementById('gmRoundsCount').value) };
       else if(type === 'videos') params = { count: Number(document.getElementById('gmVideosCount').value) };
-      else if(type === 'introdrill') params = { count: Number(document.getElementById('gmIntroDrillCount').value) };
+      if(type !== 'streak') params.practiceType = document.getElementById('gmPracticeType').value;
       await addGoal(type, params, null);
       closeGoalModal();
       if(goalModalOnSaved) goalModalOnSaved();
@@ -5358,12 +5368,13 @@ Grading rules:
   // Citation Checker) by hooking into showView().
   const RUBRIC_VISIBLE_VIEWS = [viewRecord, viewResults, viewExample, viewHistory];
   // The ballot header itself (title/Event/Round/Speaker/Judge/mode label)
-  // only makes sense for a single round in progress or on display — Home,
-  // a finished Results ballot, and the sample Example ballot. It's hidden
-  // everywhere else (My Ballot History's multi-round list, Streak Calendar,
-  // Tournament Briefing, Citation Checker, Review, Processing) so stale
+  // only makes sense for a single round in progress or on display — Home
+  // and a finished Results ballot. It's hidden everywhere else (My Ballot
+  // History's multi-round list, Streak Calendar, Tournament Briefing,
+  // Citation Checker, Review, Processing, and the sample Example ballot,
+  // which has its own "Example Ballot" page heading instead) so stale
   // "Round 1 / Regular Practice" framing doesn't linger on unrelated pages.
-  const BALLOT_HEAD_VISIBLE_VIEWS = [viewRecord, viewResults, viewExample];
+  const BALLOT_HEAD_VISIBLE_VIEWS = [viewRecord, viewResults];
   const ballotHeadEl = document.querySelector('.ballot-head');
   let currentViewEl = viewRecord;
   const _showViewForRubric = showView;

@@ -1,0 +1,1610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="theme-color" content="#0a1c30" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Extemplary" />
+<title>Extemplary</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 36 37'%3E%3Cpath d='M9 2H27C30.3137 2 33 4.68629 33 8V20C33 23.3137 30.3137 26 27 26H15.5L8.5 32.5C8.03 32.94 7.28 32.6 7.28 31.96V26H9C5.68629 26 3 23.3137 3 20V8C3 4.68629 5.68629 2 9 2Z' fill='%232f79c9'/%3E%3Ctext x='18' y='15' text-anchor='middle' dominant-baseline='central' font-family='Georgia, Iowan Old Style, Palatino Linotype, Book Antiqua, serif' font-weight='900' font-size='23' fill='%23ffffff'%3EE%3C/text%3E%3C/svg%3E" />
+<link rel="stylesheet" href="style.css" />
+<script src="data.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+</head>
+<body>
+<!-- Icon sprite (icons.svg) is fetched and injected here at load time by loadIcons() below. -->
+ <div id="iconSpriteMount"></div>
+<script>
+// Fetches icons.svg (the icon symbol sprite, split out for organization) and injects it
+// into #iconSpriteMount so all existing <use href="#icon-N"> references keep working.
+fetch('icons.svg').then(r => r.text()).then(svgText => {
+  document.getElementById('iconSpriteMount').innerHTML = svgText;
+});
+</script>
+<!-- ====== AUTH GATE ====== -->
+<div id="authGate">
+  <div class="landing-hero">
+    <canvas id="heroConstellation"></canvas>
+    <img src="Images/speechbackgr.png" alt="" class="landing-hero-photo" />
+    <div class="landing-hero-headline" id="landingHeroHeadline">
+      <h2 id="landingHeroHeadlineText"></h2>
+      <p>Extemplary handles the entire extemp practice loop, from drawing a question to reviewing exactly how you can improve, so every rep counts. New Rapid Drill modes let you knock out focused intro and body reps in minutes, no full speech required.</p>
+    </div>
+    <div class="auth-card">
+      <h1 class="auth-card-logo mark" aria-label="Extemplary">
+        <span class="mark-e-wrap" aria-hidden="true"><svg viewBox="0 0 36 37" fill="none"><use href="#icon-1"></use></svg></span>xtemplary
+      </h1>
+      <p class="auth-sub">Sign in to save and track your practice ballots</p>
+      <div class="auth-tabs">
+        <button type="button" class="auth-tab active" id="authTabLogin">Log In</button>
+        <button type="button" class="auth-tab" id="authTabSignup">Sign Up</button>
+        <span class="auth-tab-indicator" id="authTabIndicator"></span>
+      </div>
+      <form id="authForm" autocomplete="on">
+        <div class="auth-field">
+          <label for="authEmail">Email</label>
+          <input type="email" id="authEmail" name="email" required autocomplete="username" />
+        </div>
+        <div class="auth-field">
+          <label for="authPassword">Password</label>
+          <input type="password" id="authPassword" name="password" required autocomplete="current-password" minlength="6" />
+        </div>
+        <div class="auth-field hidden" id="authConfirmWrap">
+          <label for="authPasswordConfirm">Confirm Password</label>
+          <input type="password" id="authPasswordConfirm" name="passwordConfirm" autocomplete="new-password" minlength="6" />
+        </div>
+        <div class="auth-error" id="authError"></div>
+        <button type="submit" class="auth-submit" id="authSubmitBtn">Log In</button>
+      </form>
+    </div>
+  </div>
+  <div class="light-zone" id="lightZone">
+    <div class="light-zone-bg" id="lightZoneBg"></div>
+  <div class="landing-features">
+    <div class="feature-grid" id="landingFeatureGrid">
+      <div class="feature-card wide">
+        <div class="fc-body">
+          <div>
+            <div class="fc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-2"></use></svg></div>
+            <h3>Real practice questions</h3>
+            <p>Draw from authentic-style extemp questions or generate fresh ones on demand, across foreign and domestic topic areas — powered by live current-events research.</p>
+          </div>
+          <div class="demo-panel" id="demoQuestionPanel">
+            <div class="q-cat-row" id="demoQCatRow">
+              <button class="btn ghost q-cat-btn" data-cat="Domestic" type="button">Domestic</button>
+              <button class="btn ghost q-cat-btn" data-cat="International" type="button">International</button>
+              <button class="btn ghost q-cat-btn" data-cat="Economic" type="button">Economic</button>
+            </div>
+            <div class="q-error" id="demoQError" style="display:none;margin-top:8px;"></div>
+            <div id="demoQLoading" class="hidden" style="text-align:center;padding:14px 0;">
+              <div class="q-hint" id="demoQLoadingText">Drafting three questions…</div>
+              <div class="progress-bar-wrap"><div class="progress-bar-track"><div class="progress-bar-fill" id="demoQProgressFill"></div></div></div>
+              <div class="progress-phrase" id="demoQProgressPhrase"></div>
+            </div>
+            <div id="demoQOptions" style="margin-top:10px;"></div>
+            <div id="demoQConfirmed" class="hidden">
+              <div class="q-hint">Your drawn question:</div>
+              <div class="q-confirmed-text" id="demoQConfirmedText"></div>
+            </div>
+            <div class="demo-locked-overlay" id="demoQLock">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-3"></use></svg>
+              <p>That was your free question draft. Sign up to draft unlimited questions and start practicing.</p>
+              <button type="button" class="demo-signup-btn demo-signup-cta">Sign Up Free</button>
+            </div>
+            <button type="button" class="btn primary" id="demoGenerateQuestionsBtn" style="width:100%;" disabled>Generate Questions</button>
+          </div>
+        </div>
+      </div>
+      <div class="feature-card wide">
+        <div class="fc-body">
+          <div>
+            <div class="fc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-4"></use></svg></div>
+            <h3>Current event briefings</h3>
+            <p>Get up to speed on the story behind your question with a concise, prep-ready current event briefing — real live research, same as the app.</p>
+          </div>
+          <div class="demo-panel" id="demoBriefingPanel">
+            <div class="bf-timing-row" id="demoBfTimingRow" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+              <button class="bf-timing-btn" data-timing="today" type="button">In a few hours</button>
+              <button class="bf-timing-btn" data-timing="tomorrow" type="button">Tomorrow</button>
+              <button class="bf-timing-btn" data-timing="custom" type="button">Pick a date</button>
+            </div>
+            <div class="bf-custom-row" id="demoBfCustomRow">
+              <input type="datetime-local" id="demoBfCustomDate" />
+            </div>
+            <button type="button" class="btn primary" id="demoBriefingBtn" style="width:100%;" disabled>Generate Briefing</button>
+            <div class="q-error" id="demoBfError" style="display:none;margin-top:8px;"></div>
+            <div id="demoBfLoading" class="hidden" style="text-align:center;padding:14px 0;">
+              <div class="q-hint" id="demoBfLoadingText">Pulling together your briefing…</div>
+              <div class="progress-bar-wrap"><div class="progress-bar-track"><div class="progress-bar-fill" id="demoBfProgressFill"></div></div></div>
+              <div class="progress-phrase" id="demoBfProgressPhrase"></div>
+            </div>
+            <div class="bf-result" id="demoBfResult" style="margin-top:10px;max-height:260px;overflow:auto;"></div>
+            <div class="demo-locked-overlay" id="demoBfLock">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-5"></use></svg>
+              <p>That was your free briefing. Sign up to generate a fresh briefing before every tournament.</p>
+              <button type="button" class="demo-signup-btn demo-signup-cta">Sign Up Free</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="feature-card wide">
+        <div class="fc-body">
+          <div>
+            <div class="fc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-6"></use></svg></div>
+            <h3>Full prep &amp; speech timer</h3>
+            <p>A 30-minute prep clock and speech timer keep every round tournament-realistic from draw to drop. Try the real countdown below — no sign-up needed.</p>
+          </div>
+          <div class="demo-panel">
+            <div class="mini-timer-display" id="demoTimerDisplay">30:00</div>
+            <div class="mini-timer-btn-row">
+              <button type="button" class="btn primary" id="demoTimerStart">Start</button>
+              <button type="button" class="btn ghost hidden" id="demoTimerPause">Pause</button>
+              <button type="button" class="btn ghost hidden" id="demoTimerResume">Resume</button>
+              <button type="button" class="btn ghost" id="demoTimerReset">Reset</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="feature-card wide">
+        <div class="fc-body">
+          <div>
+            <div class="fc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-6"></use></svg></div>
+            <h3>Rapid Drill: Introduction &amp; Body</h3>
+            <p>Short on time before a tournament? Rapid Drill breaks a full round into focused reps. Rapid Drill: Introduction gives you a 5 minute prep countdown and caps your recording at just the intro, so you can hammer out attention getters and analogies again and again. Rapid Drill: Body does the same for a single body paragraph, with a 10 minute prep countdown built for drilling structure, analysis, and evidence without running a whole speech every time. Each mode uses a trimmed rubric tuned to what it's actually testing, and every rep gets saved to My History alongside your regular rounds, so you can track intro and body scores on their own trend lines.</p>
+          </div>
+        </div>
+      </div>
+      <div class="feature-card wide">
+        <div class="fc-body">
+          <div>
+            <div class="fc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-7"></use></svg></div>
+            <h3>Citation checker</h3>
+            <p>Verify a quote against its source before you say it in-round — Gemini searches the web to confirm it actually checks out. Try a real check below.</p>
+          </div>
+          <div class="demo-panel" id="demoCitationPanel">
+            <div class="question-block" style="margin-bottom:10px;">
+              <label for="demoCcClaimInput" style="font-size:11px;">Claim</label>
+              <textarea id="demoCcClaimInput" rows="2" placeholder="e.g. Trump said inflation went down 25%" style="font-size:13px;"></textarea>
+            </div>
+            <div style="display:flex;gap:10px;margin-bottom:10px;">
+              <div class="question-block" style="flex:1;margin-bottom:0;">
+                <label for="demoCcDateInput" style="font-size:11px;">Date (mm/dd/yyyy)</label>
+                <input type="text" id="demoCcDateInput" placeholder="06/??/2025" maxlength="10" style="font-size:13px;" />
+              </div>
+              <div class="question-block" style="flex:1;margin-bottom:0;">
+                <label for="demoCcSourceInput" style="font-size:11px;">Source</label>
+                <input type="text" id="demoCcSourceInput" placeholder="e.g. CNN" style="font-size:13px;" />
+              </div>
+            </div>
+            <div class="q-error" id="demoCcError" style="display:none;margin-bottom:8px;"></div>
+            <div id="demoCcLoading" class="hidden" style="text-align:center;padding:14px 0;">
+              <div class="q-hint" id="demoCcLoadingText">Searching the web to verify this citation…</div>
+              <div class="progress-bar-wrap"><div class="progress-bar-track"><div class="progress-bar-fill" id="demoCcProgressFill"></div></div></div>
+              <div class="progress-phrase" id="demoCcProgressPhrase"></div>
+            </div>
+            <div id="demoCcResult" class="hidden" style="margin-top:6px;">
+              <div class="cc-verdict-row" style="justify-content:flex-start;">
+                <div class="cc-verdict-stamp" id="demoCcVerdictStamp" style="padding:8px 22px;">
+                  <div class="label">Verdict</div>
+                  <div class="num" id="demoCcVerdictNum" style="font-size:20px;">—</div>
+                </div>
+              </div>
+              <div class="cc-explanation" id="demoCcExplanation" style="font-size:13px;margin-top:8px;"></div>
+              <div class="cc-source-link" id="demoCcSourceLink" style="font-size:12px;"></div>
+            </div>
+            <div class="demo-locked-overlay" id="demoCcLock">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-8"></use></svg>
+              <p>That was your free citation check. Sign up to verify unlimited claims before every round.</p>
+              <button type="button" class="demo-signup-btn demo-signup-cta">Sign Up Free</button>
+            </div>
+            <button type="button" class="btn primary" id="demoCcCheckBtn" style="width:100%;">Check Citation</button>
+          </div>
+        </div>
+      </div>
+      <div class="feature-card">
+        <div class="fc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-9"></use></svg></div>
+        <h3>Record your round</h3>
+        <p>Camera-record your speech right in the browser — no app to install, nothing to upload by hand.</p>
+        <div class="demo-record-mock" aria-hidden="true">
+          <button type="button" class="rec-btn recording demo-record-btn" tabindex="-1"><span class="inner"></span></button>
+        </div>
+      </div>
+      <div class="feature-card">
+        <div class="fc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-10"></use></svg></div>
+        <h3>Word-for-word transcript</h3>
+        <p class="transcript-highlight-demo" id="transcriptDemoText">Automatic transcription with a stenographer-style layout and auto-detected Intro / Body / Conclusion sections.</p>
+      </div>
+      <div class="feature-card">
+        <div class="fc-icon vocal-wave-icon" id="vocalWaveIcon">
+          <span class="vw-bar"></span><span class="vw-bar"></span><span class="vw-bar"></span><span class="vw-bar"></span><span class="vw-bar"></span>
+        </div>
+        <h3>Vocal delivery analysis</h3>
+        <p>Volume, emphasis, tone and pitch variety, pauses, pace (WPM), filler words, and stutters — measured straight from your recording's audio.</p>
+      </div>
+      <div class="feature-card">
+        <div class="fc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-11"></use></svg></div>
+        <h3>Ballot feedback storage</h3>
+        <p>Every round you ever record — video, transcript, full ballot, and score — lives permanently in your account. My History pulls it all together: a Coach's Overall Notes summary, per-category trend bars, score sparkline graphs, your active goals, and your full round-by-round archive, all in one place.</p>
+      </div>
+      <div class="feature-card">
+        <div class="fc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-12"></use></svg></div>
+        <h3>Streak &amp; calendar</h3>
+        <p>A day-by-day practice streak — recording a ballot, setting a goal, or completing one all keep it alive — shown live via a flame counter in the header and a full monthly calendar. The same calendar tracks your upcoming tournaments and events, so you always know what you're prepping for.</p>
+      </div>
+      <div class="feature-card">
+        <div class="fc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-13"></use></svg></div>
+        <h3>Goals system</h3>
+        <p>Set your own targets — a streak length, an overall score, a threshold in one rubric category, a number of practice rounds or live video ballots this month, or just showing up to a tournament — and watch live progress bars track them. My History also surfaces Suggested Goals, generated automatically from your own weakest categories and recent scores.</p>
+      </div>
+      <div class="feature-card wide">
+        <div class="fc-body">
+          <div>
+            <div class="fc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-14"></use></svg></div>
+            <h3>Watch &amp; read along</h3>
+            <p>Click any word or judge's note to jump your video to that exact moment, with the transcript highlighting live as it plays. Here's a peek at the example round.</p>
+          </div>
+          <div class="demo-panel">
+            <div class="wr-preview">
+              <div class="wr-thumb" id="wrThumb">
+                <img src="https://img.youtube.com/vi/lzoUu1fDmWE/hqdefault.jpg" alt="Example round thumbnail" />
+                <div class="wr-play"><svg viewBox="0 0 24 24" fill="currentColor"><use href="#icon-15"></use></svg></div>
+              </div>
+              <div class="wr-snippet" id="wrSnippet">
+                In one of the most classic episodes of arguably the most classic TV show of all time,
+                <span class="ann-comment ann-green" data-color="green" data-comment="Excellent, vivid creative hook — instantly memorable and sets up the analogy for the whole speech.">SpongeBob SquarePants</span>.
+                SpongeBob and his buddy Patrick set <span class="ann-comment ann-yellow" data-color="yellow" data-comment="Filler/intensifier word — cut for cleaner, more polished delivery.">literally</span> every building on fire — and
+                <span class="ann-comment ann-blue" data-color="blue" data-comment="Clean, explicit link from the hook straight into the topic area — judges want to see this connection made directly.">this is exactly the U.S.'s approach to the war in Afghanistan.</span>
+                <div class="q-hint" style="margin-top:8px;">Click any colored phrase for the judge's note — same as the real transcript.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="feature-card wide" data-trigger="top">
+        <div class="fc-body stacked">
+          <div>
+            <div class="fc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-16"></use></svg></div>
+            <h3>AI-judged ballot</h3>
+            <p>Scored against an 8-category NSDA-style rubric, with what worked, critical flaws, and evidence-based reasoning for every score. Here's one real category from an actual ballot.</p>
+          </div>
+          <div class="demo-panel" id="demoCategoryPanel"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+ 
+  <div class="landing-example" id="landingExample">
+    <h2>See it in action first</h2>
+    <p>Not ready to record yet? Watch a fully worked example round — real speech, real ballot, same synced video-and-transcript playback you'll get on your own rounds.</p>
+    <button type="button" class="landing-example-btn" id="landingExampleBtn">See an Example</button>
+  </div>
+  </div>
+</div>
+ 
+<!-- Comment popover for the "Watch & read along" demo snippet's clickable annotations -->
+     regardless of which view/panel is currently active — including the
+     Example Ballot and the landing-page preview demo. -->
+<div class="comment-popover hidden" id="commentPopover">
+  <div class="cp-arrow"></div>
+  <div class="cp-tag" id="cpTag"></div>
+  <div class="cp-text" id="cpText"></div>
+ 
+<script>
+(function(){
+ 
+  // functions below and never ship in this file.
+  const SUPABASE_URL = 'https://iiehhmelfotwkdqxplug.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlpZWhobWVsZm90d2tkcXhwbHVnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzNDYxMzEsImV4cCI6MjA5ODkyMjEzMX0.8QzN1LJmr70Sidxp2RsOq-z3S_NX5lN9QWTr45CSaHo';
+  const SUPABASE_FUNCTIONS_URL = SUPABASE_URL + '/functions/v1';
+ 
+  // ===== AUTH + SAVED PROGRESS =====
+  // Real accounts via Supabase Auth (email + password). Session tokens are
+  // persisted by supabase-js itself (localStorage), which is what makes
+  // "stay signed in across tabs/reopens" work with zero extra code.
+  // Ballot history (video/transcript/feedback) lives in the cloud: a
+  // Postgres table ("ballots") plus a Storage bucket ("ballot-videos") in
+  // this same Supabase project, both protected by Row Level Security so
+  // each signed-in user can only ever read/write their own rows and files.
+  // One-time setup required in the Supabase SQL editor — see setup.sql.
+  const supabaseClient = (window.supabase && window.supabase.createClient)
+    ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+    : null;
+ 
+  const SPECTRUM_STOPS = DATA.SPECTRUM_STOPS;
+  function colorFromRatio(ratio){
+    ratio = Math.max(0, Math.min(1, isFinite(ratio) ? ratio : 0));
+    for(let i=0;i<SPECTRUM_STOPS.length-1;i++){
+      const a = SPECTRUM_STOPS[i], b = SPECTRUM_STOPS[i+1];
+      if(ratio>=a.r && ratio<=b.r){
+        const t = (b.r===a.r) ? 0 : (ratio-a.r)/(b.r-a.r);
+        const rgb = [0,1,2].map(j=>Math.round(a.c[j]+(b.c[j]-a.c[j])*t));
+        return `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`;
+      }
+    }
+    const last = SPECTRUM_STOPS[SPECTRUM_STOPS.length-1].c;
+    return `rgb(${last[0]},${last[1]},${last[2]})`;
+  }
+  const ANN_LABELS = DATA.ANN_LABELS;
+  const CIRCLE_PATH = DATA.CIRCLE_PATH;
+  function escHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function inlineMd(s){ return escHtml(s).replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>'); }
+  function bandClass(score, max){
+    const ratio = (max ? score/max : score/10);
+    return colorFromRatio(ratio);
+  }
+ 
+  // ---- comment popover (shared by demo transcript snippet) ----
+  const commentPopover = document.getElementById('commentPopover');
+  const cpTag = document.getElementById('cpTag');
+  const cpText = document.getElementById('cpText');
+  function attachCommentListeners(container, seekFn){
+    const root = container || transcriptBody;
+    const seek = seekFn || seekResultsVideo;
+    root.querySelectorAll('.ann-comment').forEach(el=>{
+      el.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        showCommentPopover(el);
+        let ts = el.dataset.ts !== undefined ? parseFloat(el.dataset.ts) : NaN;
+        if(isNaN(ts)){
+          const firstWord = el.querySelector('.tw');
+          if(firstWord) ts = parseFloat(firstWord.dataset.ts);
+        }
+        if(!isNaN(ts)) seek(ts);
+      });
+    });
+  }
+  let activeCommentEl = null;
+  function showCommentPopover(el){
+    if(activeCommentEl) activeCommentEl.classList.remove('ann-active');
+    activeCommentEl = el;
+    el.classList.add('ann-active');
+    const color = el.dataset.color;
+    cpTag.textContent = ANN_LABELS[color] || 'Comment';
+    cpTag.className = 'cp-tag tag-' + color;
+    cpText.textContent = el.dataset.comment || '';
+    commentPopover.classList.remove('hidden');
+ 
+    // Reset any leftover inline left/top from a previous show before
+    // measuring, so the natural (unclamped) width/position is read fresh.
+    commentPopover.style.left = '0px';
+    commentPopover.style.top = '0px';
+ 
+    // Measure the popover's REAL rendered width. The CSS only sets
+    // max-width:300px (not a fixed width), so short comments render a
+    // narrower bubble — using a hardcoded 300 here was the bug: it clamped
+    // position and placed the arrow as if every popover were exactly 300px
+    // wide, so on narrower bubbles the arrow landed outside the actual
+    // bubble, floating over the transcript text instead of on the comment.
+    const popW = commentPopover.getBoundingClientRect().width || 300;
+ 
+    // Position fixed to the viewport, anchored directly under the clicked span.
+    const elRect = el.getBoundingClientRect();
+    const margin = 12;
+    let left = elRect.left;
+    left = Math.max(margin, Math.min(left, window.innerWidth - popW - margin));
+    let top = elRect.bottom + 10;
+ 
+    commentPopover.style.left = left + 'px';
+    commentPopover.style.top = top + 'px';
+ 
+    // If the popover would run off the bottom of the viewport, flip it above the span instead.
+    const popRect = commentPopover.getBoundingClientRect();
+    if(popRect.bottom > window.innerHeight - margin){
+      top = elRect.top - popRect.height - 10;
+      commentPopover.style.top = Math.max(margin, top) + 'px';
+      commentPopover.classList.add('cp-flip');
+    }else{
+      commentPopover.classList.remove('cp-flip');
+    }
+ 
+    // Point the little arrow at the clicked span, using the popover's real
+    // measured width (popW above) rather than an assumed fixed width.
+    const arrowLeft = Math.max(10, Math.min(elRect.left + elRect.width/2 - left, popW - 20));
+    const arrowEl = commentPopover.querySelector('.cp-arrow');
+    if(arrowEl) arrowEl.style.left = arrowLeft + 'px';
+  }
+  function hideCommentPopover(){
+    if(activeCommentEl){ activeCommentEl.classList.remove('ann-active'); activeCommentEl = null; }
+    commentPopover.classList.add('hidden');
+  }
+  document.addEventListener('click', (e)=>{
+    if(!e.target.closest('.comment-popover') && !e.target.closest('.ann-comment')) hideCommentPopover();
+  });
+  window.addEventListener('scroll', hideCommentPopover, true);
+  window.addEventListener('resize', hideCommentPopover);
+ 
+  // ---- auth form wiring ----
+  const authForm = document.getElementById('authForm');
+  const authTabLogin = document.getElementById('authTabLogin');
+  const authTabSignup = document.getElementById('authTabSignup');
+  const authConfirmWrap = document.getElementById('authConfirmWrap');
+  const authError = document.getElementById('authError');
+  const authSubmitBtn = document.getElementById('authSubmitBtn');
+  let authMode = 'login'; // 'login' | 'signup'
+ 
+  function setAuthMode(mode){
+    authMode = mode;
+    authTabLogin.classList.toggle('active', mode === 'login');
+    authTabSignup.classList.toggle('active', mode === 'signup');
+    authConfirmWrap.classList.toggle('hidden', mode !== 'signup');
+    document.getElementById('authPasswordConfirm').required = (mode === 'signup');
+    authSubmitBtn.textContent = mode === 'login' ? 'Log In' : 'Sign Up';
+    authError.classList.remove('visible');
+    const indicator = document.getElementById('authTabIndicator');
+    if(indicator) indicator.style.transform = mode === 'signup' ? 'translateX(100%)' : 'translateX(0)';
+  }
+  authTabLogin.addEventListener('click', () => setAuthMode('login'));
+  authTabSignup.addEventListener('click', () => setAuthMode('signup'));
+ 
+  function showAuthError(msg){
+    authError.textContent = msg;
+    authError.classList.add('visible');
+  }
+ 
+  function describeAuthError(err){
+    if(!err) return 'Unknown error.';
+    // Supabase errors are usually {message, status, code}; but network/CORS
+    // failures throw plain Error/TypeErrors, and some edge cases hand back
+    // odd shapes. Never trust a single field blindly — build the fullest
+    // readable string we can so the box never shows a stray fragment.
+    const parts = [];
+    if(typeof err === 'string') return err;
+    if(err.message) parts.push(err.message);
+    if(err.error_description && err.error_description !== err.message) parts.push(err.error_description);
+    if(err.status) parts.push('(status ' + err.status + ')');
+    if(err.code) parts.push('[' + err.code + ']');
+    if(parts.length) return parts.join(' ');
+    try{ return JSON.stringify(err); }catch(e){ return String(err); }
+  }
+ 
+  authForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    authError.classList.remove('visible');
+    if(!supabaseClient){
+      showAuthError('Could not load the sign-in service. Check your internet connection and reload.');
+      return;
+    }
+    const email = document.getElementById('authEmail').value.trim();
+    const password = document.getElementById('authPassword').value;
+    authSubmitBtn.disabled = true;
+    try{
+      if(authMode === 'signup'){
+        const confirm = document.getElementById('authPasswordConfirm').value;
+        if(password !== confirm){ showAuthError("Passwords don't match."); return; }
+        if(password.length < 6){ showAuthError('Password must be at least 6 characters.'); return; }
+        const { data, error } = await supabaseClient.auth.signUp({
+          email, password,
+          options: { emailRedirectTo: window.location.origin + window.location.pathname }
+        });
+        if(error){
+          console.error('Sign-up error:', error);
+          if(error.status === 500 && (error.code === 'unexpected_failure' || /confirmation email/i.test(error.message||''))){
+            // Usually means this email already has an account and Supabase's
+            // attempt to resend the confirmation email failed/hit a cooldown.
+            // Retrying signUp again for the same address tends to fail the
+            // same way, so point the person at login/reset instead of
+            // inviting another retry loop.
+            showAuthError('This email may already be registered, or a confirmation email was already sent recently. Try logging in, or wait a few minutes before signing up again.');
+            setAuthMode('login');
+          }else{
+            showAuthError(describeAuthError(error));
+          }
+          return;
+        }
+        if(data.session){
+          window.location.href = 'index.html';
+        }else if(data.user && (!data.user.identities || data.user.identities.length === 0)){
+          // Supabase's signature for "this email already has an account":
+          // it returns a user-shaped object with no identities instead of
+          // an error, to avoid leaking which emails are registered.
+          showAuthError('That email may already have an account — try logging in instead.');
+          setAuthMode('login');
+        }else{
+          showAuthError('Account created — check your email to confirm it, then log in.');
+          setAuthMode('login');
+        }
+      }else{
+        const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+        if(error){ console.error('Log-in error:', error); showAuthError(describeAuthError(error)); return; }
+        window.location.href = 'index.html';
+      }
+    }catch(err){
+      console.error('Auth exception:', err);
+      showAuthError('Something went wrong: ' + describeAuthError(err));
+    }finally{
+      authSubmitBtn.disabled = false;
+    }
+  });
+ 
+  // ---- landing-page decorative & interactive demos ----
+  (function setupTranscriptHighlightDemo(){
+    const el = document.getElementById('transcriptDemoText');
+    if(!el) return;
+    const waveBars = Array.from(document.querySelectorAll('#vocalWaveIcon .vw-bar'));
+    function pulseWave(word){
+      if(!waveBars.length) return;
+      // Rough "amplitude" per bar: louder/taller around the middle of the
+      // word's syllable count, tapering at the edges, plus a little jitter
+      // so it doesn't look mechanically identical bar to bar.
+      const intensity = Math.max(0.35, Math.min(1, (word ? word.length : 3) / 9));
+      waveBars.forEach((bar, idx) => {
+        const mid = (waveBars.length - 1) / 2;
+        const posFalloff = 1 - Math.abs(idx - mid) / (mid + 1) * 0.55;
+        const jitter = 0.75 + Math.random() * 0.5;
+        const scale = Math.max(0.22, Math.min(1, intensity * posFalloff * jitter));
+        bar.style.transform = `scaleY(${scale.toFixed(2)})`;
+      });
+    }
+    function idleWave(){
+      waveBars.forEach(bar => { bar.style.transform = 'scaleY(0.22)'; });
+    }
+    const words = el.textContent.trim().split(/\s+/);
+    el.innerHTML = words.map(w => `<span class="tw">${w}</span>`).join(' ');
+    const spans = Array.from(el.querySelectorAll('.tw'));
+    let i = 0;
+    function step(){
+      spans.forEach(s => s.classList.remove('tw-active'));
+      if(i < spans.length){
+        spans[i].classList.add('tw-active');
+        pulseWave(spans[i].textContent);
+        // Rough natural-speech pacing: longer words linger a bit longer.
+        const len = spans[i].textContent.length;
+        const dur = 190 + Math.min(len, 10) * 22;
+        i++;
+        setTimeout(step, dur);
+      }else{
+        idleWave();
+        i = 0;
+        setTimeout(step, 900); // pause at the end before looping
+      }
+    }
+    step();
+  })();
+ 
+ 
+  (function setupHeroHeadline(){
+    const variants = [
+      { before: 'Everything you need to ', word: 'break', after: ' into finals' },
+      { before: 'Everything you need to get a ', word: '1st', after: ' in your round' },
+      { before: 'Everything you need to practice, improve, and ', word: 'excel', after: '' }
+    ];
+    const pick = variants[Math.floor(Math.random() * variants.length)];
+    const el = document.getElementById('landingHeroHeadlineText');
+    if(el){
+      el.textContent = '';
+      el.appendChild(document.createTextNode(pick.before));
+      const span = document.createElement('span');
+      span.className = 'hl-word';
+      span.textContent = pick.word;
+      el.appendChild(span);
+      el.appendChild(document.createTextNode(pick.after));
+    }
+  })();
+ 
+ 
+  (function setupLandingReveal(){
+    const targets = document.querySelectorAll('#authGate .landing-example');
+    if(!targets.length) return;
+    if(!('IntersectionObserver' in window)){
+      targets.forEach(t => t.classList.add('in-view'));
+      return;
+    }
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if(entry.isIntersecting){
+          const el = entry.target;
+          setTimeout(() => el.classList.add('in-view'), 0);
+          io.unobserve(el);
+        }
+      });
+    }, { threshold: 0.15 });
+    targets.forEach(t => io.observe(t));
+  })();
+ 
+  // ----- scroll-hijacked alternating slide-in for the feature cards -----
+  // Cards slide in from the left (even index) / right (odd index). While a
+  // card is mid-slide, page scroll is intercepted and instead drives that
+  // card's progress directly from the wheel/touch/key delta, so scroll
+  // speed & direction control the animation instead of a fixed-time tween.
+  // ----- shared per-frame scheduler -----
+  // Both the card-hijack (which sometimes WRITES scrollTop) and the photo
+  // parallax (which READS scrollTop) were each running their own independent
+  // requestAnimationFrame loop. Two separate rAF chains aren't guaranteed to
+  // fire in a fixed order relative to each other — so frame to frame, the
+  // parallax's read would sometimes land before the hijack's write and
+  // sometimes after, flip-flopping between two slightly different scroll
+  // values. That flip-flop is what showed up as the image vibrating. Running
+  // both off one shared loop, in a fixed registration order (hijack's scroll
+  // write first, parallax's read second), removes that race entirely.
+  window.__frameTasks = [];
+ 
+  (function ensureFrameLoop(){
+    function tick(){
+      for(let i = 0; i < window.__frameTasks.length; i++) window.__frameTasks[i]();
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  })();
+ 
+ 
+  (function setupFeatureScrollHijack(){
+    const grid = document.getElementById('landingFeatureGrid');
+    const cards = grid ? Array.from(grid.querySelectorAll('.feature-card')) : [];
+    if(!cards.length) return;
+    if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+      cards.forEach(c => c.classList.add('revealed'));
+      return;
+    }
+ 
+    const SENS_WHEEL = 0.0028;   // drives an active card's slide-in progress — higher = fewer scrolls needed
+    const SENS_TOUCH = 0.0042;
+    const SENS_KEY = 0.14;
+    const APPROACH_STEP_MAX = 46;      // per-event feel, used to size the per-frame cap below
+    const APPROACH_FRAME_CAP = 120;    // max px of physical scroll applied per animation frame — keeps the physical scroll pace the same as before even though input is now coalesced
+    const state = cards.map((el, i) => ({ el, dir: i % 2 === 0 ? 'left' : 'right', progress: 0 }));
+    let currentIndex = 0;
+    // 'approach': plain, clamped, controlled scrolling toward the next card
+    //             (this is what replaces the old auto-scroll — there is no
+    //             animation here, just direct 1:1 scrolling driven by input).
+    // 'slide':    input instead drives that card's slide-in progress; entered
+    //             only once the card has scrolled all the way up so its
+    //             whole body is on screen ("the very bottom of the screen").
+    let mode = 'approach';
+ 
+    const scroller = document.getElementById('authGate') || document.scrollingElement || document.documentElement;
+    if(scroller && scroller.style) scroller.style.scrollBehavior = 'auto';
+ 
+    function render(i){
+      const s = state[i];
+      const eased = 1 - Math.pow(1 - s.progress, 3); // easeOutCubic — snappier near the end
+      const offsetPct = (1 - eased) * 100;
+      if(s.progress <= 0){
+        s.el.style.transform = `translateX(${s.dir === 'left' ? -100 : 100}%)`;
+        s.el.style.opacity = '0';
+        s.el.classList.remove('revealed');
+      } else if(s.progress >= 1){
+        s.el.style.transform = '';
+        s.el.style.opacity = '';
+        s.el.classList.add('revealed');
+      } else {
+        s.el.style.transform = `translateX(${(s.dir === 'left' ? -offsetPct : offsetPct).toFixed(2)}%)`;
+        s.el.style.opacity = String(Math.min(1, s.progress / 0.7));
+        s.el.classList.remove('revealed');
+      }
+    }
+ 
+    state.forEach((s, i) => { s.progress = 0; render(i); });
+ 
+    function authGateVisible(){
+      if(!scroller) return false;
+      if(scroller.classList.contains('hidden')) return false;
+      return window.getComputedStyle(scroller).display !== 'none';
+    }
+ 
+    // Only step in once the grid has actually started entering the screen —
+    // otherwise scrolling through the hero/headline above it would get
+    // hijacked too.
+    function nearSection(){
+      const rect = grid.getBoundingClientRect();
+      return rect.top < window.innerHeight && rect.bottom > 0;
+    }
+ 
+    function captured(){
+      return authGateVisible() && nearSection() && currentIndex < cards.length;
+    }
+ 
+    // Hard-reset hook: called the moment the user signs in, so the hijack
+    // releases scroll/keyboard immediately rather than waiting on the next
+    // event to notice authGate is gone.
+    window.__releaseFeatureScrollHijack = function(){
+      currentIndex = cards.length;
+      mode = 'approach';
+    };
+ 
+    function normalizeWheel(e){
+      let d = e.deltaY;
+      if(e.deltaMode === 1) d *= 16;      // lines -> ~px
+      else if(e.deltaMode === 2) d *= window.innerHeight; // pages -> px
+      return Math.max(-90, Math.min(90, d));
+    }
+ 
+    // Handle one already-normalized, already-coalesced delta for the current
+    // frame (positive = scrolling down).
+    function handleDelta(delta, sens){
+      const card = cards[currentIndex];
+ 
+      if(mode === 'slide'){
+        const s = state[currentIndex];
+        const next = s.progress + delta * sens;
+        if(next >= 1){
+          s.progress = 1;
+          render(currentIndex);
+          currentIndex++;
+          mode = 'approach';
+        } else if(next <= 0 && delta < 0){
+          s.progress = 0;
+          render(currentIndex);
+          mode = 'approach'; // release — scrolling back up is now plain scroll
+        } else {
+          s.progress = Math.max(0, Math.min(1, next));
+          render(currentIndex);
+        }
+        return;
+      }
+ 
+      // mode === 'approach' — handle both directions ourselves (see note
+      // below on why negative deltas are no longer handed off to native
+      // scroll).
+      const step = Math.max(-APPROACH_FRAME_CAP, Math.min(APPROACH_FRAME_CAP, delta));
+      scroller.scrollTop += step;
+      if(delta <= 0) return; // moving up: no card-arming check needed
+      const rect = card.getBoundingClientRect();
+      const armed = card.dataset.trigger === 'top'
+        ? rect.top <= 0                       // arm as soon as its top reaches the top of the screen
+        : rect.bottom <= window.innerHeight + 2; // default: wait until the whole card is on screen
+      if(armed){
+        mode = 'slide';
+      }
+    }
+ 
+    // Raw events only accumulate a pending delta (cheap: no layout reads or
+    // writes) — the actual DOM work (scrollTop writes, getBoundingClientRect
+    // checks, card transforms) happens at most once per animation frame in
+    // flush(). Doing that work synchronously on every single wheel/touch tick
+    // was what caused the glitching under fast scrolling: a rapid burst of
+    // events each forced their own layout + style write, competing for the
+    // same frame and falling behind. Coalescing to one flush per frame fixes
+    // that regardless of how fast input arrives.
+    let pendingDelta = 0;
+    let pendingSens = SENS_WHEEL;
+    const FRAME_DELTA_CAP = 130; // ceiling on how much can accumulate before one flush, regardless of how many wheel/trackpad micro-events fired that frame
+ 
+    function queueDelta(delta, sens){
+      pendingDelta = Math.max(-FRAME_DELTA_CAP, Math.min(FRAME_DELTA_CAP, pendingDelta + delta));
+      pendingSens = sens;
+    }
+ 
+    // Registered first, so any scrollTop write this produces is guaranteed
+    // to happen before the parallax's read in the same frame (see the
+    // shared scheduler above).
+    window.__frameTasks.push(function(){
+      if(pendingDelta === 0) return;
+      const d = pendingDelta;
+      pendingDelta = 0;
+      handleDelta(d, pendingSens);
+    });
+ 
+    // IMPORTANT: while captured(), every wheel event is hijacked — including
+    // upward ones — rather than only positive deltas. Real trackpads/mice
+    // don't emit perfectly one-signed deltas during a single continuous
+    // gesture (momentum deceleration and sensor noise routinely produce a
+    // stray negative tick mid-swipe); letting those individual ticks fall
+    // through to native scrolling handed control back and forth between two
+    // uncoordinated scroll engines from one event to the next, and it was
+    // that tug-of-war over scrollTop — not the parallax math — that showed
+    // up as visible vibration. Handling both directions through our own
+    // coalesced/frame-batched path (handleDelta, above) keeps a single
+    // authority over scrollTop for the whole gesture; captured() already
+    // naturally releases control once the user has scrolled far enough that
+    // the section is no longer near the viewport, so leaving the section by
+    // scrolling up still works, it's just driven by one consistent engine.
+    window.addEventListener('wheel', (e) => {
+      if(!captured()) return;
+      const delta = normalizeWheel(e);
+      e.preventDefault();
+      queueDelta(delta, SENS_WHEEL);
+    }, { passive: false });
+ 
+    let touchY = null;
+    window.addEventListener('touchstart', (e) => {
+      if(!captured()) return;
+      touchY = e.touches[0].clientY;
+    }, { passive: true });
+    window.addEventListener('touchmove', (e) => {
+      if(touchY === null || !captured()){ touchY = e.touches[0] ? e.touches[0].clientY : null; return; }
+      const y = e.touches[0].clientY;
+      const delta = Math.max(-90, Math.min(90, touchY - y)); // finger moving up == scrolling down
+      e.preventDefault();
+      queueDelta(delta, SENS_TOUCH);
+      touchY = y;
+    }, { passive: false });
+ 
+    window.addEventListener('keydown', (e) => {
+      const downKeys = ['ArrowDown', 'PageDown', ' '];
+      const upKeys = ['ArrowUp', 'PageUp'];
+      if(!downKeys.includes(e.key) && !upKeys.includes(e.key)) return;
+      if(!captured()) return;
+      const dir = downKeys.includes(e.key) ? 1 : -1;
+      e.preventDefault();
+      queueDelta(dir * 40, SENS_KEY);
+    }, { passive: false });
+ 
+    window.addEventListener('resize', () => { state.forEach((s, i) => render(i)); });
+  })();
+ 
+  (function setupLightZoneBackground(){
+    const bg = document.getElementById('lightZoneBg');
+    if(!bg) return;
+ 
+    function measure(){
+      // background-attachment:fixed sizes/positions against the viewport,
+      // not the element's own box, so the width to fit against is the
+      // viewport's width.
+      bg.style.backgroundSize = `${window.innerWidth}px auto`;
+    }
+ 
+    window.addEventListener('resize', measure);
+    // Recompute once fonts/images settle in, since that can shift layout width.
+    window.addEventListener('load', measure);
+    measure();
+  })();
+ 
+  // ----- "See an Example" from the landing page now hands off to the
+  // ----- real app in an unauthenticated preview mode. -----
+  document.getElementById('landingExampleBtn').addEventListener('click', () => {
+    window.location.href = 'index.html?preview=example';
+  });
+ 
+  // ----- make the "Watch & read along" demo snippet's colored comments -----
+  // ----- actually clickable, using the exact same popover the real app uses -----
+  attachCommentListeners(document.getElementById('wrSnippet'), () => {});
+ 
+  (function setupWrVideoModal(){
+    const modal = document.createElement('div');
+    modal.id = 'wrVideoModal';
+    modal.innerHTML = `
+      <div class="wr-video-backdrop"></div>
+      <div class="wr-video-frame">
+        <button type="button" class="wr-video-close" aria-label="Close video">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-68"></use></svg>
+        </button>
+        <div class="wr-video-embed"></div>
+      </div>`;
+    document.body.appendChild(modal);
+    const embed = modal.querySelector('.wr-video-embed');
+    function open(){
+      embed.innerHTML = '<iframe src="https://www.youtube.com/embed/lzoUu1fDmWE?start=20&autoplay=1&rel=0" title="Extemplary example round" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>';
+      modal.classList.add('show');
+    }
+    function close(){
+      modal.classList.remove('show');
+      embed.innerHTML = ''; // stop playback
+    }
+    document.getElementById('wrThumb').addEventListener('click', open);
+    modal.querySelector('.wr-video-close').addEventListener('click', close);
+    modal.querySelector('.wr-video-backdrop').addEventListener('click', close);
+  })();
+ 
+  // ----- "Sign Up Free" buttons inside locked demo overlays -----
+  document.querySelectorAll('.demo-signup-cta').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelector('.landing-hero').scrollIntoView({ behavior:'smooth', block:'center' });
+      setAuthMode('signup');
+      setTimeout(() => document.getElementById('authEmail').focus(), 500);
+    });
+  });
+ 
+  (function setupDemoTimer(){
+    const DEMO_TIMER_SECONDS = 30 * 60;
+    let remaining = DEMO_TIMER_SECONDS;
+    let ticking = null;
+    const disp = document.getElementById('demoTimerDisplay');
+    const startBtn = document.getElementById('demoTimerStart');
+    const pauseBtn = document.getElementById('demoTimerPause');
+    const resumeBtn = document.getElementById('demoTimerResume');
+    const resetBtn = document.getElementById('demoTimerReset');
+    function paint(){
+      const m = Math.floor(remaining/60), s = remaining%60;
+      disp.textContent = String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+      disp.classList.toggle('warn', remaining <= 60);
+    }
+    function tick(){
+      remaining = Math.max(0, remaining - 1);
+      paint();
+      if(remaining === 0){ clearInterval(ticking); ticking = null; toRunningState(false); }
+    }
+    function toRunningState(running){
+      startBtn.classList.toggle('hidden', remaining !== DEMO_TIMER_SECONDS);
+      pauseBtn.classList.toggle('hidden', !running);
+      resumeBtn.classList.toggle('hidden', running || remaining === DEMO_TIMER_SECONDS || remaining === 0);
+    }
+    startBtn.addEventListener('click', () => {
+      paint();
+      ticking = setInterval(tick, 1000);
+      toRunningState(true);
+    });
+    pauseBtn.addEventListener('click', () => {
+      clearInterval(ticking); ticking = null;
+      toRunningState(false);
+    });
+    resumeBtn.addEventListener('click', () => {
+      ticking = setInterval(tick, 1000);
+      toRunningState(true);
+    });
+    resetBtn.addEventListener('click', () => {
+      clearInterval(ticking); ticking = null;
+      remaining = DEMO_TIMER_SECONDS;
+      paint();
+      startBtn.classList.remove('hidden');
+      pauseBtn.classList.add('hidden');
+      resumeBtn.classList.add('hidden');
+    });
+    paint();
+  })();
+ 
+  // ----- constellation / network background for the hero (sign-up) area -----
+ 
+  (function setupHeroConstellation(){
+    const canvas = document.getElementById('heroConstellation');
+    if(!canvas) return;
+    const hero = canvas.parentElement;
+    const ctx = canvas.getContext('2d');
+    const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let w = 0, h = 0, dpr = Math.min(window.devicePixelRatio || 1, 2);
+    let nodes = [];       // free-floating scatter nodes, chained to their nearest neighbors
+    let meshNodes = [];   // jittered-grid nodes, connected to grid neighbors — the "fabric"
+    let mouse = { x: null, y: null };
+    let raf = null;
+ 
+    function nodeCount(){
+      const area = w * h;
+      return Math.max(70, Math.min(240, Math.round(area / 8000)));
+    }
+ 
+    // Bias x toward the left/right margins (outside the photo) so the side
+    // strips get noticeably denser, longer constellation chains, while the
+    // photo area (roughly the middle 76%) still has some sparse coverage.
+    function biasedX(){
+      const sideBand = w * 0.16; // width of each dense side strip
+      if(Math.random() < 0.72){
+        const left = Math.random() < 0.5;
+        const base = Math.random() * sideBand;
+        return left ? base : w - base;
+      }
+      return Math.random() * w;
+    }
+ 
+    function makeNode(){
+      return {
+        x: biasedX(),
+        y: Math.random() * h,
+        z: Math.random(), // depth, 0 = far, 1 = near — drives 3D parallax + size
+        vx: (Math.random() - 0.5) * 0.35,
+        vy: (Math.random() - 0.5) * 0.35,
+        r: 1.1 + Math.random() * 1.6
+      };
+    }
+ 
+    // Scatter mesh points organically across the side bands (with a slight
+    // pull toward the very edges) instead of a rigid grid, then link each
+    // to its several nearest neighbors. Irregular spacing + drifting motion
+    // reads as woven fabric rippling, not a fixed set of vertical bars.
+    function buildMesh(){
+      meshNodes = [];
+      const bandW = w * 0.26;
+      const density = Math.max(50, Math.min(160, Math.round((h * bandW) / 2600)));
+      const bands = [
+        { x0: 0, x1: bandW },
+        { x0: w - bandW, x1: w }
+      ];
+      bands.forEach(band => {
+        for(let i = 0; i < density; i++){
+          const t = Math.random();
+          const x = band.x0 + t * (band.x1 - band.x0);
+          meshNodes.push({
+            x, y: Math.random() * h,
+            vx: (Math.random() - 0.5) * 0.18,
+            vy: (Math.random() - 0.5) * 0.18,
+            z: 0.2 + Math.random() * 0.6,
+            r: 1 + Math.random() * 1.3
+          });
+        }
+      });
+    }
+ 
+    function resize(){
+      w = hero.clientWidth;
+      h = hero.clientHeight;
+      canvas.width = w * dpr;
+      canvas.height = h * dpr;
+      canvas.style.width = w + 'px';
+      canvas.style.height = h + 'px';
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const target = nodeCount();
+      if(nodes.length === 0){
+        nodes = Array.from({ length: target }, () => makeNode());
+      } else if(nodes.length < target){
+        while(nodes.length < target) nodes.push(makeNode());
+      } else if(nodes.length > target){
+        nodes.length = target;
+      }
+      buildMesh();
+    }
+ 
+    function drawMesh(){
+      const bandW = w * 0.26;
+      meshNodes.forEach(n => {
+        n.x += n.vx;
+        n.y += n.vy;
+        // keep drifting inside whichever side band it belongs to, bouncing
+        // softly off the inner/outer edges so the web stays put but isn't static
+        const inLeftBand = n.x < bandW + 40;
+        const loBound = inLeftBand ? 0 : w - bandW;
+        const hiBound = inLeftBand ? bandW : w;
+        if(n.x < loBound - 10){ n.x = loBound - 10; n.vx *= -1; }
+        if(n.x > hiBound + 10){ n.x = hiBound + 10; n.vx *= -1; }
+        if(n.y < -10){ n.y = h + 10; } else if(n.y > h + 10){ n.y = -10; }
+      });
+ 
+      // connect each point to its 3 nearest neighbors — an organic
+      // triangulated web instead of a fixed grid pattern
+      const K = 3;
+      const maxLink = Math.max(90, Math.min(w, h) * 0.14);
+      ctx.lineWidth = 0.6;
+      for(let i = 0; i < meshNodes.length; i++){
+        const a = meshNodes[i];
+        const distances = [];
+        for(let j = 0; j < meshNodes.length; j++){
+          if(i === j) continue;
+          const b = meshNodes[j];
+          const dx = a.x - b.x, dy = a.y - b.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if(dist < maxLink) distances.push({ j, dist });
+        }
+        distances.sort((p, q) => p.dist - q.dist);
+        distances.slice(0, K).forEach(({ j, dist }) => {
+          if(j < i) return;
+          const b = meshNodes[j];
+          const alpha = (1 - dist / maxLink) * 0.32 * ((a.z + b.z) / 2 + 0.3);
+          ctx.strokeStyle = `rgba(140,175,225,${alpha.toFixed(3)})`;
+          ctx.beginPath();
+          ctx.moveTo(a.x, a.y);
+          ctx.lineTo(b.x, b.y);
+          ctx.stroke();
+        });
+      }
+ 
+      meshNodes.forEach(n => {
+        const size = n.r * (0.7 + n.z * 0.9);
+        ctx.beginPath();
+        ctx.fillStyle = `rgba(170,200,240,${(0.25 + n.z * 0.4).toFixed(3)})`;
+        ctx.arc(n.x, n.y, size, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    }
+ 
+    function step(animate, t){
+      t = t || 0;
+      ctx.clearRect(0, 0, w, h);
+      const linkDist = Math.max(190, Math.min(w, h) * 0.3);
+ 
+      // Keep the effect strictly in the back: clip out the central content
+      // zone (same inset as the photo, which also underlies the headline
+      // and sign-in card) so nodes/links never paint across the photo,
+      // headline text, or auth card in front of them — only the side
+      // margins behind that content are drawn into.
+      const clipX = w * 0.12, clipY = h * 0.12, clipW = w * 0.76, clipH = h * 0.76;
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(0, 0, w, h);
+      ctx.rect(clipX, clipY, clipW, clipH);
+      ctx.clip('evenodd');
+ 
+      // update + parallax toward pointer for a subtle 3D drift
+      nodes.forEach(n => {
+        n.x += n.vx;
+        n.y += n.vy;
+        if(mouse.x !== null){
+          const dx = (mouse.x - w / 2) * 0.02 * n.z;
+          const dy = (mouse.y - h / 2) * 0.02 * n.z;
+          n.x += dx * 0.02;
+          n.y += dy * 0.02;
+        }
+        if(n.x < -20) n.x = w + 20; else if(n.x > w + 20) n.x = -20;
+        if(n.y < -20) n.y = h + 20; else if(n.y > h + 20) n.y = -20;
+      });
+ 
+      // fabric mesh first, underneath the scatter constellations
+      drawMesh();
+ 
+      // for each scatter node, connect to its several nearest neighbors
+      // (not just everything in radius) — that's what turns "two dots and
+      // a line" into long strung-together constellations threading through
+      // many points.
+      const K = 5;
+      for(let i = 0; i < nodes.length; i++){
+        const a = nodes[i];
+        const distances = [];
+        for(let j = 0; j < nodes.length; j++){
+          if(i === j) continue;
+          const b = nodes[j];
+          const dx = a.x - b.x, dy = a.y - b.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if(dist < linkDist) distances.push({ j, dist });
+        }
+        distances.sort((p, q) => p.dist - q.dist);
+        distances.slice(0, K).forEach(({ j, dist }) => {
+          if(j < i) return; // avoid drawing each edge twice
+          const b = nodes[j];
+          const alpha = (1 - dist / linkDist) * 0.4 * ((a.z + b.z) / 2 + 0.3);
+          ctx.strokeStyle = `rgba(120,160,220,${alpha.toFixed(3)})`;
+          ctx.lineWidth = 0.7;
+          ctx.beginPath();
+          ctx.moveTo(a.x, a.y);
+          ctx.lineTo(b.x, b.y);
+          ctx.stroke();
+        });
+      }
+ 
+      // dots, sized/lit by depth for the 3D feel
+      nodes.forEach(n => {
+        const size = n.r * (0.6 + n.z * 1.1);
+        const alpha = 0.35 + n.z * 0.55;
+        ctx.beginPath();
+        ctx.fillStyle = `rgba(160,195,240,${alpha.toFixed(3)})`;
+        ctx.arc(n.x, n.y, size, 0, Math.PI * 2);
+        ctx.fill();
+      });
+ 
+      ctx.restore();
+ 
+      if(animate) raf = requestAnimationFrame((now) => step(true, now));
+    }
+ 
+    resize();
+    window.addEventListener('resize', resize);
+    hero.addEventListener('mousemove', (e) => {
+      const rect = hero.getBoundingClientRect();
+      mouse.x = e.clientX - rect.left;
+      mouse.y = e.clientY - rect.top;
+    });
+    hero.addEventListener('mouseleave', () => { mouse.x = null; mouse.y = null; });
+ 
+    step(!reduceMotion); // always paint at least one frame; loop unless reduced motion is requested
+  })();
+ 
+  // ----- subtle 3D tilt on feature cards, mouse-driven -----
+ 
+  (function setupTilt(){
+    if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if(window.matchMedia && window.matchMedia('(hover: none)').matches) return; // skip on touch
+    document.querySelectorAll('#authGate .feature-card').forEach(card => {
+      let raf = null;
+      card.addEventListener('mousemove', (e) => {
+        if(!card.classList.contains('revealed')) return;
+        const rect = card.getBoundingClientRect();
+        const px = (e.clientX - rect.left) / rect.width - 0.5;
+        const py = (e.clientY - rect.top) / rect.height - 0.5;
+        if(raf) cancelAnimationFrame(raf);
+        raf = requestAnimationFrame(() => {
+          card.classList.add('tilting');
+          card.style.transform = `rotateX(${(-py*6).toFixed(2)}deg) rotateY(${(px*6).toFixed(2)}deg)`;
+        });
+      });
+      card.addEventListener('mouseleave', () => {
+        if(raf) cancelAnimationFrame(raf);
+        card.classList.remove('tilting');
+        if(card.classList.contains('revealed')) card.style.transform = '';
+      });
+    });
+  })();
+ 
+  // ----- "Real practice questions" landing demo: 1 real free try -----
+ 
+  (function setupDemoQuestions(){
+    const DEMO_Q_KEY = 'extemplary-demo-question-used';
+    const catRow = document.getElementById('demoQCatRow');
+    const errEl = document.getElementById('demoQError');
+    const loading = document.getElementById('demoQLoading');
+    const loadingText = document.getElementById('demoQLoadingText');
+    const optionsEl = document.getElementById('demoQOptions');
+    const confirmedWrap = document.getElementById('demoQConfirmed');
+    const confirmedText = document.getElementById('demoQConfirmedText');
+    const lockEl = document.getElementById('demoQLock');
+    const genBtn = document.getElementById('demoGenerateQuestionsBtn');
+    const demoQProgress = createProgressController(
+      document.getElementById('demoQProgressFill'),
+      document.getElementById('demoQProgressPhrase')
+    );
+    let demoQCategory = null;
+ 
+    function lockDemo(){
+      lockEl.classList.add('show');
+      catRow.style.pointerEvents = 'none';
+      catRow.style.opacity = '0.4';
+      genBtn.disabled = true; genBtn.style.opacity = '0.4';
+      try{ localStorage.setItem(DEMO_Q_KEY, '1'); }catch(e){}
+    }
+ 
+    if(localStorage.getItem(DEMO_Q_KEY) === '1'){
+      lockEl.classList.add('show');
+      catRow.style.opacity = '0.4';
+      catRow.style.pointerEvents = 'none';
+      genBtn.disabled = true; genBtn.style.opacity = '0.4';
+    }
+ 
+    catRow.querySelectorAll('.q-cat-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if(localStorage.getItem(DEMO_Q_KEY) === '1') return;
+        catRow.querySelectorAll('.q-cat-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        demoQCategory = btn.dataset.cat;
+        genBtn.disabled = false;
+      });
+    });
+ 
+    genBtn.addEventListener('click', async () => {
+      if(localStorage.getItem(DEMO_Q_KEY) === '1' || !demoQCategory) return;
+      errEl.style.display = 'none';
+      confirmedWrap.classList.add('hidden');
+      optionsEl.innerHTML = '';
+      catRow.style.pointerEvents = 'none';
+      catRow.style.opacity = '0.5';
+      genBtn.disabled = true; genBtn.style.opacity = '0.5';
+      const category = demoQCategory;
+      loadingText.textContent = `Drafting three ${category.toLowerCase()} questions…`;
+      loading.classList.remove('hidden');
+      demoQProgress.start(QGEN_PHRASES, 90);
+      try{
+        const dateStr = new Date().toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+        const prompt = buildQuestionGenPrompt(category, dateStr);
+        const candidate = await callGemini(prompt);
+        const questions = extractQuestions(candidate);
+        demoQProgress.finish();
+        await new Promise(r => setTimeout(r, 220));
+        loading.classList.add('hidden');
+        questions.forEach(q => {
+          const card = document.createElement('div');
+          card.className = 'q-option-card';
+          card.textContent = q;
+          card.addEventListener('click', () => {
+            if(localStorage.getItem(DEMO_Q_KEY) === '1') return;
+            confirmedText.textContent = q;
+            confirmedWrap.classList.remove('hidden');
+            optionsEl.innerHTML = '';
+            lockDemo();
+          });
+          optionsEl.appendChild(card);
+        });
+      }catch(err){
+        console.warn('Landing demo question generation failed:', err);
+        demoQProgress.stop();
+        loading.classList.add('hidden');
+        errEl.textContent = "Couldn't draft questions right now — please try again in a moment.";
+        errEl.style.display = 'block';
+        catRow.style.pointerEvents = '';
+        catRow.style.opacity = '';
+        genBtn.disabled = false; genBtn.style.opacity = '';
+      }
+    });
+  })();
+ 
+  // ----- "Current event briefings" landing demo: 1 real free try -----
+ 
+  (function setupDemoBriefing(){
+    const DEMO_BF_KEY = 'extemplary-demo-briefing-used';
+    const btn = document.getElementById('demoBriefingBtn');
+    const errEl = document.getElementById('demoBfError');
+    const loading = document.getElementById('demoBfLoading');
+    const resultEl = document.getElementById('demoBfResult');
+    const lockEl = document.getElementById('demoBfLock');
+    const timingRow = document.getElementById('demoBfTimingRow');
+    const customRow = document.getElementById('demoBfCustomRow');
+    const customDate = document.getElementById('demoBfCustomDate');
+    const demoBfProgress = createProgressController(
+      document.getElementById('demoBfProgressFill'),
+      document.getElementById('demoBfProgressPhrase')
+    );
+    let demoBfTiming = null;
+    const alreadyUsed = () => localStorage.getItem(DEMO_BF_KEY) === '1';
+ 
+    timingRow.querySelectorAll('.bf-timing-btn').forEach(tb => {
+      tb.addEventListener('click', () => {
+        if(alreadyUsed()) return;
+        timingRow.querySelectorAll('.bf-timing-btn').forEach(b => b.classList.remove('active'));
+        tb.classList.add('active');
+        demoBfTiming = tb.dataset.timing;
+        customRow.classList.toggle('show', demoBfTiming === 'custom');
+        btn.disabled = false;
+      });
+    });
+ 
+    function describeDemoTiming(){
+      const now = new Date();
+      if(demoBfTiming === 'today'){
+        return `in a few hours, later today (${now.toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' })})`;
+      }
+      if(demoBfTiming === 'tomorrow'){
+        const t = new Date(now.getTime() + 24*60*60*1000);
+        return `tomorrow (${t.toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' })})`;
+      }
+      if(demoBfTiming === 'custom' && customDate.value){
+        const d = new Date(customDate.value);
+        if(!isNaN(d.getTime())) return `on ${d.toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' })}`;
+      }
+      return 'soon';
+    }
+ 
+    if(alreadyUsed()){
+      lockEl.classList.add('show');
+      btn.disabled = true; btn.style.opacity = '0.4';
+      timingRow.style.pointerEvents = 'none'; timingRow.style.opacity = '0.5';
+    }
+ 
+    // A transient network hiccup (ad blocker, brief connectivity drop, cold
+    // edge function) shows up as a bare "Failed to fetch" TypeError with no
+    // HTTP status at all. Worth one silent retry before bothering the person
+    // with an error, since a real failure (bad prompt, quota, etc.) will
+    // fail the same way twice in a row anyway.
+    async function callGeminiWithRetry(prompt){
+      try{
+        return await callGemini(prompt);
+      }catch(err){
+        const isNetworkError = err instanceof TypeError || /failed to fetch/i.test(err?.message || '');
+        if(!isNetworkError) throw err;
+        await new Promise(r => setTimeout(r, 1200));
+        return await callGemini(prompt);
+      }
+    }
+ 
+    btn.addEventListener('click', async () => {
+      if(alreadyUsed() || !demoBfTiming) return;
+      errEl.style.display = 'none';
+      resultEl.innerHTML = '';
+      btn.disabled = true; btn.style.opacity = '0.5';
+      timingRow.style.pointerEvents = 'none'; timingRow.style.opacity = '0.6';
+      loading.classList.remove('hidden');
+      demoBfProgress.start(typeof BF_PHRASES !== 'undefined' ? BF_PHRASES : ['Pulling together your briefing…'], 92);
+      try{
+        // A condensed version of the real briefing prompt, scoped to just
+        // one section so the free demo is quick — the full multi-section
+        // Tournament Briefing (domestic + international + economic +
+        // "what to expect") is what you get once signed in.
+        const dateStr = new Date().toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+        const timingDesc = describeDemoTiming();
+        const prompt = `You are prepping a competitive NSDA extemp speaker whose tournament is ${timingDesc}. Today is ${dateStr}. Use Google Search to find real, current news from the last week. Write a brief briefing in exactly this plain-text structure (use this exact "## " header, nothing before it):\n\n## Domestic\n4-5 bullet points ("- ") on the most important U.S. domestic stories from the last week. Each bullet MUST start with a short label followed by a colon, like "- Government Shutdown Fight: description here." Wrap the 2-3 most important key terms in double asterisks like **this**.\n\nFormatting rules: plain text only besides the "**bold**" spans, no other markdown, no intro or closing remarks, nothing before "## Domestic" or after the last bullet.`;
+        const candidate = await callGeminiWithRetry(prompt);
+        const raw = (candidate.content?.parts || []).map(p => p.text || '').join('').trim();
+        demoBfProgress.finish();
+        await new Promise(r => setTimeout(r, 220));
+        loading.classList.add('hidden');
+        resultEl.innerHTML = renderBriefingText(raw);
+        lockEl.classList.add('show');
+        try{ localStorage.setItem(DEMO_BF_KEY, '1'); }catch(e){}
+      }catch(err){
+        console.warn('Landing demo briefing failed:', err);
+        demoBfProgress.stop();
+        loading.classList.add('hidden');
+        const isNetworkError = err instanceof TypeError || /failed to fetch/i.test(err?.message || '');
+        errEl.textContent = isNetworkError
+          ? "Couldn't reach the briefing service — check your connection (or an ad blocker/extension may be blocking the request) and try again."
+          : "Couldn't generate a briefing right now — please try again in a moment.";
+        errEl.style.display = 'block';
+        btn.disabled = false; btn.style.opacity = '';
+        timingRow.style.pointerEvents = ''; timingRow.style.opacity = '';
+      }
+    });
+  })();
+ 
+  // ----- "Citation checker" landing demo: 1 real free try -----
+ 
+  (function setupDemoCitation(){
+    const DEMO_CC_KEY = 'extemplary-demo-citation-used';
+    const claimInput = document.getElementById('demoCcClaimInput');
+    const dateInput = document.getElementById('demoCcDateInput');
+    const sourceInput = document.getElementById('demoCcSourceInput');
+    const btn = document.getElementById('demoCcCheckBtn');
+    const errEl = document.getElementById('demoCcError');
+    const loading = document.getElementById('demoCcLoading');
+    const loadingText = document.getElementById('demoCcLoadingText');
+    const resultEl = document.getElementById('demoCcResult');
+    const verdictStamp = document.getElementById('demoCcVerdictStamp');
+    const verdictNum = document.getElementById('demoCcVerdictNum');
+    const explanationEl = document.getElementById('demoCcExplanation');
+    const sourceLinkEl = document.getElementById('demoCcSourceLink');
+    const lockEl = document.getElementById('demoCcLock');
+    const demoCcProgress = createProgressController(
+      document.getElementById('demoCcProgressFill'),
+      document.getElementById('demoCcProgressPhrase')
+    );
+    const alreadyUsed = () => localStorage.getItem(DEMO_CC_KEY) === '1';
+    const datePattern = /^[0-9?]{2}\/[0-9?]{2}\/[0-9?]{4}$/;
+ 
+    if(alreadyUsed()){
+      lockEl.classList.add('show');
+      btn.disabled = true; btn.style.opacity = '0.4';
+      [claimInput, dateInput, sourceInput].forEach(el => { el.disabled = true; });
+    }
+ 
+    btn.addEventListener('click', async () => {
+      if(alreadyUsed()) return;
+      const claim = claimInput.value.trim();
+      const date = dateInput.value.trim();
+      const source = sourceInput.value.trim();
+      errEl.style.display = 'none';
+ 
+      if(!claim || !date || !datePattern.test(date) || !source){
+        errEl.textContent = !claim ? 'Please enter a claim.'
+          : (!source ? 'Please enter a source.'
+          : 'Please enter a date as mm/dd/yyyy (use ? for unknown digits, e.g. 06/??/2025).');
+        errEl.style.display = 'block';
+        return;
+      }
+ 
+      resultEl.classList.add('hidden');
+      btn.disabled = true; btn.style.opacity = '0.5';
+      [claimInput, dateInput, sourceInput].forEach(el => { el.disabled = true; });
+      loadingText.textContent = 'Searching the web to verify this citation…';
+      loading.classList.remove('hidden');
+      demoCcProgress.start(typeof CC_PHRASES !== 'undefined' ? CC_PHRASES : ['Reading the claim…', 'Searching for matching coverage…'], 92);
+ 
+      try{
+        const prompt = buildCitationPrompt(claim, date, source);
+        const candidate = await callGemini(prompt, 700);
+        const result = extractCitationVerdict(candidate);
+ 
+        demoCcProgress.finish();
+        await new Promise(r => setTimeout(r, 220));
+        loading.classList.add('hidden');
+ 
+        verdictStamp.className = 'cc-verdict-stamp ' + result.verdict;
+        verdictStamp.style.padding = '8px 22px';
+        verdictNum.textContent = result.verdict === 'true' ? 'TRUE' : result.verdict === 'false' ? 'FALSE' : 'UNVERIFIED';
+        explanationEl.textContent = result.explanation || (result.verdict === 'unverified' ? "Couldn't confirm this either way from what's publicly searchable." : '');
+        if(result.verdict === 'true' && result.sourceUrl){
+          sourceLinkEl.innerHTML = `Source: <a href="${escapeHtml(result.sourceUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(result.sourceTitle || result.sourceUrl)}</a>`;
+        }else if(result.verdict === 'true'){
+          sourceLinkEl.innerHTML = `<span class="q-hint">Confirmed, but no direct link was found via search.</span>`;
+        }else{
+          sourceLinkEl.innerHTML = '';
+        }
+        resultEl.classList.remove('hidden');
+        lockEl.classList.add('show');
+        try{ localStorage.setItem(DEMO_CC_KEY, '1'); }catch(e){}
+      }catch(err){
+        console.warn('Landing demo citation check failed:', err);
+        demoCcProgress.stop();
+        loading.classList.add('hidden');
+        const isNetworkError = err instanceof TypeError || /failed to fetch/i.test(err?.message || '');
+        errEl.textContent = isNetworkError
+          ? "Couldn't reach the citation checker — check your connection (or an ad blocker/extension may be blocking the request) and try again."
+          : "Couldn't check that citation right now — please try again in a moment.";
+        errEl.style.display = 'block';
+        btn.disabled = false; btn.style.opacity = '';
+        [claimInput, dateInput, sourceInput].forEach(el => { el.disabled = false; });
+      }
+    });
+  })();
+ 
+ 
+  function renderDemoCategoryCard(){
+    const panel = document.getElementById('demoCategoryPanel');
+    const demoCat = {
+      name: 'Clarity',
+      score: 7, max: 10,
+      whatWorked: '1) Key terms like **"troop surges"** and **"myopic strategy"** are defined in plain language the first time they\'re used, so a judge without prior Afghanistan-policy background can follow the throughline without prior expertise.\n\n2) The point-to-point vocabulary stays **consistent** ("myopic," "surge," "long-term cost") rather than switching terminology mid-speech, which keeps the argument easy to track sentence to sentence.\n\n3) Sentence structure in points one and two is **direct and declarative** rather than looping through multiple clauses, which is easy for a live listener to parse in real time.\n\n4) The speech is generally **to the point** — points one and two each state their claim and move directly into support, without circling back to re-explain something already said.',
+      criticalFlaws: '1) **Awkward phrasing** (most important check): "the U has a simple-minded, myopic perspective" is clunky — dropping the article before "U" and stacking two synonyms back to back reads as unedited rather than deliberate; it would land more cleanly as "the U.S. has taken a myopic perspective."\n\n2) **Vague pronoun**: in "This has led to consequences we\'re still dealing with," the "This" has no single clear antecedent — the prior sentence mentions both the surge policy and its violence data, so a listener can\'t tell which one "This" is pointing to.\n\n3) **Weak verbal signposting**: the speech relies on the AGD/thesis to imply the three-point structure rather than explicitly marking "first," "second," "third" at each transition, which is harder to track by ear than on paper.\n\n4) **Hedging/fluff language** appears at the exact moment the content gets thinnest: "and third, um, there\'s also the long-term stuff to think about" stacks a filler pause with vague filler phrasing right where precision matters most.\n\n5) The phrase "the proof is in the pudding here" is a **cliché placeholder** rather than a clear explanation, and would likely read as vague filler to a judge expecting a concrete mechanism — this also costs the speech some conciseness, since a direct claim would have been shorter and clearer than the idiom.',
+      evidence: '1) "...the U has a simple-minded, myopic perspective." → rephrase as **"the U.S. has taken a myopic perspective"** — clearer and drops the redundant double-descriptor.\n\n2) "This has led to consequences we\'re still dealing with." → replace "This" with **"that troop-surge violence spike"** so the antecedent is unambiguous.\n\n3) "...second, we\'ll see the U.S.\'s proposed solution, troop surges, have been a disastrous failure." → add an explicit **"Second,"** at the top of this sentence so the structural shift is audible, not just implied.\n\n4) "and third, um, there\'s also the long-term stuff to think about." → cut "um" and replace "the long-term stuff" with **"the long-term institutional and credibility costs"** to keep the language as precise as points one and two.'
+    };
+    const band = bandClass(demoCat.score, demoCat.max);
+    panel.innerHTML = `
+      <div class="category demo-category-reveal" style="border-top:none;padding-top:0;">
+        <div class="badge-wrap" style="--bc:${band}">
+          <svg viewBox="0 0 64 64"><path class="demo-ring-path" d="${CIRCLE_PATH}" fill="none" stroke-width="2.5"/></svg>
+          <div class="score">${demoCat.score}<small>/${demoCat.max}</small></div>
+        </div>
+        <div>
+          <h3 class="cat-name">${escHtml(demoCat.name)}</h3>
+          <div class="cat-row worked"><span class="tag">What Worked</span>${inlineMd(demoCat.whatWorked)}</div>
+          <div class="cat-row flaws"><span class="tag">Critical Flaws</span>${inlineMd(demoCat.criticalFlaws)}</div>
+          <div class="cat-row evidence"><span class="tag">What You Could Have Done</span>${inlineMd(demoCat.evidence)}</div>
+        </div>
+      </div>`;
+  }
+  // Deferred via setTimeout: CIRCLE_PATH/inlineMd/escHtml/bandClass are
+  // declared further down this same script, so this needs to run after the
+  setTimeout(renderDemoCategoryCard, 0);
+ 
+  (function setupSideWords(){
+    const leftInner  = document.getElementById('sideWordsLeftInner');
+    const rightInner = document.getElementById('sideWordsRightInner');
+    if(!leftInner || !rightInner) return;
+    const WORDS = DATA.WORDS;
+ 
+    // Picks `count` distinct random words from the list and joins them into
+    // one line — regenerated fresh every time a row's animation loops, so
+    // the wall never repeats the same phrase twice in a row.
+    function randomLineText(wordList){
+      const count = 2 + Math.floor(Math.random() * 3); // 2, 3, or 4 words
+      const pool = wordList.slice();
+      const picked = [];
+      for(let k = 0; k < count && pool.length; k++){
+        const idx = Math.floor(Math.random() * pool.length);
+        picked.push(pool.splice(idx, 1)[0]);
+      }
+      return picked.join('   ·   ');
+    }
+ 
+    function fillColumn(container, wordList, spacing, offset){
+      const totalHeight = container.offsetHeight || (window.innerHeight * 4);
+      const count = Math.ceil(totalHeight / spacing);
+      for(let i=0;i<count;i++){
+        const span = document.createElement('div');
+        span.className = 'side-word';
+        span.textContent = randomLineText(wordList);
+        span.style.top = (i * spacing + 40) + 'px';
+ 
+        // Every row uses the same wobble keyframe but with direction:alternate,
+        // so motion continuously reverses at each extreme instead of ever
+        // snapping back to its start — that snap was what caused the visible
+        // "skip" whenever the old animation looped. Half the rows start out
+        // of phase (alternate-reverse) so they don't all move in lockstep.
+        const direction = (i % 2 === 0) ? 'alternate' : 'alternate-reverse';
+        const duration = 18 + (i % 5) * 3; // 18–30s, slow and varied per row
+        span.style.animation = 'driftWobble ' + duration + 's ease-in-out infinite';
+        span.style.animationDirection = direction;
+        span.style.animationDelay = '-' + ((i * 1.7) % duration).toFixed(1) + 's';
+ 
+        // Swap in new random words only at the extremes of the wobble (where
+        // horizontal velocity is momentarily zero), and crossfade the text via
+        // opacity rather than popping it, so the content change is never
+        // visible as a jump — satisfies a smooth, continuous-feeling wall.
+        span.addEventListener('animationiteration', () => {
+          span.style.opacity = '0';
+          setTimeout(() => {
+            span.textContent = randomLineText(wordList);
+            span.style.opacity = '1';
+          }, 300);
+        });
+ 
+        container.appendChild(span);
+      }
+    }
+    fillColumn(leftInner, WORDS, 30, 0);
+    fillColumn(rightInner, WORDS, 30, 5);
+ 
+    // Smooth, dramatic depth parallax: the word wall should barely move
+    // relative to the page — scrolling far only shifts it a tiny bit — and
+    // that tiny shift is eased continuously (lerp) each frame instead of
+    // being snapped straight to the scroll position, so it never feels
+    // jumpy even on fast/trackpad scrolling.
+    let targetLeftY = 0, targetRightY = 0;
+    let currentLeftY = 0, currentRightY = 0;
+    function computeParallaxTargets(){
+      const y = window.scrollY || window.pageYOffset || 0;
+      targetLeftY  = -(y * 0.16);
+      targetRightY = -(y * 0.11);
+    }
+    function animateParallax(){
+      currentLeftY  += (targetLeftY  - currentLeftY)  * 0.06;
+      currentRightY += (targetRightY - currentRightY) * 0.06;
+      leftInner.style.transform  = 'translateY(' + currentLeftY.toFixed(2)  + 'px)';
+      rightInner.style.transform = 'translateY(' + currentRightY.toFixed(2) + 'px)';
+      requestAnimationFrame(animateParallax);
+    }
+    window.addEventListener('scroll', computeParallaxTargets, { passive:true });
+    computeParallaxTargets();
+    requestAnimationFrame(animateParallax);
+  })();
+ 
+  // ---- redirect to the app once signed in; landing page itself never ----
+  // ---- shows the app UI, so there's no onSignedIn/onSignedOut here. ----
+  (async function initAuth(){
+    if(!supabaseClient) return; // no client lib available — let them try the form, it'll surface a clear error
+    const { data } = await supabaseClient.auth.getSession();
+    if(data && data.session){
+      window.location.href = 'index.html';
+      return;
+    }
+    supabaseClient.auth.onAuthStateChange((event, session) => {
+      if(event === 'SIGNED_IN' && session) window.location.href = 'index.html';
+    });
+  })();
+ 
+})();
+</script>
+</body>
+</html>

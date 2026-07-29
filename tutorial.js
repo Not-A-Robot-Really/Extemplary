@@ -772,7 +772,7 @@
       spotlight: '.nav-menu-item[data-target="briefingToggle"]',
       waitForClick: '.nav-menu-item[data-target="briefingToggle"]',
       hintText: 'Click "Current Events Summary" in the sidebar.',
-      html: "Let's generate a real briefing, a current-events overview covering domestic, international, and economic news, plus the kinds of questions likely to come up."
+      html: "Let's generate a briefing, current-events overview covering domestic, international, and economic news, plus the kinds of questions likely to come up."
     });
 
     steps.push({

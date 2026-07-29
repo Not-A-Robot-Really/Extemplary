@@ -125,11 +125,11 @@ If you fork this project and want your *own* Supabase backend rather than the on
 
 ### Email delivery 🌐
 ---
-Supabase's built-in email sender only allows 2 emails/hour. Providers like Resend, Brevo, or SendGrid all have free tiers, but all require a valid domain. Therefore, there is **currently no built in email verification system for sign ups**. However, we are trying to resolve the issue soon.
+Supabase's built-in email sender only allows two emails/hour. Providers like Resend, Brevo, or SendGrid all have free tiers, but all require a valid domain. Therefore, there is **currently no built in email verification system for sign ups**. However, we are trying to resolve the issue soon.
 
 ## Deployment 📦
 ---
-To get a real `https://` URL (required for camera access, sign-in, and the example ballot's embedded video to work):
+To get a real `https://` URL (required for camera access, sign in page, and the example ballot's embedded video to work):
 
 1. Push this repo to GitHub.
 2. Go to **Settings → Pages**.
@@ -138,13 +138,13 @@ To get a real `https://` URL (required for camera access, sign-in, and the examp
 ```
    https://<your-username>.github.io/<repo-name>/Extemplary.html
 ```
-5. Open that URL: camera recording, AI judging, account sign-up/log-in, and the synced example video will all work normally.
+5. Open that URL: camera recording, AI judging, account sign up/log in, and the synced example video will all work normally.
 
-Viewing the raw file on `github.com/.../blob/...` or via `raw.githubusercontent.com` is **not** the same as hosting it.
+Viewing the raw file on `github.com/.../blob/...` or VIA `raw.githubusercontent.com` is **not** the same as hosting it.
 
 My reccomendation is to just use GitHub Pages for a working page.
 
-## Browser support 
+## Browser support
 ---
 Requires a modern browser with support for `MediaRecorder`, `getUserMedia`, and the Web Audio API (recent Chrome, Edge, Firefox, or Safari). Camera/microphone access as well as account sign-in and cloud history require either `https://` or `localhost`.
 
@@ -154,7 +154,7 @@ Requires a modern browser with support for `MediaRecorder`, `getUserMedia`, and 
 - Account email/password and ballot history (scores, transcripts, feedback, and recorded video) are stored in Supabase, associated only with your account, and protected by Row Level Security. In other words, no other user can read or modify your data through the app.
 - Your Streak Calendar data (tournament/event entries) and Goals data (goal type, target, progress source) are likewise stored in Supabase, tied to your account, and protected by Row Level Security.
 - Recorded video is stored in **private** storage buckets; it is only ever served back to your browser via short-lived signed links generated while you're signed in, not via public URLs.
-- The landing page's free-try demos (practice questions, current event briefings, citation checker) run before sign-in and are not saved anywhere only a "used" sign is stored locally so the free sample isn't repeatable.
+- The landing page's "free try" demos (practice questions, current event briefings, citation checker) run before sign-in and are not saved anywhere only a "used" sign is stored locally so the free sample isn't repeatable.
 
 ## Disclaimer ⚠️
 ---

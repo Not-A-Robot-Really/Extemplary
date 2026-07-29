@@ -5372,12 +5372,12 @@ Grading rules:
     sorted.forEach((sig, i) => {
       const li = document.createElement('li');
       li.className = 'signal-row';
+      li.style.setProperty('--sig-color', sig.color);
       li.innerHTML = `
         <span class="sig-time">${fmt(sig.seconds)}</span>
         <span class="sig-label">${escHtml(sig.label)}</span>
-        <span class="sig-color" style="background:${sig.color}"></span>
         <button class="sig-edit" data-i="${i}" title="Edit" type="button">Edit</button>
-        <button class="sig-del" data-i="${i}" title="Delete" type="button">×</button>
+        <button class="sig-del" data-i="${i}" title="Delete" type="button">✕</button>
       `;
       signalList.appendChild(li);
     });

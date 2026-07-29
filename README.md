@@ -2,7 +2,7 @@
 
 ---
 
-A **free** browser extention for practicing **NSDA Extemporaneous Speaking**. Record a round, receive an AI judge's ballot, recieve feedback & review your speech transcript, and automatically save a history of every round you've practiced.
+A **free** browser extention for practicing **NSDA Extemporaneous Speaking**. Record a round, recieve tailored comments &feedback, review your speech transcript, and automatically save a history of every round you've practiced.
 
 **[Live demo →](#deployment)**
 
@@ -12,7 +12,7 @@ A **free** browser extention for practicing **NSDA Extemporaneous Speaking**. Re
 
 ## What is Extemp? 🗣️
 
-Extemporaneous Speaking refers to a speech event where you deliver a **7 minute** memorized speech (no notes!) on a topic that you will be given **30 minutes** to research. The aim of Extemporaneous Speaking is to deliver the strongest, most well crafted  speech with evidence and flawless reasoning, testing both your presentational and analytical writing skills.
+Extemporaneous Speaking refers to a speech event where you deliver a **7 minute** memorized speech (no notes!) on a topic that you will be given **30 minutes** to research. The aim of Extemporaneous Speaking is to deliver the strongest, most well crafted  speech with precise evidence and flawless reasoning, testing both your presentational and analytical writing skills.
 
 ---
 
@@ -21,17 +21,17 @@ Extemporaneous Speaking refers to a speech event where you deliver a **7 minute*
 **How the Extention works (summed up in 1 flowchart!)**
 Sign up → Generate questions → Write a speech → Record your speech → Receive feedback → Set goals → Practice more → Track your improvement/progress → Correct bad habits & general weaknesses
 
-- **Record a round** | Generate 3 realistic practice questions, run a prep timer, then record on camera for your speech.
+- **Record a round** | Generate 3 realistic practice questions, run a prep timer, then record on your webcam for your speech.
 
-- **AI-judged ballot** | Transcribes your speech, analyzes vocal delivery straight from the audio waveform, and scores you using a custom made **8-category NSDA extemp rubric** (using the model: Llama 3.3 70B on Groq).
+- **AI-judged ballot** | Transcribes your speech, analyzes vocal delivery straight from the extracted audio, and scores you on a custom made **8-category NSDA extemp rubric** using the model: Llama 3.3 70B on Groq.
 
-- **Vocal Delivery Analysis** | Volume, emphasis, tone/pitch variety, pauses, pace (WPM), filler words, and stutters/repetitions, measured directly from your recording.
+- **Vocal Delivery Analysis** | Each speech will be measured for volume, emphasis, tone/pitch variety, pauses, pace (WPM), filler words, and stutters/repetitions.
 
-- **Annotated transcript** | An automated transcript with color coded, personalized comments (🟥: big mistake, 🟦: comment, 🟩: brilliant move, 🟨: minor error) and auto marked paragraph labels (Intro / Body 1–3 / Conclusion).
+- **Annotated transcript** | An automated transcript with personalized comments (🟥 = big mistake, 🟦 = comment, 🟩 = brilliant move, 🟨 = minor error).
 
 - **Watch & Read Along** | An embedded video player synced word-for-word with the transcript. Click any word (or any judge's note) to jump the video to that **exact** moment; the current word highlights live as it plays.
 
-- **Citation checker** | Before you use a stat or quote in-round, paste the claim, the date it happened, and the source it's attributed to, and Gemini searches the web live to verify it. Marks the claim **TRUE**, **FALSE**, or **UNVERIFIED**, with a 2-3 sentence explanation and a link to the real source it found. Not sure of the exact date? Swap any unknown digit for `?` (e.g. `06/??/2025`) and it'll treat that as an approximate range instead of a literal date. You can also use the citation checker to check the citations from other people's speech.
+- **Citation checker** | Before you use a stat or quote, paste the claim, the date, and the source in the citation checker and Extemplary will search the web to verify it. The result could either be **TRUE**, **FALSE**, or **UNVERIFIED**, with a 2-3 sentence explanation and a link to the source of the claim/evidence. If you are not sure of the exact data, you can swap any unknown digit for `?` (ex. `06/??/2025`) for a range of possible dates. You can also use the citation checker to check the citations from other people's speech.
 
 - **Example ballot** | An example sample round (with speech and ballot) so first-time users can see what a finished round looks like before recording their own, including the same synced playback experience.
 
@@ -49,7 +49,7 @@ Sign up → Generate questions → Write a speech → Record your speech → Rec
 
 - **tournament & event tracker** | Located in the calendar tab, you can add an upcoming tournament's date and name on the calendar. It will also show up in list below the calendar.
 
-- **Goals** | Set some attainable goals to achieve in the future: hit a streak length, beat an overall score threshold, beat a threshold in one specific rubric category, complete a number of practice rounds, or live video ballots this month. Each goal tracks its own live progress. My History also contains *Suggested Goals* that are auto-generated from your own weakest rubric categories, current average score, and current streak, so there's always a sensible next target waiting for you.
+- **Goals** | Set some attainable goals to achieve in the future! Either hit a streak length, beat an overall score threshold, beat a threshold in one specific rubric category, complete a number of practice rounds, or live video ballots this month. Each goal tracks its own live progress. My History also contains *Suggested Goals* that are auto-generated from your own weakest rubric categories, current average score, and current streak, so there's always a sensible next target waiting for you.
 
 - **Session score tracking & export** | Precise score tracking within a session **and** over many rounds, plus export to `.txt`, printable ballot, video download, and shareable round links.
 
@@ -89,9 +89,9 @@ Supabase provides authentication and cloud storage.
 - **Judging:** Groq's Llama 3.3 70B (Versatile) 
 - **Question drafting, briefings & citation checking:** Google's Gemini with live Google Search grounding, used both in the signed-in app and for the landing page's live free-try demos
 - **Audio analysis:** Web Audio API (client-side FFT/pitch/volume analysis)
-- **Video:** `MediaRecorder` for capture, plain `<video>` for review/playback; the example ballot uses the YouTube IFrame API for its sample speech
-- **Accounts:** [Supabase Auth](https://supabase.com/docs/guides/auth) (email + password), loaded client-side via `supabase-js`
-- **Cloud storage:** a Supabase Postgres table (`ballots`) for scores/transcripts/feedback, a table (`user_overall_feedback`) for the cached Coach's Overall Notes comment, a table (`calendar_events`) for tournament/event dates behind the Streak Calendar, a table (`user_goals`) for saved goals and their targets, and a private Supabase Storage bucket (`ballot-videos`) for recorded videos with Row Level Security so that each account can only ever access its own data
+- **Video:** `MediaRecorder` for capture and`<video>` for review/playback. The example ballot utilizes the YouTube IFrame API for its sample speech.
+- **Accounts:** [Supabase Auth](https://supabase.com/docs/guides/auth) (requires email + password), loaded client-side via `supabase-js`
+- **Cloud storage:** a Supabase table (`ballots`) for scores, transcripts, and feedback. Table (`user_overall_feedback`) was created/used for the "Coach's Overall Notes" comments. Table (`calendar_events`) was created/used for tournament/event dates on the Calendar. The table (`user_goals`) was used for storing goals and their targets. Last, a private Supabase Storage bucket (`ballot-videos`) was created for storing recorded videos with Row Level Security so that each account can only ever access its own data
 - **Streak calculation:** computed entirely client-side from your existing `ballots` and `user_goals` rows. A day counts as "active" if you recorded a ballot, set a goal, or currently have a goal complete that day.
 - **Local storage:** `localStorage` is used for lightweight preferences (theme, timer settings) and for remembering whether a browser has already used its one free landing-page demo try (questions, briefings, citation checker); everything account-related (ballots, video, session, streak/calendar events, goals) lives in Supabase, not the browser
 

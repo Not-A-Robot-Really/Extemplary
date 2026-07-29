@@ -553,6 +553,7 @@
         <div class="mode-switch" id="modeSwitch" role="tablist" aria-label="Practice mode">
           <button type="button" class="mode-switch-btn active" id="modeRegularBtn" data-mode="regular" role="tab" aria-selected="true">Regular Practice</button>
           <button type="button" class="mode-switch-btn" id="modeIntroDrillBtn" data-mode="introdrill" role="tab" aria-selected="false">Rapid Drill: Introduction</button>
+          <button type="button" class="mode-switch-btn" id="modeBodyDrillBtn" data-mode="bodydrill" role="tab" aria-selected="false">Rapid Drill: Body</button>
         </div>
         <div class="mode-switch-hint" id="modeSwitchHint">Full 7-minute round, graded on all 8 rubric categories.</div>
 
@@ -604,6 +605,7 @@
               <select class="rubric-mode-select hidden" id="rubricModeSelect" aria-label="Choose which rubric to view">
                 <option value="regular">Regular Practice</option>
                 <option value="introdrill">Rapid Drill: Introduction</option>
+                <option value="bodydrill">Rapid Drill: Body</option>
               </select>
             </div>
             <table class="rubric-table">
@@ -668,6 +670,44 @@
                 <tr>
                   <td>3. Speech Quality, Vocal Delivery, and Fluency</td><td>30</td>
                   <td>Did the speaker have proper volume, pace, tone, emphasis, and pauses?<br>Did the speaker refrain from filler words (um, uh, ah, er), quantifiers, qualifiers, and transitionals without a purpose?<br>Did the pitch vary (not monotonous)?</td>
+                </tr>
+              </tbody>
+              <tfoot>
+                <tr><td>Total</td><td>100</td><td></td></tr>
+              </tfoot>
+            </table>
+
+            <!-- Trimmed 6-category rubric shown only while Body Drill mode is
+                 active — hook/intro and conclusion criteria don't apply to a
+                 single-body-paragraph-only recording. -->
+            <table class="rubric-table hidden" id="bodyRubricTable">
+              <thead>
+                <tr><th>Category</th><th>Pts</th><th>Criteria</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>1. Structure</td><td>12</td>
+                  <td>Is there a clear topic sentence/claim stated up front, a signposted internal shape (assertion, support, explanation), and a clean sense of closure?<br>Is the point clearly signposted as a distinct point at the very start (e.g. "First," "Turning to")?<br>Is time reasonably split between stating the claim, developing it with evidence, and explaining its significance?</td>
+                </tr>
+                <tr>
+                  <td>2. Strength of Argument &amp; Analysis</td><td>20</td>
+                  <td>How convincing is the argument?<br>How good is the analysis supporting the argument?<br>Is it valid (the conclusion actually follows from the premises), well-supported (real backing, not just assertion), and fair (engages honestly with the strongest opposing view)?<br>Does the speaker explicitly explain why their evidence is important and how it proves the point/claim they are making?</td>
+                </tr>
+                <tr>
+                  <td>3. Flaws in Reasoning</td><td>14</td>
+                  <td>Are there any logical falacies or holes in their reasoning (slippery slope, hasty generalization, false dilemma, post hoc, straw man, appeal to authority without warrant, etc.)?<br>Are there any unproven assumptions, weak causal links (correlation asserted as causation), or rhetorical intensity used in place of actual logical connection?</td>
+                </tr>
+                <tr>
+                  <td>4. Strength of Evidence</td><td>18</td>
+                  <td>Are there ~1-2 unique sources/pieces of evidence used for this point?<br>Are the publications credible?<br>Is the source knowlegeable in the topic in which the evidence discusses?<br>Does the cited data actually prove the speaker's claim?</td>
+                </tr>
+                <tr>
+                  <td>5. Clarity</td><td>12</td>
+                  <td>Are there any awkward wordings, unnatural, clunky, or convoluted phrasing?<br>Are there any vague pronouns ("it," "this," "that," "they," "these")?<br>Does the point say what it needs to efficiently, refraining from verbose language, circling back, over-explaining, or unnecessary fluff?<br>Are there any filler words ("really," "um...," "very," "just," "kind of," "sort of," "I think," "basically," etc.)?<br>Would a judge unfamiliar with the topic understand every term, acronym, or reference used?</td>
+                </tr>
+                <tr>
+                  <td>6. Speech Quality, Vocal Delivery, and Fluency</td><td>24</td>
+                  <td>Did the speaker have proper volume, pace, tone, emphasis, and pauses?<br>Did the speaker refrain from filler words (um, uh, ah, er), quantifiers (basically, literally, actually, seriously), qualifiers (like, you know, I mean, I think), and transitionals (so, well, okay, anyway) without a purpose (such as humor)?<br>Did the pitch of the speech vary depending on the placement of the speech (not monotonous)?</td>
                 </tr>
               </tbody>
               <tfoot>
@@ -1216,6 +1256,26 @@
         </div>
       </div>
 
+      <!-- ====== BODY DRILL: 10-minute prep countdown modal ======
+           Shown automatically right after a question is confirmed while
+           Body Drill mode is active. Auto-starts a 10:00 countdown; the
+           user can pause/resume, skip straight to recording, or exit back
+           to normal practice mode. -->
+      <div class="dl-modal hidden" id="bodyPrepModal">
+        <div class="dl-modal-card" id="bodyPrepCard" style="max-width:380px;text-align:center;">
+          <div class="dl-modal-head">Body Drill — Prep Time</div>
+          <p class="dl-modal-sub" id="bodyPrepSub">Pick one main point and prep it fully (claim, evidence, analysis). You'll have about 2 minutes to record it once prep ends.</p>
+          <div class="timer-display" id="bodyPrepDisplay" style="font-size:44px;margin:6px 0 18px;">10:00</div>
+          <div class="progress-phrase" id="bodyPrepPhrase" style="margin-bottom:16px;"></div>
+          <div class="timer-btn-row" style="justify-content:center;">
+            <button class="btn ghost hidden" id="bodyPrepPauseBtn" type="button">Pause</button>
+            <button class="btn ghost hidden" id="bodyPrepResumeBtn" type="button">Resume</button>
+            <button class="btn ghost" id="bodyPrepSkipBtn" type="button">Skip to Recording</button>
+          </div>
+          <button class="btn ghost dl-modal-btn" id="bodyPrepExitBtn" type="button" style="margin-top:14px;">Exit Body Drill</button>
+        </div>
+      </div>
+
     </div>
   </div>
 
@@ -1296,13 +1356,14 @@
       // still-default recording method) rather than dropping them from
       // "video ballots" goal counts.
       recordSource: (row.delivery_metrics && row.delivery_metrics.recordSource) || 'camera',
-      isIntroDrill: !!(row.delivery_metrics && row.delivery_metrics.isIntroDrill)
+      isIntroDrill: !!(row.delivery_metrics && row.delivery_metrics.isIntroDrill),
+      isBodyDrill: !!(row.delivery_metrics && row.delivery_metrics.isBodyDrill)
     }));
   }
 
   // Records one completed round (called from renderResults once feedback
   // has been parsed) so it shows up later in "My History".
-  async function recordBallotToHistory(parsed, feedback, transcript, question, round, videoBlob, annotations, deliveryMetrics, recordSource, isIntroDrill){
+  async function recordBallotToHistory(parsed, feedback, transcript, question, round, videoBlob, annotations, deliveryMetrics, recordSource, isIntroDrill, isBodyDrill){
     if(!currentUser || !supabaseClient) return;
     const id = (crypto.randomUUID && crypto.randomUUID()) || ('b_' + Date.now() + '_' + Math.random().toString(36).slice(2,8));
     let videoPath = null;
@@ -1319,8 +1380,9 @@
     // count only rounds that were actually recorded live — distinct from the
     // "Practice rounds this month" goal, which counts every completed round.
     // Also tuck in whether this round was an Intro Drill (introduction-only,
-    // trimmed rubric) so History can label it distinctly without a schema change.
-    const deliveryMetricsWithSource = Object.assign({}, deliveryMetrics || {}, { recordSource: recordSource || 'camera', isIntroDrill: !!isIntroDrill });
+    // trimmed rubric) or a Body Drill (single-body-paragraph-only, trimmed
+    // rubric) so History can label it distinctly without a schema change.
+    const deliveryMetricsWithSource = Object.assign({}, deliveryMetrics || {}, { recordSource: recordSource || 'camera', isIntroDrill: !!isIntroDrill, isBodyDrill: !!isBodyDrill });
     // Save everything the live results view can show — including the
     // color-coded annotated-transcript data (sections + comments) and the
     // measured vocal delivery metrics — so "My History" can reconstruct the
@@ -1474,6 +1536,7 @@
   function goalPracticeTypeSuffix(pt){
     if(pt === 'regular') return ' (Regular Practice)';
     if(pt === 'introdrill') return ' (Rapid Drill: Introduction)';
+    if(pt === 'bodydrill') return ' (Rapid Drill: Body)';
     return '';
   }
   function goalLabel(g){
@@ -1630,6 +1693,7 @@
           <option value="all">All</option>
           <option value="regular">Regular Practice</option>
           <option value="introdrill">Rapid Drill: Introduction</option>
+          <option value="bodydrill">Rapid Drill: Body</option>
         </select>
       </div>
       <button type="button" class="btn primary" id="gmSaveBtn" style="width:100%;margin-top:6px;">Save Goal</button>
@@ -2069,15 +2133,17 @@
   // the "View trend" line chart. Persists (module-level) for as long as the
   // page is open, so re-renders (e.g. after adding a ballot) keep whatever
   // the user last picked.
-  let historyTrendsMode = 'all'; // 'all' | 'regular' | 'introdrill'
+  let historyTrendsMode = 'all'; // 'all' | 'regular' | 'introdrill' | 'bodydrill'
   const HISTORY_MODE_OPTIONS = [
     { v:'all', l:'All' },
     { v:'regular', l:'Regular Practice' },
-    { v:'introdrill', l:'Rapid Drill: Introduction' }
+    { v:'introdrill', l:'Rapid Drill: Introduction' },
+    { v:'bodydrill', l:'Rapid Drill: Body' }
   ];
   function filterByPracticeType(list, mode){
-    if(mode === 'regular') return list.filter(e => !e.isIntroDrill);
+    if(mode === 'regular') return list.filter(e => !e.isIntroDrill && !e.isBodyDrill);
     if(mode === 'introdrill') return list.filter(e => !!e.isIntroDrill);
+    if(mode === 'bodydrill') return list.filter(e => !!e.isBodyDrill);
     return list;
   }
 
@@ -2335,7 +2401,7 @@
           <div class="hc-top">
             <div class="hc-top-left">
               <span class="hc-round">Round ${roundNum}</span>
-              <span class="hc-mode-badge ${entry.isIntroDrill ? 'is-intro' : 'is-regular'}">${entry.isIntroDrill ? 'Rapid Drill: Intro' : 'Regular Practice'}</span>
+              <span class="hc-mode-badge ${entry.isIntroDrill ? 'is-intro' : entry.isBodyDrill ? 'is-body' : 'is-regular'}">${entry.isIntroDrill ? 'Rapid Drill: Intro' : entry.isBodyDrill ? 'Rapid Drill: Body' : 'Regular Practice'}</span>
               <span class="hc-date">${date}</span>
             </div>
             <div class="hc-score" style="color:${scoreColor}">${entry.total!==null && entry.total!==undefined ? `${entry.total}<span class="hc-score-max">/100</span>` : '—'}</div>
@@ -3667,9 +3733,11 @@
 
   const RUBRIC_PROMPT = DATA.RUBRIC_PROMPT;
   const INTRO_RUBRIC_PROMPT = DATA.INTRO_RUBRIC_PROMPT;
+  const BODY_RUBRIC_PROMPT = DATA.BODY_RUBRIC_PROMPT;
 
   const ANNOTATION_PROMPT = DATA.ANNOTATION_PROMPT;
   const INTRO_ANNOTATION_PROMPT = DATA.INTRO_ANNOTATION_PROMPT;
+  const BODY_ANNOTATION_PROMPT = DATA.BODY_ANNOTATION_PROMPT;
 
   const CIRCLE_PATH = DATA.CIRCLE_PATH;
 
@@ -3819,6 +3887,7 @@
 
   const PIPELINE_PHRASES = DATA.PIPELINE_PHRASES;
   const INTRO_PIPELINE_PHRASES = DATA.INTRO_PIPELINE_PHRASES || PIPELINE_PHRASES;
+  const BODY_PIPELINE_PHRASES = DATA.BODY_PIPELINE_PHRASES || PIPELINE_PHRASES;
   const pipelineProgress = createProgressController(procProgressFill, procProgressPhrase);
   const qGenError       = document.getElementById('qGenError');
   const qPickStep       = document.getElementById('qPickStep');
@@ -3961,6 +4030,24 @@
       return;
     }
 
+    if(bodyDrillMode){
+      // Body Drill: only a single body paragraph is recorded, so the cap is
+      // ~2 minutes instead of the full 7:30 speech clock, and none of the
+      // full-speech time signals apply.
+      if(elapsedSeconds >= BODY_RECORD_CAP_SECONDS){
+        fireSignalOverlay('⏹ Time Expired', fmt(elapsedSeconds), 'Body point recording stopped automatically', '', '#a6790c');
+        stopRecording();
+        return;
+      }
+      if(elapsedSeconds >= BODY_RECORD_CAP_SECONDS - 15){
+        clockPill.classList.add('over');
+        if(elapsedSeconds === BODY_RECORD_CAP_SECONDS - 15) fireSignalOverlay('⚠ Wrap It Up', fmt(elapsedSeconds), '15 seconds left in the body cap', '', '#a6790c');
+      }else if(elapsedSeconds >= 90){
+        clockPill.classList.add('warn');
+      }
+      return;
+    }
+
     if(elapsedSeconds >= 450){
       // Auto-stop at 7:30
       stopRecording();
@@ -4091,22 +4178,41 @@
   let questionMode = null; // null | 'custom' | 'generated'
   let lastGenCategory = null;
 
-  // ===== INTRO DRILL MODE =====
-  // When active: after a question is confirmed, a 5-minute prep countdown
-  // auto-starts (pause/skip/exit available). Recording is then capped at
-  // ~1 minute and graded with a trimmed rubric (hook/link/thesis, clarity,
-  // and vocal delivery only — no body/conclusion/evidence categories).
+  // ===== INTRO DRILL MODE / BODY DRILL MODE =====
+  // When Intro Drill is active: after a question is confirmed, a 5-minute
+  // prep countdown auto-starts (pause/skip/exit available). Recording is
+  // then capped at ~1 minute and graded with a trimmed rubric (hook/link/
+  // thesis, clarity, and vocal delivery only — no body/conclusion/evidence
+  // categories).
+  // When Body Drill is active: same shape, but a 10-minute prep countdown
+  // and a recording cap of ~2 minutes, capturing just a single body
+  // paragraph, graded with a trimmed rubric (structure, argument/analysis,
+  // reasoning, evidence, clarity, and vocal delivery — no hook/intro or
+  // conclusion categories).
+  // practiceMode is the single source of truth for which of the three
+  // modes is active; introDrillMode/bodyDrillMode below are kept as
+  // convenience booleans derived from it so existing call sites reading
+  // "introDrillMode" keep working unchanged.
+  let practiceMode = 'regular'; // 'regular' | 'introdrill' | 'bodydrill'
   let introDrillMode = false;
+  let bodyDrillMode = false;
   const INTRO_PREP_SECONDS = 5 * 60;
   const INTRO_RECORD_CAP_SECONDS = 65; // ~1 minute, with a few seconds of grace
+  const BODY_PREP_SECONDS = 10 * 60;
+  const BODY_RECORD_CAP_SECONDS = 125; // ~2 minutes, with a few seconds of grace
   let introPrepSecondsLeft = INTRO_PREP_SECONDS;
   let introPrepRunning = false;
   let introPrepInterval = null;
   let introPrepPhraseTimer = null;
+  let bodyPrepSecondsLeft = BODY_PREP_SECONDS;
+  let bodyPrepRunning = false;
+  let bodyPrepInterval = null;
+  let bodyPrepPhraseTimer = null;
 
   const modeSwitch         = document.getElementById('modeSwitch');
   const modeRegularBtn     = document.getElementById('modeRegularBtn');
   const modeIntroDrillBtn  = document.getElementById('modeIntroDrillBtn');
+  const modeBodyDrillBtn   = document.getElementById('modeBodyDrillBtn');
   const modeSwitchHint     = document.getElementById('modeSwitchHint');
   const ballotModeLabel    = document.getElementById('ballotModeLabel');
   const ballotTitleEl      = document.getElementById('ballotTitle');
@@ -4118,37 +4224,58 @@
   const introPrepSkipBtn   = document.getElementById('introPrepSkipBtn');
   const introPrepExitBtn   = document.getElementById('introPrepExitBtn');
   const INTRO_PREP_PHRASES = DATA.INTRO_PREP_PHRASES || [];
+  const bodyPrepModal     = document.getElementById('bodyPrepModal');
+  const bodyPrepDisplay   = document.getElementById('bodyPrepDisplay');
+  const bodyPrepPhrase    = document.getElementById('bodyPrepPhrase');
+  const bodyPrepPauseBtn  = document.getElementById('bodyPrepPauseBtn');
+  const bodyPrepResumeBtn = document.getElementById('bodyPrepResumeBtn');
+  const bodyPrepSkipBtn   = document.getElementById('bodyPrepSkipBtn');
+  const bodyPrepExitBtn   = document.getElementById('bodyPrepExitBtn');
+  const BODY_PREP_PHRASES = DATA.BODY_PREP_PHRASES || [];
 
-  function setIntroDrillMode(on){
-    introDrillMode = on;
-    modeRegularBtn.classList.toggle('active', !on);
-    modeIntroDrillBtn.classList.toggle('active', on);
-    modeRegularBtn.setAttribute('aria-selected', String(!on));
-    modeIntroDrillBtn.setAttribute('aria-selected', String(on));
-    modeSwitchHint.textContent = on
+  function setPracticeMode(mode){
+    practiceMode = mode;
+    introDrillMode = (mode === 'introdrill');
+    bodyDrillMode = (mode === 'bodydrill');
+    const isRegular = mode === 'regular';
+    modeRegularBtn.classList.toggle('active', isRegular);
+    modeIntroDrillBtn.classList.toggle('active', introDrillMode);
+    modeBodyDrillBtn.classList.toggle('active', bodyDrillMode);
+    modeRegularBtn.setAttribute('aria-selected', String(isRegular));
+    modeIntroDrillBtn.setAttribute('aria-selected', String(introDrillMode));
+    modeBodyDrillBtn.setAttribute('aria-selected', String(bodyDrillMode));
+    modeSwitchHint.textContent = introDrillMode
       ? '5-minute prep, then record just the introduction up to 1 minute. Graded only on hook, link, thesis, clarity, and delivery.'
+      : bodyDrillMode
+      ? '10-minute prep, then record just 1 body paragraph up to 2 minutes. Graded on everything the full round is graded on except the intro and conclusion.'
       : '30-minute prep, then record a full 7-minute. Graded on all 8 rubric categories.';
-    ballotModeLabel.textContent = on ? 'Rapid Drill: Introduction' : 'Regular Practice';
-    ballotModeLabel.classList.toggle('is-intro', on);
-    ballotModeLabel.classList.toggle('is-regular', !on);
-    ballotTitleEl.textContent = on ? 'Intro Drill Ballot' : 'Practice Ballot';
-    if(!on){
+    ballotModeLabel.textContent = introDrillMode ? 'Rapid Drill: Introduction' : bodyDrillMode ? 'Rapid Drill: Body' : 'Regular Practice';
+    ballotModeLabel.classList.toggle('is-intro', introDrillMode);
+    ballotModeLabel.classList.toggle('is-body', bodyDrillMode);
+    ballotModeLabel.classList.toggle('is-regular', isRegular);
+    ballotTitleEl.textContent = introDrillMode ? 'Intro Drill Ballot' : bodyDrillMode ? 'Body Drill Ballot' : 'Practice Ballot';
+    if(!introDrillMode){
       stopIntroPrepTimer();
       introPrepModal.classList.add('hidden');
     }
+    if(!bodyDrillMode){
+      stopBodyPrepTimer();
+      bodyPrepModal.classList.add('hidden');
+    }
   }
 
-  function switchPracticeMode(on){
+  function switchPracticeMode(mode){
     if(recorder && recorder.state === 'recording') return; // don't toggle mid-recording
-    if(on === introDrillMode) return;
-    setIntroDrillMode(on);
+    if(mode === practiceMode) return;
+    setPracticeMode(mode);
     recordedBlob = null;
     revertToCamera();
     resetHomeView();
     showView(viewRecord);
   }
-  modeRegularBtn.addEventListener('click', () => switchPracticeMode(false));
-  modeIntroDrillBtn.addEventListener('click', () => switchPracticeMode(true));
+  modeRegularBtn.addEventListener('click', () => switchPracticeMode('regular'));
+  modeIntroDrillBtn.addEventListener('click', () => switchPracticeMode('introdrill'));
+  modeBodyDrillBtn.addEventListener('click', () => switchPracticeMode('bodydrill'));
 
   function fmtIntroPrep(s){
     const m = Math.floor(s/60), sec = s%60;
@@ -4211,7 +4338,7 @@
   introPrepExitBtn.addEventListener('click', () => {
     stopIntroPrepTimer();
     introPrepModal.classList.add('hidden');
-    setIntroDrillMode(false);
+    setPracticeMode('regular');
   });
 
   function openIntroPrepModal(){
@@ -4219,6 +4346,79 @@
     renderIntroPrepTimer();
     introPrepModal.classList.remove('hidden');
     startIntroPrepTimer();
+  }
+
+  // ---- Body Drill prep timer (10:00 countdown) — mirrors the Intro Drill
+  // prep timer functions above exactly, just with its own state/DOM. ----
+  function fmtBodyPrep(s){
+    const m = Math.floor(s/60), sec = s%60;
+    return m + ':' + String(sec).padStart(2,'0');
+  }
+  function renderBodyPrepTimer(){
+    bodyPrepDisplay.textContent = fmtBodyPrep(bodyPrepSecondsLeft);
+    bodyPrepDisplay.classList.toggle('warn', bodyPrepSecondsLeft <= 30 && bodyPrepSecondsLeft > 0);
+    bodyPrepPauseBtn.classList.toggle('hidden', !bodyPrepRunning);
+    bodyPrepResumeBtn.classList.toggle('hidden', bodyPrepRunning || bodyPrepSecondsLeft === 0);
+  }
+  function rotateBodyPrepPhrase(){
+    if(!BODY_PREP_PHRASES.length) return;
+    const i = Math.floor(Math.random() * BODY_PREP_PHRASES.length);
+    bodyPrepPhrase.textContent = BODY_PREP_PHRASES[i];
+  }
+  function startBodyPrepTimer(){
+    if(bodyPrepRunning || bodyPrepSecondsLeft <= 0) return;
+    bodyPrepRunning = true;
+    clearInterval(bodyPrepInterval);
+    bodyPrepInterval = setInterval(() => {
+      bodyPrepSecondsLeft = Math.max(0, bodyPrepSecondsLeft - 1);
+      renderBodyPrepTimer();
+      if(bodyPrepSecondsLeft === 0){
+        clearInterval(bodyPrepInterval);
+        bodyPrepRunning = false;
+        finishBodyPrep();
+      }
+    }, 1000);
+    clearInterval(bodyPrepPhraseTimer);
+    rotateBodyPrepPhrase();
+    bodyPrepPhraseTimer = setInterval(rotateBodyPrepPhrase, 12000);
+    renderBodyPrepTimer();
+  }
+  function pauseBodyPrepTimer(){
+    bodyPrepRunning = false;
+    clearInterval(bodyPrepInterval);
+    clearInterval(bodyPrepPhraseTimer);
+    renderBodyPrepTimer();
+  }
+  function stopBodyPrepTimer(){
+    bodyPrepRunning = false;
+    clearInterval(bodyPrepInterval);
+    clearInterval(bodyPrepPhraseTimer);
+    bodyPrepSecondsLeft = BODY_PREP_SECONDS;
+  }
+  function finishBodyPrep(){
+    bodyPrepModal.classList.add('hidden');
+    fireSignalOverlay('⏰ Prep Time\'s Up', '0:00', 'Record your body point now.', '', '#a6790c');
+  }
+  bodyPrepPauseBtn.addEventListener('click', pauseBodyPrepTimer);
+  bodyPrepResumeBtn.addEventListener('click', startBodyPrepTimer);
+  bodyPrepSkipBtn.addEventListener('click', () => {
+    clearInterval(bodyPrepInterval);
+    clearInterval(bodyPrepPhraseTimer);
+    bodyPrepRunning = false;
+    bodyPrepSecondsLeft = 0;
+    bodyPrepModal.classList.add('hidden');
+  });
+  bodyPrepExitBtn.addEventListener('click', () => {
+    stopBodyPrepTimer();
+    bodyPrepModal.classList.add('hidden');
+    setPracticeMode('regular');
+  });
+
+  function openBodyPrepModal(){
+    bodyPrepSecondsLeft = BODY_PREP_SECONDS;
+    renderBodyPrepTimer();
+    bodyPrepModal.classList.remove('hidden');
+    startBodyPrepTimer();
   }
 
   const QUESTION_EXAMPLES = DATA.QUESTION_EXAMPLES;
@@ -4243,6 +4443,7 @@ Output ONLY this JSON, nothing else: {"questions":["...","...","..."]}`;
   function setQuestionMode(mode){
     questionMode = mode;
     introPrepStartedForCurrentQuestion = false;
+    bodyPrepStartedForCurrentQuestion = false;
     qModeError.style.display = 'none';
     qModeCustomBtn.classList.toggle('active', mode === 'custom');
     qModeReceiveBtn.classList.toggle('active', mode === 'generated');
@@ -5007,19 +5208,27 @@ Grading rules:
     showToast('Briefing PDF downloaded');
   });
 
-  // Once a question is locked in while Intro Drill mode is active, the
-  // 5-minute prep countdown auto-starts exactly once per question (guarded
-  // by this flag so re-checking requireQuestion() on every click, e.g. the
-  // upload/record buttons, doesn't relaunch the modal on top of itself).
+  // Once a question is locked in while Intro Drill or Body Drill mode is
+  // active, the prep countdown auto-starts exactly once per question
+  // (guarded by this flag so re-checking requireQuestion() on every click,
+  // e.g. the upload/record buttons, doesn't relaunch the modal on top of
+  // itself).
   let introPrepStartedForCurrentQuestion = false;
+  let bodyPrepStartedForCurrentQuestion = false;
 
   function maybeStartIntroPrepForQuestion(){
-    if(!introDrillMode) return;
-    if(introPrepStartedForCurrentQuestion) return;
     if(!questionInput.value.trim()) return;
-    if(introPrepRunning || introPrepSecondsLeft !== INTRO_PREP_SECONDS) return;
-    introPrepStartedForCurrentQuestion = true;
-    openIntroPrepModal();
+    if(introDrillMode){
+      if(introPrepStartedForCurrentQuestion) return;
+      if(introPrepRunning || introPrepSecondsLeft !== INTRO_PREP_SECONDS) return;
+      introPrepStartedForCurrentQuestion = true;
+      openIntroPrepModal();
+    }else if(bodyDrillMode){
+      if(bodyPrepStartedForCurrentQuestion) return;
+      if(bodyPrepRunning || bodyPrepSecondsLeft !== BODY_PREP_SECONDS) return;
+      bodyPrepStartedForCurrentQuestion = true;
+      openBodyPrepModal();
+    }
   }
 
   function requireQuestion(){
@@ -5059,6 +5268,12 @@ Grading rules:
       clearInterval(introPrepPhraseTimer);
       introPrepRunning = false;
       introPrepModal.classList.add('hidden');
+    }
+    if(bodyDrillMode && bodyPrepModal && !bodyPrepModal.classList.contains('hidden')){
+      clearInterval(bodyPrepInterval);
+      clearInterval(bodyPrepPhraseTimer);
+      bodyPrepRunning = false;
+      bodyPrepModal.classList.add('hidden');
     }
   }
 
@@ -5312,13 +5527,17 @@ Grading rules:
   // someone just browsing a rubric for reference (every other page).
   function displayRubricMode(mode){
     const isIntro = mode === 'introdrill';
-    const fullTable = rubricPanel.querySelector('.rubric-table:not(#introRubricTable)');
+    const isBody = mode === 'bodydrill';
+    const fullTable = rubricPanel.querySelector('.rubric-table:not(#introRubricTable):not(#bodyRubricTable)');
     const introTable = document.getElementById('introRubricTable');
-    if(fullTable) fullTable.classList.toggle('hidden', isIntro);
+    const bodyTable = document.getElementById('bodyRubricTable');
+    if(fullTable) fullTable.classList.toggle('hidden', isIntro || isBody);
     if(introTable) introTable.classList.toggle('hidden', !isIntro);
-    rubricModeLabel.textContent = isIntro ? 'Rapid Drill: Introduction Rubric' : 'Regular Practice Rubric';
+    if(bodyTable) bodyTable.classList.toggle('hidden', !isBody);
+    rubricModeLabel.textContent = isIntro ? 'Rapid Drill: Introduction Rubric' : isBody ? 'Rapid Drill: Body Rubric' : 'Regular Practice Rubric';
     rubricModeLabel.classList.toggle('is-intro', isIntro);
-    rubricModeLabel.classList.toggle('is-regular', !isIntro);
+    rubricModeLabel.classList.toggle('is-body', isBody);
+    rubricModeLabel.classList.toggle('is-regular', !isIntro && !isBody);
   }
   function openRubricPanel(){
     rubricOpen = true;
@@ -5330,7 +5549,7 @@ Grading rules:
     const onHome = currentViewEl === viewRecord;
     rubricModeSelect.classList.toggle('hidden', onHome);
     rubricModeBar.classList.toggle('browsable', !onHome);
-    const mode = introDrillMode ? 'introdrill' : 'regular';
+    const mode = introDrillMode ? 'introdrill' : bodyDrillMode ? 'bodydrill' : 'regular';
     rubricModeSelect.value = mode;
     displayRubricMode(mode);
     rubricPanel.classList.remove('hidden');
@@ -7079,7 +7298,7 @@ Grading rules:
     showView(viewProcessing);
     processError.classList.add('hidden');
     processErrorActions.classList.add('hidden');
-    const phrases = introDrillMode ? INTRO_PIPELINE_PHRASES : PIPELINE_PHRASES;
+    const phrases = introDrillMode ? INTRO_PIPELINE_PHRASES : bodyDrillMode ? BODY_PIPELINE_PHRASES : PIPELINE_PHRASES;
     statusText.textContent = 'Reading audio track…';
     statusSub.textContent = 'Decoding and compressing the recording before upload.';
     pipelineProgress.start(phrases.audio, 8);
@@ -7118,6 +7337,8 @@ Grading rules:
       statusText.textContent = 'The panel is deliberating…';
       statusSub.textContent = introDrillMode
         ? 'Llama 3.3 70B Versatile is scoring your introduction against the intro-drill rubric.'
+        : bodyDrillMode
+        ? 'Llama 3.3 70B Versatile is scoring your body point against the body-drill rubric.'
         : 'Llama 3.3 70B Versatile is scoring your speech against the rubric.';
       pipelineProgress.setStage(88, phrases.judging);
 
@@ -7133,7 +7354,7 @@ Grading rules:
           body: JSON.stringify({
             model:'llama-3.3-70b-versatile', temperature:0.4, max_tokens:3000,
             messages:[
-              {role:'system', content: introDrillMode ? INTRO_RUBRIC_PROMPT : RUBRIC_PROMPT},
+              {role:'system', content: introDrillMode ? INTRO_RUBRIC_PROMPT : bodyDrillMode ? BODY_RUBRIC_PROMPT : RUBRIC_PROMPT},
               {role:'user', content:'TRANSCRIPT:\n\n'+transcript+'\n\n'+metricsBlock}
             ],
             overrideKey: k || undefined
@@ -7173,7 +7394,7 @@ Grading rules:
             model:'llama-3.3-70b-versatile', temperature:0.3, max_tokens:3800,
             response_format:{ type:'json_object' },
             messages:[
-              {role:'system', content: introDrillMode ? INTRO_ANNOTATION_PROMPT : ANNOTATION_PROMPT},
+              {role:'system', content: introDrillMode ? INTRO_ANNOTATION_PROMPT : bodyDrillMode ? BODY_ANNOTATION_PROMPT : ANNOTATION_PROMPT},
               {role:'user', content:'TRANSCRIPT:\n\n'+transcript}
             ],
             overrideKey: k || undefined
@@ -7585,7 +7806,7 @@ Grading rules:
 
     if(parsed.total !== null) flightHistory.push({round:roundNo, total:parsed.total});
     renderFlightStrips();
-    recordBallotToHistory(parsed, feedback, transcript, lastQuestion, roundNo, recordedBlob, lastTranscriptAnnotations, lastDeliveryMetrics, captureMode, introDrillMode);
+    recordBallotToHistory(parsed, feedback, transcript, lastQuestion, roundNo, recordedBlob, lastTranscriptAnnotations, lastDeliveryMetrics, captureMode, introDrillMode, bodyDrillMode);
     showView(viewResults);
   }
 
@@ -7601,8 +7822,11 @@ Grading rules:
     // Blank the question box back to its initial "choose a method" state
     questionMode = null;
     introPrepStartedForCurrentQuestion = false;
+    bodyPrepStartedForCurrentQuestion = false;
     stopIntroPrepTimer();
     introPrepModal.classList.add('hidden');
+    stopBodyPrepTimer();
+    bodyPrepModal.classList.add('hidden');
     qModeCustomBtn.classList.remove('active');
     qModeReceiveBtn.classList.remove('active');
     customQuestionBlock.classList.add('hidden');

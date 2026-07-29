@@ -175,6 +175,7 @@
   }
   .rubric-mode-label.is-regular{background:#1d5c9e;}
   .rubric-mode-label.is-intro{background:#a3322a;}
+  .rubric-mode-label.is-body{background:#a6790c;}
   .rubric-mode-select{
     font-family:var(--font-mono);font-size:11.5px;padding:6px 9px;border:1px solid var(--rule);
     border-radius:4px;background:#ffffff;color:var(--charcoal);cursor:pointer;
@@ -192,8 +193,10 @@
   }
   #modeRegularBtn:hover{color:#1d5c9e;background:rgba(29,92,158,0.08);}
   #modeIntroDrillBtn:hover{color:#a3322a;background:rgba(163,50,42,0.08);}
+  #modeBodyDrillBtn:hover{color:#a6790c;background:rgba(166,121,12,0.08);}
   #modeRegularBtn.active{background:#1d5c9e;color:#fff;}
   #modeIntroDrillBtn.active{background:#a3322a;color:#fff;}
+  #modeBodyDrillBtn.active{background:#a6790c;color:#fff;}
   .mode-switch-hint{
     font-family:var(--font-mono);font-size:11px;color:#000;margin-bottom:26px;
   }
@@ -206,6 +209,7 @@
   }
   .ballot-mode-label.is-regular{background:#1d5c9e;}
   .ballot-mode-label.is-intro{background:#a3322a;}
+  .ballot-mode-label.is-body{background:#a6790c;}
 
   .rubric-table{width:100%;border-collapse:collapse;font-size:12.5px;table-layout:fixed;}
   .rubric-table th, .rubric-table td{
@@ -654,6 +658,7 @@
   }
   .hc-mode-badge.is-regular{background:#1d5c9e;}
   .hc-mode-badge.is-intro{background:#a3322a;}
+  .hc-mode-badge.is-body{background:#a6790c;}
   .hc-date{font-family:var(--font-mono);font-size:12px;color:#000;opacity:0.6;}
   .history-card-head .hc-score{font-family:var(--font-display);font-size:30px;font-weight:800;flex-shrink:0;line-height:1;}
   .history-card-head .hc-score .hc-score-max{font-size:15px;font-weight:600;opacity:0.55;margin-left:1px;}
@@ -1737,14 +1742,14 @@
   /* ================= STREAK / CALENDAR / GOALS ================= */
   .streak-fab{
     position:fixed;top:16px;right:16px;z-index:700;
-    display:flex;align-items:center;gap:6px;
-    padding:8px 14px 8px 10px;border-radius:24px;border:none;cursor:pointer;
+    display:flex;align-items:center;gap:7px;
+    padding:9px 16px 9px 11px;border-radius:26px;border:none;cursor:pointer;
     background:rgba(0,0,0,0.28);color:#ffffff;
     transition:opacity .15s, transform .15s, background .15s;
   }
   .streak-fab:hover{opacity:0.85;}
-  .streak-fab svg{color:inherit;flex-shrink:0;}
-  .streak-fab-count{font-family:var(--font-display);font-size:18px;font-weight:800;line-height:1;}
+  .streak-fab svg{color:inherit;flex-shrink:0;width:29px;height:29px;}
+  .streak-fab-count{font-family:var(--font-display);font-size:20px;font-weight:800;line-height:1;}
 
   /* ---- realistic layered flame icon on the top-right streak fab ----
      Four nested shapes (outer/mid/inner flame + hot core) plus a couple of
@@ -1755,10 +1760,16 @@
   #streakFabIcon{overflow:visible;}
   #streakFabIcon .flame-layer{transform-box:fill-box;transform-origin:50% 85%;}
   #streakFabIcon .flame-sway{transform-box:fill-box;transform-origin:50% 100%;}
-  #streakFabIcon .flame-outer{fill:#d94a1c;}
-  #streakFabIcon .flame-mid{fill:#ff8a2b;}
-  #streakFabIcon .flame-inner{fill:#ffcf4d;}
-  #streakFabIcon .flame-core{fill:#fff6d8;}
+  /* Outer layer now uses the same orange as the static (non-animated)
+     flame icon (#ff8a2b) so the two read as the same fire at a glance. */
+  #streakFabIcon .flame-outer{fill:#ff8a2b;}
+  #streakFabIcon .flame-mid{fill:#ffab4d;}
+  /* The "inner" flame is the smaller shape nested inside the outer one.
+     It's pulled down and enlarged so it sits low, near the base of the
+     fire (like the hot part of a real flame), instead of hovering near
+     the tip. */
+  #streakFabIcon .flame-inner{fill:#ffcf4d;transform:translateY(2.2px) scale(1.2);}
+  #streakFabIcon .flame-core{fill:#fff6d8;transform:translateY(2.6px) scale(1.3);}
   #streakFabIcon .flame-spark{fill:#ffcf80;opacity:0;transform-box:fill-box;transform-origin:50% 50%;}
 
   #streakFabIcon:not(.flame-live) .flame-outer{fill:#9aa0a8;}
@@ -1813,22 +1824,22 @@
     100%{transform:scaleY(1) skewX(0deg);}
   }
   @keyframes flameInner{
-    0%{transform:scale(1);opacity:0.95;}
-    14%{transform:scale(1.1);opacity:1;}
-    28%{transform:scale(0.92);opacity:0.88;}
-    42%{transform:scale(1.06);opacity:1;}
-    57%{transform:scale(0.95);opacity:0.9;}
-    71%{transform:scale(1.08);opacity:0.97;}
-    85%{transform:scale(0.97);opacity:0.92;}
-    100%{transform:scale(1);opacity:0.95;}
+    0%{transform:translateY(2.2px) scale(1.2);opacity:0.95;}
+    14%{transform:translateY(2.2px) scale(1.32);opacity:1;}
+    28%{transform:translateY(2.2px) scale(1.1);opacity:0.88;}
+    42%{transform:translateY(2.2px) scale(1.27);opacity:1;}
+    57%{transform:translateY(2.2px) scale(1.14);opacity:0.9;}
+    71%{transform:translateY(2.2px) scale(1.3);opacity:0.97;}
+    85%{transform:translateY(2.2px) scale(1.16);opacity:0.92;}
+    100%{transform:translateY(2.2px) scale(1.2);opacity:0.95;}
   }
   @keyframes flameCore{
-    0%{transform:scale(1) translateY(0);opacity:0.9;}
-    20%{transform:scale(1.15) translateY(-0.3px);opacity:1;}
-    40%{transform:scale(0.9) translateY(0.2px);opacity:0.8;}
-    60%{transform:scale(1.1) translateY(-0.2px);opacity:1;}
-    80%{transform:scale(0.95) translateY(0.1px);opacity:0.85;}
-    100%{transform:scale(1) translateY(0);opacity:0.9;}
+    0%{transform:translateY(2.6px) scale(1.3) translateY(0);opacity:0.9;}
+    20%{transform:translateY(2.6px) scale(1.5) translateY(-0.3px);opacity:1;}
+    40%{transform:translateY(2.6px) scale(1.17) translateY(0.2px);opacity:0.8;}
+    60%{transform:translateY(2.6px) scale(1.43) translateY(-0.2px);opacity:1;}
+    80%{transform:translateY(2.6px) scale(1.24) translateY(0.1px);opacity:0.85;}
+    100%{transform:translateY(2.6px) scale(1.3) translateY(0);opacity:0.9;}
   }
   @keyframes flameSpark{
     0%{transform:translateY(0) scale(1);opacity:0;}

@@ -100,7 +100,7 @@ Supabase: provides authentication and cloud storage
 ### Try it!
 Open `Extemplary.html` in any modern desktop or mobile browser, no installs needed.
 
-> **Note:** the example ballot's video uses YouTube IFrame API, which requires the page be served over. `http(s)://` It won't load correctly if you open the file from disk (`file://`). Cloud history also require `https://` (or `localhost`) for the same reason browsers require it for camera access. See [Deployment](#deployment) below to host it properly!
+> **Note:** the example ballot's video uses YouTube IFrame API, which requires the page be served over. `http(s)://` It won't load correctly if you open the file from disk (`file://`). Cloud history also require `https://` (or `localhost`) for the reason browsers require it for camera access. See [Deployment](#deployment) below to host it properly!
 
 ### Creating an account 👤
 ---
@@ -108,13 +108,9 @@ You'll land on the sign in screen (landing page) the first time you open the app
 
 1. Locate the **Sign Up** tab, enter an email and a password (requires 6+ characters), and submit.
 2. Depending on the project's auth settings, you may need to check your email and click a confirmation link before your first log in (see [Supabase setup](#supabase-setup) below).
-3. Once signed in, you'll stay signed in automatically, even after closing the tab or restarting your browser, until you tap **Sign out** in the account menu (top right).
+3. Once signed in, you'll stay signed in automatically, even after closing the tab or restarting your browser, until you tap **Sign out** in the top right of the account menu. You will also see a quick tutorial on how the extention works that will guide you through all the features of Extemplary.
 
-Every round completed while signed in is saved **automatically**. Tap the clock icon in the header at any time to open **My History**: expand any past round to rewatch the video, re-read the transcript, or reread the full judge's feedback, read your Coach's Overall Notes, scroll through your score trend line graphs and category strengths/weaknesses across all your rounds, review or add **Goals** (including auto-suggested ones based on your own weak spots), and jump straight to the Streak Calendar from there.
-
-Tap the flame icon in the header to open the **Streak Calendar**: see your current and best-ever streak, a full monthly view of active days, upcoming tournaments/events you've added, and your active goals with live progress bars, all in one place.
-
-Tap the magnifying-glass icon in the header any time to open the **Citation Checker** and verify a claim before you use it in a speech.
+Every round completed while signed in is saved **automatically**. Click on any past round in the "My Ballot History" page to rewatch the video, re-read the transcript, or reread the full judge's feedback, read your Coach's Overall Notes, view your progress graphs, general strengths/weaknesses and view & add **Goals** (with auto-suggested ones based on your own weak spots).
 
 ### API keys 🔑
 ---

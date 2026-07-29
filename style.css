@@ -183,12 +183,13 @@
 
   /* -------- home page practice mode switch -------- */
   .mode-switch{
-    display:inline-flex;gap:3px;padding:3px;background:rgba(0,0,0,0.04);
-    border:1px solid var(--rule);border-radius:4px;margin-bottom:6px;
+    display:inline-flex;gap:4px;padding:4px;background:var(--parchment-deep);
+    border:1px solid rgba(22,40,60,0.22);border-radius:999px;margin-bottom:6px;
+    box-shadow:inset 0 1px 3px rgba(22,40,60,0.14);
   }
   .mode-switch-btn{
     font-family:var(--font-body);font-size:12.5px;font-weight:600;
-    padding:8px 13px;border-radius:2px;border:1px solid transparent;background:none;color:var(--slate);
+    padding:8px 15px;border-radius:999px;border:1px solid transparent;background:none;color:var(--charcoal);
     cursor:pointer;transition:background .15s, color .15s, border-color .15s;white-space:nowrap;
   }
   #modeRegularBtn:hover{color:#1d5c9e;background:rgba(29,92,158,0.08);}
@@ -1763,7 +1764,7 @@
   /* Outer layer now uses the same orange as the static (non-animated)
      flame icon (#ff8a2b) so the two read as the same fire at a glance. */
   #streakFabIcon .flame-outer{fill:#ff8a2b;}
-  #streakFabIcon .flame-mid{fill:#ffab4d;}
+  #streakFabIcon .flame-mid{fill:#ffab4d;transform:translateY(1.6px);}
   /* The "inner" flame is the smaller shape nested inside the outer one.
      It's pulled down and enlarged so it sits low, near the base of the
      fire (like the hot part of a real flame), instead of hovering near
@@ -1812,16 +1813,16 @@
     100%{transform:scale(1,1) translateY(0);}
   }
   @keyframes flameMid{
-    0%{transform:scaleY(1) skewX(0deg);}
-    11%{transform:scaleY(0.92) skewX(1.5deg);}
-    22%{transform:scaleY(1.08) skewX(-1deg);}
-    33%{transform:scaleY(0.96) skewX(0.8deg);}
-    44%{transform:scaleY(1.1) skewX(-1.6deg);}
-    55%{transform:scaleY(0.9) skewX(1.2deg);}
-    66%{transform:scaleY(1.05) skewX(-0.6deg);}
-    77%{transform:scaleY(0.95) skewX(1deg);}
-    88%{transform:scaleY(1.04) skewX(-0.9deg);}
-    100%{transform:scaleY(1) skewX(0deg);}
+    0%{transform:translateY(1.6px) scaleY(1) skewX(0deg);}
+    11%{transform:translateY(1.6px) scaleY(0.92) skewX(1.5deg);}
+    22%{transform:translateY(1.6px) scaleY(1.08) skewX(-1deg);}
+    33%{transform:translateY(1.6px) scaleY(0.96) skewX(0.8deg);}
+    44%{transform:translateY(1.6px) scaleY(1.1) skewX(-1.6deg);}
+    55%{transform:translateY(1.6px) scaleY(0.9) skewX(1.2deg);}
+    66%{transform:translateY(1.6px) scaleY(1.05) skewX(-0.6deg);}
+    77%{transform:translateY(1.6px) scaleY(0.95) skewX(1deg);}
+    88%{transform:translateY(1.6px) scaleY(1.04) skewX(-0.9deg);}
+    100%{transform:translateY(1.6px) scaleY(1) skewX(0deg);}
   }
   @keyframes flameInner{
     0%{transform:translateY(2.2px) scale(1.2);opacity:0.95;}

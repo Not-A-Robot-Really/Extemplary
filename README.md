@@ -56,7 +56,7 @@ Sign up → Generate questions → Write a speech → Record your speech → Rec
 
 - **Installable PWA** | Works offline for timing/recording; add to your phone's home screen.
 
-- **Tutorial** | The first time you create an account, a step by step walkthrough gides you through every part of the app, allowing the user to try every feature the site offers. During the tutorial, My History's Coach's Notes, Trends, and Goals sections show a placeholder skeleton preview instead of a blank page.
+- **Tutorial** | The first time you create an account, a walkthrough gides you through every part of the app, allowing the user to try every feature the site offers. During the tutorial, the Coach's Notes, Trends, and Goals sections show a placeholder skeleton preview instead of a blank page.
 
 Note: Extemplary requires camera and microphone access for recording speeches (duh).
 

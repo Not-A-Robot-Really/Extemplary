@@ -163,6 +163,40 @@
   body.previewing-example .rubric-toggle-btn{display:none;}
 
   .rubric-panel{width:min(640px, calc(100vw - 24px));}
+
+  /* -------- rubric mode bar (label + optional browse dropdown) -------- */
+  .rubric-mode-bar{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    margin-bottom:12px;padding-bottom:12px;border-bottom:1px dashed var(--rule);
+  }
+  .rubric-mode-label{
+    font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:1px;font-weight:700;
+    border-radius:20px;padding:5px 12px;
+  }
+  .rubric-mode-label.is-regular{background:rgba(29,92,158,0.1);color:var(--crimson-deep);}
+  .rubric-mode-label.is-intro{background:rgba(163,50,42,0.1);color:#a3322a;}
+  .rubric-mode-select{
+    font-family:var(--font-mono);font-size:11.5px;padding:6px 9px;border:1px solid var(--rule);
+    border-radius:4px;background:#ffffff;color:var(--charcoal);cursor:pointer;
+  }
+
+  /* -------- home page practice mode switch -------- */
+  .mode-switch{
+    display:inline-flex;gap:4px;padding:4px;background:rgba(0,0,0,0.04);
+    border:1px solid var(--rule);border-radius:24px;margin-bottom:6px;
+  }
+  .mode-switch-btn{
+    font-family:var(--font-body);font-size:12.5px;font-weight:600;
+    padding:8px 16px;border-radius:20px;border:none;background:none;color:var(--slate);
+    cursor:pointer;transition:background .15s, color .15s;white-space:nowrap;
+  }
+  .mode-switch-btn:hover{color:var(--charcoal);}
+  .mode-switch-btn.active{background:var(--charcoal);color:var(--on-accent);}
+  #modeIntroDrillBtn.active{background:#a3322a;}
+  .mode-switch-hint{
+    font-family:var(--font-mono);font-size:11px;color:var(--slate);margin-bottom:16px;
+  }
+
   .rubric-table{width:100%;border-collapse:collapse;font-size:12.5px;table-layout:fixed;}
   .rubric-table th, .rubric-table td{
     border:1px solid var(--charcoal);padding:8px 10px;text-align:left;vertical-align:top;

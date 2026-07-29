@@ -428,9 +428,6 @@
     <button class="gear-btn" id="shortcutsToggle" type="button" aria-label="Keyboard shortcuts" title="Keyboard shortcuts">
       <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-25"></use></svg>
     </button>
-    <button class="gear-btn" id="introDrillToggle" type="button" aria-label="Intro Drill" title="Intro Drill — practice just your introduction, 5-minute prep, ~1 min recording">
-      <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-21"></use></svg>
-    </button>
     <button class="gear-btn" id="briefingToggle" type="button" aria-label="Tournament Briefing" title="Tournament Briefing — current events overview">
       <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-26"></use></svg>
     </button>
@@ -495,10 +492,6 @@
       <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-38"></use></svg>
       <span>Shortcuts</span>
     </button>
-    <button type="button" class="nav-menu-item" id="navIntroDrillBtn">
-      <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-21"></use></svg>
-      <span>Intro Drill</span>
-    </button>
     <button type="button" class="nav-menu-item" data-target="briefingToggle">
       <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-39"></use></svg>
       <span>Current Events Summary</span>
@@ -543,6 +536,16 @@
       <div id="view-record">
         <div class="flight hidden" id="flightStrip"></div>
 
+        <!-- Practice mode switch — replaces the old separate Intro Drill
+             page/icon. Choosing "Rapid Drill: Introduction" here is what
+             now drives introDrillMode (prep timer, recording cap, rubric,
+             grading prompt) everywhere else in the app. -->
+        <div class="mode-switch" id="modeSwitch" role="tablist" aria-label="Practice mode">
+          <button type="button" class="mode-switch-btn active" id="modeRegularBtn" data-mode="regular" role="tab" aria-selected="true">Regular Practice</button>
+          <button type="button" class="mode-switch-btn" id="modeIntroDrillBtn" data-mode="introdrill" role="tab" aria-selected="false">Rapid Drill: Introduction</button>
+        </div>
+        <div class="mode-switch-hint" id="modeSwitchHint">Full 7-minute round, graded on all 8 rubric categories.</div>
+
         <!-- YouTube link popover (toggled by the "Open Video & Capture Tab Audio" button) -->
         <div class="settings-panel hidden" id="youtubePopover">
           <div class="sp-head">
@@ -580,6 +583,19 @@
             <span>100 pts</span>
           </div>
           <div class="sp-body">
+            <!-- On the Home page the practice mode switch above is the one
+                 source of truth, so this bar just shows a colored label. On
+                 every other page (History, Results, Example Ballot) there's
+                 no mode switch in view, so a small dropdown lets someone
+                 browse either rubric for reference without changing what
+                 they're actually practicing. -->
+            <div class="rubric-mode-bar" id="rubricModeBar">
+              <span class="rubric-mode-label" id="rubricModeLabel">Regular Practice Rubric</span>
+              <select class="rubric-mode-select hidden" id="rubricModeSelect" aria-label="Choose which rubric to view">
+                <option value="regular">Regular Practice</option>
+                <option value="introdrill">Rapid Drill: Introduction</option>
+              </select>
+            </div>
             <table class="rubric-table">
               <thead>
                 <tr><th>Category</th><th>Pts</th><th>Criteria</th></tr>
@@ -4015,8 +4031,10 @@
   let introPrepInterval = null;
   let introPrepPhraseTimer = null;
 
-  const introDrillToggle   = document.getElementById('introDrillToggle');
-  const navIntroDrillBtn   = document.getElementById('navIntroDrillBtn');
+  const modeSwitch         = document.getElementById('modeSwitch');
+  const modeRegularBtn     = document.getElementById('modeRegularBtn');
+  const modeIntroDrillBtn  = document.getElementById('modeIntroDrillBtn');
+  const modeSwitchHint     = document.getElementById('modeSwitchHint');
   const introDrillBadge    = document.getElementById('introDrillBadge');
   const introRecordHint    = document.getElementById('introRecordHint');
   const ballotTitleEl      = document.getElementById('ballotTitle');
@@ -4031,7 +4049,13 @@
 
   function setIntroDrillMode(on){
     introDrillMode = on;
-    introDrillToggle.classList.toggle('active', on);
+    modeRegularBtn.classList.toggle('active', !on);
+    modeIntroDrillBtn.classList.toggle('active', on);
+    modeRegularBtn.setAttribute('aria-selected', String(!on));
+    modeIntroDrillBtn.setAttribute('aria-selected', String(on));
+    modeSwitchHint.textContent = on
+      ? '5-minute prep, then record ~1 minute — graded only on hook, link, thesis, clarity, and delivery.'
+      : 'Full 7-minute round, graded on all 8 rubric categories.';
     introDrillBadge.classList.toggle('hidden', !on);
     introRecordHint.classList.toggle('hidden', !on);
     ballotTitleEl.textContent = on ? 'Intro Drill Ballot' : 'Official Practice Ballot';
@@ -4041,25 +4065,17 @@
     }
   }
 
-  introDrillToggle.addEventListener('click', () => {
+  function switchPracticeMode(on){
     if(recorder && recorder.state === 'recording') return; // don't toggle mid-recording
-    setIntroDrillMode(!introDrillMode);
-    if(introDrillMode){
-      recordedBlob = null;
-      revertToCamera();
-      resetHomeView();
-      showView(viewRecord);
-    }
-  });
-  navIntroDrillBtn?.addEventListener('click', () => {
-    closeNavMenu();
-    if(recorder && recorder.state === 'recording') return;
-    setIntroDrillMode(true);
+    if(on === introDrillMode) return;
+    setIntroDrillMode(on);
     recordedBlob = null;
     revertToCamera();
     resetHomeView();
     showView(viewRecord);
-  });
+  }
+  modeRegularBtn.addEventListener('click', () => switchPracticeMode(false));
+  modeIntroDrillBtn.addEventListener('click', () => switchPracticeMode(true));
 
   function fmtIntroPrep(s){
     const m = Math.floor(s/60), sec = s%60;
@@ -5200,8 +5216,11 @@ Grading rules:
   window.addEventListener('resize', () => { if(shortcutsOpen) positionShortcutsPanel(); });
 
   // ===== Grading Rubric panel (icon lives on the ballot paper itself) =====
-  const rubricToggle = document.getElementById('rubricToggle');
-  const rubricPanel  = document.getElementById('rubricPanel');
+  const rubricToggle     = document.getElementById('rubricToggle');
+  const rubricPanel      = document.getElementById('rubricPanel');
+  const rubricModeBar    = document.getElementById('rubricModeBar');
+  const rubricModeLabel  = document.getElementById('rubricModeLabel');
+  const rubricModeSelect = document.getElementById('rubricModeSelect');
   if(rubricPanel && rubricPanel.parentElement !== document.body){
     document.body.appendChild(rubricPanel);
   }
@@ -5216,13 +5235,32 @@ Grading rules:
     rubricPanel.style.right = right + 'px';
     rubricPanel.style.top = (rect.bottom + 8) + 'px';
   }
+  // Swaps which of the two tables is shown and colors/labels the header bar
+  // to match — used both for the real practice mode (Home page) and for
+  // someone just browsing a rubric for reference (every other page).
+  function displayRubricMode(mode){
+    const isIntro = mode === 'introdrill';
+    const fullTable = rubricPanel.querySelector('.rubric-table:not(#introRubricTable)');
+    const introTable = document.getElementById('introRubricTable');
+    if(fullTable) fullTable.classList.toggle('hidden', isIntro);
+    if(introTable) introTable.classList.toggle('hidden', !isIntro);
+    rubricModeLabel.textContent = isIntro ? 'Rapid Drill: Introduction Rubric' : 'Regular Practice Rubric';
+    rubricModeLabel.classList.toggle('is-intro', isIntro);
+    rubricModeLabel.classList.toggle('is-regular', !isIntro);
+  }
   function openRubricPanel(){
     rubricOpen = true;
     positionRubricPanel();
-    const fullTable = rubricPanel.querySelector('.rubric-table:not(#introRubricTable)');
-    const introTable = document.getElementById('introRubricTable');
-    if(fullTable) fullTable.classList.toggle('hidden', introDrillMode);
-    if(introTable) introTable.classList.toggle('hidden', !introDrillMode);
+    // On the Home page the practice mode switch is the real control, so the
+    // rubric just mirrors it (no dropdown needed). Everywhere else, offer
+    // the dropdown so the rubric can be browsed independent of whichever
+    // mode was last practiced in.
+    const onHome = currentViewEl === viewRecord;
+    rubricModeSelect.classList.toggle('hidden', onHome);
+    rubricModeBar.classList.toggle('browsable', !onHome);
+    const mode = introDrillMode ? 'introdrill' : 'regular';
+    rubricModeSelect.value = mode;
+    displayRubricMode(mode);
     rubricPanel.classList.remove('hidden');
     rubricToggle.classList.add('active');
   }
@@ -5231,6 +5269,7 @@ Grading rules:
     rubricPanel.classList.add('hidden');
     rubricToggle.classList.remove('active');
   }
+  rubricModeSelect.addEventListener('change', () => displayRubricMode(rubricModeSelect.value));
   rubricToggle.addEventListener('click', (e) => {
     e.stopPropagation();
     if(rubricOpen) closeRubricPanel(); else openRubricPanel();
@@ -5247,9 +5286,11 @@ Grading rules:
   // view — hide it everywhere else (Review, Processing, Streak, Briefing,
   // Citation Checker) by hooking into showView().
   const RUBRIC_VISIBLE_VIEWS = [viewRecord, viewResults, viewExample, viewHistory];
+  let currentViewEl = viewRecord;
   const _showViewForRubric = showView;
   showView = function(v){
     _showViewForRubric(v);
+    currentViewEl = v;
     const shouldShow = RUBRIC_VISIBLE_VIEWS.includes(v);
     rubricToggle.classList.toggle('hidden', !shouldShow);
     if(!shouldShow && rubricOpen) closeRubricPanel();

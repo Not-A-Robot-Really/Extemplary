@@ -83,17 +83,17 @@ Note: the Streak Calendar and Goals system are account features and aren't part 
 
 ## Software ⚙️
 ---
-Supabase provides authentication and cloud storage.
+Supabase: provides authentication and cloud storage
 
-- **Transcription:** Groq's Whisper (`whisper-large-v3`, word-level timestamps)
-- **Judging:** Groq's Llama 3.3 70B (Versatile) 
-- **Question drafting, briefings & citation checking:** Google's Gemini with live Google Search grounding, used both in the signed-in app and for the landing page's live free-try demos
+- **Transcription:** Groq's Whisper (`whisper-large-v3`)
+- **Judging:** Groq's Llama 3.3 70B 
+- **Question drafting, briefings & citation checking:** Google's Gemini with live Google Search
 - **Audio analysis:** Web Audio API (client-side FFT/pitch/volume analysis)
 - **Video:** `MediaRecorder` for capture and`<video>` for review/playback. The example ballot utilizes the YouTube IFrame API for its sample speech.
 - **Accounts:** [Supabase Auth](https://supabase.com/docs/guides/auth) (requires email + password), loaded client-side via `supabase-js`
 - **Cloud storage:** a Supabase table (`ballots`) for scores, transcripts, and feedback. Table (`user_overall_feedback`) was created/used for the "Coach's Overall Notes" comments. Table (`calendar_events`) was created/used for tournament/event dates on the Calendar. The table (`user_goals`) was used for storing goals and their targets. Last, a private Supabase Storage bucket (`ballot-videos`) was created for storing recorded videos with Row Level Security so that each account can only ever access its own data
-- **Streak calculation:** computed entirely client-side from your existing `ballots` and `user_goals` rows. A day counts as "active" if you recorded a ballot, set a goal, or currently have a goal complete that day.
-- **Local storage:** `localStorage` is used for lightweight preferences (theme, timer settings) and for remembering whether a browser has already used its one free landing-page demo try (questions, briefings, citation checker); everything account-related (ballots, video, session, streak/calendar events, goals) lives in Supabase, not the browser
+- **Streak calculation:** computed entirely on the clientside from `ballots` and `user_goals` rows. A day counts as "active" if you recorded a ballot, set a goal, or currently have a goal complete that day.
+- **Local storage:** (localStorage`) used for minor preferences (theme, timer settings) and for whether a browser has already tried its one free landing-page demo (questions, briefings, citation checker). Everything privacy and account related (ballots, video, session, streak/calendar events, goals) is in Supabase.
 
 ## Getting started 📖
 ---

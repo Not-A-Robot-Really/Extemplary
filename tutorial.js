@@ -169,9 +169,14 @@
       title: byId('tutTitle'), text: byId('tutText'), avatar: byId('tutAvatar'),
       count: byId('tutStepCount'), hint: byId('tutHint'), hintText: byId('tutHintText'),
       next: byId('tutNextBtn'), skip: byId('tutSkipBtn'), choiceRow: byId('tutChoiceRow'),
-      yes: byId('tutYesBtn'), no: byId('tutNoBtn')
+      yes: byId('tutYesBtn'), no: byId('tutNoBtn'),
+      inputRow: byId('tutInputRow'), nameInput: byId('tutNameInput')
     };
   }
+
+  var NAME_MAX_LEN = 20; // secretly capped — the person is never told this number
+
+  function nameKeyFor(email){ return 'extemplary_speaker_name:' + (email||'').toLowerCase(); }
 
   function clearSpotlight(){
     var e = el();
@@ -280,6 +285,7 @@
     e.hint.classList.add('hidden');
     e.next.style.display = 'inline-block';
     e.choiceRow.style.display = 'none';
+    if(e.inputRow) e.inputRow.style.display = 'none';
     e.skip.style.display = step.hideSkip ? 'none' : 'inline-block';
 
     clearSpotlight();
@@ -307,7 +313,34 @@
     }
 
     // advance modes
-    if(step.choice){
+    if(step.input){
+      e.next.onclick = advance;
+      e.next.textContent = step.nextLabel || 'Next →';
+      if(e.inputRow && e.nameInput){
+        e.inputRow.style.display = 'block';
+        e.nameInput.value = '';
+        e.nameInput.maxLength = NAME_MAX_LEN;
+        e.next.setAttribute('disabled', 'disabled');
+        e.next.style.opacity = '0.5';
+        var onInput = function(){
+          var v = e.nameInput.value.slice(0, NAME_MAX_LEN);
+          if(v !== e.nameInput.value) e.nameInput.value = v;
+          var ok = v.trim().length > 0;
+          if(ok){ e.next.removeAttribute('disabled'); e.next.style.opacity = '1'; }
+          else { e.next.setAttribute('disabled', 'disabled'); e.next.style.opacity = '0.5'; }
+        };
+        e.nameInput.oninput = onInput;
+        e.nameInput.onkeydown = function(ev){
+          if(ev.key === 'Enter' && !e.next.hasAttribute('disabled')) advance();
+        };
+        setTimeout(function(){ e.nameInput.focus(); }, 50);
+        e.next.onclick = function(){
+          if(e.next.hasAttribute('disabled')) return;
+          if(step.onSubmit) step.onSubmit(e.nameInput.value.trim().slice(0, NAME_MAX_LEN));
+          advance();
+        };
+      }
+    } else if(step.choice){
       e.next.style.display = 'none';
       e.choiceRow.style.display = 'block';
       e.yes.onclick = function(){ step.choice.yes(); advance(); };
@@ -445,6 +478,23 @@
       title: 'Welcome to Extemplary! 🎉',
       avatar: '🎙️',
       html: "Your account is all set up! I'm going to walk you through every function of the site: the sidebar, calendar, Ballot History, the recording tools, and how to run a full practice round. It only takes a few minutes, and you can exit out any time with <b>Skip tutorial</b>."
+    });
+
+    // ---- Capture the speaker's name -----------------------------------------
+    steps.push({
+      title: "What should we call you?",
+      avatar: '👋',
+      input: true,
+      html: "Every ballot has a Speaker field on it. Type your name below and we'll use it on your ballots from here on out.",
+      onSubmit: function(name){
+        try{ localStorage.setItem(nameKeyFor(state && state.email), name); }catch(e){}
+        try{
+          window.dispatchEvent(new CustomEvent('extemplary:speaker-name-set', { detail: { name: name } }));
+        }catch(e){
+          var el2 = byId('speakerName');
+          if(el2) el2.textContent = name || 'You';
+        }
+      }
     });
 
     // ---- Sidebar orientation -------------------------------------------------

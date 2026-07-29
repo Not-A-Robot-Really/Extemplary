@@ -535,7 +535,7 @@
       <div class="ballot-title" id="ballotTitle">Practice Ballot</div>
       <div class="field"><b>Event</b>Extemporaneous Speaking</div>
       <div class="field"><b>Round</b><span id="roundNo">1</span></div>
-      <div class="field"><b>Speaker</b>You</div>
+      <div class="field"><b>Speaker</b><span id="speakerName">You</span></div>
       <div class="field"><b>Judge</b>Llama 3.3 70B</div>
       <div class="field ballot-mode-label is-regular" id="ballotModeLabel">Regular Practice</div>
     </div>
@@ -3608,6 +3608,23 @@
   // whole file has finished its initial synchronous pass, not inline here.
   setTimeout(renderDemoCategoryCard, 0);
 
+  // Reads the name captured during the first-run tutorial (see
+  // tutorial.js's "What should we call you?" step) and reflects it in the
+  // ballot header's Speaker field. Falls back to the default "You" if the
+  // person hasn't gone through the tutorial (or skipped that step).
+  function applySpeakerName(email){
+    if(!speakerNameEl) return;
+    var stored = null;
+    try{ stored = localStorage.getItem('extemplary_speaker_name:' + (email||'').toLowerCase()); }catch(e){}
+    speakerNameEl.textContent = (stored && stored.trim()) ? stored.trim().slice(0, 20) : 'You';
+  }
+
+  window.addEventListener('extemplary:speaker-name-set', function(ev){
+    if(!speakerNameEl) return;
+    var name = (ev.detail && ev.detail.name || '').trim().slice(0, 20);
+    speakerNameEl.textContent = name || 'You';
+  });
+
   function onSignedIn(user){
     currentUser = { id: user.id, email: user.email };
     accountChip.classList.remove('hidden');
@@ -3619,6 +3636,7 @@
     if(window.__releaseFeatureScrollHijack) window.__releaseFeatureScrollHijack();
     document.getElementById('streakFab')?.classList.remove('hidden');
     refreshStreakFab();
+    applySpeakerName(currentUser.email);
   }
   function onSignedOut(){
     currentUser = null;
@@ -3626,6 +3644,7 @@
     authGate.classList.remove('hidden');
     setAuthMode('login');
     document.getElementById('streakFab')?.classList.add('hidden');
+    applySpeakerName(null);
   }
 
   // Restore session on load / whenever it changes (this is what makes
@@ -3908,6 +3927,7 @@
   const processError   = document.getElementById('processError');
   const processErrorActions = document.getElementById('processErrorActions');
   const roundNoEl      = document.getElementById('roundNo');
+  const speakerNameEl  = document.getElementById('speakerName');
   const sessionTag     = document.getElementById('sessionTag');
   const flightStrip    = document.getElementById('flightStrip');
   const flightStripResults = document.getElementById('flightStripResults');
@@ -8260,6 +8280,9 @@ Grading rules:
     </div>
     <div class="tut-text" id="tutText"></div>
     <div class="tut-hint hidden" id="tutHint"><span class="tut-dot"></span><span id="tutHintText"></span></div>
+    <div id="tutInputRow" style="display:none;">
+      <input type="text" id="tutNameInput" class="tut-name-input" maxlength="20" autocomplete="off" placeholder="Type your name…">
+    </div>
     <div class="tut-actions">
       <button type="button" class="tut-btn tut-btn-skip" id="tutSkipBtn">Skip tutorial</button>
       <div id="tutChoiceRow" style="display:none;">

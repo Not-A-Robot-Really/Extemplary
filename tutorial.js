@@ -773,12 +773,21 @@
     });
 
     steps.push({
+      title: 'Pick your timing',
+      avatar: '🗞️',
+      spotlight: '.bf-timing-btn[data-timing="today"]',
+      waitForClick: '.bf-timing-btn[data-timing="today"]',
+      hintText: 'Click "In a few hours".',
+      html: 'Click <b>"In a few hours"</b> — this tells the AI your tournament is coming up soon so it can focus on the most relevant recent news.'
+    });
+
+    steps.push({
       title: 'Generate your briefing',
       avatar: '🗞️',
-      spotlight: '#bfSetupStep',
+      spotlight: '#bfGenerateBtn',
       waitForCondition: function(){ var r = byId('bfResultStep'); return r && !r.classList.contains('hidden'); },
-      hintText: 'Click "In a few hours", then click "Generate Briefing".',
-      html: 'Click the <b>"In a few hours"</b> timing option, then click <b>Generate Briefing</b>. This calls a real AI model, so it may take a few seconds.'
+      hintText: 'Click "Generate Briefing".',
+      html: 'Now click <b>Generate Briefing</b>. This calls a real AI model, so it may take a few seconds.'
     });
 
     steps.push({
@@ -891,7 +900,16 @@
       title: 'Three practice modes',
       avatar: '\u26A1',
       spotlight: '#modeSwitch',
-      html: "Before you record, pick a mode here. <b>Regular Practice</b> is a full 7-minute round graded on all 8 rubric categories \u2014 the standard tournament format. <b>Rapid Drill: Introduction</b> is a short-form drill focused only on your opening (hook, link, thesis) so you can rep intros fast without recording a whole speech. <b>Rapid Drill: Body</b> does the same for your body paragraphs \u2014 structure, argument strength, evidence, and reasoning \u2014 without needing a full intro or conclusion. Each mode grades against its own focused rubric and shows up tagged in your Ballot History, so you can track all three separately."
+      html: "Before you record, pick a mode here. <b>Regular Practice</b> is a full 7-minute round graded on all 8 rubric categories \u2014 the standard tournament format. <b>Rapid Drill: Introduction</b> is a short-form drill focused only on your opening (hook, link, thesis) so you can rep intros fast without recording a whole speech. <b>Rapid Drill: Body</b> does the same for your body paragraphs \u2014 structure, argument strength, evidence, and reasoning \u2014 without needing a full intro or conclusion. Each drill grades against its own separate, focused rubric \u2014 different from Regular Practice's full 8-category rubric \u2014 and shows up tagged in your Ballot History, so you can track all three separately."
+    });
+
+    steps.push({
+      title: "Let's stick with Regular Practice",
+      avatar: '\u26A1',
+      spotlight: '#modeRegularBtn',
+      waitForClick: '#modeRegularBtn',
+      hintText: 'Click "Regular Practice".',
+      html: "For the rest of this tour, click <b>Regular Practice</b> so we're working with the standard full-round format."
     });
 
     steps.push({

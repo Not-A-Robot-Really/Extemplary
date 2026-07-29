@@ -91,9 +91,9 @@ Supabase: provides authentication and cloud storage
 - **Audio analysis:** Web Audio API (client-side FFT/pitch/volume analysis)
 - **Video:** `MediaRecorder` for capture and`<video>` for review/playback. The example ballot utilizes the YouTube IFrame API for its sample speech.
 - **Accounts:** [Supabase Auth](https://supabase.com/docs/guides/auth) (requires email + password), loaded client-side via `supabase-js`
-- **Cloud storage:** a Supabase table (`ballots`) for scores, transcripts, and feedback. Table (`user_overall_feedback`) was created/used for the "Coach's Overall Notes" comments. Table (`calendar_events`) was created/used for tournament/event dates on the Calendar. The table (`user_goals`) was used for storing goals and their targets. Last, a private Supabase Storage bucket (`ballot-videos`) was created for storing recorded videos with Row Level Security so that each account can only ever access its own data
-- **Streak calculation:** computed entirely on the clientside from `ballots` and `user_goals` rows. A day counts as "active" if you recorded a ballot, set a goal, or currently have a goal complete that day.
-- **Local storage:** (localStorage`) used for minor preferences (theme, timer settings) and for whether a browser has already tried its one free landing-page demo (questions, briefings, citation checker). Everything privacy and account related (ballots, video, session, streak/calendar events, goals) is in Supabase.
+- **Cloud storage:** Supabase table (`ballots`) for scores, transcripts, and feedback. Table (`user_overall_feedback`) was created/used for the "Coach's Overall Notes" comments. Table (`calendar_events`) was created/used for tournament/event dates on the Calendar. The table (`user_goals`) was used for storing goals and their targets. Last, a private Supabase Storage bucket (`ballot-videos`) was created for storing recorded videos with Row Level Security so that each account can only ever access its own data
+- **Streak calculation:** Computed entirely on the clientside from `ballots` and `user_goals` rows. A day counts as "active" if you recorded a ballot, set a goal, or currently have a goal complete that day.
+- **Local storage:** (localStorage`) used for minor preferences (theme, timer settings) and for whether a browser has already tried its one free landing-page demo (questions, briefings, citation checker). Everything privacy & account related (ballots, video, session, streak/calendar events, goals) is in Supabase.
 
 ## Getting started 📖
 ---

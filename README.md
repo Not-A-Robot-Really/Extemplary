@@ -41,7 +41,7 @@ Sign up → Generate questions → Write a speech → Record your speech → Rec
 
 - **Coach's Overall Notes** | Comprehensive feedback of your Extemp journey that finds patterns across your *entire* practice history, naming your biggest recurring strength, your biggest recurring area to improve, and one concrete next step. It's designed to update automatically at designated milestone rounds or whenever you record a particularly brillian round.
 
-- **Trends across your ballots** | The History view aggregates your average score in each rubric category across every round you've recorded, with per-category bars plus your top overall strengths and weaknesses.
+- **Trends across your ballots** | The "History view" aggregates your average score in each rubric category across every round you've recorded, with per-category bars plus your top overall strengths and weaknesses.
 
 - **Score trend line graphs** | Line charts for your overall score and for each individual rubric category, plotted round-by-round across your whole history, so you can see exactly where you're improving (or backsliding) at a glance.
 
@@ -77,7 +77,7 @@ The sign-in screen is also a landing page. Scroll down past the log in info to s
 
 - **5️⃣ Citation checker** | verify one real claim against its source, the exact same way the in-app Citation Checker does (one free try per browser).
 
-- 6️⃣ **Example Ballot** | Contains a **complete** example round, with example transcript, video, feedback, comments, rubric, and score. This preview is fully  from the rest of the app. You can look around without ever being signed into anything.
+- 6️⃣ **Example Ballot** | Contains a **complete** example round with an example transcript, video, feedback, comments, rubric, and score.
 
 Note: the Streak Calendar and Goals system are account features and aren't part of the free-try preview, since both are built on your ongoing ballot history.
 

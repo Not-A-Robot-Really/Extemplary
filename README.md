@@ -41,11 +41,11 @@ Sign up → Generate questions → Write a speech → Record your speech → Rec
 
 - **Coach's Overall Notes** | Comprehensive feedback of your Extemp journey that finds patterns across your *entire* practice history, naming your biggest recurring strength, your biggest recurring area to improve, and one concrete next step. It's designed to update automatically at designated milestone rounds or whenever you record a particularly brillian round.
 
-- **Trends across your ballots** | The "History view" aggregates your average score in each rubric category across every round you've recorded, with per-category bars plus your top overall strengths and weaknesses.
+- **Trends across your ballots** | The "History view" combines & stores your average score in each rubric category across every round you've recorded, with per-category bars plus your top overall strengths and weaknesses.
 
-- **Score trend line graphs** | Line charts for your overall score and for each individual rubric category, plotted round-by-round across your whole history, so you can see exactly where you're improving (or backsliding) at a glance.
+- **Score line graphs** | Line graphs of your overall score, sorted by individual rubric category and type of practice, plotted round-by-round across all of your speeches. This not only helps with tracking your progress in a specific area across months of hard work, but also serves as a representation of your speeches as a whole. 
 
-- **Streak & Calendar** | A tracked practice streak: any day you record a ballot, set a goal, or complete one keeps the streak alive. Your current streak lives in a flame counter fixed to the top of the app, and the full **Streak Calendar** view lays out a month-by-month history of active days, and your current & best streak.
+- **Streak & Calendar** | A tracked practice streak: When you record a ballot, set a goal, or complete one keeps the streak alive. Your current streak lives in a flame counter fixed to the top of the app, and the full **Streak Calendar** view lays out a month-by-month history of active days, and your current & best streak.
 
 - **tournament & event tracker** | Located in the calendar tab, you can add an upcoming tournament's date and name on the calendar. It will also show up in list below the calendar.
 
@@ -150,7 +150,7 @@ Requires a modern browser with support for `MediaRecorder`, `getUserMedia`, and 
 
 ## Privacy & data 🛡️
 ---
-- Audio is sent only to Groq's API for transcription and judging; question drafting, briefing generation, and citation checking are sent only to Google's Gemini API.
+- Audio is sent *only* to Groq's API for transcription and judging; question drafting, briefing generation, and citation checking are sent only to Google's Gemini API.
 - Account email/password and ballot history (scores, transcripts, feedback, and recorded video) are stored in Supabase, associated only with your account, and protected by Row Level Security. In other words, no other user can read or modify your data through the app.
 - Your Streak Calendar data (tournament/event entries) and Goals data (goal type, target, progress source) are likewise stored in Supabase, tied to your account, and protected by Row Level Security.
 - Recorded video is stored in **private** storage buckets; it is only ever served back to your browser via short-lived signed links generated while you're signed in, not via public URLs.

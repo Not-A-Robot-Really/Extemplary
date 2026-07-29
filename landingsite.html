@@ -288,13 +288,14 @@ fetch('icons.svg').then(r => r.text()).then(svgText => {
   </div>
 </div>
 
-<!-- Comment popover for the "Watch & read along" demo snippet's clickable annotations -->
+<!-- Comment popover for the "Watch & read along" demo snippet's clickable annotations,
      regardless of which view/panel is currently active — including the
      Example Ballot and the landing-page preview demo. -->
 <div class="comment-popover hidden" id="commentPopover">
   <div class="cp-arrow"></div>
   <div class="cp-tag" id="cpTag"></div>
   <div class="cp-text" id="cpText"></div>
+</div>
 
 <script>
 (function(){
@@ -317,6 +318,7 @@ fetch('icons.svg').then(r => r.text()).then(svgText => {
     ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
     : null;
 
+  const DATA = window.APP_DATA;
   const SPECTRUM_STOPS = DATA.SPECTRUM_STOPS;
   function colorFromRatio(ratio){
     ratio = Math.max(0, Math.min(1, isFinite(ratio) ? ratio : 0));

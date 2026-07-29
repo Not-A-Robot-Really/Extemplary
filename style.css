@@ -170,11 +170,11 @@
     margin-bottom:12px;padding-bottom:12px;border-bottom:1px dashed var(--rule);
   }
   .rubric-mode-label{
-    font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:1px;font-weight:700;
-    border-radius:20px;padding:5px 12px;
+    font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:0.6px;font-weight:800;
+    border-radius:3px;padding:4px 10px;color:#fff;display:inline-block;
   }
-  .rubric-mode-label.is-regular{background:rgba(29,92,158,0.1);color:var(--crimson-deep);}
-  .rubric-mode-label.is-intro{background:rgba(163,50,42,0.1);color:#a3322a;}
+  .rubric-mode-label.is-regular{background:#1d5c9e;}
+  .rubric-mode-label.is-intro{background:#a3322a;}
   .rubric-mode-select{
     font-family:var(--font-mono);font-size:11.5px;padding:6px 9px;border:1px solid var(--rule);
     border-radius:4px;background:#ffffff;color:var(--charcoal);cursor:pointer;
@@ -187,7 +187,7 @@
   }
   .mode-switch-btn{
     font-family:var(--font-body);font-size:12.5px;font-weight:600;
-    padding:8px 16px;border-radius:20px;border:none;background:none;color:var(--slate);
+    padding:8px 12px;border-radius:20px;border:none;background:none;color:var(--slate);
     cursor:pointer;transition:background .15s, color .15s;white-space:nowrap;
   }
   #modeRegularBtn:hover{color:#1d5c9e;background:rgba(29,92,158,0.08);}
@@ -195,7 +195,7 @@
   #modeRegularBtn.active{background:#1d5c9e;color:#fff;}
   #modeIntroDrillBtn.active{background:#a3322a;color:#fff;}
   .mode-switch-hint{
-    font-family:var(--font-mono);font-size:11px;color:var(--slate);margin-bottom:16px;
+    font-family:var(--font-mono);font-size:11px;color:#000;margin-bottom:26px;
   }
 
   /* -------- ballot-head practice mode label -------- */

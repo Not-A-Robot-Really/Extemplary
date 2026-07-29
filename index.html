@@ -966,6 +966,7 @@
 
       <!-- ====== EXAMPLE BALLOT VIEW (static — shown via the "?" help button) ====== -->
       <div id="view-example" class="hidden">
+        <div class="page-heading">Example Ballot</div>
         <div class="result-question">
           <div class="rq-label">Question Drawn</div>
           <div class="rq-text">Was the U.S. war in Afghanistan in vain?</div>
@@ -1063,6 +1064,7 @@
       <!-- ====== TOURNAMENT BRIEFING VIEW ====== -->
       <!-- ====== HISTORY VIEW ====== -->
       <div id="view-history" class="hidden">
+        <div class="page-heading">My Ballot History</div>
         <div class="actions" style="justify-content:flex-start;margin-bottom:18px;">
           <button class="btn ghost" id="historyBackBtn">← Back</button>
         </div>
@@ -1076,6 +1078,7 @@
 
       <!-- ====== STREAK CALENDAR VIEW ====== -->
       <div id="view-streak" class="hidden">
+        <div class="page-heading">Streak Calendar</div>
         <div class="actions" style="justify-content:flex-start;margin-bottom:18px;">
           <button class="btn ghost" id="streakBackBtn">← Back</button>
         </div>
@@ -1086,7 +1089,7 @@
       </div>
 
       <div id="view-briefing" class="hidden">
-        <div class="ballot-title" style="font-size:22px;margin-bottom:16px;">Tournament Briefing</div>
+        <div class="page-heading">Tournament Briefing</div>
 
         <!-- Step 1: when's the tournament -->
         <div id="bfSetupStep">
@@ -1135,7 +1138,7 @@
 
       <!-- ====== CITATION CHECKER VIEW ====== -->
       <div id="view-citation" class="hidden">
-        <div class="ballot-title" style="font-size:22px;margin-bottom:16px;">Citation Checker</div>
+        <div class="page-heading">Citation Checker</div>
 
         <!-- Step 1: enter claim + source -->
         <div id="ccSetupStep">
@@ -1482,6 +1485,7 @@
     if(g.type === 'category') return `Score above ${g.params.threshold} in ${escHtml(g.params.category)}`;
     if(g.type === 'rounds') return `Complete ${g.params.count} practice rounds this month`;
     if(g.type === 'videos') return `Record ${g.params.count} live video ballots this month`;
+    if(g.type === 'introdrill') return `Complete ${g.params.count} Rapid Drill: Introduction rounds this month`;
     if(g.type === 'tournament') return `Compete at ${escHtml(g.params.title || 'the upcoming tournament')}`;
     return 'Goal';
   }
@@ -1513,6 +1517,15 @@
         // captured from a shared tab/YouTube playback, since those aren't a
         // live recording of your own delivery.
         return e.hasVideo && e.recordSource === 'camera';
+      }).length;
+      return { current: count, target: g.params.count, pct: Math.min(100, count/g.params.count*100), done: count >= g.params.count };
+    }
+    if(g.type === 'introdrill'){
+      const now = new Date();
+      const count = list.filter(e => {
+        const d = new Date(e.ts);
+        if(d.getFullYear()!==now.getFullYear() || d.getMonth()!==now.getMonth()) return false;
+        return !!e.isIntroDrill;
       }).length;
       return { current: count, target: g.params.count, pct: Math.min(100, count/g.params.count*100), done: count >= g.params.count };
     }
@@ -1589,6 +1602,7 @@
           <option value="category">Score in a specific category</option>
           <option value="rounds">Practice rounds this month</option>
           <option value="videos">Live video ballots this month</option>
+          <option value="introdrill">Practice type: Rapid Drill: Introduction rounds this month</option>
         </select>
       </div>
       <div class="gm-field" data-for="streak">
@@ -1617,6 +1631,10 @@
         <label>Number of live video ballots this month</label>
         <input type="number" id="gmVideosCount" min="1" max="60" value="3">
       </div>
+      <div class="gm-field" data-for="introdrill">
+        <label>Number of Rapid Drill: Introduction rounds this month</label>
+        <input type="number" id="gmIntroDrillCount" min="1" max="60" value="5">
+      </div>
       <button type="button" class="btn primary" id="gmSaveBtn" style="width:100%;margin-top:6px;">Save Goal</button>
     `;
     const typeSel = document.getElementById('gmType');
@@ -1632,6 +1650,7 @@
     }
     if(p.type === 'score' && p.params) document.getElementById('gmScoreThreshold').value = p.params.threshold;
     if(p.type === 'streak' && p.params) document.getElementById('gmStreakDays').value = p.params.days;
+    if(p.type === 'introdrill' && p.params) document.getElementById('gmIntroDrillCount').value = p.params.count;
     typeSel.addEventListener('change', syncFields);
     syncFields();
     document.getElementById('gmSaveBtn').addEventListener('click', async () => {
@@ -1642,6 +1661,7 @@
       else if(type === 'category') params = { category: document.getElementById('gmCategory').value, threshold: Number(document.getElementById('gmCategoryThreshold').value) };
       else if(type === 'rounds') params = { count: Number(document.getElementById('gmRoundsCount').value) };
       else if(type === 'videos') params = { count: Number(document.getElementById('gmVideosCount').value) };
+      else if(type === 'introdrill') params = { count: Number(document.getElementById('gmIntroDrillCount').value) };
       await addGoal(type, params, null);
       closeGoalModal();
       if(goalModalOnSaved) goalModalOnSaved();
@@ -2042,111 +2062,163 @@
     return { asc, overall, catSeries };
   }
 
-  function renderHistoryTrends(list){
+  // Practice-type filter applied to the "Trends Across X Ballots" bars and
+  // the "View trend" line chart. Persists (module-level) for as long as the
+  // page is open, so re-renders (e.g. after adding a ballot) keep whatever
+  // the user last picked.
+  let historyTrendsMode = 'all'; // 'all' | 'regular' | 'introdrill'
+  const HISTORY_MODE_OPTIONS = [
+    { v:'all', l:'All' },
+    { v:'regular', l:'Regular Practice' },
+    { v:'introdrill', l:'Rapid Drill: Introduction' }
+  ];
+  function filterByPracticeType(list, mode){
+    if(mode === 'regular') return list.filter(e => !e.isIntroDrill);
+    if(mode === 'introdrill') return list.filter(e => !!e.isIntroDrill);
+    return list;
+  }
+
+  function renderHistoryTrends(fullList){
     const el = document.getElementById('historyTrends');
-    if(!list.length){ el.innerHTML = ''; return; }
-    const rows = computeTrends(list);
-    if(!rows.length){ el.innerHTML = ''; return; }
-    const strengths = rows.slice(0,2);
-    const weaknesses = rows.slice(-2).reverse();
-    const { overall, catSeries } = computeSeries(list);
+    if(!fullList.length){ el.innerHTML = ''; return; }
 
-    // Build a lookup of every chart the dropdown can show: "overall" plus
-    // one entry per graded category, each carrying its own values/axis/color
-    // so switching the <select> just re-renders the single big chart panel.
-    const chartOptions = [];
-    const overallVals = overall.map(p => p.val).filter(v => v !== null && v !== undefined);
-    if(overallVals.length){
-      const overallPts = overall.filter(p=>p.val!==null&&p.val!==undefined);
-      chartOptions.push({
-        key: 'overall', label: 'Overall Score',
-        latest: overallVals[overallVals.length-1].toFixed(0) + '/100',
-        values: overallVals, rounds: overallPts.map(p=>p.round), color: '#16283c'
+    function paintPanel(){
+      const list = filterByPracticeType(fullList, historyTrendsMode);
+      const modeFilterHtml = `
+        <div class="trend-mode-filter">
+          <label for="historyModeFilter">Practice type</label>
+          <select class="tcp-select" id="historyModeFilter">
+            ${HISTORY_MODE_OPTIONS.map(o => `<option value="${o.v}" ${o.v===historyTrendsMode?'selected':''}>${o.l}</option>`).join('')}
+          </select>
+        </div>`;
+
+      if(!list.length){
+        el.innerHTML = `
+          <div class="history-trends">
+            <div class="trend-head-row">
+              <h3>Trends Across 0 Ballots</h3>
+              ${modeFilterHtml}
+            </div>
+            <div class="history-empty">No ${escHtml((HISTORY_MODE_OPTIONS.find(o=>o.v===historyTrendsMode)||{}).l||'')} ballots yet — try a different filter.</div>
+          </div>`;
+        const modeSel0 = document.getElementById('historyModeFilter');
+        if(modeSel0) modeSel0.addEventListener('change', () => { historyTrendsMode = modeSel0.value; paintPanel(); });
+        return;
+      }
+
+      const rows = computeTrends(list);
+      const strengths = rows.slice(0,2);
+      const weaknesses = rows.slice(-2).reverse();
+      const { overall, catSeries } = computeSeries(list);
+
+      // Build a lookup of every chart the dropdown can show: "overall" plus
+      // one entry per graded category, each carrying its own values/axis/color
+      // so switching the <select> just re-renders the single big chart panel.
+      const chartOptions = [];
+      const overallVals = overall.map(p => p.val).filter(v => v !== null && v !== undefined);
+      if(overallVals.length){
+        const overallPts = overall.filter(p=>p.val!==null&&p.val!==undefined);
+        chartOptions.push({
+          key: 'overall', label: 'Overall Score',
+          latest: overallVals[overallVals.length-1].toFixed(0) + '/100',
+          values: overallVals, rounds: overallPts.map(p=>p.round), color: '#16283c'
+        });
+      }
+      Object.keys(catSeries).forEach(name => {
+        const series = catSeries[name];
+        const vals = series.map(p => p.val);
+        const lastRaw = series[series.length-1];
+        chartOptions.push({
+          key: name, label: name,
+          latest: lastRaw.raw + '/' + lastRaw.max,
+          values: vals, rounds: series.map(p=>p.round), color: colorFromRatio(vals[vals.length-1]/100)
+        });
       });
-    }
-    Object.keys(catSeries).forEach(name => {
-      const series = catSeries[name];
-      const vals = series.map(p => p.val);
-      const lastRaw = series[series.length-1];
-      chartOptions.push({
-        key: name, label: name,
-        latest: lastRaw.raw + '/' + lastRaw.max,
-        values: vals, rounds: series.map(p=>p.round), color: colorFromRatio(vals[vals.length-1]/100)
-      });
-    });
 
-    const strengthIcon = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-65"></use></svg>';
-    const weaknessIcon = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-66"></use></svg>';
+      const strengthIcon = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-65"></use></svg>';
+      const weaknessIcon = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-66"></use></svg>';
 
-    // Latest vs. average overall score, so the user can see how the most
-    // recent round stacks up against their own history.
-    const overallValsAll = overall.map(p => p.val).filter(v => v !== null && v !== undefined);
-    const latestOverallScore = overallValsAll.length ? overallValsAll[overallValsAll.length-1] : null;
-    const avgOverallScore = overallValsAll.length ? overallValsAll.reduce((a,b)=>a+b,0) / overallValsAll.length : null;
+      // Latest vs. average overall score, so the user can see how the most
+      // recent round stacks up against their own history.
+      const overallValsAll = overall.map(p => p.val).filter(v => v !== null && v !== undefined);
+      const latestOverallScore = overallValsAll.length ? overallValsAll[overallValsAll.length-1] : null;
+      const avgOverallScore = overallValsAll.length ? overallValsAll.reduce((a,b)=>a+b,0) / overallValsAll.length : null;
 
-    el.innerHTML = `
-      <div class="history-trends">
-        <h3>Trends Across ${list.length} Ballot${list.length===1?'':'s'}</h3>
-        <div class="trend-rows">
-          ${overallValsAll.length ? `
-            <div class="trend-row trend-row-overall">
-              <span class="trend-name">Overall Score</span>
-              <span class="trend-bar-wrap"><span class="trend-bar" data-w="${latestOverallScore.toFixed(0)}" style="width:0%;background:${colorFromRatio(latestOverallScore/100)}"></span></span>
-              <span class="trend-avg">${latestOverallScore.toFixed(0)}%<span class="trend-avg-sub">avg ${avgOverallScore.toFixed(0)}%</span></span>
-            </div>` : ''}
-          ${rows.map(r => `
-            <div class="trend-row">
-              <span class="trend-name">${escHtml(r.name)}</span>
-              <span class="trend-bar-wrap"><span class="trend-bar" data-w="${r.avgPct.toFixed(0)}" style="width:0%;background:${colorFromRatio(r.avgPct/100)}"></span></span>
-              <span class="trend-avg">${r.avgPct.toFixed(0)}%</span>
-            </div>`).join('')}
-        </div>
-        <div class="trend-summary">
-          <div class="col strength">
-            <h4>${strengthIcon} Overall Strengths</h4>
-            <ul>${strengths.map(s=>`<li>${escHtml(s.name)}</li>`).join('')}</ul>
+      el.innerHTML = `
+        <div class="history-trends">
+          <div class="trend-head-row">
+            <h3>Trends Across ${list.length} Ballot${list.length===1?'':'s'}</h3>
+            ${modeFilterHtml}
           </div>
-          <div class="col weakness">
-            <h4>${weaknessIcon} Overall Weaknesses</h4>
-            <ul>${weaknesses.map(s=>`<li>${escHtml(s.name)}</li>`).join('')}</ul>
+          <div class="trend-rows">
+            ${overallValsAll.length ? `
+              <div class="trend-row trend-row-overall">
+                <span class="trend-name">Overall Score</span>
+                <span class="trend-bar-wrap"><span class="trend-bar" data-w="${latestOverallScore.toFixed(0)}" style="width:0%;background:${colorFromRatio(latestOverallScore/100)}"></span></span>
+                <span class="trend-avg">${latestOverallScore.toFixed(0)}%<span class="trend-avg-sub">avg ${avgOverallScore.toFixed(0)}%</span></span>
+              </div>` : ''}
+            ${rows.map(r => `
+              <div class="trend-row">
+                <span class="trend-name">${escHtml(r.name)}</span>
+                <span class="trend-bar-wrap"><span class="trend-bar" data-w="${r.avgPct.toFixed(0)}" style="width:0%;background:${colorFromRatio(r.avgPct/100)}"></span></span>
+                <span class="trend-avg">${r.avgPct.toFixed(0)}%</span>
+              </div>`).join('')}
           </div>
-        </div>
-        ${chartOptions.length ? `
-        <div class="trend-chart-panel">
-          <div class="tcp-head">
-            <label for="trendChartSelect">View trend</label>
-            <select class="tcp-select" id="trendChartSelect">
-              ${chartOptions.map(c => `<option value="${escHtml(c.key)}">${escHtml(c.label)}</option>`).join('')}
-            </select>
+          <div class="trend-summary">
+            <div class="col strength">
+              <h4>${strengthIcon} Overall Strengths</h4>
+              <ul>${strengths.map(s=>`<li>${escHtml(s.name)}</li>`).join('')}</ul>
+            </div>
+            <div class="col weakness">
+              <h4>${weaknessIcon} Overall Weaknesses</h4>
+              <ul>${weaknesses.map(s=>`<li>${escHtml(s.name)}</li>`).join('')}</ul>
+            </div>
           </div>
-          <div class="trend-chart-big" id="trendChartBig"></div>
-        </div>` : ''}
-      </div>`;
+          ${chartOptions.length ? `
+          <div class="trend-chart-panel">
+            <div class="tcp-head">
+              <label for="trendChartSelect">View trend</label>
+              <select class="tcp-select" id="trendChartSelect">
+                ${chartOptions.map(c => `<option value="${escHtml(c.key)}">${escHtml(c.label)}</option>`).join('')}
+              </select>
+            </div>
+            <div class="trend-chart-big" id="trendChartBig"></div>
+          </div>` : ''}
+        </div>`;
 
-    // Animate the summary bars in on a rAF tick so the width transition fires.
-    requestAnimationFrame(() => {
+      // Animate the summary bars in on a rAF tick so the width transition fires.
       requestAnimationFrame(() => {
-        el.querySelectorAll('.trend-bar').forEach(bar => { bar.style.width = bar.dataset.w + '%'; });
+        requestAnimationFrame(() => {
+          el.querySelectorAll('.trend-bar').forEach(bar => { bar.style.width = bar.dataset.w + '%'; });
+        });
       });
-    });
 
-    // Wire the dropdown to (re)render the single big chart panel.
-    function paintChart(key){
-      const c = chartOptions.find(o => o.key === key) || chartOptions[0];
-      const big = document.getElementById('trendChartBig');
-      if(!c || !big) return;
-      big.innerHTML = `
-        <div class="tcb-head">
-          <h5>${escHtml(c.label)}</h5>
-          <span class="tcb-latest">${escHtml(c.latest)}</span>
-        </div>
-        ${buildTrendChartSvg(c.values, c.color, c.rounds)}`;
+      // Wire the practice-type filter to re-run the whole panel.
+      const modeSel = document.getElementById('historyModeFilter');
+      if(modeSel){
+        modeSel.addEventListener('change', () => { historyTrendsMode = modeSel.value; paintPanel(); });
+      }
+
+      // Wire the dropdown to (re)render the single big chart panel.
+      function paintChart(key){
+        const c = chartOptions.find(o => o.key === key) || chartOptions[0];
+        const big = document.getElementById('trendChartBig');
+        if(!c || !big) return;
+        big.innerHTML = `
+          <div class="tcb-head">
+            <h5>${escHtml(c.label)}</h5>
+            <span class="tcb-latest">${escHtml(c.latest)}</span>
+          </div>
+          ${buildTrendChartSvg(c.values, c.color, c.rounds)}`;
+      }
+      const select = document.getElementById('trendChartSelect');
+      if(select){
+        select.addEventListener('change', () => paintChart(select.value));
+        paintChart(chartOptions[0] ? chartOptions[0].key : null);
+      }
     }
-    const select = document.getElementById('trendChartSelect');
-    if(select){
-      select.addEventListener('change', () => paintChart(select.value));
-      paintChart(chartOptions[0] ? chartOptions[0].key : null);
-    }
+
+    paintPanel();
   }
 
   // ---- overall AI coaching comment (Gemini) ----

@@ -233,6 +233,11 @@
   .ballot-head .field{font-family:var(--font-mono);font-size:12px;}
   .ballot-head .field b{text-transform:uppercase;letter-spacing:1px;color:var(--slate);font-weight:600;margin-right:6px;}
   .ballot-title{grid-column:1/-1;font-family:var(--font-display);font-size:26px;margin:0 0 6px;}
+
+  /* Standardized heading used at the top of every secondary page/view
+     (My Ballot History, Streak Calendar, Example Ballot, Tournament
+     Briefing, Citation Checker) so they all share the same font/size. */
+  .page-heading{font-family:var(--font-display);font-size:22px;font-weight:700;margin:0 0 16px;color:inherit;}
   .ballot-body{padding:24px 28px 28px;}
 
   /* -------- flight history -------- */
@@ -590,6 +595,11 @@
     font-family:var(--font-display);font-size:19px;font-weight:700;margin:0 0 20px;color:#000;
     padding-bottom:14px;border-bottom:2px solid var(--rule);
   }
+  .trend-head-row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+    padding-bottom:14px;border-bottom:2px solid var(--rule);margin-bottom:20px;}
+  .trend-head-row h3{margin:0;padding-bottom:0;border-bottom:none;}
+  .trend-mode-filter{display:flex;align-items:center;gap:8px;}
+  .trend-mode-filter label{font-family:var(--font-mono);font-size:11.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.6px;color:#000;}
   .trend-rows{display:flex;flex-direction:column;}
   .trend-row{display:flex;align-items:center;gap:14px;padding:11px 0;font-size:13px;border-bottom:1px solid rgba(0,0,0,0.07);}
   .trend-row:last-child{border-bottom:none;}

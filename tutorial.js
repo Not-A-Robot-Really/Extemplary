@@ -7,7 +7,7 @@
 
    Design: this file does NOT reach into the main app's closures (the whole
    app lives inside one big IIFE). Instead it drives the real UI the same
-   way a person would — highlighting real buttons, requiring real clicks on
+   way a person would: highlighting real buttons, requiring real clicks on
    them, and watching the app's own hidden/shown classes to know when a
    real action (a goal was saved, a briefing came back, a question was
    picked, etc.) actually happened.
@@ -31,7 +31,7 @@
 
   if(authForm && authTabSignup){
     // Capture phase so we record intent before the app's own async signup
-    // handler runs — if it succeeds, we'll know to launch the tutorial the
+    // handler runs; if it succeeds, we'll know to launch the tutorial the
     // moment authGate disappears.
     authForm.addEventListener('submit', function(){
       if(authTabSignup.classList.contains('active')){
@@ -75,7 +75,7 @@
   /* ---------------------------------------------------------------------
      Fake "skeleton" preview of My Ballot History for brand-new accounts.
      A new user has zero recorded rounds, so the real page would show
-     nothing for Coach's Notes / Trends / Goals / round list — but the
+     nothing for Coach's Notes / Trends / Goals / round list, but the
      tour still wants to point at those sections and describe what they
      become once you've recorded ~7 speeches. Rather than invent fake
      copy (which reads as real and can be confusing/wrong), this paints
@@ -83,7 +83,7 @@
      same card/bar counts, but every line of actual text or data is just
      a colored rectangle. Widths/colors are randomized per render so it
      reads as clearly-a-placeholder rather than a specific data point.
-     Purely cosmetic — real renderHistoryList() overwrites all of this
+     Purely cosmetic; real renderHistoryList() overwrites all of this
      the moment History is opened for real after the tour.
      --------------------------------------------------------------------- */
   function skelPct(min, max){ return Math.round(min + Math.random() * (max - min)); }
@@ -95,7 +95,7 @@
     return '<div class="tut-skel-block tut-skel-bar" style="width:' + skelPct(40, 92) + '%;height:14px;background:' + skelColor() + ';opacity:0.55;"></div>';
   }
 
-  // Real rubric category names (just labels — no invented scores) so the
+  // Real rubric category names (just labels, no invented scores) so the
   // skeleton preview reads as "this app, before you have data" rather than
   // a generic loading spinner. Widths/values next to them are still random
   // placeholders, never anything that looks like a specific real result.
@@ -195,7 +195,7 @@
         '</div>' +
       '</div>';
 
-    // Cosmetic only — a brand-new account has no ballots to actually
+    // Cosmetic only: a brand-new account has no ballots to actually
     // filter, so picking an option just repaints a fresh random preview
     // rather than wiring up real filtering logic.
     var modeSel = byId('historyModeFilter');
@@ -296,7 +296,7 @@
     };
   }
 
-  var NAME_MAX_LEN = 20; // secretly capped — the person is never told this number
+  var NAME_MAX_LEN = 20; // secretly capped (the person is never told this number)
 
   function nameKeyFor(email){ return 'extemplary_speaker_name:' + (email||'').toLowerCase(); }
 
@@ -320,7 +320,7 @@
   }
 
   // Draws the highlight ring + glow box around a target purely as
-  // separate, always-on-top overlay elements — the target itself is
+  // separate, always-on-top overlay elements; the target itself is
   // never given a new position/z-index/class, so it's never at risk of
   // being covered by (or blocking clicks through) anything else, and it
   // stays 100% clickable exactly where the app already put it.
@@ -331,7 +331,7 @@
   // inside the outline reads at full brightness and everything else stays
   // dim, instead of the old flat overlay dimming the target too. The
   // pulsing ring is only drawn when the current step actually needs a
-  // real click on the target — for pure "look at this" steps it's just
+  // real click on the target: for pure "look at this" steps it's just
   // visual clutter that can block the very thing being shown off, so it's
   // left out.
   function paintHighlight(target, showRing){
@@ -357,7 +357,7 @@
   // current target is furthest from (or the right side by default, when
   // there's no target). Because the panel always lives on a fixed edge
   // rail instead of floating next to the target, it can never end up on
-  // top of the very thing the step is highlighting — the two things it
+  // top of the very thing the step is highlighting, the two things it
   // needs to avoid overlapping (target rect, panel rect) are pinned to
   // opposite sides of the viewport by construction.
   function positionBox(target, showRing){
@@ -387,7 +387,7 @@
 
   // Whether the current step actually requires clicking the spotlighted
   // element. That's the only time the pulsing orange ring earns its keep
-  // as a "click here" cue — for plain look-at-this steps it just sits on
+  // as a "click here" cue: for plain look-at-this steps it just sits on
   // top of the very thing being shown off, so we leave it off.
   function stepNeedsRing(step){
     return !!step.waitForClick;
@@ -418,7 +418,7 @@
     positionBox(target, showRing);
 
     // Keep tracking the target continuously (not just once), since
-    // several steps spotlight things that resize or shift mid-step — a
+    // several steps spotlight things that resize or shift mid-step, a
     // goal-builder box growing as fields fill in, a question box that
     // disappears once a new question is generated, etc. Re-querying the
     // DOM fresh every tick (via liveTarget) instead of reusing a cached
@@ -503,7 +503,7 @@
       // spotlighted icon/button ("click this any time…"). If the user
       // actually clicks it, treat that as their way of saying "got it"
       // and move on automatically instead of leaving them stuck looking
-      // for a Next button — without taking Next away from anyone who'd
+      // for a Next button, without taking Next away from anyone who'd
       // rather just read and move on themselves.
       if(step.spotlight){
         var autoHandler = function(ev){
@@ -548,7 +548,7 @@
 
   // Small celebratory confetti burst, shown once, only when someone
   // actually finishes every step (not when they skip out early). Plain
-  // CSS-animated divs — no canvas/deps — that clean themselves up after
+  // CSS-animated divs (no canvas/deps) that clean themselves up after
   // the animation ends so nothing lingers in the DOM.
   function fireConfetti(){
     var colors = ['#123a63', '#a3322a', '#2f8f5b', '#c9932f', '#6a4c93', '#1e88a8'];
@@ -710,7 +710,7 @@
       avatar: '\uD83D\uDD0D',
       before: function(){ paintHistorySkeleton(); },
       spotlight: '#historyModeFilter',
-      html: "Every one of your rounds is tagged by the practice mode you recorded it in. Use this <b>Practice type</b> dropdown to see trends for just <b>Regular Practice</b>, just <b>Rapid Drill: Introduction</b>, or just <b>Rapid Drill: Body</b> \u2014 handy once you've been mixing drill types and want to see how each one's coming along on its own."
+      html: "Every one of your rounds is tagged by the practice mode you recorded it in. Use this <b>Practice type</b> dropdown to see trends for just <b>Regular Practice</b>, just <b>Rapid Drill: Introduction</b>, or just <b>Rapid Drill: Body</b>. Handy once you've been mixing drill types and want to see how each one's coming along on its own."
     });
 
     steps.push({
@@ -736,6 +736,7 @@
       title: 'The 30-minute prep timer',
       avatar: '⏱️',
       spotlight: '#timerToggle',
+      after: function(){ var p = byId('timerPanel'); if(p) p.classList.add('hidden'); },
       html: "Extemp gives you 30 minutes to prep a speech. Click this clock icon any time to open a real countdown timer. You can start, pause, resume, or reset right from the header or the sidebar."
     });
 
@@ -750,6 +751,7 @@
       title: 'Keyboard shortcuts',
       avatar: '⌨️',
       spotlight: '#shortcutsToggle',
+      after: function(){ var p = byId('shortcutsPanel'); if(p) p.classList.add('hidden'); },
       html: "There's a full set of keyboard shortcuts for convenience sakes. Click here any time to see the full list."
     });
 
@@ -758,7 +760,8 @@
       title: 'Time Signal settings',
       avatar: '🔔',
       spotlight: '#settingsToggle',
-      html: "This is where you customize <b>time signals</b>, little on-screen alerts that pop up at specific points while you're recording (e.g. \"1 minute left\"). Add, relabel, recolor, or remove signals here, or reset to the defaults. This is also where you can paste your own Groq/Gemini API keys if you ever hit rate limits.<br><br>Your signals fire for real while you're actually recording: the on-screen clock turns amber at 6:00 and red with a hard-stop warning at 7:00, so you always know exactly how much time is left, even without opening this panel."
+      after: function(){ var p = byId('settingsPanel'); var t = byId('settingsToggle'); if(p) p.classList.add('hidden'); if(t) t.classList.remove('active'); },
+      html: "This is where you customize <b>time signals</b>, little on-screen alerts that pop up at specific points while you're recording (e.g. \"1 minute left\"). Add, relabel, recolor, or remove signals here, or reset to the defaults. This is also where you can paste your own Groq/Gemini API keys if you ever hit rate limits.<br><br>Your signals fire for real while you're actually recording: the on-screen clock turns amber at 6:00 and red with a hard stop warning at 7:00, so you always know exactly how much time is left, even without opening this panel."
     });
 
     // ---- Tournament Briefing (forced use) ---------------------------------
@@ -775,10 +778,10 @@
     steps.push({
       title: 'Pick your timing',
       avatar: '🗞️',
-      spotlight: '.bf-timing-btn[data-timing="today"]',
-      waitForClick: '.bf-timing-btn[data-timing="today"]',
+      spotlight: '#bfTimingRow .bf-timing-btn[data-timing="today"]',
+      waitForClick: '#bfTimingRow .bf-timing-btn[data-timing="today"]',
       hintText: 'Click "In a few hours".',
-      html: 'Click <b>"In a few hours"</b>. this tells the AI your tournament is coming up soon so it can focus on the most relevant recent news.'
+      html: 'Click <b>"In a few hours"</b>. This tells the AI your tournament is coming up soon so it can focus on the most relevant recent news.'
     });
 
     steps.push({
@@ -839,7 +842,7 @@
       title: 'Every category, every point',
       avatar: '📐',
       spotlight: '#rubricPanel',
-      html: "This is the full rubric: Creative Hook; Intro, Structure, Strength of Argument &amp; Analysis, Flaws in Reasoning, Strength of Evidence, and more. Each category has its own point value and the exact criteria the AI judge checks for. It's the same rubric used to score every round you record, so it's worth a skim before your first one. You can reopen this any time from the same icon on the paper."
+      html: "This is the full rubric: Creative Hook &amp; Intro, Structure, Strength of Argument &amp; Analysis, Flaws in Reasoning, Strength of Evidence, and more. Each category has its own point value and the exact criteria the AI judge checks for. It's the same rubric used to score every round you record, so it's worth a skim before your first one. You can reopen this any time from the same icon on the paper."
     });
 
 
@@ -900,7 +903,7 @@
       title: 'Three practice modes',
       avatar: '\u26A1',
       spotlight: '#modeSwitch',
-      html: "Before you record, pick a mode here. <b>Regular Practice</b> is a full 7-minute round graded on all 8 rubric categories \u2014 the standard tournament format. <b>Rapid Drill: Introduction</b> is a short-form drill focused only on your opening (hook, link, thesis) so you can rep intros fast without recording a whole speech. <b>Rapid Drill: Body</b> does the same for your body paragraphs \u2014 structure, argument strength, evidence, and reasoning \u2014 without needing a full intro or conclusion. Each drill grades against its own separate, focused rubric \u2014 different from Regular Practice's full 8-category rubric \u2014 and shows up tagged in your Ballot History, so you can track all three separately."
+      html: "Before you record, pick a mode here. <b>Regular Practice</b> is a full 7-minute round graded on all 8 rubric categories, the standard tournament format. <b>Rapid Drill: Introduction</b> is a short-form drill focused only on your opening (hook, link, thesis) so you can rep intros fast without recording a whole speech. <b>Rapid Drill: Body</b> does the same for your body paragraphs: structure, argument strength, evidence, and reasoning, without needing a full intro or conclusion. Each drill grades against its own separate, focused rubric, different from Regular Practice's full 8-category rubric, and shows up tagged in your Ballot History, so you can track all three separately."
     });
 
     steps.push({

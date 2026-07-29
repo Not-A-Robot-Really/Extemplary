@@ -183,20 +183,20 @@
 
   /* -------- home page practice mode switch -------- */
   .mode-switch{
-    display:inline-flex;gap:4px;padding:4px;background:rgba(0,0,0,0.04);
-    border:1px solid var(--rule);border-radius:24px;margin-bottom:6px;
+    display:inline-flex;gap:3px;padding:3px;background:rgba(0,0,0,0.04);
+    border:1px solid var(--rule);border-radius:4px;margin-bottom:6px;
   }
   .mode-switch-btn{
     font-family:var(--font-body);font-size:12.5px;font-weight:600;
-    padding:8px 12px;border-radius:20px;border:none;background:none;color:var(--slate);
-    cursor:pointer;transition:background .15s, color .15s;white-space:nowrap;
+    padding:8px 13px;border-radius:2px;border:1px solid transparent;background:none;color:var(--slate);
+    cursor:pointer;transition:background .15s, color .15s, border-color .15s;white-space:nowrap;
   }
   #modeRegularBtn:hover{color:#1d5c9e;background:rgba(29,92,158,0.08);}
   #modeIntroDrillBtn:hover{color:#a3322a;background:rgba(163,50,42,0.08);}
   #modeBodyDrillBtn:hover{color:#a6790c;background:rgba(166,121,12,0.08);}
-  #modeRegularBtn.active{background:#1d5c9e;color:#fff;}
-  #modeIntroDrillBtn.active{background:#a3322a;color:#fff;}
-  #modeBodyDrillBtn.active{background:#a6790c;color:#fff;}
+  #modeRegularBtn.active{background:#1d5c9e;color:#fff;border-color:#123a63;}
+  #modeIntroDrillBtn.active{background:#a3322a;color:#fff;border-color:#7a231c;}
+  #modeBodyDrillBtn.active{background:#a6790c;color:#fff;border-color:#7a5a08;}
   .mode-switch-hint{
     font-family:var(--font-mono);font-size:11px;color:#000;margin-bottom:26px;
   }

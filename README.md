@@ -98,9 +98,9 @@ Supabase: provides authentication and cloud storage
 ## Getting started 📖
 ---
 ### Try it!
-Open `Extemplary.html` in any modern (up to date) desktop or mobile browser. No installs needed, no npm, no server to run.
+Open `Extemplary.html` in any modern desktop or mobile browser, no installs needed.
 
-> **Note:** the example ballot's video uses the YouTube IFrame API, which requires the page be served over. `http(s)://` It won't load correctly if you just double-click the file from disk (`file://`). Your own recorded rounds don't have this restriction; that playback is a plain local `<video>` element. Signing up, logging in, and cloud history also require `https://` (or `localhost`) for the same reason browsers require it for camera access. See [Deployment](#deployment) below to host it properly.
+> **Note:** the example ballot's video uses YouTube IFrame API, which requires the page be served over. `http(s)://` It won't load correctly if you open the file from disk (`file://`). Cloud history also require `https://` (or `localhost`) for the same reason browsers require it for camera access. See [Deployment](#deployment) below to host it properly!
 
 ### Creating an account 👤
 ---
@@ -122,23 +122,15 @@ The app utilizes default Groq and Gemini API keys for transcription, judging, an
 
 ## Supabase setup 💾
 ---
-Accounts and cloud history run on a Supabase project. The app already has a project's URL and public (`anon`) key wired in, but that project needs one piece of one-time setup before sign-ups, history, and video storage will work.
+Accounts and cloud history run on a Supabase project.
 
-1. Open the corresponding project at [supabase.com/dashboard](https://supabase.com/dashboard).
-2. Go to **SQL Editor → New query**, paste in the contents of `setup.sql` (included in this repo), and run it. This creates:
-   - A `ballots` table (question, scores, feedback, transcript, video path) with Row Level Security, so each signed-in user can only read, insert, or delete their own rows.
-   - A `user_overall_feedback` table for the cached Coach's Overall Notes comment, also protected by Row Level Security.
-   - A `calendar_events` table (event date, title, notes) powering the Streak Calendar's tournament/event tracker, protected by Row Level Security.
-   - A `user_goals` table (goal type, params, target date, status) powering the Goals system, protected by Row Level Security.
-   - A private `ballot-videos` Storage bucket with matching policies, so videos are only reachable by their owner via short-lived signed URLs.
-3. Under **Authentication → Providers → Email**, confirm email sign-in is enabled, and decide whether to require **email confirmation** before first login.
-4. Under **Authentication → URL Configuration**, set **Site URL** (and add to **Redirect URLs**) to your deployed GitHub Pages URL, so confirmation emails link back to the right place.
+If you fork this project and want your *own* Supabase backend rather than the one it ships with, do the following:
 
-If you fork this project and want your *own* Supabase backend rather than the one it ships with, create a new Supabase project, run `setup.sql` there, and swap in your project's URL and anon key where `SUPABASE_URL` / `SUPABASE_ANON_KEY` are defined near the top of the `<script>` in `Extemplary.html`. The anon key is meant to be public, Row Level Security. It is *not* key secrecy, that protects user data.
+Create a new Supabase project, run `setup.sql` there, and swap in your project's URL and anon key in `SUPABASE_URL` / `SUPABASE_ANON_KEY` near the top of `<script>` in `Extemplary.html`. The anon key is meant to be public, Row Level Security. It is *not* meant to be key secrecy.
 
 ### Email delivery 🌐
 ---
-Supabase's built-in email sender is rate-limited to about 2 emails/hour, which doesn't cut it logistically for signups. Providers like Resend, Brevo, or SendGrid all have workable free tiers, though most require verifying either a valid sender domain or a single sender address before they'll deliver to real recipients. Therefore, there is **currently no built in email verification system** for sign ups. However, we are trying to resolve the issue soon.
+Supabase's built-in email sender only allows 2 emails/hour. Providers like Resend, Brevo, or SendGrid all have free tiers, but all require a valid domain. Therefore, there is **currently no built in email verification system for sign ups**. However, we are trying to resolve the issue soon.
 
 ## Deployment 📦
 ---
@@ -153,11 +145,13 @@ To get a real `https://` URL (required for camera access, sign-in, and the examp
 ```
 5. Open that URL: camera recording, AI judging, account sign-up/log-in, and the synced example video will all work normally.
 
-Viewing the raw file on `github.com/.../blob/...` or via `raw.githubusercontent.com` is **not** the same as hosting it. My reccomendation is to just use GitHub Pages for a working page.
+Viewing the raw file on `github.com/.../blob/...` or via `raw.githubusercontent.com` is **not** the same as hosting it.
+
+My reccomendation is to just use GitHub Pages for a working page.
 
 ## Browser support 
 ---
-Requires a modern browser with support for `MediaRecorder`, `getUserMedia`, and the Web Audio API (recent Chrome, Edge, Firefox, or Safari). Camera/microphone access, as well as account sign-in and cloud history, require either `https://` or `localhost`. Browsers block media capture on plain `http://`, and Supabase Auth sessions behave unreliably there too.
+Requires a modern browser with support for `MediaRecorder`, `getUserMedia`, and the Web Audio API (recent Chrome, Edge, Firefox, or Safari). Camera/microphone access as well as account sign-in and cloud history require either `https://` or `localhost`.
 
 ## Privacy & data 🛡️
 ---

@@ -190,12 +190,21 @@
     padding:8px 16px;border-radius:20px;border:none;background:none;color:var(--slate);
     cursor:pointer;transition:background .15s, color .15s;white-space:nowrap;
   }
-  .mode-switch-btn:hover{color:var(--charcoal);}
-  .mode-switch-btn.active{background:var(--charcoal);color:var(--on-accent);}
-  #modeIntroDrillBtn.active{background:#a3322a;}
+  #modeRegularBtn:hover{color:#1d5c9e;background:rgba(29,92,158,0.08);}
+  #modeIntroDrillBtn:hover{color:#a3322a;background:rgba(163,50,42,0.08);}
+  #modeRegularBtn.active{background:#1d5c9e;color:#fff;}
+  #modeIntroDrillBtn.active{background:#a3322a;color:#fff;}
   .mode-switch-hint{
     font-family:var(--font-mono);font-size:11px;color:var(--slate);margin-bottom:16px;
   }
+
+  /* -------- ballot-head practice mode label -------- */
+  .ballot-mode-label{
+    font-family:var(--font-mono);font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.6px;
+    padding:4px 10px;border-radius:3px;color:#fff;display:inline-block;
+  }
+  .ballot-mode-label.is-regular{background:#1d5c9e;}
+  .ballot-mode-label.is-intro{background:#a3322a;}
 
   .rubric-table{width:100%;border-collapse:collapse;font-size:12.5px;table-layout:fixed;}
   .rubric-table th, .rubric-table td{
@@ -628,6 +637,12 @@
     font-family:var(--font-mono);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;
     color:var(--on-accent);background:var(--charcoal);border-radius:3px;padding:4px 9px;flex-shrink:0;
   }
+  .hc-mode-badge{
+    font-family:var(--font-mono);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;
+    color:#fff;border-radius:3px;padding:4px 9px;flex-shrink:0;
+  }
+  .hc-mode-badge.is-regular{background:#1d5c9e;}
+  .hc-mode-badge.is-intro{background:#a3322a;}
   .hc-date{font-family:var(--font-mono);font-size:12px;color:#000;opacity:0.6;}
   .history-card-head .hc-score{font-family:var(--font-display);font-size:30px;font-weight:800;flex-shrink:0;line-height:1;}
   .history-card-head .hc-score .hc-score-max{font-size:15px;font-weight:600;opacity:0.55;margin-left:1px;}

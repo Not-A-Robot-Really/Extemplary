@@ -527,7 +527,7 @@
       <div class="field"><b>Round</b><span id="roundNo">1</span></div>
       <div class="field"><b>Speaker</b>You</div>
       <div class="field"><b>Judge</b>AI Panel — Llama 3.3 70B</div>
-      <div class="field hidden" id="introDrillBadge" style="color:var(--score-red);font-weight:bold;">Intro Drill Mode</div>
+      <div class="field ballot-mode-label is-regular" id="ballotModeLabel">Regular Practice</div>
     </div>
 
     <div class="ballot-body">
@@ -820,7 +820,6 @@
           <div style="display:flex;flex-direction:column;align-items:center;">
             <button class="rec-btn" id="recBtn" aria-label="Start recording"><span class="inner"></span></button>
             <div class="btn-label" id="recBtnLabel">Record</div>
-            <div class="q-hint hidden" id="introRecordHint" style="margin-top:6px;">Intro Drill — record just your introduction (up to ~1 minute), then Stop.</div>
             <div class="q-error" id="recordQuestionError" style="display:none;margin-top:6px;color:var(--score-red);">Please enter a question</div>
           </div>
         </div>
@@ -2261,7 +2260,7 @@
           <div class="hc-top">
             <div class="hc-top-left">
               <span class="hc-round">Round ${roundNum}</span>
-              ${entry.isIntroDrill ? '<span class="hc-round" style="background:var(--score-red);">Intro Drill</span>' : ''}
+              <span class="hc-mode-badge ${entry.isIntroDrill ? 'is-intro' : 'is-regular'}">${entry.isIntroDrill ? 'Rapid Drill: Intro' : 'Regular Practice'}</span>
               <span class="hc-date">${date}</span>
             </div>
             <div class="hc-score" style="color:${scoreColor}">${entry.total!==null && entry.total!==undefined ? `${entry.total}<span class="hc-score-max">/100</span>` : '—'}</div>
@@ -4035,8 +4034,7 @@
   const modeRegularBtn     = document.getElementById('modeRegularBtn');
   const modeIntroDrillBtn  = document.getElementById('modeIntroDrillBtn');
   const modeSwitchHint     = document.getElementById('modeSwitchHint');
-  const introDrillBadge    = document.getElementById('introDrillBadge');
-  const introRecordHint    = document.getElementById('introRecordHint');
+  const ballotModeLabel    = document.getElementById('ballotModeLabel');
   const ballotTitleEl      = document.getElementById('ballotTitle');
   const introPrepModal     = document.getElementById('introPrepModal');
   const introPrepDisplay   = document.getElementById('introPrepDisplay');
@@ -4054,10 +4052,11 @@
     modeRegularBtn.setAttribute('aria-selected', String(!on));
     modeIntroDrillBtn.setAttribute('aria-selected', String(on));
     modeSwitchHint.textContent = on
-      ? '5-minute prep, then record ~1 minute — graded only on hook, link, thesis, clarity, and delivery.'
-      : 'Full 7-minute round, graded on all 8 rubric categories.';
-    introDrillBadge.classList.toggle('hidden', !on);
-    introRecordHint.classList.toggle('hidden', !on);
+      ? '5-minute prep, then record just the introduction up to 1 minute. Graded only on hook, link, thesis, clarity, and delivery.'
+      : '30-minute prep, then record a full 7-minute. Graded on all 8 rubric categories.';
+    ballotModeLabel.textContent = on ? 'Rapid Drill: Introduction' : 'Regular Practice';
+    ballotModeLabel.classList.toggle('is-intro', on);
+    ballotModeLabel.classList.toggle('is-regular', !on);
     ballotTitleEl.textContent = on ? 'Intro Drill Ballot' : 'Official Practice Ballot';
     if(!on){
       stopIntroPrepTimer();

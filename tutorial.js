@@ -94,73 +94,195 @@
   function skelBarRow(){
     return '<div class="tut-skel-block tut-skel-bar" style="width:' + skelPct(40, 92) + '%;height:14px;background:' + skelColor() + ';opacity:0.55;"></div>';
   }
-  function paintHistorySkeleton(){
+
+  // Real rubric category names (just labels — no invented scores) so the
+  // skeleton preview reads as "this app, before you have data" rather than
+  // a generic loading spinner. Widths/values next to them are still random
+  // placeholders, never anything that looks like a specific real result.
+  var SKEL_CATEGORIES = [
+    'Creative Hook & Intro', 'Structure', 'Strength of Argument & Analysis',
+    'Flaws in Reasoning', 'Strength of Evidence', 'Speech Quality, Vocal Delivery, and Fluency'
+  ];
+  var SKEL_MODES = [
+    { cls:'is-regular', label:'Regular Practice' },
+    { cls:'is-intro', label:'Rapid Drill: Intro' },
+    { cls:'is-body', label:'Rapid Drill: Body' }
+  ];
+  var HISTORY_MODE_OPTIONS_SKEL = [
+    { v:'all', l:'All' },
+    { v:'regular', l:'Regular Practice' },
+    { v:'introdrill', l:'Rapid Drill: Introduction' },
+    { v:'bodydrill', l:'Rapid Drill: Body' }
+  ];
+
+  /* -------- Coach's Overall Notes -------- */
+  function paintOverallSkeleton(){
     var overallEl = byId('historyOverallFeedback');
-    if(overallEl){
-      overallEl.innerHTML =
-        '<div class="history-overall tut-skel">' +
-          '<div class="ho-head">' +
-            '<span class="ho-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-67"></use></svg></span>' +
-            '<h3>Coach\u2019s Overall Notes</h3>' +
-          '</div>' +
-          '<div class="tut-skel-block tut-skel-line" style="width:96%;"></div>' +
-          '<div class="tut-skel-block tut-skel-line" style="width:88%;"></div>' +
-          '<div class="tut-skel-block tut-skel-line" style="width:63%;"></div>' +
-        '</div>';
-    }
+    if(!overallEl) return;
+    overallEl.innerHTML =
+      '<div class="history-overall tut-skel">' +
+        '<div class="ho-head">' +
+          '<span class="ho-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-67"></use></svg></span>' +
+          '<h3>Coach\u2019s Overall Notes</h3>' +
+        '</div>' +
+        '<div class="tut-skel-block tut-skel-line" style="width:96%;"></div>' +
+        '<div class="tut-skel-block tut-skel-line" style="width:88%;"></div>' +
+        '<div class="tut-skel-block tut-skel-line" style="width:63%;"></div>' +
+      '</div>';
+  }
+
+  /* -------- Trends Across Your Ballots (real layout: head row + practice-
+     type filter select + overall/category trend rows + strengths/
+     weaknesses + trend-chart panel with its own select) -------- */
+  function paintTrendsSkeleton(){
     var trendsEl = byId('historyTrends');
-    if(trendsEl){
-      var rows = '';
-      for(var i=0;i<4;i++){
-        rows += '<div class="tut-skel-goal-card">' +
-          '<div class="tut-skel-block tut-skel-line" style="width:' + skelPct(30,55) + '%;margin:0;"></div>' +
-          '<div class="tut-skel-block" style="width:44px;height:16px;background:' + skelColor() + ';opacity:0.6;"></div>' +
-        '</div>';
+    if(!trendsEl) return;
+
+    var overallPct = skelPct(55, 90);
+    var catRows = SKEL_CATEGORIES.map(function(name){
+      var pct = skelPct(45, 95);
+      return '<div class="trend-row">' +
+        '<span class="trend-name">' + name + '</span>' +
+        '<span class="trend-bar-wrap"><span class="tut-skel-block tut-skel-bar" style="width:' + pct + '%;height:100%;background:' + skelColor() + ';opacity:0.55;"></span></span>' +
+        '<span class="trend-avg tut-skel-block tut-skel-line" style="width:34px;height:11px;margin:0;display:inline-block;"></span>' +
+      '</div>';
+    }).join('');
+
+    function strengthWeaknessCol(cls, headingIcon, heading){
+      var items = '';
+      for(var i=0;i<2;i++){
+        items += '<li><span class="tut-skel-block tut-skel-line" style="width:' + skelPct(60,90) + '%;margin:0;height:11px;"></span></li>';
       }
-      var bars = '';
-      for(var j=0;j<9;j++){
-        bars += '<div class="tut-skel-block tut-skel-bar" style="width:9%;height:' + skelPct(20,100) + '%;background:' + skelColor() + ';opacity:0.6;"></div>';
-      }
-      trendsEl.innerHTML =
-        '<div class="tut-skel-trends">' +
+      return '<div class="col ' + cls + '"><h4>' + headingIcon + ' ' + heading + '</h4><ul>' + items + '</ul></div>';
+    }
+    var strengthIcon = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-65"></use></svg>';
+    var weaknessIcon = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-66"></use></svg>';
+
+    var chartBars = '';
+    for(var j=0;j<9;j++){
+      chartBars += '<div class="tut-skel-block tut-skel-bar" style="width:9%;height:' + skelPct(20,100) + '%;background:' + skelColor() + ';opacity:0.6;"></div>';
+    }
+
+    trendsEl.innerHTML =
+      '<div class="history-trends tut-skel">' +
+        '<div class="trend-head-row">' +
           '<h3>Trends Across Your Ballots</h3>' +
-          '<div class="tut-skel-trend-rows">' + rows + '</div>' +
-          '<div class="tut-skel-chart">' + bars + '</div>' +
-        '</div>';
-    }
-    var goalsEl = byId('historyGoals');
-    if(goalsEl){
-      var cards = '';
-      for(var k=0;k<2;k++){
-        cards += '<div class="tut-skel-goal-card">' +
-          '<div class="tut-skel-block tut-skel-line" style="width:' + skelPct(45,70) + '%;margin:0;"></div>' +
-          '<div class="tut-skel-block" style="width:70px;height:26px;background:' + skelColor() + ';opacity:0.6;border-radius:20px;"></div>' +
-        '</div>';
-      }
-      goalsEl.innerHTML =
-        '<div class="tut-skel-goals">' +
-          '<h3>Your Goals</h3>' +
-          cards +
-        '</div>';
-    }
-    var listWrapEl = byId('historyListWrap');
-    if(listWrapEl){
-      var cardsHtml = '';
-      for(var m=0;m<3;m++){
-        var catRows = '';
-        var catCount = skelPct(3,5);
-        for(var n=0;n<catCount;n++){ catRows += skelBarRow(); }
-        cardsHtml += '<div class="tut-skel-card">' +
-          '<div class="tut-skel-card-top">' +
-            '<div class="tut-skel-block tut-skel-line" style="width:120px;margin:0;"></div>' +
-            '<div class="tut-skel-block" style="width:56px;height:26px;background:' + skelColor() + ';opacity:0.6;"></div>' +
+          '<div class="trend-mode-filter">' +
+            '<label for="historyModeFilter">Practice type</label>' +
+            '<select class="tcp-select" id="historyModeFilter">' +
+              HISTORY_MODE_OPTIONS_SKEL.map(function(o){ return '<option value="' + o.v + '">' + o.l + '</option>'; }).join('') +
+            '</select>' +
           '</div>' +
-          '<div class="tut-skel-cats">' + catRows + '</div>' +
-        '</div>';
-      }
-      var list = byId('historyList');
-      if(list) list.innerHTML = cardsHtml;
+        '</div>' +
+        '<div class="trend-rows">' +
+          '<div class="trend-row trend-row-overall">' +
+            '<span class="trend-name">Overall Score</span>' +
+            '<span class="trend-bar-wrap"><span class="tut-skel-block tut-skel-bar" style="width:' + overallPct + '%;height:100%;background:' + skelColor() + ';opacity:0.6;"></span></span>' +
+            '<span class="trend-avg tut-skel-block tut-skel-line" style="width:40px;height:13px;margin:0;display:inline-block;"></span>' +
+          '</div>' +
+          catRows +
+        '</div>' +
+        '<div class="trend-summary">' +
+          strengthWeaknessCol('strength', strengthIcon, 'Overall Strengths') +
+          strengthWeaknessCol('weakness', weaknessIcon, 'Overall Weaknesses') +
+        '</div>' +
+        '<div class="trend-chart-panel">' +
+          '<div class="tcp-head">' +
+            '<label for="trendChartSelectSkel">View trend</label>' +
+            '<select class="tcp-select" id="trendChartSelectSkel"><option>Overall Score</option></select>' +
+          '</div>' +
+          '<div class="trend-chart-big"><div class="tut-skel-chart">' + chartBars + '</div></div>' +
+        '</div>' +
+      '</div>';
+
+    // Cosmetic only — a brand-new account has no ballots to actually
+    // filter, so picking an option just repaints a fresh random preview
+    // rather than wiring up real filtering logic.
+    var modeSel = byId('historyModeFilter');
+    if(modeSel) modeSel.addEventListener('change', paintTrendsSkeleton);
+  }
+
+  /* -------- Your Goals (real goal-card / seal / suggested-goals shapes) -------- */
+  function paintGoalsSkeleton(){
+    var goalsEl = byId('historyGoals');
+    if(!goalsEl) return;
+    var cards = '';
+    for(var k=0;k<2;k++){
+      var pct = skelPct(20, 85);
+      cards += '<div class="goal-card tut-skel">' +
+        '<div class="goal-card-seal" style="--goal-pct:' + pct + '">' +
+          '<div class="goal-card-seal-ring"></div>' +
+          '<div class="goal-card-seal-hole"><span class="goal-card-seal-pct">' + pct + '%</span></div>' +
+        '</div>' +
+        '<div class="goal-card-main">' +
+          '<div class="goal-card-label tut-skel-block tut-skel-line" style="width:' + skelPct(50,72) + '%;"></div>' +
+          '<div class="goal-card-progress tut-skel-block tut-skel-line" style="width:64px;height:11px;"></div>' +
+        '</div>' +
+      '</div>';
     }
+    var suggested = '';
+    for(var s=0;s<2;s++){
+      suggested += '<div class="suggested-goal-card">' +
+        '<div class="tut-skel-block tut-skel-line" style="width:' + skelPct(55,80) + '%;margin:0;"></div>' +
+        '<div class="tut-skel-block" style="width:70px;height:26px;background:' + skelColor() + ';opacity:0.6;border-radius:20px;"></div>' +
+      '</div>';
+    }
+    goalsEl.innerHTML =
+      '<div class="history-goals tut-skel">' +
+        '<div class="hg-head">' +
+          '<div class="sec-head-title">' +
+            '<span class="sec-icon sec-icon-target"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-71"></use></svg></span>' +
+            '<h3>Your Goals</h3>' +
+          '</div>' +
+          '<button type="button" class="btn primary" disabled style="opacity:0.5;cursor:default;">+ New Goal</button>' +
+        '</div>' +
+        '<div class="goals-list">' + cards + '</div>' +
+        '<div class="suggested-goals">' +
+          '<h4>Suggested for you</h4>' +
+          '<div class="suggested-goals-list">' + suggested + '</div>' +
+        '</div>' +
+      '</div>';
+  }
+
+  /* -------- Full round list (real .history-card shape, including the
+     mode badge for Regular / Rapid Drill: Intro / Rapid Drill: Body so
+     the tour can show off the new practice types right in context) -------- */
+  function paintListSkeleton(){
+    var listWrapEl = byId('historyListWrap');
+    if(!listWrapEl) return;
+    var cardsHtml = '';
+    for(var m=0;m<3;m++){
+      var mode = SKEL_MODES[m % SKEL_MODES.length];
+      var catRows = '';
+      var catCount = skelPct(3,5);
+      var cats = SKEL_CATEGORIES.slice(0, catCount);
+      for(var n=0;n<cats.length;n++){
+        catRows += '<div class="hc-cat"><b class="tut-skel-block tut-skel-line" style="width:30px;height:11px;margin:0;display:inline-block;"></b> ' + cats[n] + '</div>';
+      }
+      cardsHtml += '<div class="history-card tut-skel">' +
+        '<div class="history-card-head">' +
+          '<div class="hc-top">' +
+            '<div class="hc-top-left">' +
+              '<span class="hc-round">Round ' + (m+1) + '</span>' +
+              '<span class="hc-mode-badge ' + mode.cls + '">' + mode.label + '</span>' +
+              '<span class="hc-date tut-skel-block tut-skel-line" style="width:100px;height:11px;margin:0;display:inline-block;"></span>' +
+            '</div>' +
+            '<div class="hc-score tut-skel-block tut-skel-line" style="width:44px;height:24px;margin:0;"></div>' +
+          '</div>' +
+          '<div class="hc-question tut-skel-block tut-skel-line" style="width:' + skelPct(60,90) + '%;"></div>' +
+        '</div>' +
+        '<div class="tut-skel-cats" style="padding:0 20px 18px;">' + catRows + '</div>' +
+      '</div>';
+    }
+    var list = byId('historyList');
+    if(list) list.innerHTML = cardsHtml;
+  }
+
+  function paintHistorySkeleton(){
+    paintOverallSkeleton();
+    paintTrendsSkeleton();
+    paintGoalsSkeleton();
+    paintListSkeleton();
   }
 
   function el(){ // dom refs, grabbed lazily since app builds some content late
@@ -584,6 +706,14 @@
     });
 
     steps.push({
+      title: 'Filter by practice type',
+      avatar: '\uD83D\uDD0D',
+      before: function(){ paintHistorySkeleton(); },
+      spotlight: '#historyModeFilter',
+      html: "Every one of your rounds is tagged by the practice mode you recorded it in. Use this <b>Practice type</b> dropdown to see trends for just <b>Regular Practice</b>, just <b>Rapid Drill: Introduction</b>, or just <b>Rapid Drill: Body</b> \u2014 handy once you've been mixing drill types and want to see how each one's coming along on its own."
+    });
+
+    steps.push({
       title: 'Your goals & full round list',
       avatar: '📋',
       before: function(){ paintHistorySkeleton(); },
@@ -755,6 +885,13 @@
       avatar: '🎬',
       spotlight: '#view-record',
       html: "Here's the brief overcourse of what an Extemp round looks like. You receive a question (custom, or drawn for you), you have 30 minutes to prepare, then record yourself on camera. When you submit, Extemplary transcribes your speech and scores you against an 8-category NSDA extemp rubric, which you can view by clicking the paper icon on the top right— with an annotated."
+    });
+
+    steps.push({
+      title: 'Three practice modes',
+      avatar: '\u26A1',
+      spotlight: '#modeSwitch',
+      html: "Before you record, pick a mode here. <b>Regular Practice</b> is a full 7-minute round graded on all 8 rubric categories \u2014 the standard tournament format. <b>Rapid Drill: Introduction</b> is a short-form drill focused only on your opening (hook, link, thesis) so you can rep intros fast without recording a whole speech. <b>Rapid Drill: Body</b> does the same for your body paragraphs \u2014 structure, argument strength, evidence, and reasoning \u2014 without needing a full intro or conclusion. Each mode grades against its own focused rubric and shows up tagged in your Ballot History, so you can track all three separately."
     });
 
     steps.push({

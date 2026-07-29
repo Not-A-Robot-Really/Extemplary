@@ -120,9 +120,8 @@ The app utilizes default Groq and Gemini API keys for transcription, judging, an
 ---
 Accounts and cloud history run on a Supabase project.
 
-If you fork this project and want your *own* Supabase backend rather than the one it ships with, do the following:
-
-Create a new Supabase project, run `setup.sql` there, and swap in your project's URL and anon key in `SUPABASE_URL` / `SUPABASE_ANON_KEY` near the top of `<script>` in `Extemplary.html`. The anon key is meant to be public, Row Level Security. It is *not* meant to be key secrecy.
+If you fork this project and want your *own* Supabase backend rather than the one it comes with:
+**Create a new Supabase project**, run `setup.sql` there, and swap in your project's URL and anon key in `SUPABASE_URL` / `SUPABASE_ANON_KEY` near the top of `<script>` in `Extemplary.html`. The anon key is meant to be public, Row Level Security. It is *not* meant to be key secrecy.
 
 ### Email delivery 🌐
 ---

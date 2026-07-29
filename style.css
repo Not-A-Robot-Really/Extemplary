@@ -1764,7 +1764,7 @@
   /* Outer layer now uses the same orange as the static (non-animated)
      flame icon (#ff8a2b) so the two read as the same fire at a glance. */
   #streakFabIcon .flame-outer{fill:#ff8a2b;}
-  #streakFabIcon .flame-mid{fill:#ffab4d;transform:translateY(1.6px);}
+  #streakFabIcon .flame-mid{fill:#ffab4d;transform:translateY(3.2px) scale(1.14);}
   /* The "inner" flame is the smaller shape nested inside the outer one.
      It's pulled down and enlarged so it sits low, near the base of the
      fire (like the hot part of a real flame), instead of hovering near
@@ -1813,16 +1813,16 @@
     100%{transform:scale(1,1) translateY(0);}
   }
   @keyframes flameMid{
-    0%{transform:translateY(1.6px) scaleY(1) skewX(0deg);}
-    11%{transform:translateY(1.6px) scaleY(0.92) skewX(1.5deg);}
-    22%{transform:translateY(1.6px) scaleY(1.08) skewX(-1deg);}
-    33%{transform:translateY(1.6px) scaleY(0.96) skewX(0.8deg);}
-    44%{transform:translateY(1.6px) scaleY(1.1) skewX(-1.6deg);}
-    55%{transform:translateY(1.6px) scaleY(0.9) skewX(1.2deg);}
-    66%{transform:translateY(1.6px) scaleY(1.05) skewX(-0.6deg);}
-    77%{transform:translateY(1.6px) scaleY(0.95) skewX(1deg);}
-    88%{transform:translateY(1.6px) scaleY(1.04) skewX(-0.9deg);}
-    100%{transform:translateY(1.6px) scaleY(1) skewX(0deg);}
+    0%{transform:translateY(3.2px) scale(1.14) scaleY(1) skewX(0deg);}
+    11%{transform:translateY(3.2px) scale(1.14) scaleY(0.92) skewX(1.5deg);}
+    22%{transform:translateY(3.2px) scale(1.14) scaleY(1.08) skewX(-1deg);}
+    33%{transform:translateY(3.2px) scale(1.14) scaleY(0.96) skewX(0.8deg);}
+    44%{transform:translateY(3.2px) scale(1.14) scaleY(1.1) skewX(-1.6deg);}
+    55%{transform:translateY(3.2px) scale(1.14) scaleY(0.9) skewX(1.2deg);}
+    66%{transform:translateY(3.2px) scale(1.14) scaleY(1.05) skewX(-0.6deg);}
+    77%{transform:translateY(3.2px) scale(1.14) scaleY(0.95) skewX(1deg);}
+    88%{transform:translateY(3.2px) scale(1.14) scaleY(1.04) skewX(-0.9deg);}
+    100%{transform:translateY(3.2px) scale(1.14) scaleY(1) skewX(0deg);}
   }
   @keyframes flameInner{
     0%{transform:translateY(2.2px) scale(1.2);opacity:0.95;}
@@ -2246,6 +2246,18 @@
 }
 .tut-skel-card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
 .tut-skel-cats{display:flex;flex-direction:column;gap:8px;}
+
+/* Real components reused (not just look-alike classes) for the History
+   skeleton preview, so it's a faithful stand-in for the live layout. Only
+   swap the bits that would otherwise carry real numbers/text/dates for
+   plain placeholder blocks; keep everything else (borders, spacing,
+   badge colors) exactly as the real page renders it. */
+.history-trends.tut-skel .trend-avg{display:inline-flex;}
+.goal-card.tut-skel .goal-card-seal-ring{background:conic-gradient(var(--brass) calc(var(--goal-pct,0) * 1%), var(--rule) 0);}
+.history-card.tut-skel .history-card-head{cursor:default;}
+.history-card.tut-skel .history-card-head:hover{background:none;}
+.history-goals.tut-skel .btn[disabled]{pointer-events:none;}
+#trendChartSelectSkel{pointer-events:none;}
 
 /* ---- Tutorial completion confetti ------------------------------------- */
 .tut-confetti-root{

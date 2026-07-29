@@ -652,6 +652,33 @@ fetch('icons.svg').then(r => r.text()).then(svgText => {
     const APPROACH_FRAME_CAP = 120;    // max px of physical scroll applied per animation frame — keeps the physical scroll pace the same as before even though input is now coalesced
     const state = cards.map((el, i) => ({ el, dir: i % 2 === 0 ? 'left' : 'right', progress: 0 }));
     let currentIndex = 0;
+
+    // Safety net: the wheel/touch-driven hijack above is what normally arms
+    // and slides each card in, but it depends on catching the right delta at
+    // the right moment — a fast trackpad flick or momentum scroll can, in
+    // rare cases, skip a card's arming check entirely (most likely on the
+    // tallest cards, e.g. the data-trigger="top" AI-judged-ballot card).
+    // If that happens the card is stuck at its default opacity:0 forever.
+    // This observer is a pure fallback: once a card has genuinely scrolled
+    // into view, force it to its fully-revealed state regardless of what
+    // the hijack's own progress tracking thinks happened.
+    if('IntersectionObserver' in window){
+      const revealFallback = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if(!entry.isIntersecting) return;
+          const i = cards.indexOf(entry.target);
+          if(i === -1) return;
+          const s = state[i];
+          if(s.progress < 1){
+            s.progress = 1;
+            render(i);
+          }
+          if(currentIndex <= i) currentIndex = i + 1;
+          revealFallback.unobserve(entry.target);
+        });
+      }, { threshold: 0.35 });
+      cards.forEach(c => revealFallback.observe(c));
+    }
     // 'approach': plain, clamped, controlled scrolling toward the next card
     //             (this is what replaces the old auto-scroll — there is no
     //             animation here, just direct 1:1 scrolling driven by input).

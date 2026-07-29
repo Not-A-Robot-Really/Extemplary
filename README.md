@@ -2,7 +2,7 @@
 
 ---
 
-A **free** browser extention for practicing **NSDA Extemporaneous Speaking**. Record a round, receive an AI judge's ballot, recieve feedback & review your speech transcript, and automatically record a saved history of every round you've practiced. Account creation and cloud storage are powered by Supabase.
+A **free** browser extention for practicing **NSDA Extemporaneous Speaking**. Record a round, receive an AI judge's ballot, recieve feedback & review your speech transcript, and automatically save a history of every round you've practiced.
 
 **[Live demo →](#deployment)**
 
@@ -18,6 +18,7 @@ Extemporaneous Speaking refers to a speech event where you deliver a **7 minute*
 
 ## Features 🧩
 ---
+**How the Extention works (summed up in 1 flowchart!)**
 Sign up → Generate questions → Write a speech → Record your speech → Receive feedback → Set goals → Practice more → Track your improvement/progress → Correct bad habits & general weaknesses
 
 - **Record a round** | Generate 3 realistic practice questions, run a prep timer, then record on camera for your speech.
@@ -42,13 +43,13 @@ Sign up → Generate questions → Write a speech → Record your speech → Rec
 
 - **Trends across your ballots** | The History view aggregates your average score in each rubric category across every round you've recorded, with per-category bars plus your top overall strengths and weaknesses.
 
-- **Score trend line graphs** | Sparkline charts for your overall score and for each individual rubric category, plotted round-by-round across your whole history, so you can see exactly where you're improving (or backsliding) at a glance.
+- **Score trend line graphs** | Line charts for your overall score and for each individual rubric category, plotted round-by-round across your whole history, so you can see exactly where you're improving (or backsliding) at a glance.
 
 - **Streak & Calendar** | A tracked practice streak: any day you record a ballot, set a goal, or complete one keeps the streak alive. Your current streak lives in a flame counter fixed to the top of the app, and the full **Streak Calendar** view lays out a month-by-month history of active days, and your current & best streak.
 
-- **tournament & event tracker** | Located in the calendar tab, you can add an upcoming competition's date and name on the calendar. It will also show up in list below the calendar.
+- **tournament & event tracker** | Located in the calendar tab, you can add an upcoming tournament's date and name on the calendar. It will also show up in list below the calendar.
 
-- **Goals** | Set concrete goals for right from the Streak Calendar or My History: hit a streak length, beat an overall score threshold, beat a threshold in one specific rubric category, complete a number of practice rounds, or live video ballots this month. Each goal tracks its own live progress. My History also contains *Suggested Goals* that are auto-generated from your own weakest rubric categories, current average score, and current streak, so there's always a sensible next target waiting for you.
+- **Goals** | Set some attainable goals to achieve in the future: hit a streak length, beat an overall score threshold, beat a threshold in one specific rubric category, complete a number of practice rounds, or live video ballots this month. Each goal tracks its own live progress. My History also contains *Suggested Goals* that are auto-generated from your own weakest rubric categories, current average score, and current streak, so there's always a sensible next target waiting for you.
 
 - **Session score tracking & export** | Precise score tracking within a session **and** over many rounds, plus export to `.txt`, printable ballot, video download, and shareable round links.
 
@@ -62,7 +63,7 @@ Note: Extemplary requires camera and microphone access for recording speeches (d
 
 ## Free trial before signing up! 🆓
 ---
-The sign-in screen is also a landing page. Scroll down past the log in info to see a glimpes of what the app can actually do, with several features you can try live, no account required!:
+The sign-in screen is also a landing page. Scroll down past the log in info to see a glimpes of what the app can actually do. Interact with the several features which you can try live, no account required!
 
 - **1️⃣ Real practice questions** | pick between **domestic, economic, and international** topics and get three relevant extemp questions on the spot (one free try per browser).
 

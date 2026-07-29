@@ -515,14 +515,14 @@
          Example Ballot, or the post-submission Feedback/Results view (see
          showView()'s rubricToggle.classList.toggle logic in the JS below). -->
     <button class="rubric-toggle-btn" id="rubricToggle" type="button" aria-label="Grading Rubric" title="Grading Rubric">
-      <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-70"></use></svg>
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-70"></use></svg>
     </button>
     <div class="print-brand" aria-hidden="true">
       <span class="mark-e-wrap" style="width:26px;height:24px;"><svg viewBox="0 0 36 37" fill="none"><use href="#icon-42"></use></svg></span>
       <span class="print-brand-name">xtemplary</span>
     </div>
     <div class="ballot-head">
-      <div class="ballot-title" id="ballotTitle">Official Practice Ballot</div>
+      <div class="ballot-title" id="ballotTitle">Practice Ballot</div>
       <div class="field"><b>Event</b>Extemporaneous Speaking</div>
       <div class="field"><b>Round</b><span id="roundNo">1</span></div>
       <div class="field"><b>Speaker</b>You</div>
@@ -722,25 +722,6 @@
               </div>
               <button class="btn-add" id="addSignalBtn" type="button">+ Add</button>
               <button class="btn ghost" id="resetSignalsBtn" type="button" style="font-size:12px;padding:8px 10px;">Reset</button>
-            </div>
-            <div class="sp-note">Signals fire a full-screen alert during recording. 7:00 and 7:30 are always active.</div>
-            <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--rule);">
-              <div style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:var(--slate);margin-bottom:6px;">Override Groq API Key</div>
-              <input type="password" id="apiKey" placeholder="Leave blank to use default key" autocomplete="off"
-                style="width:100%;font-family:var(--font-mono);font-size:12px;padding:8px 10px;border:1px solid var(--rule);border-radius:3px;background:#ffffff;color:var(--charcoal);" />
-              <div style="font-size:11px;font-family:var(--font-mono);color:var(--slate);margin-top:5px;">Only fill this in if you want to use a different Groq key.</div>
-              <div class="field-error" id="keyError" style="display:none;">Invalid API key.</div>
-              <div style="margin-top:12px;">
-                <input type="password" id="geminiKey2" placeholder="Optional: 2nd Gemini key (fallback if the 1st runs low)" autocomplete="off"
-                  style="width:100%;font-family:var(--font-mono);font-size:12px;padding:8px 10px;border:1px solid var(--rule);border-radius:3px;background:#ffffff;color:var(--charcoal);margin-bottom:12px;" />
-                <div style="font-size:11px;font-family:var(--font-mono);color:var(--slate);margin-bottom:12px;">Used for AI question drafting and Tournament Briefings — only needed if the built-in key runs out of credits.</div>
-                <input type="password" id="apiKey2" placeholder="Optional: 2nd Groq key (speeds up long recordings)" autocomplete="off"
-                  style="width:100%;font-family:var(--font-mono);font-size:12px;padding:8px 10px;border:1px solid var(--rule);border-radius:3px;background:#ffffff;color:var(--charcoal);margin-bottom:12px;" />
-                <div style="font-size:11px;font-family:var(--font-mono);color:var(--slate);margin-bottom:12px;">A backup Groq key is already wired in and used automatically if the main key fails or rate-limits, and to speed up long recordings split into chunks. Only fill this in if you want to use your own second key instead.</div>
-                <input type="password" id="apiKey3" placeholder="Optional: 3rd Groq key (extra fallback for long recordings)" autocomplete="off"
-                  style="width:100%;font-family:var(--font-mono);font-size:12px;padding:8px 10px;border:1px solid var(--rule);border-radius:3px;background:#ffffff;color:var(--charcoal);" />
-                <div style="font-size:11px;font-family:var(--font-mono);color:var(--slate);margin-top:5px;">A third backup key runs alongside the other two — if any key hits a rate limit partway through a long recording, the remaining keys keep transcribing the rest without stopping.</div>
-              </div>
             </div>
           </div>
         </div>
@@ -3744,7 +3725,6 @@
   const recPill        = document.getElementById('recPill');
   const clockPill      = document.getElementById('clockPill');
   const permError      = document.getElementById('permError');
-  const apiKeyInput    = document.getElementById('apiKey');
   const questionInput  = document.getElementById('extempQuestion');
   const questionError  = document.getElementById('questionError');
   const qModeCustomBtn       = document.getElementById('qModeCustomBtn');
@@ -4139,7 +4119,7 @@
     ballotModeLabel.textContent = on ? 'Rapid Drill: Introduction' : 'Regular Practice';
     ballotModeLabel.classList.toggle('is-intro', on);
     ballotModeLabel.classList.toggle('is-regular', !on);
-    ballotTitleEl.textContent = on ? 'Intro Drill Ballot' : 'Official Practice Ballot';
+    ballotTitleEl.textContent = on ? 'Intro Drill Ballot' : 'Practice Ballot';
     if(!on){
       stopIntroPrepTimer();
       introPrepModal.classList.add('hidden');
@@ -4324,11 +4304,10 @@ Output ONLY this JSON, nothing else: {"questions":["...","...","..."]}`;
   // `gemini-generate` edge function proxy (see SUPABASE_URL below).
   const GEMINI_MODEL = 'gemini-2.5-flash';
 
-  // Optional user-supplied override key (Settings → "2nd Gemini key"),
-  // forwarded to the edge function and tried before its own server-side keys.
+  // Gemini calls go through the edge function's own server-side keys —
+  // there's no user-supplied override key anymore.
   function geminiKeyList(){
-    const override = (document.getElementById('geminiKey2')?.value || '').trim();
-    return [override].filter(Boolean);
+    return [];
   }
 
   async function callGeminiWithKey(prompt, apiKey, maxOutputTokens){
@@ -5862,11 +5841,7 @@ Grading rules:
   }
 
   document.getElementById('submitBtn').addEventListener('click', () => {
-    const key = apiKeyInput.value.trim() || null;
-    const key2 = document.getElementById('apiKey2').value.trim() || null;
-    const key3 = document.getElementById('apiKey3').value.trim() || null;
-    const keys = [key, key2, key3].filter((k, i, arr) => k && arr.indexOf(k) === i); // non-empty, deduped, order preserved
-    runPipeline(keys[0] || null, keys[1] || null, keys[2] || null);
+    runPipeline(null, null, null);
   });
 
   document.getElementById('backToReviewBtn').addEventListener('click', () => showView(viewReview));

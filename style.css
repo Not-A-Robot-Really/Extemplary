@@ -154,9 +154,9 @@
   .rubric-toggle-btn{
     position:absolute;top:14px;right:34px;z-index:3;
     background:none;border:none;cursor:pointer;
-    color:var(--slate);padding:5px;border-radius:4px;
+    color:var(--slate);padding:4px;border-radius:4px;
     display:flex;align-items:center;justify-content:center;
-    width:27px;height:27px;box-sizing:border-box;
+    width:28px;height:28px;box-sizing:border-box;
     transition:color .15s;
   }
   .rubric-toggle-btn:hover, .rubric-toggle-btn.active{color:var(--crimson);}
@@ -961,7 +961,7 @@
     color:var(--charcoal);line-height:1.4;
   }
   .example-note{
-    font-family:var(--font-mono);font-size:11.5px;color:var(--slate);
+    font-family:var(--font-body);font-size:16px;color:var(--charcoal);
     line-height:1.6;margin:-10px 0 22px;padding-bottom:18px;
     border-bottom:1px solid var(--rule);
   }

@@ -11,33 +11,29 @@ Wanna know [how to deploy](#deployment)?
 ---
 ## Table of Contents
 
-* [What is Extemp?](#what-is-extemp)
+1) [What is Extemp?](#what-is-extemp)
 
-* [Features](#features)
+2) [Features](#features)
 
-* [Deployment 📦](#deployment)
-
+3) [Deployment 📦](#deployment)
   * [Method 1: GitHub Pages (Browser)](#method-1-github-pages-browser)
-
   * [Method 2: Extension](#method-2-extension)
-
   * [Notes](#notes)
 
-* [Landing Site 🏁](#landing-site)
+4) [Landing Site 🏁](#landing-site)
 
-* [Software ⚙️](#software)
-
+5) [Software ⚙️](#software)
   * [Creating an account 👤](#creating-an-account-)
   * [API keys 🔑](#api-keys-)
 
-* [Supabase setup 💾](#supabase-setup-)
+6) [Supabase setup 💾](#supabase-setup-)
 
   * [Email delivery 🌐](#email-delivery-)
 
-* [Browser support](#browser-support)
-* [Privacy & data 🛡️](#privacy--data-)
+7) [Browser support](#browser-support)
+8) [Privacy & data 🛡️](#privacy--data-)
 
-* [Disclaimer ⚠️](#disclaimer-️)
+9) [Disclaimer ⚠️](#disclaimer-️)
 ---
 
 ## What is Extemp? 🗣️

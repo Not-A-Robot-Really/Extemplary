@@ -1530,7 +1530,6 @@ const DATA = window.APP_DATA;
   const roundNoEl      = document.getElementById('roundNo');
   const speakerNameEl  = document.getElementById('speakerName');
   const sessionTag     = document.getElementById('sessionTag');
-  const flightStrip    = document.getElementById('flightStrip');
   const flightStripResults = document.getElementById('flightStripResults');
   const resultsContent = document.getElementById('resultsContent');
   const transcriptBody = document.getElementById('transcriptBody');
@@ -4628,41 +4627,6 @@ Grading rules:
     ytPlayer.playVideo();
   }
 
-  // ===== Manual sync-fix for the example's synthetic word timing =====
-  // The example transcript has no real per-word timestamps from the source
-  // video (it's a YouTube clip, not a Whisper-transcribed recording), so its
-  // highlight timing is a best-guess estimate and can end up pointing at a
-  // completely different part of the speech than what's actually playing.
-  // "Fix sync" lets the person correct that live: arm it, then click the
-  // word that's actually being spoken right now, and every timestamp is
-  // re-anchored (shifted) so the highlight lines up from that point on.
-  let exampleSyncArmed = false;
-  const exampleSyncBtn  = document.getElementById('exampleSyncBtn');
-  const exampleSyncHint = document.getElementById('exampleSyncHint');
-  function setExampleSyncArmed(on){
-    exampleSyncArmed = on;
-    exampleSyncBtn.classList.toggle('armed', on);
-    exampleSyncHint.classList.toggle('hidden', !on);
-  }
-  exampleSyncBtn.addEventListener('click', ()=>{
-    setExampleSyncArmed(!exampleSyncArmed);
-  });
-  // Shifts every word's ts/te by the same delta, so the pacing (words per
-  // second) stays whatever it was, but the whole sequence is re-anchored to
-  // match reality at the point the person just confirmed.
-  function resyncExampleWords(clickedWordEl, actualVideoTime){
-    const clickedIdx = exampleWordSpans.findIndex(s => s.el === clickedWordEl);
-    if(clickedIdx === -1) return;
-    const delta = actualVideoTime - exampleWordSpans[clickedIdx].ts;
-    exampleWordSpans.forEach(s => {
-      s.ts += delta;
-      s.te += delta;
-      s.el.dataset.ts = s.ts.toFixed(2);
-      s.el.dataset.te = s.te.toFixed(2);
-    });
-    showToast('Sync fixed — highlighting re-anchored to this word');
-  }
-
   const examplePbPlayBtn  = document.getElementById('examplePbPlayBtn');
   const examplePbScrub    = document.getElementById('examplePbScrub');
   const examplePbTimeCur  = document.getElementById('examplePbTimeCur');
@@ -4685,13 +4649,6 @@ Grading rules:
   document.getElementById('exampleTranscriptBody').addEventListener('click', (e)=>{
     const wordEl = e.target.closest('.tw');
     if(!wordEl) return;
-    if(exampleSyncArmed){
-      if(ytPlayer && ytPlayer.getCurrentTime){
-        resyncExampleWords(wordEl, ytPlayer.getCurrentTime());
-      }
-      setExampleSyncArmed(false);
-      return;
-    }
     const ts = parseFloat(wordEl.dataset.ts);
     if(!isNaN(ts)){
       autoScrollToWordEnabled = true; // user asked to jump/follow here explicitly
@@ -5514,10 +5471,9 @@ Grading rules:
   }
 
   function renderFlightStrips(){
-    if(!flightHistory.length){ flightStrip.classList.add('hidden'); flightStripResults.classList.add('hidden'); return; }
+    if(!flightHistory.length){ flightStripResults.classList.add('hidden'); return; }
     const chips = flightHistory.map(f=>`<span class="chip">R${f.round}: <b>${f.total}/100</b></span>`).join('');
-    flightStrip.innerHTML = flightStripResults.innerHTML = chips;
-    flightStrip.classList.remove('hidden');
+    flightStripResults.innerHTML = chips;
     flightStripResults.classList.remove('hidden');
   }
 

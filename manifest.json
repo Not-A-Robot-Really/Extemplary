@@ -1,0 +1,47 @@
+{
+  "manifest_version": 3,
+  "name": "Extemplary",
+  "version": "1.0.0",
+  "description": "A single-file, browser-based practice tool for NSDA Extemporaneous Speaking",
+  "icons": {
+    "48": "Images/icon-48.png",
+    "96": "Images/icon-96.png",
+    "128": "Images/icon-128.png"
+  },
+  "action": {
+    "default_icon": {
+      "48": "Images/icon-48.png",
+      "96": "Images/icon-96.png"
+    },
+    "default_title": "Extemplary"
+  },
+  "background": {
+    "scripts": ["background.js"]
+  },
+  "permissions": ["storage"],
+  "host_permissions": [
+    "https://iiehhmelfotwkdqxplug.supabase.co/*"
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "landingsite.html",
+        "index.html",
+        "style.css",
+        "data.js",
+        "tutorial.js",
+        "icons.svg",
+        "icons2.svg",
+        "Images/*",
+        "vendor/*"
+      ],
+      "matches": ["<all_urls>"]
+    }
+  ],
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "extemplary@example.com",
+      "strict_min_version": "109.0"
+    }
+  }
+}

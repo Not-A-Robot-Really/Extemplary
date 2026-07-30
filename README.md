@@ -23,15 +23,15 @@ Sign up → Generate questions → Write a speech → Record your speech → Rec
 
 - **Record a round** | Generate 3 realistic practice questions, run a prep timer, then record on your webcam for your speech.
 
-- **AI-judged ballot** | Transcribes your speech, analyzes vocal delivery straight from the extracted audio, and scores you on a custom made **8-category NSDA extemp rubric** using the model: Llama 3.3 70B on Groq.
+- **AI-judged ballot** | Transcribes your speech, analyzes vocal delivery from the extracted audio, and scores you on a custom made **8-category NSDA extemp rubric** using the model: Llama 3.3 70B on Groq.
 
 - **Vocal Delivery Analysis** | Each speech will be measured for volume, emphasis, tone/pitch variety, pauses, pace (WPM), filler words, and stutters/repetitions.
 
 - **Annotated transcript** | An automated transcript with personalized comments (🟥 = big mistake, 🟦 = comment, 🟩 = brilliant move, 🟨 = minor error).
 
-- **Watch & Read Along** | An embedded video player synced word-for-word with the transcript. Click any word (or any judge's note) to jump the video to that **exact** moment; the current word highlights live as it plays.
+- **Watch & Read Along** | An embedded video player that plays along with the transcript. Click any word to jump the video to that **exact** moment. The current word will be highlighted live as it plays.
 
-- **Citation checker** | Before you use a stat or quote, paste the claim, the date, and the source in the citation checker and Extemplary will search the web to verify it. The result could either be **TRUE**, **FALSE**, or **UNVERIFIED**, with a 2-3 sentence explanation and a link to the source of the claim/evidence. If you're not sure of the exact date, you can swap any unknown digit for `?` (ex. `06/??/2025`) for a range of possible dates. You can also use the citation checker to check the citations from other people's speech.
+- **Citation checker** | Before you use a statistic/quote or want to verify someone else's claim and evidence, paste the claim, the date, and the source in the citation checker and Extemplary will search the web to verify it. The result could either be **TRUE**, **FALSE**, or **UNVERIFIED**, with a 2-3 sentence explanation and a link to the source of the claim/evidence. If you're not sure of the exact date, you can swap any unknown digit for `?` (ex. `06/??/2025`) for a range of possible dates.
 
 - **Example ballot** | An example sample round (with speech and ballot) so first-time users can see what a finished round looks like before recording their own, including the same synced playback experience.
 
@@ -69,11 +69,11 @@ The sign-in screen is also a landing page. Scroll down past the log in info to s
 
 - **2️⃣ Current event briefings** | generate current event/news briefing the same way the in-app Tournament Briefing feature does (one free try per browser).
 
-- **3️⃣ A working prep timer** | the actual 30-minute countdown, fully functional, unlimited use.
+- **3️⃣ A working prep timer** | Just a 30 minute timer that you can pause/unpause and restart.
 
-- **Watch & Read Along preview** | a real annotated transcript excerpt with clickable judge's-note highlights, plus the example round's video in its own player.
+- **Watch & Read Along preview** | A small portion of the transcript with clickable comments with a video of the full speech.
 
-- **4️⃣ AI-judged ballot preview** | one full, real category (with score, What Worked, Critical Flaws, and What You Could Have Done) pulled from an actual ballot.
+- **4️⃣ AI-judged ballot preview** | One full, real category (with score, What Worked, Critical Flaws, and What You Could Have Done) pulled from an actual ballot.
 
 - **5️⃣ Citation checker** | verify one real claim against its source, the exact same way the in-app Citation Checker does (one free try per browser).
 
@@ -125,7 +125,7 @@ If you fork this project and want your *own* Supabase backend rather than the on
 
 ### Email delivery 🌐
 ---
-Supabase's built-in email sender only allows two emails/hour. Providers like Resend, Brevo, or SendGrid all have free tiers, but all require a valid domain. Therefore, there is **currently no built in email verification system for sign ups**. However, we are trying to resolve the issue soon.
+Supabase's built in email sender only allows 2 emails/hour. Other email verification services like Resend, Brevo, or SendGrid all are free, but all require a valid domain. Therefore, there is **currently no built in email verification system for sign ups**. However, we are trying to resolve the issue soon.
 
 ## Deployment 📦
 ---

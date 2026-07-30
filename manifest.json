@@ -18,6 +18,9 @@
   "background": {
     "service_worker": "background.js"
   },
+  "chrome_url_overrides": {
+    "newtab": "landingsite.html"
+  },
   "permissions": ["storage"],
   "host_permissions": [
     "https://iiehhmelfotwkdqxplug.supabase.co/*"

@@ -470,35 +470,65 @@
   }
   .feature-card:hover .fc-icon{transform:translateZ(34px) scale(1.06);}
   .feature-card .fc-icon svg{width:20px;height:20px;}
-  /* ---- landing "Streak & calendar" card: small always-lit version of the
-     header's layered flame icon, reusing the same flameSway/flameOuter/
-     flameMid/flameInner/flameCore/flameSpark keyframes so the motion reads
-     identically, just scaled down and always animating (no live/off toggle
-     since there's no real streak state on the marketing page). ---- */
-  .fc-flame-icon svg{width:22px;height:22px;overflow:visible;}
-  .fc-flame-icon .flame-layer{transform-box:fill-box;transform-origin:50% 85%;}
-  .fc-flame-icon .flame-sway{transform-box:fill-box;transform-origin:50% 100%;animation:flameSway 2.6s ease-in-out infinite;}
-  .fc-flame-icon .flame-outer{fill:#ff8a2b;animation:flameOuter 1.85s ease-in-out infinite;}
-  .fc-flame-icon .flame-mid{fill:#ffab4d;transform:translateY(3.2px) scale(1.14);animation:flameMid 1.35s ease-in-out infinite;animation-delay:-0.4s;}
-  .fc-flame-icon .flame-inner{fill:#ffcf4d;transform:translateY(2.2px) scale(1.2);animation:flameInner 0.95s ease-in-out infinite;animation-delay:-0.15s;}
-  .fc-flame-icon .flame-core{fill:#fff6d8;transform:translateY(2.6px) scale(1.3);animation:flameCore 0.7s ease-in-out infinite;animation-delay:-0.3s;}
-  .fc-flame-icon .flame-spark{fill:#ffcf80;opacity:0;transform-box:fill-box;transform-origin:50% 50%;}
-  .fc-flame-icon .flame-spark-1{animation:flameSpark 2.2s ease-in infinite;animation-delay:.3s;}
-  .fc-flame-icon .flame-spark-2{animation:flameSpark 1.9s ease-in infinite;animation-delay:1.1s;}
-  .fc-flame-icon .flame-spark-3{animation:flameSpark 2.5s ease-in infinite;animation-delay:1.8s;}
+  /* ---- per-card accent color: each feature card can set --fc-accent
+     (inline style) to recolor its icon chip, its hover border, and its
+     hover "pulse" fidget dot, without changing the shared card layout —
+     keeps the grid feeling like one family while giving each card its
+     own identity (e.g. Rapid Drill: Intro is red, Rapid Drill: Body is
+     gold, Streak is flame-orange, Goals is progress-green). ---- */
+  .feature-card{ position:relative; }
+  .feature-card .fc-icon{ background:var(--fc-accent, var(--crimson)); }
+  .feature-card:hover{ border-color:var(--fc-accent, var(--brass)); }
+  .feature-card::after{
+    content:'';position:absolute;top:16px;right:16px;width:7px;height:7px;border-radius:50%;
+    background:var(--fc-accent, var(--brass));opacity:0;transform:scale(0.3);
+    transition:opacity .3s ease, transform .3s ease;pointer-events:none;
+  }
+  .feature-card:hover::after{opacity:1;transform:scale(1);animation:fcPulseDot 1.7s ease-out infinite;}
+  @keyframes fcPulseDot{
+    0%{box-shadow:0 0 0 0 var(--fc-accent, var(--brass));}
+    70%{box-shadow:0 0 0 9px transparent;}
+    100%{box-shadow:0 0 0 0 transparent;}
+  }
 
-  /* ---- landing "Goals system" card: small version of the circular goal
-     seal from My History/Streak Goals (conic-gradient ring around a hole),
-     looping its fill from 0% up to a target percent so the card demonstrates
-     live progress-bar motion without needing any real goal data. ---- */
+  /* ---- header row used by cards that pair the normal icon chip with a
+     larger decorative visual to its right, in the card's empty space ---- */
+  .fc-head-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+  .fc-head-row .fc-icon{margin-bottom:0;}
+  .fc-decor{flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+
+  /* ---- landing "Streak & calendar" card: a larger, always-lit version of
+     the header's layered flame icon sitting beside the real streak icon,
+     reusing the same flameSway/flameOuter/flameMid/flameInner/flameCore/
+     flameSpark keyframes so the motion reads identically to the real app,
+     just always animating (no live/off toggle since there's no real
+     streak state on the marketing page). ---- */
+  .fc-decor-flame svg{width:38px;height:38px;overflow:visible;}
+  .fc-decor-flame .flame-layer{transform-box:fill-box;transform-origin:50% 85%;}
+  .fc-decor-flame .flame-sway{transform-box:fill-box;transform-origin:50% 100%;animation:flameSway 2.6s ease-in-out infinite;}
+  .fc-decor-flame .flame-outer{fill:#ff8a2b;animation:flameOuter 1.85s ease-in-out infinite;}
+  .fc-decor-flame .flame-mid{fill:#ffab4d;transform:translateY(3.2px) scale(1.14);animation:flameMid 1.35s ease-in-out infinite;animation-delay:-0.4s;}
+  .fc-decor-flame .flame-inner{fill:#ffcf4d;transform:translateY(2.2px) scale(1.2);animation:flameInner 0.95s ease-in-out infinite;animation-delay:-0.15s;}
+  .fc-decor-flame .flame-core{fill:#fff6d8;transform:translateY(2.6px) scale(1.3);animation:flameCore 0.7s ease-in-out infinite;animation-delay:-0.3s;}
+  .fc-decor-flame .flame-spark{fill:#ffcf80;opacity:0;transform-box:fill-box;transform-origin:50% 50%;}
+  .fc-decor-flame .flame-spark-1{animation:flameSpark 2.2s ease-in infinite;animation-delay:.3s;}
+  .fc-decor-flame .flame-spark-2{animation:flameSpark 1.9s ease-in infinite;animation-delay:1.1s;}
+  .fc-decor-flame .flame-spark-3{animation:flameSpark 2.5s ease-in infinite;animation-delay:1.8s;}
+
+  /* ---- landing "Goals system" card: a larger version of the circular
+     goal seal from My History/Streak Goals (conic-gradient ring around a
+     hole), sitting beside the real goals icon and looping its fill from
+     0% up to a target percent so the card demonstrates live progress-bar
+     motion without needing any real goal data. ---- */
   @property --goal-pct{ syntax:'<number>'; inherits:false; initial-value:0; }
   .fc-goal-ring{
-    width:26px;height:26px;border-radius:50%;position:relative;
+    width:38px;height:38px;border-radius:50%;position:relative;
     background:conic-gradient(#fff calc(var(--goal-pct,0) * 1%), rgba(255,255,255,0.3) 0);
     animation:fcGoalFill 3.4s cubic-bezier(.3,.7,.3,1) infinite;
   }
   .fc-goal-ring-hole{
-    position:absolute;inset:4.5px;border-radius:50%;background:var(--crimson);
+    position:absolute;inset:6px;border-radius:50%;background:var(--ink-soft);
+    display:flex;align-items:center;justify-content:center;
   }
   @keyframes fcGoalFill{
     0%{--goal-pct:0;}

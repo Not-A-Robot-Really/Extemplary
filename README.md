@@ -28,12 +28,13 @@ Wanna know [how to deploy](#deployment)?
 
 6) [Supabase setup 💾](#supabase-setup-)
 
-  * [Email delivery 🌐](#email-delivery-)
+7) [Email delivery 🌐](#email-delivery-)
 
-7) [Browser support](#browser-support)
-8) [Privacy & data 🛡️](#privacy--data-)
+8) [Browser support](#browser-support)
 
-9) [Disclaimer ⚠️](#disclaimer-️)
+9) [Privacy & data 🛡️](#privacy--data-)
+
+10) [Disclaimer ⚠️](#disclaimer-️)
 ---
 
 ## What is Extemp? 🗣️

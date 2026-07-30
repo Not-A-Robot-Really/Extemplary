@@ -2,9 +2,9 @@
 
 ---
 
-A **free** browser extention for practicing **NSDA Extemporaneous Speaking**. Record a round, recieve tailored comments &feedback, review your speech transcript, and automatically save a history of every round you've practiced.
+A **free** tool for practicing **NSDA Extemporaneous Speaking**, usable either as a website or installed as a real Chrome/Edge/Firefox extension. Record a full round or a quick drill, recieve tailored comments & feedback, review your speech transcript, and automatically save a history of every round you've practiced.
 
-**[Live demo →](#deployment)**
+**[Live demo:](#Deployment 📦)**
 
 ![Image22](Images/speechbackgr.png)
 
@@ -21,7 +21,7 @@ Extemporaneous Speaking refers to a speech event where you deliver a **7 minute*
 **How the Extention works (summed up in one flowchart!)**
 Sign up → Generate questions → Write a speech → Record your speech → Receive feedback → Set goals → Practice more → Track your improvement/progress → Correct bad habits & general weaknesses
 
-- **Record a round** | Generate 3 realistic practice questions, run a prep timer, then record on your webcam for your speech.
+- **Record a round** | Generate 3 realistic practice questions, run a prep timer, then record on your webcam for your speech. There are actually 3 practice modes to pick from right on the record screen: **Regular Practice** (30 minute prep, 7 minute round, graded on 8 categories), **Rapid Drill: Introduction** (5 minute prep, 1 minute intro, graded on 5 categories), and **Rapid Drill: Body** (10 minute prep, a 2 minute body paragraph, graded on 6 categories). Each mode has its own timer and own rubric.
 
 - **AI judged Ballot** | Extemplary Transcribes your speech, analyzes vocal delivery from the extracted audio, and scores you on a custom made **8-category NSDA extemp rubric**, all using the model: Llama 3.3 70B on Groq.
 
@@ -29,7 +29,7 @@ Sign up → Generate questions → Write a speech → Record your speech → Rec
 
 - **Annotated transcript** | An automated transcript with personalized comments (🟥 = big mistake, 🟦 = comment, 🟩 = brilliant move, 🟨 = minor error).
 
-- **Watch & Read Along** | An embedded video player that plays along with the transcript. Click any word to jump the video to that **exact** moment. The current word will be highlighted live as it plays.
+- **Watch & Read Along** | The video of your speech plays along with the transcript. Click any word to jump the video to that **exact** moment (precise down to the tenth of a second). The current word will be highlighted live as it plays so you can comfortably follow along.
 
 - **Citation checker** | Before you use a statistic/quote or want to verify someone else's claim and evidence, paste the claim, the date, and the source in the citation checker and Extemplary will search the web to verify it. The result could either be **TRUE**, **FALSE**, or **UNVERIFIED**, with a 2-3 sentence explanation and a link to the source of the claim/evidence. If you're not sure of the exact date, you can swap any unknown digit for `?` (ex. `06/??/2025`) for a range of possible dates.
 
@@ -37,7 +37,7 @@ Sign up → Generate questions → Write a speech → Record your speech → Rec
 
 - **Accounts & sign-in** | Sign up with an email and password to use Extemplary and track your progress. Sessions are saved automatically. If you close the tab and come back later, you will be still signed in. Sign out any time from the account menu.
 
-- **Cloud-saved ballot history** | Every completed round, whether it is regular practice or a rapid drill, is saved and automatically stored onto your account and available from any device you sign in on, via the **My History** page.
+- **Cloud-saved ballot history** | Every completed round, whether it is regular practice or a rapid drill, is saved and automatically stored onto your account and available from any device you sign in on, via the **My History** page. Each entry is tagged with which of the 3 practice modes it came from, and a dropdown filter lets you narrow the whole page (round list, trend graphs, and averages included) down to just Regular Practice, Rapid Drill: Introduction, or Rapid Drill: Body instead of always seeing everything mixed together.
 
 - **Coach's Overall Notes** | Comprehensive feedback of your Extemp journey that finds patterns across your *entire* practice history, naming your biggest recurring strength, your biggest recurring area to improve, and one concrete next step. It's designed to update automatically at designated milestone rounds or whenever you record a particularly brillian round.
 
@@ -57,11 +57,34 @@ Sign up → Generate questions → Write a speech → Record your speech → Rec
 
 - **Installable PWA** | Works offline for timing/recording; add to your phone's home screen.
 
-- **Tutorial** | The first time you create an account, a walkthrough gides you through every part of the app, allowing the user to try every feature the site offers. During the tutorial, the Coach's Notes, Trends, and Goals sections show a placeholder skeleton preview instead of a blank page.
+- **Tutorial** | The first time you create an account, an easy to follow tutorial gides you through every part of the app, allowing the user to try every feature the site offers. The tutorial highlights actual buttons, waits for user input and before moving on. It covers **every single feature** currently present on the Extension
 
 Note: Extemplary requires camera and microphone access for recording speeches (duh).
 
-## Free trial before signing up! 🆓
+## Deployment 📦
+---
+### Method 1: GitHub Pages (Browser)
+Use the link `not-a-robot-really.github.io/Extemplary/` to try it on the web browser via GitHub pages.
+
+
+### Method 2: Extension
+Extemplary also serves as a browser extension (Manifest V3). Just pin it to your toolbar like any other extension. It works in Chrome, Edge, and Firefox.
+
+1. Go to `https://github.com/Not-A-Robot-Really/Extemplary`
+2. Click on `<> Code`, `Local`, and `Download ZIP`
+3. Open `chrome://extensions` in Chrome.
+4. Turn on `Developer mode`.
+5. Click `Load unpacked` and select `Extemplary-main`. Make sure you pressed `Extract All` on `Extemplary-main.zip` before you do this step.
+6. Click on the puzzle icon (🧩) to the right of the search bar and click on `Extemplary`.
+
+Notes:
+- Every YouTube video in the extension (the video of the example speech) is unable to be view directly in the extension. You will have to visit the external link. **This issue does not exist on GitHub pages**.
+- `Extemplary.html` was split into separate `app.js`, `landing-app.js`, `tutorial.js`, `data.js`, `index.html`, and `landingsite.html` files so it can be packaged as an extension file.
+- `background.js` opens/focuses the landing site when you open the Extemplary extension.
+- The extension only requests the `storage` and `windows` permissions, plus host access to the Supabase project it talks to.
+- If you'd rather just use the hosted web version, that's completely fine too, nothing about the extension changes how the site works, it's just a second way to open the same app.
+
+## Landing Site 🏁
 ---
 The sign-in screen is also a landing page. Scroll down past the log in info to see a glimpes of what the app can actually do. Interact with the several features which you can try live, no account required!
 
@@ -79,38 +102,29 @@ The sign-in screen is also a landing page. Scroll down past the log in info to s
 
 - 6️⃣ **Example Ballot** | Contains a **complete** example round with an example transcript, video, feedback, comments, rubric, and score.
 
-Note: the Streak Calendar and Goals system are account features and aren't part of the free-try preview, since both are built on your ongoing ballot history.
-
 ## Software ⚙️
 ---
 Supabase: provides authentication and cloud storage
 
 - **Transcription:** Groq's Whisper (`whisper-large-v3`)
 - **Judging:** Groq's Llama 3.3 70B 
-- **Question drafting, briefings & citation checking:** Google's Gemini with live Google Search
+- **Question drafting, briefings & citation checking:** Google's Gemini (using live web searches)
 - **Audio analysis:** Web Audio API (client-side FFT/pitch/volume analysis)
 - **Video:** `MediaRecorder` for capture and`<video>` for review/playback. The example ballot utilizes the YouTube IFrame API for its sample speech.
 - **Accounts:** [Supabase Auth](https://supabase.com/docs/guides/auth) (requires email + password), loaded client-side via `supabase-js`
 - **Cloud storage:** Supabase table (`ballots`) for scores, transcripts, and feedback. Table (`user_overall_feedback`) was created/used for the "Coach's Overall Notes" comments. Table (`calendar_events`) was created/used for tournament/event dates on the Calendar. The table (`user_goals`) was used for storing goals and their targets. Last, a private Supabase Storage bucket (`ballot-videos`) was created for storing recorded videos with Row Level Security so that each account can only ever access its own data
-- **Streak calculation:** Computed entirely on the clientside from `ballots` and `user_goals` rows. A day counts as "active" if you recorded a ballot, set a goal, or currently have a goal complete that day.
+- **Streak calculation:** Client side from `ballots` and `user_goals` rows. A day counts as "active" if you recorded a ballot, set a goal, or currently have a goal complete that day.
 - **Local storage:** (localStorage`) used for minor preferences (theme, timer settings) and for whether a browser has already tried its one free landing-page demo (questions, briefings, citation checker). Everything privacy & account related (ex. ballots, video, session, streak/calendar events, goals) is in Supabase.
-
-## Getting started 📖
----
-### Try it!
-Open `Extemplary.html` in any modern desktop or mobile browser, no installs needed.
-
-> **Note:** The example ballot's video uses YouTube IFrame API, which requires the page be served over. `http(s)://` It won't load correctly if you open the file from disk (`file://`). Cloud history also require `https://` (or `localhost`) for the reason browsers require it for camera access. See [Deployment](#deployment) below to host it properly!
 
 ### Creating an account 👤
 ---
 You'll land on the sign in screen (landing page) the first time you open the app.
 
 1. Locate the **Sign Up** tab, enter an email and a password (requires 6+ characters), and submit.
-2. Depending on the project's auth settings, you may need to check your email and click a confirmation link before your first log in (see [Supabase setup](#supabase-setup) below).
-3. Once signed in, you will stay signed in *automatically*, even after closing the tab or restarting your browser, until you tap **Sign out** in the top right of the account menu. You will also see a quick tutorial on how the extention works that will guide you through all the features of Extemplary.
+2. You may need to check your email and click a confirmation link before your first log in (see [Supabase setup](#supabase-setup) below).
+3. Once signed in, you will stay signed in *automatically* until you tap **Sign out** in the top right of the account menu. You will also see a tutorial that will guide you through all the features of Extemplary.
 
-Every round completed while signed in is saved **automatically**. Click on any past round in the "My Ballot History" page to rewatch the video, re-read the transcript, or reread the full judge's feedback, read your Coach's Overall Notes, view your progress graphs, general strengths/weaknesses and view & add **Goals** (with auto-suggested ones based on your own weak spots).
+Every round completed while signed in is saved **automatically**. Click on any past round in the "My Ballot History" page to rewatch the video, re-read the transcript, or re-read the full judge's feedback, read your Coach's Overall Notes, view your progress graphs, general strengths/weaknesses and view & add **Goals** (with auto-suggested ones based on your own weak spots).
 
 ### API keys 🔑
 ---
@@ -127,26 +141,11 @@ If you fork this project and want your *own* Supabase backend rather than the on
 ---
 Supabase's built in email sender only allows 2 emails/hour. Other email verification services like Resend, Brevo, or SendGrid all are free, but all require a valid domain. Therefore, there is **currently no built in email verification system for sign ups**. However, we are trying to resolve the issue soon.
 
-## Deployment 📦
----
-To get a real `https://` URL (required for camera access, sign in page, and the example ballot's embedded video to work):
-
-1. Push this repo to GitHub.
-2. Go to **Settings → Pages**.
-3. Under **Source**, pick the branch and folder where `Extemplary.html` lives.
-4. GitHub will give you a URL like:
-```
-   https://<your-username>.github.io/<repo-name>/Extemplary.html
-```
-5. Open that URL: camera recording, AI judging, account sign up/log in, and the synced example video will all work normally.
-
-Viewing the raw file on `github.com/.../blob/...` or VIA `raw.githubusercontent.com` is **not** the same as hosting it.
-
-My reccomendation is to just use GitHub Pages for a working page.
-
 ## Browser support
 ---
-Requires a modern browser with support for `MediaRecorder`, `getUserMedia`, and the Web Audio API (recent Chrome, Edge, Firefox, or Safari). Camera/microphone access as well as account sign-in and cloud history require either `https://` or `localhost`.
+Requires a modern browser supporting `MediaRecorder`, `getUserMedia`, and the Web Audio API. Also requires camera and microphone  (via `Https://` or `localhost`) unless you want manually upload a recording or upload from YouTube.
+
+Latest versions of Chrome, Edge, Firefox, or Safari should be fine for Extemplary.
 
 ## Privacy & data 🛡️
 ---

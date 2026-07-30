@@ -25,7 +25,7 @@ api.action.onClicked.addListener(async () => {
 
   const win = await api.windows.create({
     url: appUrl,
-    type: "popup", // no tab strip / address bar — feels like a standalone app
+    type: "popup", // no tab strip / address bar feels like a standalone app
     width: 1000,
     height: 700
   });

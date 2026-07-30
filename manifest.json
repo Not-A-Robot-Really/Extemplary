@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Extemplary",
   "version": "1.0.0",
-  "description": "A single-file, browser-based practice tool for NSDA Extemporaneous Speaking",
+  "description": "A browser-based practice tool for NSDA Extemporaneous Speaking",
   "icons": {
     "48": "Images/icon-48.png",
     "96": "Images/icon-96.png",

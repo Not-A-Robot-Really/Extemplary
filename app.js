@@ -3,7 +3,7 @@ const DATA = window.APP_DATA;
 
   // ===== SUPABASE CONFIG =====
   // Fill these in with YOUR project's values (Project Settings → API).
-  // SUPABASE_ANON_KEY is the public "anon" key — it's designed to be
+  // SUPABASE_ANON_KEY is the public "anon" key. Spefifically it's designed to be
   // exposed in client-side code (Supabase docs make this explicit) and is
   // NOT the same thing as a service_role key or a Groq/Gemini API key. The
   // real Groq/Gemini keys now live only as server-side secrets on the edge
@@ -20,7 +20,7 @@ const DATA = window.APP_DATA;
   // Postgres table ("ballots") plus a Storage bucket ("ballot-videos") in
   // this same Supabase project, both protected by Row Level Security so
   // each signed-in user can only ever read/write their own rows and files.
-  // One-time setup required in the Supabase SQL editor — see setup.sql.
+  // One-time setup required in the Supabase SQL editor.
   const supabaseClient = (window.supabase && window.supabase.createClient)
     ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
     : null;
@@ -78,7 +78,7 @@ const DATA = window.APP_DATA;
     const deliveryMetricsWithSource = Object.assign({}, deliveryMetrics || {}, { recordSource: recordSource || 'camera', isIntroDrill: !!isIntroDrill, isBodyDrill: !!isBodyDrill });
     // Save everything the live results view can show — including the
     // color-coded annotated-transcript data (sections + comments) and the
-    // measured vocal delivery metrics — so "My History" can reconstruct the
+    // measured vocal delivery metrics. This way, "My History" can reconstruct the
     // full formatted ballot later, not just a plain-text dump.
     const { error } = await supabaseClient.from('ballots').insert({
       id, user_id: currentUser.id, round, ts: new Date().toISOString(),
@@ -134,9 +134,9 @@ const DATA = window.APP_DATA;
     const [y,m,d] = key.split('-').map(Number);
     return new Date(y, m-1, d);
   }
-  // date -> true if anything happened that day: a ballot was recorded, a
+  // date --> true if anything happened that day: a ballot was recorded, a
   // goal was set, or (best-effort, since we don't store a completion date)
-  // a goal is currently complete — that last case can only credit today.
+  // a goal is currently complete.
   function activeDaysByDay(list, goals, events){
     const map = {};
     list.forEach(e => { map[dateKey(new Date(e.ts))] = true; }); // any ballot made
@@ -155,7 +155,7 @@ const DATA = window.APP_DATA;
     const today = new Date(); today.setHours(0,0,0,0);
     let cursor = new Date(today);
     // Today doesn't have to have activity yet for the streak to still be
-    // "alive" — only step back to yesterday as the start if today has no
+    // "alive". Only step back to yesterday as the start if today has no
     // recorded activity yet.
     if(!byDay[dateKey(cursor)]) cursor.setDate(cursor.getDate()-1);
     let streak = 0;
@@ -250,7 +250,7 @@ const DATA = window.APP_DATA;
     }
     // Every other goal type (besides streak/tournament, which aren't tied to
     // individual ballots) is measured only against the practice type chosen
-    // when the goal was created — "Regular Practice", "Rapid Drill:
+    // when the goal was created "Regular Practice", "Rapid Drill:
     // Introduction", or "All" (the default for goals saved before this
     // filter existed).
     const scopedList = filterByPracticeType(list, (g.params && g.params.practiceType) || 'all');
@@ -271,7 +271,7 @@ const DATA = window.APP_DATA;
         const d = new Date(e.ts);
         if(d.getFullYear()!==now.getFullYear() || d.getMonth()!==now.getMonth()) return false;
         if(g.type === 'rounds') return true; // every completed round this month, video or not
-        // 'videos': only rounds actually recorded live via camera this month —
+        // 'videos': only rounds actually recorded live via camera this month:
         // excludes rounds where a video was merely uploaded from a file or
         // captured from a shared tab/YouTube playback, since those aren't a
         // live recording of your own delivery.
@@ -660,7 +660,7 @@ const DATA = window.APP_DATA;
               <button type="button" class="se-item-del" data-del-event="${e.id}" aria-label="Remove event">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-63"></use></svg>
               </button>
-            </div>`).join('') : '<div class="goals-empty">No upcoming events — add a tournament date above.</div>'}
+            </div>`).join('') : '<div class="goals-empty">No upcoming events: add a tournament date above.</div>'}
         </div>
         ${past.length ? `<div class="se-past-toggle" id="sePastToggle">Show ${past.length} past event${past.length===1?'':'s'}</div>
         <div class="se-list hidden" id="sePastList">

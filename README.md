@@ -45,7 +45,7 @@ Sign up → Generate questions → Write a speech → Record your speech → Rec
 
 - **Score line graphs** | Line graphs of your overall score, sorted by individual rubric category and type of practice, plotted round-by-round across all of your speeches. This not only helps with tracking your progress in a specific area across months of hard work, but also serves as a representation of your speeches as a whole. 
 
-- **Streak & Calendar** | A tracked practice streak: When you record a ballot, set a goal, or complete one keeps the streak alive. Your current streak lives in a flame counter fixed to the top of the app, and the full **Streak Calendar** view lays out a month-by-month history of active days, and your current & best streak.
+- **Streak & Calendar** | A practice streak: When you record a ballot, set a goal, or complete one keeps the streak alive. Your current streak lives in a flame counter fixed to the top of the app, and the full **Streak Calendar** view lays out a month-by-month history of active days, and your current & best streak.
 
 - **tournament & event tracker** | Located in the calendar tab, you can add an upcoming tournament's date and name on the calendar. It will also show up in list below the calendar.
 

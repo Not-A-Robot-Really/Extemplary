@@ -684,6 +684,45 @@ fetch('icons.svg').then(r => r.text()).then(svgText => {
 
     state.forEach((s, i) => { s.progress = 0; render(i); });
 
+    // Targeted safety net: the wheel/touch hijack above normally arms and
+    // slides every card in, but the one card using data-trigger="top" is
+    // both the tallest card and on a different, more fragile arming path
+    // (rect.top<=0 rather than the default "whole card visible"), so a fast
+    // scroll/trackpad flick can occasionally pass through its arming check
+    // without ever catching it — leaving it stuck at opacity:0 forever.
+    // This only watches that one card, and only steps in if it's actually
+    // scrolled substantially into view while still unrevealed, animating it
+    // in smoothly (not an instant snap) so it doesn't change how the other
+    // cards feel.
+    (function ensureTopTriggerCardReveals(){
+      const idx = cards.findIndex(c => c.dataset.trigger === 'top');
+      if(idx === -1 || !('IntersectionObserver' in window)) return;
+      const io = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if(!entry.isIntersecting) return;
+          io.unobserve(entry.target);
+          const s = state[idx];
+          if(s.progress >= 1) return; // hijack already revealed it normally
+          const startProgress = s.progress;
+          const duration = 550;
+          const startTime = performance.now();
+          function tick(now){
+            const t = Math.min(1, (now - startTime) / duration);
+            s.progress = startProgress + (1 - startProgress) * t;
+            render(idx);
+            if(t < 1){
+              requestAnimationFrame(tick);
+            } else if(currentIndex <= idx){
+              currentIndex = idx + 1;
+              mode = 'approach';
+            }
+          }
+          requestAnimationFrame(tick);
+        });
+      }, { threshold: 0.5 });
+      io.observe(cards[idx]);
+    })();
+
     function authGateVisible(){
       if(!scroller) return false;
       if(scroller.classList.contains('hidden')) return false;

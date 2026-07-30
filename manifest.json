@@ -16,7 +16,7 @@
     "default_title": "Extemplary"
   },
   "background": {
-    "scripts": ["background.js"]
+    "service_worker": "background.js"
   },
   "permissions": ["storage"],
   "host_permissions": [

@@ -652,33 +652,6 @@ fetch('icons.svg').then(r => r.text()).then(svgText => {
     const APPROACH_FRAME_CAP = 120;    // max px of physical scroll applied per animation frame — keeps the physical scroll pace the same as before even though input is now coalesced
     const state = cards.map((el, i) => ({ el, dir: i % 2 === 0 ? 'left' : 'right', progress: 0 }));
     let currentIndex = 0;
-
-    // Safety net: the wheel/touch-driven hijack above is what normally arms
-    // and slides each card in, but it depends on catching the right delta at
-    // the right moment — a fast trackpad flick or momentum scroll can, in
-    // rare cases, skip a card's arming check entirely (most likely on the
-    // tallest cards, e.g. the data-trigger="top" AI-judged-ballot card).
-    // If that happens the card is stuck at its default opacity:0 forever.
-    // This observer is a pure fallback: once a card has genuinely scrolled
-    // into view, force it to its fully-revealed state regardless of what
-    // the hijack's own progress tracking thinks happened.
-    if('IntersectionObserver' in window){
-      const revealFallback = new IntersectionObserver((entries) => {
-        entries.forEach((entry) => {
-          if(!entry.isIntersecting) return;
-          const i = cards.indexOf(entry.target);
-          if(i === -1) return;
-          const s = state[i];
-          if(s.progress < 1){
-            s.progress = 1;
-            render(i);
-          }
-          if(currentIndex <= i) currentIndex = i + 1;
-          revealFallback.unobserve(entry.target);
-        });
-      }, { threshold: 0.35 });
-      cards.forEach(c => revealFallback.observe(c));
-    }
     // 'approach': plain, clamped, controlled scrolling toward the next card
     //             (this is what replaces the old auto-scroll — there is no
     //             animation here, just direct 1:1 scrolling driven by input).
@@ -1515,13 +1488,8 @@ fetch('icons.svg').then(r => r.text()).then(svgText => {
 
   function renderDemoCategoryCard(){
     const panel = document.getElementById('demoCategoryPanel');
-    const demoCat = {
-      name: 'Clarity',
-      score: 7, max: 10,
-      whatWorked: '1) Key terms like **"troop surges"** and **"myopic strategy"** are defined in plain language the first time they\'re used, so a judge without prior Afghanistan-policy background can follow the throughline without prior expertise.\n\n2) The point-to-point vocabulary stays **consistent** ("myopic," "surge," "long-term cost") rather than switching terminology mid-speech, which keeps the argument easy to track sentence to sentence.\n\n3) Sentence structure in points one and two is **direct and declarative** rather than looping through multiple clauses, which is easy for a live listener to parse in real time.\n\n4) The speech is generally **to the point** — points one and two each state their claim and move directly into support, without circling back to re-explain something already said.',
-      criticalFlaws: '1) **Awkward phrasing** (most important check): "the U has a simple-minded, myopic perspective" is clunky — dropping the article before "U" and stacking two synonyms back to back reads as unedited rather than deliberate; it would land more cleanly as "the U.S. has taken a myopic perspective."\n\n2) **Vague pronoun**: in "This has led to consequences we\'re still dealing with," the "This" has no single clear antecedent — the prior sentence mentions both the surge policy and its violence data, so a listener can\'t tell which one "This" is pointing to.\n\n3) **Weak verbal signposting**: the speech relies on the AGD/thesis to imply the three-point structure rather than explicitly marking "first," "second," "third" at each transition, which is harder to track by ear than on paper.\n\n4) **Hedging/fluff language** appears at the exact moment the content gets thinnest: "and third, um, there\'s also the long-term stuff to think about" stacks a filler pause with vague filler phrasing right where precision matters most.\n\n5) The phrase "the proof is in the pudding here" is a **cliché placeholder** rather than a clear explanation, and would likely read as vague filler to a judge expecting a concrete mechanism — this also costs the speech some conciseness, since a direct claim would have been shorter and clearer than the idiom.',
-      evidence: '1) "...the U has a simple-minded, myopic perspective." → rephrase as **"the U.S. has taken a myopic perspective"** — clearer and drops the redundant double-descriptor.\n\n2) "This has led to consequences we\'re still dealing with." → replace "This" with **"that troop-surge violence spike"** so the antecedent is unambiguous.\n\n3) "...second, we\'ll see the U.S.\'s proposed solution, troop surges, have been a disastrous failure." → add an explicit **"Second,"** at the top of this sentence so the structural shift is audible, not just implied.\n\n4) "and third, um, there\'s also the long-term stuff to think about." → cut "um" and replace "the long-term stuff" with **"the long-term institutional and credibility costs"** to keep the language as precise as points one and two.'
-    };
+    const demoCat = (DATA.EXAMPLE_CATEGORIES || []).find(c => c.name === 'Structure') || (DATA.EXAMPLE_CATEGORIES || [])[1];
+    if(!panel || !demoCat) return;
     const band = bandClass(demoCat.score, demoCat.max);
     panel.innerHTML = `
       <div class="category demo-category-reveal" style="border-top:none;padding-top:0;">

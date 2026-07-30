@@ -117,7 +117,6 @@ fetch('icons.svg').then(r => r.text()).then(svgText => {
             <div class="bf-custom-row" id="demoBfCustomRow">
               <input type="datetime-local" id="demoBfCustomDate" />
             </div>
-            <button type="button" class="btn primary" id="demoBriefingBtn" style="width:100%;" disabled>Generate Briefing</button>
             <div class="q-error" id="demoBfError" style="display:none;margin-top:8px;"></div>
             <div id="demoBfLoading" class="hidden" style="text-align:center;padding:14px 0;">
               <div class="q-hint" id="demoBfLoadingText">Pulling together your briefing…</div>
@@ -130,6 +129,7 @@ fetch('icons.svg').then(r => r.text()).then(svgText => {
               <p>That was your free briefing. Sign up to generate a fresh briefing before every tournament.</p>
               <button type="button" class="demo-signup-btn demo-signup-cta">Sign Up Free</button>
             </div>
+            <button type="button" class="btn primary" id="demoBriefingBtn" style="width:100%;" disabled>Generate Briefing</button>
           </div>
         </div>
       </div>
@@ -248,8 +248,11 @@ fetch('icons.svg').then(r => r.text()).then(svgText => {
         <div class="fc-head-row">
           <div class="fc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-13"></use></svg></div>
           <div class="fc-decor fc-decor-goal" aria-hidden="true">
-            <div class="fc-goal-ring">
-              <div class="fc-goal-ring-hole"></div>
+            <div class="goal-card-seal fc-decor-goal-seal">
+              <div class="goal-card-seal-ring"></div>
+              <div class="goal-card-seal-hole">
+                <span class="goal-card-seal-pct" id="landingGoalPct">0%</span>
+              </div>
             </div>
           </div>
         </div>
@@ -1785,6 +1788,34 @@ Grading rules:
   // Deferred via setTimeout: CIRCLE_PATH/inlineMd/escHtml/bandClass are
   // declared further down this same script, so this needs to run after the
   setTimeout(renderDemoCategoryCard, 0);
+
+  (function animateLandingGoalRing(){
+    const ring = document.querySelector('.fc-decor-goal-seal .goal-card-seal-ring');
+    const pctEl = document.getElementById('landingGoalPct');
+    if(!ring || !pctEl) return;
+    const target = 82, riseMs = 2400, holdMs = 1100, pauseMs = 900;
+    function cycle(){
+      const start = performance.now();
+      function tick(now){
+        const t = Math.min(1, (now - start) / riseMs);
+        const eased = 1 - Math.pow(1 - t, 3);
+        const val = Math.round(eased * target);
+        ring.style.setProperty('--goal-pct', val);
+        pctEl.textContent = val + '%';
+        if(t < 1){
+          requestAnimationFrame(tick);
+        }else{
+          setTimeout(() => {
+            ring.style.setProperty('--goal-pct', 0);
+            pctEl.textContent = '0%';
+            setTimeout(cycle, pauseMs);
+          }, holdMs);
+        }
+      }
+      requestAnimationFrame(tick);
+    }
+    cycle();
+  })();
 
   (function setupSideWords(){
     const leftInner  = document.getElementById('sideWordsLeftInner');

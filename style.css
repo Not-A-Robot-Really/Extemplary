@@ -503,7 +503,7 @@
      flameSpark keyframes so the motion reads identically to the real app,
      just always animating (no live/off toggle since there's no real
      streak state on the marketing page). ---- */
-  .fc-decor-flame svg{width:38px;height:38px;overflow:visible;}
+  .fc-decor-flame svg{width:58px;height:58px;overflow:visible;}
   .fc-decor-flame .flame-layer{transform-box:fill-box;transform-origin:50% 85%;}
   .fc-decor-flame .flame-sway{transform-box:fill-box;transform-origin:50% 100%;animation:flameSway 2.6s ease-in-out infinite;}
   .fc-decor-flame .flame-outer{fill:#ff8a2b;animation:flameOuter 1.85s ease-in-out infinite;}
@@ -515,27 +515,14 @@
   .fc-decor-flame .flame-spark-2{animation:flameSpark 1.9s ease-in infinite;animation-delay:1.1s;}
   .fc-decor-flame .flame-spark-3{animation:flameSpark 2.5s ease-in infinite;animation-delay:1.8s;}
 
-  /* ---- landing "Goals system" card: a larger version of the circular
-     goal seal from My History/Streak Goals (conic-gradient ring around a
-     hole), sitting beside the real goals icon and looping its fill from
-     0% up to a target percent so the card demonstrates live progress-bar
-     motion without needing any real goal data. ---- */
-  @property --goal-pct{ syntax:'<number>'; inherits:false; initial-value:0; }
-  .fc-goal-ring{
-    width:38px;height:38px;border-radius:50%;position:relative;
-    background:conic-gradient(#fff calc(var(--goal-pct,0) * 1%), rgba(255,255,255,0.3) 0);
-    animation:fcGoalFill 3.4s cubic-bezier(.3,.7,.3,1) infinite;
-  }
-  .fc-goal-ring-hole{
-    position:absolute;inset:6px;border-radius:50%;background:var(--ink-soft);
-    display:flex;align-items:center;justify-content:center;
-  }
-  @keyframes fcGoalFill{
-    0%{--goal-pct:0;}
-    55%{--goal-pct:82;}
-    85%{--goal-pct:82;}
-    100%{--goal-pct:0;}
-  }
+  /* ---- landing "Goals system" card: this reuses the exact real goal
+     wheel markup/classes from My History & Streak Goals (.goal-card-seal /
+     .goal-card-seal-ring / .goal-card-seal-hole / .goal-card-seal-pct,
+     conic-gradient brass-on-rule ring), just scaled up, so it's not a
+     lookalike but literally the same component. JS drives --goal-pct up
+     to a target percent and back down on a loop for the demo. ---- */
+  .fc-decor-goal-seal{width:58px;height:58px;}
+  .fc-decor-goal-seal .goal-card-seal-pct{font-size:14px;}
 
   .vocal-wave-icon{gap:2.5px;}
   .vocal-wave-icon .vw-bar{

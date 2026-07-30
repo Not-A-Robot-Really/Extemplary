@@ -23,11 +23,7 @@
     "https://iiehhmelfotwkdqxplug.supabase.co/*"
   ],
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'",
-    "sandbox": "sandbox allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.youtube.com https://s.ytimg.com; child-src https://www.youtube.com;"
-  },
-  "sandbox": {
-    "pages": ["sandboxed/yt-player.html"]
+    "extension_pages": "script-src 'self'; object-src 'self'"
   },
   "web_accessible_resources": [
     {

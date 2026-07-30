@@ -4422,65 +4422,98 @@ Grading rules:
   let ytPollTimer = null;
 
   // Manifest V3 extension pages can only load scripts from 'self', so the
-  // real https://www.youtube.com/iframe_api script can never be loaded
-  // directly here (Chrome blocks it regardless of manifest CSP settings).
-  // Instead we embed a sandboxed page (sandboxed/yt-player.html, declared
-  // under manifest.json's "sandbox" key) that's allowed to load it, and
-  // control that real player entirely over postMessage. ytPlayer below
-  // exposes the same method names the rest of this file already expects
-  // (getCurrentTime/getPlayerState/seekTo/playVideo/pauseVideo), backed by
-  // a small cache kept fresh by ~200ms "tick" messages from the sandbox,
-  // so no other code below needs to change.
-  const YT_STATE_PLAYING = 1; // matches the real YouTube IFrame API's PlayerState.PLAYING
+  // real https://www.youtube.com/iframe_api script can never run in our own
+  // pages (Chrome blocks it regardless of CSP). Loading it in a sandboxed
+  // page doesn't work either: Chrome forbids the 'allow-same-origin' token
+  // on extension sandbox pages (it would let the page escape the sandbox),
+  // and without it YouTube's own script can't use Cache Storage and throws.
+  //
+  // So instead of loading any script at all, we embed a plain YouTube
+  // "embed" iframe (with enablejsapi=1) and drive it with the same raw
+  // postMessage protocol the official API script itself uses internally.
+  // This needs no script loading in any of our pages, so no CSP directive
+  // ever comes into play. ytPlayer below exposes the same method names the
+  // rest of this file already expects (getCurrentTime/getPlayerState/
+  // seekTo/playVideo/pauseVideo), backed by a small cache kept fresh by the
+  // iframe's periodic "infoDelivery" messages, so no other code below needs
+  // to change.
+  const YT_STATE_PLAYING = 1; // matches YouTube's own PlayerState.PLAYING value
 
-  let ytBridgeFrame = null;
+  let ytFrame = null;
   let ytCachedTime = 0;
   let ytCachedState = -1;
+  let ytListenTimer = null;
 
   function loadYouTubeIframeAPI(){
-    ytApiReady = true; // the sandboxed page handles its own API loading
+    ytApiReady = true; // nothing to load — the raw postMessage protocol needs no script
   }
 
-  function ensureYtBridgeFrame(){
-    if(ytBridgeFrame) return ytBridgeFrame;
+  function ytPostCommand(func, args){
+    if(!ytFrame || !ytFrame.contentWindow) return;
+    ytFrame.contentWindow.postMessage(JSON.stringify({ event: 'command', func, args: args || [] }), '*');
+  }
+
+  function ensureYtFrame(){
+    if(ytFrame) return ytFrame;
     const container = document.getElementById('exampleYtPlayer');
-    ytBridgeFrame = document.createElement('iframe');
-    ytBridgeFrame.src = chrome.runtime.getURL('sandboxed/yt-player.html');
-    ytBridgeFrame.style.width = '100%';
-    ytBridgeFrame.style.height = '100%';
-    ytBridgeFrame.style.border = '0';
-    ytBridgeFrame.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture');
+    ytFrame = document.createElement('iframe');
+    const params = new URLSearchParams({
+      start: EXAMPLE_SPEECH_START, end: EXAMPLE_SPEECH_END,
+      controls: 0, modestbranding: 1, rel: 0, playsinline: 1,
+      enablejsapi: 1, origin: location.origin
+    });
+    ytFrame.src = `https://www.youtube.com/embed/${EXAMPLE_YT_VIDEO_ID}?${params.toString()}`;
+    ytFrame.style.width = '100%';
+    ytFrame.style.height = '100%';
+    ytFrame.style.border = '0';
+    ytFrame.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture');
     container.innerHTML = '';
-    container.appendChild(ytBridgeFrame);
+    container.appendChild(ytFrame);
 
     window.addEventListener('message', (e) => {
-      if(!ytBridgeFrame || e.source !== ytBridgeFrame.contentWindow) return;
-      const data = e.data;
+      if(!ytFrame || e.source !== ytFrame.contentWindow) return;
+      let data = e.data;
+      if(typeof data === 'string'){
+        try { data = JSON.parse(data); } catch(err) { return; }
+      }
       if(!data || typeof data !== 'object') return;
-      if(data.type === 'ready'){
+
+      if(data.event === 'onError'){
+        onExamplePlayerError({ data: data.info });
+        return;
+      }
+      if(data.event === 'onReady' || data.event === 'initialDelivery'){
         ytPlayerReady = true;
-      }else if(data.type === 'tick'){
-        ytCachedTime = data.time;
-        ytCachedState = data.state;
-      }else if(data.type === 'stateChange'){
-        ytCachedState = data.state;
-        onExamplePlayerStateChange({ data: data.state });
-      }else if(data.type === 'error'){
-        onExamplePlayerError({ data: data.error });
+      }
+      if(data.event === 'onStateChange' && typeof data.info === 'number'){
+        ytCachedState = data.info;
+        onExamplePlayerStateChange({ data: data.info });
+      }
+      // Periodic status pushed once we've sent the "listening" handshake below.
+      if(data.info && typeof data.info === 'object'){
+        if(typeof data.info.currentTime === 'number') ytCachedTime = data.info.currentTime;
+        if(typeof data.info.playerState === 'number') ytCachedState = data.info.playerState;
       }
     });
 
-    ytBridgeFrame.addEventListener('load', () => {
-      ytBridgeFrame.contentWindow.postMessage({
-        type: 'init',
-        config: {
-          videoId: EXAMPLE_YT_VIDEO_ID,
-          playerVars: { start: EXAMPLE_SPEECH_START, end: EXAMPLE_SPEECH_END, controls: 0, modestbranding: 1, rel: 0, playsinline: 1 }
-        }
-      }, '*');
+    ytFrame.addEventListener('load', () => {
+      // Handshake YouTube's embed listens for to start pushing periodic
+      // "infoDelivery" status messages and start/ready/error events. Sent a
+      // few times since the very first one can arrive before the embedded
+      // player has finished wiring up its own listener.
+      let attempts = 0;
+      ytListenTimer = setInterval(() => {
+        attempts++;
+        if(!ytFrame || !ytFrame.contentWindow) return;
+        ytFrame.contentWindow.postMessage(JSON.stringify({ event: 'listening', id: EXAMPLE_YT_VIDEO_ID }), '*');
+        ytPostCommand('addEventListener', ['onReady']);
+        ytPostCommand('addEventListener', ['onStateChange']);
+        ytPostCommand('addEventListener', ['onError']);
+        if(attempts >= 5 && ytListenTimer){ clearInterval(ytListenTimer); ytListenTimer = null; }
+      }, 300);
     });
 
-    return ytBridgeFrame;
+    return ytFrame;
   }
 
   const ytPlayer = {
@@ -4488,11 +4521,14 @@ Grading rules:
     getPlayerState: () => ytCachedState,
     seekTo: (t) => {
       ytCachedTime = t;
-      ensureYtBridgeFrame().contentWindow.postMessage({ type: 'seek', time: t }, '*');
+      ensureYtFrame();
+      ytPostCommand('seekTo', [t, true]);
     },
-    playVideo: () => ensureYtBridgeFrame().contentWindow.postMessage({ type: 'play' }, '*'),
-    pauseVideo: () => ensureYtBridgeFrame().contentWindow.postMessage({ type: 'pause' }, '*')
+    playVideo: () => { ensureYtFrame(); ytPostCommand('playVideo'); },
+    pauseVideo: () => { ensureYtFrame(); ytPostCommand('pauseVideo'); }
   };
+
+
 
   // Walks a rendered DOM subtree and wraps every word-like run of text in a
   // clickable/highlightable .tw span, assigning each one a synthetic,
@@ -4532,7 +4568,7 @@ Grading rules:
   }
 
   function initExamplePlayer(){
-    ensureYtBridgeFrame();
+    ensureYtFrame();
   }
 
   function onExamplePlayerError(e){

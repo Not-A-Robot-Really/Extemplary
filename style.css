@@ -479,17 +479,6 @@
   .feature-card{ position:relative; }
   .feature-card .fc-icon{ background:var(--fc-accent, var(--crimson)); }
   .feature-card:hover{ border-color:var(--fc-accent, var(--brass)); }
-  .feature-card::after{
-    content:'';position:absolute;top:16px;right:16px;width:7px;height:7px;border-radius:50%;
-    background:var(--fc-accent, var(--brass));opacity:0;transform:scale(0.3);
-    transition:opacity .3s ease, transform .3s ease;pointer-events:none;
-  }
-  .feature-card:hover::after{opacity:1;transform:scale(1);animation:fcPulseDot 1.7s ease-out infinite;}
-  @keyframes fcPulseDot{
-    0%{box-shadow:0 0 0 0 var(--fc-accent, var(--brass));}
-    70%{box-shadow:0 0 0 9px transparent;}
-    100%{box-shadow:0 0 0 0 transparent;}
-  }
 
   /* ---- header row used by cards that pair the normal icon chip with a
      larger decorative visual to its right, in the card's empty space ---- */
@@ -1172,6 +1161,18 @@
   .bf-timing-btn{flex:1;min-width:130px;font-size:13px;padding:10px 12px;border:1px solid var(--rule);background:#ffffff;color:var(--charcoal);border-radius:3px;cursor:pointer;font-family:var(--font-body);}
   .bf-timing-btn:hover{border-color:var(--brass);}
   .bf-timing-btn.active{background:var(--brass);color:#fff;border-color:var(--brass);}
+
+  /* ---- landing page only: the briefing demo's timing buttons should read
+     as the exact same control as the questions demo's category buttons
+     (transparent/ghost fill, same padding, weight, hover and active states)
+     so the two hero demo cards feel like one consistent UI. Scoped to
+     #authGate so the real in-app briefing screen is untouched. ---- */
+  #authGate .bf-timing-row{margin-bottom:10px;}
+  #authGate .bf-timing-btn{
+    background:transparent;font-weight:600;padding:9px 12px;
+  }
+  #authGate .bf-timing-btn:hover{background:rgba(0,0,0,0.05);border-color:var(--rule);}
+  #authGate .bf-timing-btn.active{background:var(--brass);color:#fff;border-color:var(--brass);}
   .bf-custom-row{display:none;margin-bottom:14px;}
   .bf-custom-row.show{display:block;}
   .bf-custom-row input[type=datetime-local]{

@@ -222,6 +222,19 @@ fetch('icons.svg').then(r => r.text()).then(svgText => {
         <div class="fc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-11"></use></svg></div>
         <h3>Ballot feedback storage</h3>
         <p>Every round you ever record, video, transcript, full ballot, and score, lives permanently in your account. My History pulls it all together: a Coach's Overall Notes summary, per-category trend bars, score sparkline graphs, your active goals, and your full round-by-round archive, all in one place.</p>
+        <div class="history-card fc-mini-history" aria-hidden="true">
+          <div class="history-card-head" style="cursor:default;">
+            <div class="hc-top">
+              <div class="hc-top-left">
+                <span class="hc-round">Round 5</span>
+                <span class="hc-mode-badge is-regular">Regular Practice</span>
+                <span class="hc-date">7/27/2026, 3:33 PM</span>
+              </div>
+              <div class="hc-score" style="color:var(--score-yellow);">56<span class="hc-score-max">/100</span></div>
+            </div>
+            <div class="hc-question">Who will win the Texas Senate seat in the 2026 midterm elections?</div>
+          </div>
+        </div>
       </div>
       <div class="feature-card" style="--fc-accent:var(--score-orange)">
         <div class="fc-head-row">
@@ -263,9 +276,8 @@ fetch('icons.svg').then(r => r.text()).then(svgText => {
         <h3>Rapid Drill: Intro</h3>
         <p>Short on time before a tournament? A 5 minute prep countdown caps your recording at just the intro, so you can hammer out attention getters and analogies again and again, scored on a trimmed rubric and saved to My History on its own trend line.</p>
         <div class="fc-mini-trend" aria-hidden="true">
-          <span class="fc-mini-trend-label">Trend</span>
           <div class="trend-bar-wrap fc-mini-trend-wrap">
-            <span class="trend-bar fc-mini-trend-fill" style="--trend-pct:71%"></span>
+            <span class="trend-bar fc-mini-trend-fill" data-pct="71" style="--trend-pct:71%"></span>
           </div>
           <span class="fc-mini-trend-avg">7.1</span>
         </div>
@@ -275,9 +287,8 @@ fetch('icons.svg').then(r => r.text()).then(svgText => {
         <h3>Rapid Drill: Body</h3>
         <p>Same idea for a single body paragraph: a 10 minute prep countdown built for drilling structure, analysis, and evidence without running a whole speech every time, scored on a trimmed rubric and saved to My History on its own trend line.</p>
         <div class="fc-mini-trend" aria-hidden="true">
-          <span class="fc-mini-trend-label">Trend</span>
           <div class="trend-bar-wrap fc-mini-trend-wrap">
-            <span class="trend-bar fc-mini-trend-fill" style="--trend-pct:85%"></span>
+            <span class="trend-bar fc-mini-trend-fill" data-pct="85" style="--trend-pct:85%"></span>
           </div>
           <span class="fc-mini-trend-avg">8.5</span>
         </div>
@@ -1778,6 +1789,16 @@ Grading rules:
     });
   })();
 
+
+  function renderMiniTrendBars(){
+    document.querySelectorAll('.fc-mini-trend-fill[data-pct]').forEach(fillEl => {
+      const pct = parseFloat(fillEl.dataset.pct) || 0;
+      fillEl.style.background = colorFromRatio(pct / 100);
+    });
+  }
+  // Deferred via setTimeout: colorFromRatio is declared further down this
+  // same script, same reason renderDemoCategoryCard below is deferred.
+  setTimeout(renderMiniTrendBars, 0);
 
   function renderDemoCategoryCard(){
     const panel = document.getElementById('demoCategoryPanel');

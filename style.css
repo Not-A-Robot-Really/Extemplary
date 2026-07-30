@@ -514,18 +514,31 @@
   .fc-decor-goal-seal .goal-card-seal-pct{font-size:14px;}
 
   /* ---- landing "Rapid Drill" cards: a mini version of the real per-
-     category trend bar from My History (reuses .trend-bar-wrap/.trend-bar
-     exactly, just shrunk down), giving each drill card a small preview of
-     its own trend line, filled in the card's own accent color. ---- */
-  .fc-mini-trend{display:flex;align-items:center;gap:8px;margin-top:14px;}
-  .fc-mini-trend-label{font-family:var(--font-mono);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--chrome-text-dim);flex-shrink:0;}
-  .fc-mini-trend-wrap{flex:1;height:7px;}
-  .fc-mini-trend-avg{font-family:var(--font-mono);font-size:11px;font-weight:700;color:var(--chrome-text);flex-shrink:0;}
+     category trend bar/slider from My History (reuses .trend-bar-wrap/
+     .trend-bar exactly, just shrunk down), colored by score band the same
+     way the real bars are (JS sets the fill color via colorFromRatio). ---- */
+  .fc-mini-trend{display:flex;align-items:center;gap:10px;margin-top:14px;}
+  .fc-mini-trend-wrap{flex:1;height:13px;border-radius:6px;}
+  .fc-mini-trend-avg{font-family:var(--font-mono);font-size:12px;font-weight:700;color:var(--chrome-text);flex-shrink:0;}
   .fc-mini-trend-fill{
-    width:0%;background:var(--fc-accent, var(--brass));
+    display:block;height:100%;border-radius:6px;width:0%;
     animation:fcMiniTrendFill 1.3s cubic-bezier(.22,.9,.3,1) 0.25s forwards;
   }
   @keyframes fcMiniTrendFill{ to{ width:var(--trend-pct, 75%); } }
+
+  /* ---- landing "Ballot feedback storage" card: a shrunk-down preview of
+     a real My History round card, reusing the exact .history-card/.hc-*
+     classes (round badge, mode badge, date, score, pull-quote question)
+     just at reduced scale so it fits inside the feature card. ---- */
+  .fc-mini-history{margin-top:14px;background:rgba(255,255,255,0.55);}
+  .fc-mini-history .history-card-head{padding:12px 14px;gap:10px;}
+  .fc-mini-history .hc-round, .fc-mini-history .hc-mode-badge{font-size:9px;padding:3px 7px;letter-spacing:0.4px;}
+  .fc-mini-history .hc-date{font-size:10px;}
+  .fc-mini-history .hc-top-left{gap:7px;}
+  .fc-mini-history .hc-score{font-size:20px;}
+  .fc-mini-history .hc-score .hc-score-max{font-size:11px;}
+  .fc-mini-history .hc-question{font-size:12px;padding:10px 22px 0;}
+  .fc-mini-history .hc-question::before, .fc-mini-history .hc-question::after{font-size:20px;top:5px;}
 
   .vocal-wave-icon{gap:2.5px;}
   .vocal-wave-icon .vw-bar{
@@ -559,6 +572,7 @@
     display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:10px;
     padding:20px;opacity:0;pointer-events:none;transition:opacity 0.35s ease;
     border:3px solid var(--crimson-deep);
+    z-index:60;transform:translateZ(60px);
   }
   .demo-locked-overlay.show{opacity:1;pointer-events:auto;}
   .demo-locked-overlay svg{width:26px;height:26px;color:var(--brass);}

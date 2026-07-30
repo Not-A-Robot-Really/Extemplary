@@ -108,7 +108,7 @@ You'll land on the sign in screen (landing page) the first time you open the app
 
 1. Locate the **Sign Up** tab, enter an email and a password (requires 6+ characters), and submit.
 2. Depending on the project's auth settings, you may need to check your email and click a confirmation link before your first log in (see [Supabase setup](#supabase-setup) below).
-3. Once signed in, you'll stay signed in *automatically*, even after closing the tab or restarting your browser, until you tap **Sign out** in the top right of the account menu. You will also see a quick tutorial on how the extention works that will guide you through all the features of Extemplary.
+3. Once signed in, you will stay signed in *automatically*, even after closing the tab or restarting your browser, until you tap **Sign out** in the top right of the account menu. You will also see a quick tutorial on how the extention works that will guide you through all the features of Extemplary.
 
 Every round completed while signed in is saved **automatically**. Click on any past round in the "My Ballot History" page to rewatch the video, re-read the transcript, or reread the full judge's feedback, read your Coach's Overall Notes, view your progress graphs, general strengths/weaknesses and view & add **Goals** (with auto-suggested ones based on your own weak spots).
 

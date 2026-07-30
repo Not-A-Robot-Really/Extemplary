@@ -552,7 +552,8 @@
   .fc-mini-history .hc-score .hc-score-max{font-size:11px;}
   .fc-mini-history .hc-question{font-size:0;padding:8px 14px 10px;text-align:left;}
   .fc-mini-history .hc-question::before, .fc-mini-history .hc-question::after{content:none;}
-  .fc-mini-q-line{display:block;width:82%;height:7px;margin:0;background:rgba(0,0,0,0.1);}
+  .fc-mini-cats{display:flex;flex-direction:column;gap:2px;}
+  .fc-mini-cats .hc-cat{font-size:11px;padding:4px 0 4px 10px;}
 
   .vocal-wave-icon{gap:2.5px;}
   .vocal-wave-icon .vw-bar{
@@ -589,7 +590,7 @@
     z-index:60;transform:translateZ(60px);
   }
   .demo-locked-overlay.show{opacity:1;pointer-events:auto;}
-  .demo-locked-overlay svg{width:26px;height:26px;color:var(--brass);}
+  .demo-locked-overlay svg{width:44px;height:44px;stroke-width:2.75;color:#7fb8ff;}
   .demo-locked-overlay p{color:#fff;font-family:var(--font-body);font-size:13px;margin:0;max-width:260px;line-height:1.5;}
   .demo-locked-overlay .demo-signup-btn{
     padding:9px 20px;border-radius:24px;background:var(--crimson);color:var(--on-accent);border:3px solid var(--crimson-deep);
@@ -2420,4 +2421,4 @@
 }
 @media (max-width:640px){
   #tutBox{max-width:88vw;min-width:0;left:6vw !important;right:6vw !important;}
-}
+} 

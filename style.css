@@ -532,6 +532,10 @@
      a real My History round card, reusing the exact .history-card/.hc-*
      classes (round badge, mode badge, date, score, pull-quote question)
      just at reduced scale so it fits inside the feature card. ---- */
+  /* ---- landing "Ballot feedback storage" card: a shrunk-down preview of
+     a real My History round card, reusing the exact .history-card/.hc-*
+     classes (round badge, mode badge, date, score, pull-quote question)
+     just at reduced scale so it fits inside the feature card. ---- */
   .fc-mini-history{margin-top:14px;background:rgba(255,255,255,0.55);overflow:hidden;}
   .fc-mini-history .history-card-head{padding:10px 12px;gap:6px;}
   .fc-mini-history .hc-top{flex-wrap:wrap;row-gap:4px;}
@@ -543,16 +547,47 @@
   .tut-skel-cats.fc-mini-cats{display:flex;flex-direction:column;gap:0;padding:0 12px 10px !important;}
   .fc-mini-cats .hc-cat{font-size:9.5px;padding:3px 0 3px 8px;border-left-width:2px;line-height:1.3;}
 
-  .fc-ghost-frame{
-    width:100%;max-width:200px;height:34px;border-radius:6px;
+  /* ---- landing "Record your round" card: mini version of the real
+     Trends chart (reuses .tut-skel-chart/.tut-skel-bar exactly, just
+     shrunk down) to stand in for a waveform/analysis preview. ---- */
+  .fc-mini-chart{
+    margin-top:14px;width:100%;max-width:220px;height:52px;
+    display:flex;align-items:flex-end;gap:3%;
     background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.16);
-    display:flex;align-items:center;justify-content:center;
+    border-radius:6px;padding:6px 8px;
   }
-  .fc-ghost-transcript{margin-top:12px;display:flex;flex-direction:column;}
-  .fc-ghost-transcript .tut-skel-block{background:rgba(0,0,0,0.1);}
-  .fc-ghost-delivery{margin-top:14px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
-  .fc-ghost-stat{background:rgba(255,255,255,0.5);border:1px solid var(--rule);border-radius:3px;padding:8px 9px;}
-  .fc-ghost-stat .tut-skel-block{background:rgba(0,0,0,0.12);}
+  .fc-mini-chart .tut-skel-bar{border-radius:2px;}
+
+  /* ---- landing "Word-for-word transcript" card: mini version of the
+     real Coach's Overall Notes card (reuses .history-overall/.tut-skel
+     exactly, just shrunk down and without its heading text). ---- */
+  .fc-mini-notes{margin-top:12px;padding:12px 14px;}
+  .fc-mini-notes .tut-skel-block{height:9px;margin:6px 0;}
+
+  /* ---- landing "Vocal delivery analysis" card: mini version of the
+     real per-category trend rows (reuses .trend-row/.trend-bar-wrap
+     exactly, just shrunk down and without the row labels). ---- */
+  .fc-mini-trendrows{margin-top:14px;display:flex;flex-direction:column;gap:8px;}
+  .fc-mini-trendrows .trend-row{padding:0;border-bottom:none;gap:8px;}
+  .fc-mini-trendrows .trend-bar-wrap{height:8px;border-radius:4px;background:rgba(255,255,255,0.18);}
+  .fc-mini-trendrows .trend-avg{background:rgba(255,255,255,0.3);}
+
+  /* ---- landing "Rapid Drill: Intro" card: mini version of the real
+     Overall Strengths / Overall Weaknesses columns (reuses .trend-summary
+     /.col exactly, just shrunk down). ---- */
+  .fc-mini-summary{margin-top:14px;gap:10px;}
+  .fc-mini-summary .col{padding:9px 11px;min-width:0;}
+  .fc-mini-summary h4{font-size:9px;margin-bottom:6px;gap:5px;}
+  .fc-mini-summary ul{gap:5px;}
+  .fc-mini-summary li{padding-left:12px;}
+  .fc-mini-summary li::before{width:4px;height:4px;top:5px;}
+
+  /* ---- landing "Rapid Drill: Body" card: mini version of the real
+     Suggested Goals row (reuses .suggested-goal-card exactly, just
+     shrunk down). ---- */
+  .fc-mini-suggested-group{margin-top:14px;display:flex;flex-direction:column;gap:8px;}
+  .fc-mini-suggested{padding:8px 10px;gap:8px;}
+
 
   .vocal-wave-icon{gap:2.5px;}
   .vocal-wave-icon .vw-bar{

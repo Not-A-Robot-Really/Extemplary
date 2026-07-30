@@ -204,19 +204,16 @@ fetch('icons.svg').then(r => r.text()).then(svgText => {
         <p>Camera-record your speech right in the browser, no app to install, nothing to upload by hand.</p>
         <div class="demo-record-mock" aria-hidden="true">
           <button type="button" class="rec-btn recording demo-record-btn" tabindex="-1"><span class="inner"></span></button>
-          <div class="history-card fc-mini-history" aria-hidden="true">
-            <div class="history-card-head" style="cursor:default;">
-              <div class="hc-top">
-                <div class="hc-top-left">
-                  <span class="hc-round">Round 6</span>
-                  <span class="hc-mode-badge is-regular">Regular Practice</span>
-                </div>
-                <div class="hc-score" style="color:var(--score-red);">--<span class="hc-score-max">/100</span></div>
-              </div>
-            </div>
-            <div class="tut-skel-cats fc-mini-cats" aria-hidden="true" style="padding:0 14px 12px;">
-              <div class="hc-cat"><b class="tut-skel-block tut-skel-line" style="width:24px;height:10px;margin:0;display:inline-block;"></b> Recording…</div>
-            </div>
+          <div class="tut-skel-chart fc-mini-chart" aria-hidden="true">
+            <div class="tut-skel-block tut-skel-bar" style="width:9%;height:42%;background:#8a9bb5;opacity:0.6;"></div>
+            <div class="tut-skel-block tut-skel-bar" style="width:9%;height:70%;background:#b58a9b;opacity:0.6;"></div>
+            <div class="tut-skel-block tut-skel-bar" style="width:9%;height:55%;background:#9bb58a;opacity:0.6;"></div>
+            <div class="tut-skel-block tut-skel-bar" style="width:9%;height:88%;background:#c9a86a;opacity:0.6;"></div>
+            <div class="tut-skel-block tut-skel-bar" style="width:9%;height:36%;background:#7a8ca8;opacity:0.6;"></div>
+            <div class="tut-skel-block tut-skel-bar" style="width:9%;height:64%;background:#a87a8c;opacity:0.6;"></div>
+            <div class="tut-skel-block tut-skel-bar" style="width:9%;height:78%;background:#8a9bb5;opacity:0.6;"></div>
+            <div class="tut-skel-block tut-skel-bar" style="width:9%;height:48%;background:#b58a9b;opacity:0.6;"></div>
+            <div class="tut-skel-block tut-skel-bar" style="width:9%;height:60%;background:#9bb58a;opacity:0.6;"></div>
           </div>
         </div>
       </div>
@@ -224,20 +221,10 @@ fetch('icons.svg').then(r => r.text()).then(svgText => {
         <div class="fc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-10"></use></svg></div>
         <h3>Word-for-word transcript</h3>
         <p class="transcript-highlight-demo" id="transcriptDemoText">Automatic transcription with a stenographer-style layout and auto-detected Intro / Body / Conclusion sections.</p>
-        <div class="history-card fc-mini-history" aria-hidden="true">
-          <div class="history-card-head" style="cursor:default;">
-            <div class="hc-top">
-              <div class="hc-top-left">
-                <span class="hc-round">Round 3</span>
-                <span class="hc-mode-badge is-regular">Regular Practice</span>
-              </div>
-              <div class="hc-score" style="color:var(--score-cyan);">71<span class="hc-score-max">/100</span></div>
-            </div>
-          </div>
-          <div class="tut-skel-cats fc-mini-cats" aria-hidden="true" style="padding:0 14px 12px;">
-            <div class="hc-cat"><b class="tut-skel-block tut-skel-line" style="width:24px;height:10px;margin:0;display:inline-block;"></b> Intro</div>
-            <div class="hc-cat"><b class="tut-skel-block tut-skel-line" style="width:24px;height:10px;margin:0;display:inline-block;"></b> Body</div>
-          </div>
+        <div class="history-overall tut-skel fc-mini-notes" aria-hidden="true">
+          <div class="tut-skel-block tut-skel-line" style="width:96%;"></div>
+          <div class="tut-skel-block tut-skel-line" style="width:88%;"></div>
+          <div class="tut-skel-block tut-skel-line" style="width:63%;"></div>
         </div>
       </div>
       <div class="feature-card" style="--fc-accent:var(--crimson-bright)">
@@ -246,19 +233,18 @@ fetch('icons.svg').then(r => r.text()).then(svgText => {
         </div>
         <h3>Vocal delivery analysis</h3>
         <p>Volume, emphasis, tone and pitch variety, pauses, pace (WPM), filler words, and stutters, measured straight from your recording's audio.</p>
-        <div class="history-card fc-mini-history" aria-hidden="true">
-          <div class="history-card-head" style="cursor:default;">
-            <div class="hc-top">
-              <div class="hc-top-left">
-                <span class="hc-round">Round 4</span>
-                <span class="hc-mode-badge is-regular">Regular Practice</span>
-              </div>
-              <div class="hc-score" style="color:var(--crimson-bright);">63<span class="hc-score-max">/100</span></div>
-            </div>
+        <div class="fc-mini-trendrows" aria-hidden="true">
+          <div class="trend-row">
+            <span class="trend-bar-wrap"><span class="tut-skel-block tut-skel-bar" style="width:64%;height:100%;background:#7a8ca8;opacity:0.55;"></span></span>
+            <span class="trend-avg tut-skel-block tut-skel-line" style="width:26px;height:10px;margin:0;display:inline-block;"></span>
           </div>
-          <div class="tut-skel-cats fc-mini-cats" aria-hidden="true" style="padding:0 14px 12px;">
-            <div class="hc-cat"><b class="tut-skel-block tut-skel-line" style="width:24px;height:10px;margin:0;display:inline-block;"></b> Pace</div>
-            <div class="hc-cat"><b class="tut-skel-block tut-skel-line" style="width:24px;height:10px;margin:0;display:inline-block;"></b> Fillers</div>
+          <div class="trend-row">
+            <span class="trend-bar-wrap"><span class="tut-skel-block tut-skel-bar" style="width:82%;height:100%;background:#a87a8c;opacity:0.55;"></span></span>
+            <span class="trend-avg tut-skel-block tut-skel-line" style="width:26px;height:10px;margin:0;display:inline-block;"></span>
+          </div>
+          <div class="trend-row">
+            <span class="trend-bar-wrap"><span class="tut-skel-block tut-skel-bar" style="width:47%;height:100%;background:#9bb58a;opacity:0.55;"></span></span>
+            <span class="trend-avg tut-skel-block tut-skel-line" style="width:26px;height:10px;margin:0;display:inline-block;"></span>
           </div>
         </div>
       </div>
@@ -321,19 +307,20 @@ fetch('icons.svg').then(r => r.text()).then(svgText => {
         <div class="fc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-6"></use></svg></div>
         <h3>Rapid Drill: Intro</h3>
         <p>Short on time before a tournament? A 5 minute prep countdown caps your recording at just the intro, so you can hammer out attention getters and analogies again and again, scored on a trimmed rubric and saved to My History on its own trend line.</p>
-        <div class="history-card fc-mini-history" aria-hidden="true">
-          <div class="history-card-head" style="cursor:default;">
-            <div class="hc-top">
-              <div class="hc-top-left">
-                <span class="hc-round">Drill 12</span>
-                <span class="hc-mode-badge is-regular">Rapid Drill · Intro</span>
-              </div>
-              <div class="hc-score" style="color:var(--score-red);">74<span class="hc-score-max">/100</span></div>
-            </div>
+        <div class="trend-summary fc-mini-summary" aria-hidden="true">
+          <div class="col strength">
+            <h4>Overall Strengths</h4>
+            <ul>
+              <li><span class="tut-skel-block tut-skel-line" style="width:78%;margin:0;height:10px;"></span></li>
+              <li><span class="tut-skel-block tut-skel-line" style="width:64%;margin:0;height:10px;"></span></li>
+            </ul>
           </div>
-          <div class="tut-skel-cats fc-mini-cats" aria-hidden="true" style="padding:0 14px 12px;">
-            <div class="hc-cat"><b class="tut-skel-block tut-skel-line" style="width:24px;height:10px;margin:0;display:inline-block;"></b> Hook</div>
-            <div class="hc-cat"><b class="tut-skel-block tut-skel-line" style="width:24px;height:10px;margin:0;display:inline-block;"></b> Link</div>
+          <div class="col weakness">
+            <h4>Overall Weaknesses</h4>
+            <ul>
+              <li><span class="tut-skel-block tut-skel-line" style="width:70%;margin:0;height:10px;"></span></li>
+              <li><span class="tut-skel-block tut-skel-line" style="width:58%;margin:0;height:10px;"></span></li>
+            </ul>
           </div>
         </div>
       </div>
@@ -341,19 +328,14 @@ fetch('icons.svg').then(r => r.text()).then(svgText => {
         <div class="fc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-6"></use></svg></div>
         <h3>Rapid Drill: Body</h3>
         <p>Same idea for a single body paragraph: a 10 minute prep countdown built for drilling structure, analysis, and evidence without running a whole speech every time, scored on a trimmed rubric and saved to My History on its own trend line.</p>
-        <div class="history-card fc-mini-history" aria-hidden="true">
-          <div class="history-card-head" style="cursor:default;">
-            <div class="hc-top">
-              <div class="hc-top-left">
-                <span class="hc-round">Drill 9</span>
-                <span class="hc-mode-badge is-regular">Rapid Drill · Body</span>
-              </div>
-              <div class="hc-score" style="color:var(--score-yellow);">85<span class="hc-score-max">/100</span></div>
-            </div>
+        <div class="fc-mini-suggested-group" aria-hidden="true">
+          <div class="suggested-goal-card fc-mini-suggested">
+            <div class="tut-skel-block tut-skel-line" style="width:66%;margin:0;"></div>
+            <div class="tut-skel-block" style="width:52px;height:20px;background:#a87a8c;opacity:0.6;border-radius:20px;"></div>
           </div>
-          <div class="tut-skel-cats fc-mini-cats" aria-hidden="true" style="padding:0 14px 12px;">
-            <div class="hc-cat"><b class="tut-skel-block tut-skel-line" style="width:24px;height:10px;margin:0;display:inline-block;"></b> Structure</div>
-            <div class="hc-cat"><b class="tut-skel-block tut-skel-line" style="width:24px;height:10px;margin:0;display:inline-block;"></b> Evidence</div>
+          <div class="suggested-goal-card fc-mini-suggested">
+            <div class="tut-skel-block tut-skel-line" style="width:50%;margin:0;"></div>
+            <div class="tut-skel-block" style="width:52px;height:20px;background:#9bb58a;opacity:0.6;border-radius:20px;"></div>
           </div>
         </div>
       </div>

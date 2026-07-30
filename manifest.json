@@ -22,6 +22,9 @@
   "host_permissions": [
     "https://iiehhmelfotwkdqxplug.supabase.co/*"
   ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  },
   "web_accessible_resources": [
     {
       "resources": [
@@ -29,6 +32,10 @@
         "index.html",
         "style.css",
         "data.js",
+        "app.js",
+        "index-icons.js",
+        "landing-app.js",
+        "landing-icons.js",
         "tutorial.js",
         "icons.svg",
         "icons2.svg",

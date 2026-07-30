@@ -18,12 +18,12 @@ Extemporaneous Speaking refers to a speech event where you deliver a **7 minute*
 
 ## Features 🧩
 ---
-**How the Extention works (summed up in 1 flowchart!)**
+**How the Extention works (summed up in one flowchart!)**
 Sign up → Generate questions → Write a speech → Record your speech → Receive feedback → Set goals → Practice more → Track your improvement/progress → Correct bad habits & general weaknesses
 
 - **Record a round** | Generate 3 realistic practice questions, run a prep timer, then record on your webcam for your speech.
 
-- **AI-judged ballot** | Transcribes your speech, analyzes vocal delivery from the extracted audio, and scores you on a custom made **8-category NSDA extemp rubric** using the model: Llama 3.3 70B on Groq.
+- **AI judged Ballot** | Extemplary Transcribes your speech, analyzes vocal delivery from the extracted audio, and scores you on a custom made **8-category NSDA extemp rubric**, all using the model: Llama 3.3 70B on Groq.
 
 - **Vocal Delivery Analysis** | Each speech will be measured for volume, emphasis, tone/pitch variety, pauses, pace (WPM), filler words, and stutters/repetitions.
 
@@ -35,7 +35,7 @@ Sign up → Generate questions → Write a speech → Record your speech → Rec
 
 - **Example ballot** | An example sample round (with speech and ballot) so first-time users can see what a finished round looks like before recording their own, including the same synced playback experience.
 
-- **Accounts & sign-in** | Sign up with an email and password to save and track your progress. Sessions persist automatically: close the tab, come back later, and you're still signed in. Sign out any time from the account menu.
+- **Accounts & sign-in** | Sign up with an email and password to use Extemplary and track your progress. Sessions are saved automatically. If you close the tab and come back later, you will be still signed in. Sign out any time from the account menu.
 
 - **Cloud-saved ballot history** | Every completed round, whether it is regular practice or a rapid drill, is saved and automatically stored onto your account and available from any device you sign in on, via the **My History** page.
 
@@ -67,7 +67,7 @@ The sign-in screen is also a landing page. Scroll down past the log in info to s
 
 - **1️⃣ Real practice questions** | pick between **domestic, economic, and international** topics and get three relevant extemp questions on the spot (one free try per browser).
 
-- **2️⃣ Current event briefings** | generate current event/news briefing the same way the in-app Tournament Briefing feature does (one free try per browser).
+- **2️⃣ Current event briefings** | Generate current events & news briefing (one free try per browser).
 
 - **3️⃣ A working prep timer** | Just a 30 minute timer that you can pause/unpause and restart.
 
@@ -75,7 +75,7 @@ The sign-in screen is also a landing page. Scroll down past the log in info to s
 
 - **4️⃣ AI-judged ballot preview** | One full, real category (with score, What Worked, Critical Flaws, and What You Could Have Done) pulled from an actual ballot.
 
-- **5️⃣ Citation checker** | verify one real claim against its source, the exact same way the in-app Citation Checker does (one free try per browser).
+- **5️⃣ Citation checker** | Verify 1 real claim against its source, the exact same way the in-app Citation Checker does (one free try per browser).
 
 - 6️⃣ **Example Ballot** | Contains a **complete** example round with an example transcript, video, feedback, comments, rubric, and score.
 

@@ -95,7 +95,6 @@ fetch('icons.svg').then(r => r.text()).then(svgText => {
             <div class="demo-locked-overlay" id="demoQLock">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-3"></use></svg>
               <p>That was your free question draft. Sign up to draft unlimited questions and start practicing.</p>
-              <button type="button" class="demo-signup-btn demo-signup-cta">Sign Up Free</button>
             </div>
             <button type="button" class="btn primary" id="demoGenerateQuestionsBtn" style="width:100%;" disabled>Generate Questions</button>
           </div>
@@ -263,11 +262,25 @@ fetch('icons.svg').then(r => r.text()).then(svgText => {
         <div class="fc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-6"></use></svg></div>
         <h3>Rapid Drill: Intro</h3>
         <p>Short on time before a tournament? A 5 minute prep countdown caps your recording at just the intro, so you can hammer out attention getters and analogies again and again, scored on a trimmed rubric and saved to My History on its own trend line.</p>
+        <div class="fc-mini-trend" aria-hidden="true">
+          <span class="fc-mini-trend-label">Trend</span>
+          <div class="trend-bar-wrap fc-mini-trend-wrap">
+            <span class="trend-bar fc-mini-trend-fill" style="--trend-pct:71%"></span>
+          </div>
+          <span class="fc-mini-trend-avg">7.1</span>
+        </div>
       </div>
       <div class="feature-card" style="--fc-accent:var(--score-yellow)">
         <div class="fc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-6"></use></svg></div>
         <h3>Rapid Drill: Body</h3>
         <p>Same idea for a single body paragraph: a 10 minute prep countdown built for drilling structure, analysis, and evidence without running a whole speech every time, scored on a trimmed rubric and saved to My History on its own trend line.</p>
+        <div class="fc-mini-trend" aria-hidden="true">
+          <span class="fc-mini-trend-label">Trend</span>
+          <div class="trend-bar-wrap fc-mini-trend-wrap">
+            <span class="trend-bar fc-mini-trend-fill" style="--trend-pct:85%"></span>
+          </div>
+          <span class="fc-mini-trend-avg">8.5</span>
+        </div>
       </div>
       <div class="feature-card wide" style="--fc-accent:var(--forest)">
         <div class="fc-body">

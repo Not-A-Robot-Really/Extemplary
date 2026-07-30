@@ -513,6 +513,20 @@
   .fc-decor-goal-seal{width:58px;height:58px;}
   .fc-decor-goal-seal .goal-card-seal-pct{font-size:14px;}
 
+  /* ---- landing "Rapid Drill" cards: a mini version of the real per-
+     category trend bar from My History (reuses .trend-bar-wrap/.trend-bar
+     exactly, just shrunk down), giving each drill card a small preview of
+     its own trend line, filled in the card's own accent color. ---- */
+  .fc-mini-trend{display:flex;align-items:center;gap:8px;margin-top:14px;}
+  .fc-mini-trend-label{font-family:var(--font-mono);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--chrome-text-dim);flex-shrink:0;}
+  .fc-mini-trend-wrap{flex:1;height:7px;}
+  .fc-mini-trend-avg{font-family:var(--font-mono);font-size:11px;font-weight:700;color:var(--chrome-text);flex-shrink:0;}
+  .fc-mini-trend-fill{
+    width:0%;background:var(--fc-accent, var(--brass));
+    animation:fcMiniTrendFill 1.3s cubic-bezier(.22,.9,.3,1) 0.25s forwards;
+  }
+  @keyframes fcMiniTrendFill{ to{ width:var(--trend-pct, 75%); } }
+
   .vocal-wave-icon{gap:2.5px;}
   .vocal-wave-icon .vw-bar{
     width:3px;height:8px;border-radius:2px;background:var(--on-accent);

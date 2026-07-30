@@ -16,15 +16,15 @@ Wanna know [how to deploy](#deployment)?
 2) [Features](#features)
 
 3) [Deployment 📦](#deployment)
-  * [Method 1: GitHub Pages (Browser)](#method-1-github-pages-browser)
-  * [Method 2: Extension](#method-2-extension)
-  * [Notes](#notes)
+     * [Method 1: GitHub Pages (Browser)](#method-1-github-pages-browser)
+     * [Method 2: Extension](#method-2-extension)
+     * [Notes](#notes)
 
 4) [Landing Site 🏁](#landing-site)
 
 5) [Software ⚙️](#software)
-  * [Creating an account 👤](#creating-an-account-)
-  * [API keys 🔑](#api-keys-)
+     * [Creating an account 👤](#creating-an-account-)
+     * [API keys 🔑](#api-keys-)
 
 6) [Supabase setup 💾](#supabase-setup-)
 

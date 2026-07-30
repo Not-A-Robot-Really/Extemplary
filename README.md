@@ -4,7 +4,7 @@
 
 A **free** tool for practicing **NSDA Extemporaneous Speaking**, usable either as a website or installed as a real Chrome/Edge/Firefox extension. Record a full round or a quick drill, recieve tailored comments & feedback, review your speech transcript, and automatically save a history of every round you've practiced.
 
-**[Live demo:](#Deployment 📦)**
+[Deployment:] (#Deployment)
 
 ![Image22](Images/speechbackgr.png)
 

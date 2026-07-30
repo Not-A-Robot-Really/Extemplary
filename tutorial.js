@@ -42,7 +42,6 @@
   }
 
   function maybeLaunchAfterSignIn(){
-    if(!authGate || !authGate.classList.contains('hidden')) return;
     var pendingEmail = localStorage.getItem(PENDING_KEY);
     if(!pendingEmail) return;
     var liveEmail = (accountEmail && accountEmail.textContent || '').trim();
@@ -52,9 +51,14 @@
     setTimeout(function(){ Tutorial.start(liveEmail); }, 700);
   }
 
-  if(authGate){
+  // index.html (the app) no longer has an #authGate on the page -- signing
+  // in there just fills in #accountEmail via the app's own onSignedIn().
+  // Watch that element instead, and also check once immediately in case
+  // it was already populated before this script finished loading.
+  if(accountEmail){
     new MutationObserver(maybeLaunchAfterSignIn)
-      .observe(authGate, { attributes:true, attributeFilter:['class'] });
+      .observe(accountEmail, { childList:true, characterData:true, subtree:true });
+    maybeLaunchAfterSignIn();
   }
 
   /* ---------------------------------------------------------------------

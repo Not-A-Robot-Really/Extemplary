@@ -204,12 +204,20 @@ fetch('icons.svg').then(r => r.text()).then(svgText => {
         <p>Camera-record your speech right in the browser, no app to install, nothing to upload by hand.</p>
         <div class="demo-record-mock" aria-hidden="true">
           <button type="button" class="rec-btn recording demo-record-btn" tabindex="-1"><span class="inner"></span></button>
+          <div class="fc-ghost-frame">
+            <span class="tut-skel-block" style="width:36%;height:9px;background:rgba(255,255,255,0.4);"></span>
+          </div>
         </div>
       </div>
       <div class="feature-card" style="--fc-accent:var(--score-yellow)">
         <div class="fc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-10"></use></svg></div>
         <h3>Word-for-word transcript</h3>
         <p class="transcript-highlight-demo" id="transcriptDemoText">Automatic transcription with a stenographer-style layout and auto-detected Intro / Body / Conclusion sections.</p>
+        <div class="fc-ghost-transcript" aria-hidden="true">
+          <span class="tut-skel-block tut-skel-line" style="width:96%;"></span>
+          <span class="tut-skel-block tut-skel-line" style="width:88%;"></span>
+          <span class="tut-skel-block tut-skel-line" style="width:63%;"></span>
+        </div>
       </div>
       <div class="feature-card" style="--fc-accent:var(--crimson-bright)">
         <div class="fc-icon vocal-wave-icon" id="vocalWaveIcon">
@@ -217,6 +225,20 @@ fetch('icons.svg').then(r => r.text()).then(svgText => {
         </div>
         <h3>Vocal delivery analysis</h3>
         <p>Volume, emphasis, tone and pitch variety, pauses, pace (WPM), filler words, and stutters, measured straight from your recording's audio.</p>
+        <div class="fc-ghost-delivery" aria-hidden="true">
+          <div class="fc-ghost-stat">
+            <span class="tut-skel-block tut-skel-line" style="width:60%;height:7px;margin:0 0 5px;"></span>
+            <span class="tut-skel-block" style="width:34%;height:13px;"></span>
+          </div>
+          <div class="fc-ghost-stat">
+            <span class="tut-skel-block tut-skel-line" style="width:70%;height:7px;margin:0 0 5px;"></span>
+            <span class="tut-skel-block" style="width:34%;height:13px;"></span>
+          </div>
+          <div class="fc-ghost-stat">
+            <span class="tut-skel-block tut-skel-line" style="width:50%;height:7px;margin:0 0 5px;"></span>
+            <span class="tut-skel-block" style="width:34%;height:13px;"></span>
+          </div>
+        </div>
       </div>
       <div class="feature-card" style="--fc-accent:var(--score-cyan)">
         <div class="fc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-11"></use></svg></div>

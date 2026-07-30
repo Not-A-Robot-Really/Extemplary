@@ -225,12 +225,28 @@ fetch('icons.svg').then(r => r.text()).then(svgText => {
         <p>Every round you ever record, video, transcript, full ballot, and score, lives permanently in your account. My History pulls it all together: a Coach's Overall Notes summary, per-category trend bars, score sparkline graphs, your active goals, and your full round-by-round archive, all in one place.</p>
       </div>
       <div class="feature-card">
-        <div class="fc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-12"></use></svg></div>
+        <div class="fc-icon fc-flame-icon">
+          <svg viewBox="0 0 24 24" overflow="visible">
+            <g class="flame-sway">
+              <path class="flame-layer flame-outer" d="M12 2C12 2 6 8.2 6 13.6C6 17.7 8.7 21 12 21C15.3 21 18 17.7 18 13.6C18 11.9 17.3 10.1 16.3 8.5C16.1 10 15.2 11 14.3 11C14.7 9 13.8 6.8 12 2Z"/>
+              <path class="flame-layer flame-mid" d="M12 6.2C12 6.2 9 10.2 9 13.7C9 16.1 10.3 18 12 18C13.7 18 15 16.1 15 13.7C15 12.4 14.5 11.1 13.8 10C13.7 11.1 13.2 11.7 12.7 11.7C12.9 10.3 12.5 8.5 12 6.2Z"/>
+              <path class="flame-layer flame-inner" d="M12 10.3C12 10.3 10.5 12.5 10.5 14.3C10.5 15.7 11.1 16.8 12 16.8C12.9 16.8 13.5 15.7 13.5 14.3C13.5 13.5 13.2 12.8 12.8 12.2C12.75 12.8 12.5 13.1 12.2 13.1C12.3 12.3 12.1 11.3 12 10.3Z"/>
+              <path class="flame-layer flame-core" d="M12 13.2C12 13.2 11.3 14.2 11.3 15C11.3 15.6 11.6 16 12 16C12.4 16 12.7 15.6 12.7 15C12.7 14.6 12.55 14.2 12.35 13.9C12.32 14.2 12.2 14.35 12.05 14.35C12.1 13.95 12.05 13.6 12 13.2Z"/>
+              <circle class="flame-spark flame-spark-1" cx="8.6" cy="9" r="0.7"/>
+              <circle class="flame-spark flame-spark-2" cx="15.3" cy="7.4" r="0.6"/>
+              <circle class="flame-spark flame-spark-3" cx="12" cy="4.2" r="0.55"/>
+            </g>
+          </svg>
+        </div>
         <h3>Streak &amp; calendar</h3>
         <p>A day-by-day practice streak, recording a ballot, setting a goal, or completing one all keep it alive, shown live via a flame counter in the header and a full monthly calendar. The same calendar tracks your upcoming tournaments and events, so you always know what you're prepping for.</p>
       </div>
       <div class="feature-card">
-        <div class="fc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-13"></use></svg></div>
+        <div class="fc-icon fc-goal-icon">
+          <div class="fc-goal-ring">
+            <div class="fc-goal-ring-hole"></div>
+          </div>
+        </div>
         <h3>Goals system</h3>
         <p>Set your own targets, a streak length, an overall score, a threshold in one rubric category, a number of practice rounds or live video ballots this month, or just showing up to a tournament, and watch live progress bars track them. My History also surfaces Suggested Goals, generated automatically from your own weakest categories and recent scores.</p>
       </div>

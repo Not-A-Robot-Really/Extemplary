@@ -4417,23 +4417,81 @@ Grading rules:
   let exampleWordSpans = [];
   let exampleWordEls = [];
   let exampleActiveWordEl = null;
-  let ytPlayer = null;
   let ytApiReady = false;
   let ytPlayerReady = false;
   let ytPollTimer = null;
-  let ytPendingInit = false;
+
+  // Manifest V3 extension pages can only load scripts from 'self', so the
+  // real https://www.youtube.com/iframe_api script can never be loaded
+  // directly here (Chrome blocks it regardless of manifest CSP settings).
+  // Instead we embed a sandboxed page (sandboxed/yt-player.html, declared
+  // under manifest.json's "sandbox" key) that's allowed to load it, and
+  // control that real player entirely over postMessage. ytPlayer below
+  // exposes the same method names the rest of this file already expects
+  // (getCurrentTime/getPlayerState/seekTo/playVideo/pauseVideo), backed by
+  // a small cache kept fresh by ~200ms "tick" messages from the sandbox,
+  // so no other code below needs to change.
+  const YT_STATE_PLAYING = 1; // matches the real YouTube IFrame API's PlayerState.PLAYING
+
+  let ytBridgeFrame = null;
+  let ytCachedTime = 0;
+  let ytCachedState = -1;
 
   function loadYouTubeIframeAPI(){
-    if(window.YT && window.YT.Player){ ytApiReady = true; return; }
-    if(document.getElementById('yt-iframe-api-tag')) return;
-    const tag = document.createElement('script');
-    tag.id = 'yt-iframe-api-tag';
-    tag.src = 'https://www.youtube.com/iframe_api';
-    document.head.appendChild(tag);
+    ytApiReady = true; // the sandboxed page handles its own API loading
   }
-  window.onYouTubeIframeAPIReady = function(){
-    ytApiReady = true;
-    if(ytPendingInit) initExamplePlayer();
+
+  function ensureYtBridgeFrame(){
+    if(ytBridgeFrame) return ytBridgeFrame;
+    const container = document.getElementById('exampleYtPlayer');
+    ytBridgeFrame = document.createElement('iframe');
+    ytBridgeFrame.src = chrome.runtime.getURL('sandboxed/yt-player.html');
+    ytBridgeFrame.style.width = '100%';
+    ytBridgeFrame.style.height = '100%';
+    ytBridgeFrame.style.border = '0';
+    ytBridgeFrame.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture');
+    container.innerHTML = '';
+    container.appendChild(ytBridgeFrame);
+
+    window.addEventListener('message', (e) => {
+      if(!ytBridgeFrame || e.source !== ytBridgeFrame.contentWindow) return;
+      const data = e.data;
+      if(!data || typeof data !== 'object') return;
+      if(data.type === 'ready'){
+        ytPlayerReady = true;
+      }else if(data.type === 'tick'){
+        ytCachedTime = data.time;
+        ytCachedState = data.state;
+      }else if(data.type === 'stateChange'){
+        ytCachedState = data.state;
+        onExamplePlayerStateChange({ data: data.state });
+      }else if(data.type === 'error'){
+        onExamplePlayerError({ data: data.error });
+      }
+    });
+
+    ytBridgeFrame.addEventListener('load', () => {
+      ytBridgeFrame.contentWindow.postMessage({
+        type: 'init',
+        config: {
+          videoId: EXAMPLE_YT_VIDEO_ID,
+          playerVars: { start: EXAMPLE_SPEECH_START, end: EXAMPLE_SPEECH_END, controls: 0, modestbranding: 1, rel: 0, playsinline: 1 }
+        }
+      }, '*');
+    });
+
+    return ytBridgeFrame;
+  }
+
+  const ytPlayer = {
+    getCurrentTime: () => ytCachedTime,
+    getPlayerState: () => ytCachedState,
+    seekTo: (t) => {
+      ytCachedTime = t;
+      ensureYtBridgeFrame().contentWindow.postMessage({ type: 'seek', time: t }, '*');
+    },
+    playVideo: () => ensureYtBridgeFrame().contentWindow.postMessage({ type: 'play' }, '*'),
+    pauseVideo: () => ensureYtBridgeFrame().contentWindow.postMessage({ type: 'pause' }, '*')
   };
 
   // Walks a rendered DOM subtree and wraps every word-like run of text in a
@@ -4474,18 +4532,7 @@ Grading rules:
   }
 
   function initExamplePlayer(){
-    if(ytPlayer || !window.YT || !window.YT.Player) return;
-    ytPlayer = new YT.Player('exampleYtPlayer', {
-      videoId: EXAMPLE_YT_VIDEO_ID,
-      width: '640',
-      height: '360',
-      playerVars: { start: EXAMPLE_SPEECH_START, end: EXAMPLE_SPEECH_END, controls: 0, modestbranding: 1, rel: 0, playsinline: 1 },
-      events: {
-        onReady: ()=>{ ytPlayerReady = true; },
-        onStateChange: onExamplePlayerStateChange,
-        onError: onExamplePlayerError
-      }
-    });
+    ensureYtBridgeFrame();
   }
 
   function onExamplePlayerError(e){
@@ -4504,7 +4551,7 @@ Grading rules:
   }
 
   function onExamplePlayerStateChange(e){
-    if(e.data === YT.PlayerState.PLAYING){
+    if(e.data === YT_STATE_PLAYING){
       examplePbPlayBtn.classList.add('pb-playing');
       startExamplePolling();
     }else{
@@ -4589,7 +4636,7 @@ Grading rules:
   examplePbPlayBtn.addEventListener('click', ()=>{
     if(!ytPlayer || !ytPlayerReady) return;
     const state = ytPlayer.getPlayerState();
-    if(state === YT.PlayerState.PLAYING) ytPlayer.pauseVideo();
+    if(state === YT_STATE_PLAYING) ytPlayer.pauseVideo();
     else ytPlayer.playVideo();
   });
   examplePbScrub.addEventListener('input', ()=>{
@@ -4867,8 +4914,7 @@ Grading rules:
     examplePbPlayBtn.classList.remove('pb-playing');
 
     loadYouTubeIframeAPI();
-    if(ytApiReady) initExamplePlayer();
-    else ytPendingInit = true;
+    initExamplePlayer();
     if(ytPlayer && ytPlayer.seekTo) ytPlayer.seekTo(EXAMPLE_SPEECH_START, true);
   }
 

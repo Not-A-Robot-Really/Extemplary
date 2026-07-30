@@ -25,6 +25,9 @@
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'"
   },
+  "sandbox": {
+    "pages": ["sandboxed/yt-player.html"]
+  },
   "web_accessible_resources": [
     {
       "resources": [

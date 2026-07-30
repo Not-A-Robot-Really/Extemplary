@@ -624,7 +624,14 @@
     z-index:60;transform:translateZ(60px);
   }
   .demo-locked-overlay.show{opacity:1;pointer-events:auto;}
-  .demo-locked-overlay svg{width:40px;height:40px;stroke-width:2.75;color:#5b9be0;}
+  .demo-locked-overlay svg{
+    width:64px;height:64px;min-width:64px;min-height:64px;flex-shrink:0;
+    stroke-width:2.75;color:#5b9be0;
+    /* Force every lock icon to render at the same visual size regardless of
+       the source symbol's own internal viewBox/padding in icons.svg. */
+    display:block;
+  }
+  .demo-locked-overlay svg use{width:100%;height:100%;}
   .demo-locked-overlay p{color:#fff;font-family:var(--font-body);font-size:13px;margin:0;max-width:260px;line-height:1.5;}
   .demo-locked-overlay .demo-signup-btn{
     padding:9px 20px;border-radius:24px;background:var(--crimson);color:var(--on-accent);border:3px solid var(--crimson-deep);

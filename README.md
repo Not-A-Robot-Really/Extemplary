@@ -31,13 +31,13 @@ Sign up → Generate questions → Write a speech → Record your speech → Rec
 
 - **Watch & Read Along** | An embedded video player synced word-for-word with the transcript. Click any word (or any judge's note) to jump the video to that **exact** moment; the current word highlights live as it plays.
 
-- **Citation checker** | Before you use a stat or quote, paste the claim, the date, and the source in the citation checker and Extemplary will search the web to verify it. The result could either be **TRUE**, **FALSE**, or **UNVERIFIED**, with a 2-3 sentence explanation and a link to the source of the claim/evidence. If you are not sure of the exact data, you can swap any unknown digit for `?` (ex. `06/??/2025`) for a range of possible dates. You can also use the citation checker to check the citations from other people's speech.
+- **Citation checker** | Before you use a stat or quote, paste the claim, the date, and the source in the citation checker and Extemplary will search the web to verify it. The result could either be **TRUE**, **FALSE**, or **UNVERIFIED**, with a 2-3 sentence explanation and a link to the source of the claim/evidence. If you're not sure of the exact date, you can swap any unknown digit for `?` (ex. `06/??/2025`) for a range of possible dates. You can also use the citation checker to check the citations from other people's speech.
 
 - **Example ballot** | An example sample round (with speech and ballot) so first-time users can see what a finished round looks like before recording their own, including the same synced playback experience.
 
-- **Accounts & sign-in** | Sign up with an email and password to save your progress. Sessions persist automatically: close the tab, come back later, and you're still signed in. Sign out any time from the account menu.
+- **Accounts & sign-in** | Sign up with an email and password to save and track your progress. Sessions persist automatically: close the tab, come back later, and you're still signed in. Sign out any time from the account menu.
 
-- **Cloud-saved ballot history** | Every completed round (video, transcript, full written feedback, and category scores) is saved and automatically stored onto your account and available from any device you sign in on, via the **My History** page.
+- **Cloud-saved ballot history** | Every completed round, whether it is regular practice or a rapid drill, is saved and automatically stored onto your account and available from any device you sign in on, via the **My History** page.
 
 - **Coach's Overall Notes** | Comprehensive feedback of your Extemp journey that finds patterns across your *entire* practice history, naming your biggest recurring strength, your biggest recurring area to improve, and one concrete next step. It's designed to update automatically at designated milestone rounds or whenever you record a particularly brillian round.
 
@@ -108,7 +108,7 @@ You'll land on the sign in screen (landing page) the first time you open the app
 
 1. Locate the **Sign Up** tab, enter an email and a password (requires 6+ characters), and submit.
 2. Depending on the project's auth settings, you may need to check your email and click a confirmation link before your first log in (see [Supabase setup](#supabase-setup) below).
-3. Once signed in, you'll stay signed in automatically, even after closing the tab or restarting your browser, until you tap **Sign out** in the top right of the account menu. You will also see a quick tutorial on how the extention works that will guide you through all the features of Extemplary.
+3. Once signed in, you'll stay signed in *automatically*, even after closing the tab or restarting your browser, until you tap **Sign out** in the top right of the account menu. You will also see a quick tutorial on how the extention works that will guide you through all the features of Extemplary.
 
 Every round completed while signed in is saved **automatically**. Click on any past round in the "My Ballot History" page to rewatch the video, re-read the transcript, or reread the full judge's feedback, read your Coach's Overall Notes, view your progress graphs, general strengths/weaknesses and view & add **Goals** (with auto-suggested ones based on your own weak spots).
 

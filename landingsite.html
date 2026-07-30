@@ -342,6 +342,221 @@ fetch('icons.svg').then(r => r.text()).then(svgText => {
     return colorFromRatio(ratio);
   }
 
+  // ---- Shared helpers for the landing-page free-trial demos (Generate
+  // Questions / Tournament Briefing / Citation Checker), mirrored from the
+  // same-named functions in index.html's script. The demo panels below
+  // call these directly, but this file never actually defined them —
+  // that's what made every one of those demos throw immediately (and so
+  // look completely broken) as soon as they were used. -----
+  const QGEN_PHRASES = DATA.QGEN_PHRASES;
+  const BF_PHRASES = DATA.BF_PHRASES;
+  const CC_PHRASES = DATA.CC_PHRASES;
+  const QUESTION_EXAMPLES = DATA.QUESTION_EXAMPLES;
+
+  function createProgressController(fillEl, phraseEl){
+    let target = 0, current = 0, raf = null, phraseTimer = null, phrases = [], phraseIdx = 0;
+    function paint(){
+      fillEl.style.width = current.toFixed(1) + '%';
+    }
+    function tick(){
+      if(current < target){
+        current += Math.max((target - current) * 0.045, 0.12);
+        if(current > target) current = target;
+        paint();
+      }
+      raf = requestAnimationFrame(tick);
+    }
+    function showPhrase(i){
+      if(!phraseEl || !phrases.length) return;
+      phraseEl.style.opacity = '0';
+      setTimeout(()=>{
+        phraseEl.textContent = phrases[i % phrases.length];
+        phraseEl.style.opacity = '1';
+      }, 180);
+    }
+    function rotatePhrase(){ phraseIdx++; showPhrase(phraseIdx); }
+    return {
+      start(initialPhrases, capPct){
+        current = 0; target = (capPct === undefined ? 90 : capPct);
+        paint();
+        phrases = initialPhrases || [];
+        phraseIdx = 0;
+        if(phraseEl){ phraseEl.textContent = phrases[0] || ''; phraseEl.style.opacity = '1'; }
+        if(raf) cancelAnimationFrame(raf);
+        tick();
+        if(phraseTimer) clearInterval(phraseTimer);
+        if(phrases.length > 1) phraseTimer = setInterval(rotatePhrase, 2100);
+      },
+      setStage(pct, stagePhrases){
+        if(Number.isFinite(pct)) target = Math.max(target, pct);
+        if(stagePhrases){
+          phrases = stagePhrases;
+          phraseIdx = 0;
+          showPhrase(0);
+        }
+      },
+      finish(){
+        target = 100; current = 100; paint();
+        if(raf) cancelAnimationFrame(raf);
+        if(phraseTimer) clearInterval(phraseTimer);
+      },
+      stop(){
+        if(raf) cancelAnimationFrame(raf);
+        if(phraseTimer) clearInterval(phraseTimer);
+      }
+    };
+  }
+
+  // Gemini calls go through the `gemini-generate` edge function, same as
+  // the signed-in app — the real Gemini key never lives in this file.
+  async function callGeminiWithKey(prompt, apiKey, maxOutputTokens){
+    const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/gemini-generate`, {
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'Authorization':'Bearer '+SUPABASE_ANON_KEY,
+        'apikey': SUPABASE_ANON_KEY
+      },
+      body: JSON.stringify({ prompt, maxOutputTokens: maxOutputTokens||1024, overrideKey: apiKey || undefined })
+    });
+    if(!res.ok){
+      const bodyText = await res.text().catch(()=> '');
+      throw new Error('gemini_failed:'+res.status+':'+bodyText.slice(0,300));
+    }
+    const json = await res.json();
+    const candidate = json.candidates?.[0];
+    if(!candidate) throw new Error('gemini_no_candidate:'+JSON.stringify(json).slice(0,200));
+    return candidate;
+  }
+  async function callGemini(prompt, maxOutputTokens){
+    return await callGeminiWithKey(prompt, null, maxOutputTokens);
+  }
+
+  function buildQuestionGenPrompt(category, dateStr){
+    const examples = QUESTION_EXAMPLES[category].slice(0,5).map(q => '- '+q).join('\n');
+    return `You write NSDA competitive extemp questions. Today: ${dateStr}.
+Use Google Search to find real ${category} news from the last 7-14 days. Then write 3 new ${category} extemp questions, each tied to a specific real event/person/policy you found. One sentence each, ending in "?", under 30 words, analytical/predictive phrasing ("Will...","Can...","Should...","How will..."). No older than a few weeks unless still developing. Don't copy these style examples verbatim:
+${examples}
+Output ONLY this JSON, nothing else: {"questions":["...","...","..."]}`;
+  }
+
+  function extractQuestions(candidate){
+    const raw = (candidate.content?.parts || []).map(p => p.text || '').join('').trim();
+    let cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '').trim();
+    const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+    if(jsonMatch) cleaned = jsonMatch[0];
+    let questions = [];
+    try{
+      const data = JSON.parse(cleaned);
+      questions = Array.isArray(data.questions)
+        ? data.questions.filter(q => typeof q === 'string' && q.trim()).map(q => q.trim())
+        : [];
+    }catch(parseErr){
+      const strMatches = [...cleaned.matchAll(/"((?:[^"\\]|\\.)*)"/g)].map(m => m[1].replace(/\\"/g,'"').trim());
+      questions = strMatches.filter(q => q.length > 15 && q.includes('?'));
+    }
+    questions = questions.slice(0,3);
+    if(questions.length < 3) throw new Error('q_gen_bad_output');
+    return questions;
+  }
+
+  function escapeHtml(s){
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+  function boldInlineMd(escapedText){
+    return escapedText.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  }
+  function googleSearchLink(topic){
+    return 'https://www.google.com/search?q=' + encodeURIComponent(topic);
+  }
+  function renderBriefingText(raw){
+    const lines = raw.replace(/\r\n/g,'\n').split('\n');
+    let html = '';
+    let inList = false;
+    function closeList(){ if(inList){ html += '</ul>'; inList = false; } }
+    function formatBullet(text){
+      const labelMatch = text.match(/^\*{0,2}([^*:]{2,80}?)\*{0,2}:\s*([\s\S]*)$/);
+      if(labelMatch){
+        const label = labelMatch[1].trim();
+        const rest = labelMatch[2].trim();
+        const link = googleSearchLink(label);
+        return `<a href="${link}" target="_blank" rel="noopener noreferrer"><strong>${escapeHtml(label)}</strong></a>: ${boldInlineMd(escapeHtml(rest))}`;
+      }
+      return boldInlineMd(escapeHtml(text));
+    }
+    for(let line of lines){
+      line = line.trim();
+      if(!line) continue;
+      const headerMatch = line.match(/^#{1,3}\s+(.*)$/);
+      if(headerMatch){
+        closeList();
+        html += `<h4>${escapeHtml(headerMatch[1])}</h4>`;
+        continue;
+      }
+      const bulletMatch = line.match(/^[-•*]\s+(.*)$/);
+      if(bulletMatch){
+        if(!inList){ html += '<ul>'; inList = true; }
+        html += `<li>${formatBullet(bulletMatch[1])}</li>`;
+        continue;
+      }
+      closeList();
+      html += `<p>${formatBullet(line)}</p>`;
+    }
+    closeList();
+    return html;
+  }
+
+  function buildCitationPrompt(claim, date, source){
+    const hasWildcard = date.includes('?');
+    const dateNote = hasWildcard
+      ? `The speaker is unsure of part of the date and has marked the unknown digits with "?" — treat this as a range/approximation (e.g. "06/??/2025" means "sometime in June 2025") rather than a literal string.`
+      : `Treat this as the exact date being claimed.`;
+    return `You are a rigorous fact-checker helping a competitive extemp speaker verify a citation before they use it in a speech.
+
+CLAIM (as the speaker plans to say it): "${claim}"
+DATE ATTRIBUTED TO THIS CLAIM: "${date}" — ${dateNote}
+CITED SOURCE: "${source}"
+
+Use Google Search to determine whether ${source} actually reported or said this, at or around the date given. Search specifically for coverage from ${source} (or reliable reporting ABOUT what ${source} said/reported) that matches the claim's substance and date.
+
+Respond with ONLY this exact JSON shape, nothing else — no markdown fences, no text before or after:
+{"verdict":"true","explanation":"2-3 sentence explanation of exactly what you found and why the claim does or doesn't check out","sourceUrl":"the single best URL that supports your verdict, or an empty string if none was found","sourceTitle":"a short title or description of that source page, or an empty string"}
+
+Grading rules:
+- "verdict":"true" ONLY if you found a real source — ideally the cited outlet itself, or credible reporting confirming it — that matches the claim's substance AND is consistent with the stated date (within a few days is fine; a flatly wrong date should count against it).
+- "verdict":"false" if you found reporting that contradicts the claim, or found what the source actually said/reported and it does not match what's being attributed to it here.
+- "verdict":"unverified" if you could not find enough information via search to confirm or deny it either way — never guess.
+- Never fabricate a URL — only include sourceUrl if it's a real link you found via search, and leave it as an empty string otherwise.`;
+  }
+
+  function extractCitationVerdict(candidate){
+    const raw = (candidate.content?.parts || []).map(p => p.text || '').join('').trim();
+    let cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '').trim();
+    const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+    if(jsonMatch) cleaned = jsonMatch[0];
+    let data;
+    try{
+      data = JSON.parse(cleaned);
+    }catch(e){
+      throw new Error('cc_bad_output');
+    }
+    const verdict = ['true','false','unverified'].includes(data.verdict) ? data.verdict : 'unverified';
+    let sourceUrl = typeof data.sourceUrl === 'string' ? data.sourceUrl.trim() : '';
+    const groundedUrls = (candidate.groundingMetadata?.groundingChunks || [])
+      .map(c => c?.web?.uri).filter(Boolean);
+    if(sourceUrl && !groundedUrls.some(u => u === sourceUrl || u.includes(sourceUrl) || sourceUrl.includes(u))){
+      sourceUrl = groundedUrls[0] || '';
+    }else if(!sourceUrl && groundedUrls.length){
+      sourceUrl = groundedUrls[0];
+    }
+    return {
+      verdict,
+      explanation: typeof data.explanation === 'string' ? data.explanation.trim() : '',
+      sourceUrl,
+      sourceTitle: typeof data.sourceTitle === 'string' ? data.sourceTitle.trim() : ''
+    };
+  }
+
   // ---- comment popover (shared by demo transcript snippet) ----
   const commentPopover = document.getElementById('commentPopover');
   const cpTag = document.getElementById('cpTag');

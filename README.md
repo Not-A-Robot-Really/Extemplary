@@ -9,6 +9,24 @@ Wanna know [how to deploy](#deployment)?
 ![Image22](Images/speechbackgr.png)
 
 ---
+## Table of Contents
+
+* [What is Extemp?](#what-is-extemp)
+* [Features](#features)
+* [Deployment 📦](#deployment)
+  * [Method 1: GitHub Pages (Browser)](#method-1-github-pages-browser)
+  * [Method 2: Extension](#method-2-extension)
+  * [Notes](#notes)
+* [Landing Site 🏁](#landing-site)
+* [Software ⚙️](#software)
+  * [Creating an account 👤](#creating-an-account-)
+  * [API keys 🔑](#api-keys-)
+* [Supabase setup 💾](#supabase-setup-)
+  * [Email delivery 🌐](#email-delivery-)
+* [Browser support](#browser-support)
+* [Privacy & data 🛡️](#privacy--data-)
+* [Disclaimer ⚠️](#disclaimer-️)
+---
 
 ## What is Extemp? 🗣️
 
@@ -77,7 +95,7 @@ Extemplary also serves as a browser extension (Manifest V3). Just pin it to your
 5. Click `Load unpacked` and select `Extemplary-main`. Make sure you pressed `Extract All` on `Extemplary-main.zip` before you do this step.
 6. Click on the puzzle icon (🧩) to the right of the search bar and click on `Extemplary`.
 
-Notes:
+### Notes:
 - Every YouTube video in the extension (the video of the example speech) is unable to be view directly in the extension. You will have to visit the external link. **This issue does not exist on GitHub pages**.
 - `Extemplary.html` was split into separate `app.js`, `landing-app.js`, `tutorial.js`, `data.js`, `index.html`, and `landingsite.html` files so it can be packaged as an extension file.
 - `background.js` opens/focuses the landing site when you open the Extemplary extension.

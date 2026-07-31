@@ -1057,88 +1057,71 @@
 
   .q-diff-slider-wrap{ padding:8px 6px 0; }
 
-  /* Badge header: level name + "Level X of 5" pill, replaces the old skinny text label */
+  /* Badge header: flat mono-uppercase pill matching .rubric-mode-label elsewhere on the site */
   .q-diff-badge-row{
-    display:flex;align-items:center;justify-content:center;gap:10px;
-    margin-bottom:16px;flex-wrap:wrap;
+    display:flex;align-items:center;justify-content:center;gap:8px;
+    margin-bottom:14px;flex-wrap:wrap;
   }
   .q-diff-badge{
-    font-family:var(--font-display);font-weight:700;font-size:19px;letter-spacing:0.2px;
-    color:#fff;background:linear-gradient(135deg, var(--brass), var(--crimson-deep));
-    padding:5px 18px;border-radius:999px;
-    box-shadow:0 3px 8px rgba(22,40,60,0.28), inset 0 1px 0 rgba(255,255,255,0.18);
-    transition:background 0.2s ease;
+    font-family:var(--font-mono);font-weight:800;font-size:11.5px;letter-spacing:0.6px;text-transform:uppercase;
+    color:#fff;background:var(--brass);
+    padding:5px 12px;border-radius:3px;
   }
   .q-diff-badge-sub{
-    font-family:var(--font-mono);font-size:10.5px;letter-spacing:1px;text-transform:uppercase;
-    color:var(--slate);font-weight:600;
+    font-family:var(--font-mono);font-size:11px;letter-spacing:0.4px;
+    color:var(--slate);
   }
 
-  /* Track: thicker, rounder, more tactile with a visible groove + glossy fill */
+  /* Track: flat, thicker bar with a plain solid fill — same radius language as .trend-bar-wrap */
   .q-diff-track-outer{
-    position:relative;display:flex;align-items:center;height:44px;margin:4px 0 10px;
+    position:relative;display:flex;align-items:center;height:34px;margin:4px 0 10px;
   }
   .q-diff-track-stops{
-    position:absolute;left:14px;right:14px;top:50%;transform:translateY(-50%);
-    display:flex;justify-content:space-between;pointer-events:none;z-index:1;
+    position:absolute;left:9px;right:9px;top:50%;transform:translateY(-50%);
+    display:flex;justify-content:space-between;z-index:1;
   }
   .q-diff-stop{
-    width:9px;height:9px;border-radius:50%;
-    background:rgba(22,40,60,0.16);
-    border:1.5px solid rgba(22,40,60,0.22);
-    transition:background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+    width:5px;height:5px;border-radius:50%;
+    background:var(--slate);opacity:0.35;
+    cursor:pointer;
   }
-  .q-diff-stop.is-passed{
-    background:rgba(255,255,255,0.75);
-    border-color:rgba(255,255,255,0.85);
-  }
-  .q-diff-stop.is-active{
-    transform:scale(1.25);
-    background:#fff;
-    border-color:#fff;
-  }
+  .q-diff-stop.is-passed{ background:#fff;opacity:0.7; }
+  .q-diff-stop.is-active{ background:#fff;opacity:1; }
 
   .q-diff-slider{
     position:relative;z-index:2;
-    -webkit-appearance:none;appearance:none;width:100%;height:22px;border-radius:999px;
-    outline:none;cursor:grab;margin:0;
+    -webkit-appearance:none;appearance:none;width:100%;height:18px;border-radius:4px;
+    outline:none;cursor:pointer;margin:0;
     background:var(--parchment-deep);
-    border:1px solid rgba(22,40,60,0.28);
-    box-shadow:inset 0 2px 5px rgba(22,40,60,0.24), inset 0 -1px 0 rgba(255,255,255,0.4);
+    border:1px solid var(--rule);
   }
-  .q-diff-slider:hover{ box-shadow:inset 0 2px 5px rgba(22,40,60,0.28), inset 0 -1px 0 rgba(255,255,255,0.4), 0 0 0 3px rgba(61,110,163,0.12); }
-  .q-diff-slider:active{ cursor:grabbing; }
-  .q-diff-slider:focus-visible{ box-shadow:inset 0 2px 5px rgba(22,40,60,0.24), 0 0 0 3px rgba(61,110,163,0.35); }
+  .q-diff-slider:focus-visible{ border-color:var(--brass); }
 
   .q-diff-slider::-webkit-slider-runnable-track{
-    height:22px;border-radius:999px;
-    background:linear-gradient(180deg, rgba(255,255,255,0.15), rgba(0,0,0,0.06)),
-      linear-gradient(to right, var(--brass) 0%, var(--crimson) var(--fillpct,50%), var(--parchment-deep) var(--fillpct,50%), var(--parchment-deep) 100%);
+    height:18px;border-radius:4px;
+    background:linear-gradient(to right, var(--crimson) var(--fillpct,50%), var(--parchment-deep) var(--fillpct,50%));
   }
   .q-diff-slider::-moz-range-track{
-    height:22px;border-radius:999px;background:var(--parchment-deep);border:1px solid rgba(22,40,60,0.28);
+    height:18px;border-radius:4px;background:var(--parchment-deep);
   }
   .q-diff-slider::-moz-range-progress{
-    height:22px;border-radius:999px 0 0 999px;
-    background:linear-gradient(180deg, rgba(255,255,255,0.15), rgba(0,0,0,0.06)), linear-gradient(90deg, var(--brass), var(--crimson));
+    height:18px;border-radius:4px 0 0 4px;
+    background:var(--crimson);
   }
   .q-diff-slider::-webkit-slider-thumb{
     -webkit-appearance:none;appearance:none;
-    width:34px;height:34px;margin-top:-6px;border-radius:50%;
-    background:radial-gradient(circle at 35% 30%, #2b4763, var(--charcoal) 65%);
-    border:3px solid var(--brass);
-    box-shadow:0 3px 9px rgba(22,40,60,0.55), inset 0 1px 1px rgba(255,255,255,0.25);
-    cursor:grab;
+    width:16px;height:30px;margin-top:-6px;border-radius:3px;
+    background:var(--charcoal);
+    border:2px solid var(--brass);
+    box-shadow:-1px 1px 3px rgba(0,0,0,0.25);
+    cursor:pointer;
   }
   .q-diff-slider::-moz-range-thumb{
-    width:34px;height:34px;border-radius:50%;
-    background:radial-gradient(circle at 35% 30%, #2b4763, var(--charcoal) 65%);
-    border:3px solid var(--brass);
-    box-shadow:0 3px 9px rgba(22,40,60,0.55), inset 0 1px 1px rgba(255,255,255,0.25);
-    cursor:grab;
-  }
-  .q-diff-slider:active::-webkit-slider-thumb, .q-diff-slider:active::-moz-range-thumb{
-    cursor:grabbing; transform:scale(1.06);
+    width:16px;height:30px;border-radius:3px;
+    background:var(--charcoal);
+    border:2px solid var(--brass);
+    box-shadow:-1px 1px 3px rgba(0,0,0,0.25);
+    cursor:pointer;
   }
 
   .q-diff-ticks{
@@ -1150,12 +1133,12 @@
   .q-diff-ticks span:last-child{ text-align:right; }
   .q-diff-ticks span.is-active{ color:var(--crimson-deep);font-weight:700; }
 
-  /* Example card: gives the sample question its own clear, distinct surface */
+  /* Example card: flat parchment panel, same border language as other content cards on the site */
   .q-diff-example-card{
     background:var(--parchment-deep);
     border:1px solid var(--rule);
-    border-left:4px solid var(--brass);
-    border-radius:8px;
+    border-left:3px solid var(--brass);
+    border-radius:4px;
     padding:12px 14px;
     margin-bottom:14px;
   }

@@ -2194,8 +2194,6 @@ Output ONLY this JSON, nothing else: {"questions":["...","...","..."]}`;
   qDifficultySlider.addEventListener('input', renderDifficultyExample);
   if(qDifficultyStops){
     qDifficultyStops.querySelectorAll('.q-diff-stop').forEach(stop => {
-      stop.style.pointerEvents = 'auto';
-      stop.style.cursor = 'pointer';
       stop.addEventListener('click', () => {
         qDifficultySlider.value = stop.dataset.idx;
         renderDifficultyExample();

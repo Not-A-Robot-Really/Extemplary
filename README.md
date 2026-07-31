@@ -1,4 +1,4 @@
-# **Extemplary**
+# **$${\color{blue}Extemplary}$$**
 ---
 
 A **free** tool for practicing **NSDA Extemporaneous Speaking**, usable either as a website or installed as a real Chrome/Edge/Firefox extension. Record a full round or a quick drill, recieve tailored comments & feedback, review your speech transcript, and automatically save a history of every round you've practiced.
@@ -103,6 +103,8 @@ Extemplary also serves as a browser extension (Manifest V3). Just pin it to your
 
 1. Go to `https://github.com/Not-A-Robot-Really/Extemplary`
 2. Click on `<> Code`, press `Local`, and then hit `Download ZIP`. A ZIP file of the entire repo will be downloaded on your end.
+
+
 ![downloadzippng](Images/downloadzip.png)
 
 3. Open `chrome://extensions` in Chrome.

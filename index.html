@@ -222,7 +222,13 @@
             <button type="button" class="mode-switch-btn" id="modeIntroDrillBtn" data-mode="introdrill" role="tab" aria-selected="false">Rapid Drill: Introduction</button>
             <button type="button" class="mode-switch-btn" id="modeBodyDrillBtn" data-mode="bodydrill" role="tab" aria-selected="false">Rapid Drill: Body</button>
           </div>
-          <button type="button" class="start-timer-btn mode-regular" id="startTimerBtn">Start Timer</button>
+          <button type="button" class="start-timer-btn mode-regular" id="startTimerBtn" aria-label="Start Timer" title="Start Timer">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="10" y1="2" x2="14" y2="2"></line>
+              <line x1="12" y1="14" x2="12" y2="9"></line>
+              <circle cx="12" cy="14" r="8"></circle>
+            </svg>
+          </button>
         </div>
         <div class="mode-switch-hint" id="modeSwitchHint">Full 7-minute round, graded on all 8 rubric categories.</div>
 

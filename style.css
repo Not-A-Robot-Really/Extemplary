@@ -192,10 +192,11 @@
   }
   .start-timer-btn{
     font-family:var(--font-body);font-size:12.5px;font-weight:700;
-    padding:9px 16px;border-radius:999px;border:1px solid transparent;cursor:pointer;
-    color:#fff;margin-bottom:6px;transition:background .15s, border-color .15s, transform .1s;
-    white-space:nowrap;
+    width:38px;height:38px;padding:0;border-radius:10px;border:1px solid transparent;cursor:pointer;
+    color:#fff;margin-bottom:6px;margin-left:auto;transition:background .15s, border-color .15s, transform .1s;
+    white-space:nowrap;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;
   }
+  .start-timer-btn svg{ width:19px;height:19px;stroke:#fff;fill:none; }
   .start-timer-btn:active{ transform:scale(0.97); }
   .start-timer-btn.mode-regular{ background:#1d5c9e;border-color:#123a63; }
   .start-timer-btn.mode-regular:hover{ background:#164a80; }
@@ -1624,9 +1625,9 @@
   .prep-card-intro .dl-modal-btn.btn.ghost:hover{ background:rgba(163,50,42,0.1); }
   .prep-card-body .dl-modal-btn.btn.ghost{ border-color:#a6790c;color:#a6790c; }
   .prep-card-body .dl-modal-btn.btn.ghost:hover{ background:rgba(166,121,12,0.1); }
-  .prep-modal-regular{ background:rgba(18,58,99,0.55); }
-  .prep-modal-intro{ background:rgba(122,35,28,0.55); }
-  .prep-modal-body{ background:rgba(122,90,8,0.55); }
+  .prep-modal-regular{ background:rgba(10,14,20,0.65); }
+  .prep-modal-intro{ background:rgba(10,14,20,0.65); }
+  .prep-modal-body{ background:rgba(10,14,20,0.65); }
 
   /* -------- vocal delivery analysis panel -------- */
   .delivery-section{margin-top:28px;border-top:2px solid var(--charcoal);padding-top:18px;}
@@ -2501,9 +2502,9 @@
 .tut-btn-choice{background:#1d5c9e;color:#fff;margin-left:6px;}
 .tut-btn-choice.tut-btn-no{background:#7a7264;}
 
-/* On narrower / shorter viewports a side rail eats too much width, so the
+/* On narrower / shorter viewports, a side rail eats too much width, so the
    panel becomes an anchored bottom sheet instead, still never covering
-   the spotlighted area, since the app content sits above it. */
+   the spotlighted area, since the app content sits ABOVE IT!! */
 @media (max-width: 780px), (max-height: 560px){
   #tutBox, #tutBox.tut-dock-left, #tutBox.tut-center{
     top:auto;bottom:14px;left:50%;right:auto;

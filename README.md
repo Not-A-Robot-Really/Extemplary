@@ -120,7 +120,7 @@ Extemplary also serves as a browser extension (Manifest V3). Just pin it to your
 - `Extemplary.html` was split into separate `app.js`, `landing-app.js`, `tutorial.js`, `data.js`, `index.html`, and `landingsite.html` files so it can be easily packaged as an extension file.
 - `background.js` opens the landing site when you open the Extemplary extension.
 - The extension only requests the `storage` and `windows` permissions, plus host access to its Supabase project.
-- If you'd rather just use the web version on GitHub pages, that's completely fine. Nothing about the extension changes how the site works except for no YouTube embeds.
+- If you'd rather just use the web version on GitHub pages, that's completely fine. Nothing about the extension changes how the site works except for no YouTube embeds.  
 
 ## Landing Site 🏁
 ---

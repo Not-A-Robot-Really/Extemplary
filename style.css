@@ -1625,9 +1625,9 @@
   .prep-card-intro .dl-modal-btn.btn.ghost:hover{ background:#872720; }
   .prep-card-body .dl-modal-btn.btn.ghost{ background:#a6790c;border-color:#7a5a08;color:#fff; }
   .prep-card-body .dl-modal-btn.btn.ghost:hover{ background:#8a6409; }
-  .prep-modal-regular{ background:rgba(10,14,20,0.65); }
-  .prep-modal-intro{ background:rgba(10,14,20,0.65); }
-  .prep-modal-body{ background:rgba(10,14,20,0.65); }
+  .prep-modal-regular, .prep-modal-intro, .prep-modal-body{
+    z-index:1600;background:rgba(10,14,20,0.65);
+  }
 
   /* -------- vocal delivery analysis panel -------- */
   .delivery-section{margin-top:28px;border-top:2px solid var(--charcoal);padding-top:18px;}

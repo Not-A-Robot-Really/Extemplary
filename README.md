@@ -6,10 +6,10 @@ A **free** tool for practicing **NSDA Extemporaneous Speaking**, usable either a
 
 Wanna know [how to deploy](#deployment)?
 
-![Image22](Images/speechbackgr.png)
+![Image22](Images/extemplary.png)
 
 ---
-## Table of Contents
+## -------TABLE OF CONTENTS---------
 
 1) [What is Extemp?](#what-is-extemp)
 

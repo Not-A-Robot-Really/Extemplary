@@ -1433,6 +1433,13 @@ const DATA = window.APP_DATA;
   const customQuestionBlock  = document.getElementById('customQuestionBlock');
   const generatedQuestionBlock = document.getElementById('generatedQuestionBlock');
   const qCategoryStep   = document.getElementById('qCategoryStep');
+  const qDifficultyStep       = document.getElementById('qDifficultyStep');
+  const qDifficultyCatLabel   = document.getElementById('qDifficultyCatLabel');
+  const qDifficultySlider     = document.getElementById('qDifficultySlider');
+  const qDifficultyLevelLabel = document.getElementById('qDifficultyLevelLabel');
+  const qDifficultyExample    = document.getElementById('qDifficultyExample');
+  const qDifficultyBackBtn    = document.getElementById('qDifficultyBackBtn');
+  const qDifficultyContinueBtn = document.getElementById('qDifficultyContinueBtn');
   const qGenLoading     = document.getElementById('qGenLoading');
   const qGenLoadingText = document.getElementById('qGenLoadingText');
   const qGenProgressFill   = document.getElementById('qGenProgressFill');
@@ -2136,22 +2143,60 @@ const DATA = window.APP_DATA;
   }
 
   const QUESTION_EXAMPLES = DATA.QUESTION_EXAMPLES;
+  // Difficulty scale for the "Receive a Question" flow. Index 0 = Easy,
+  // 1 = Medium, 2 = Hard. Each level carries prompt instructions (fed to
+  // Gemini alongside the category) plus a static example question shown
+  // next to the slider so the user knows what that difficulty looks like
+  // before drafting. Falls back to a safe default set if data.js is old.
+  const DIFFICULTY_LEVELS = DATA.DIFFICULTY_LEVELS || [
+    { label:'Easy', instructions:'Keep this an EASY question, built around a simple, widely-known current event.', example:'How will the global oil prices affect consumers in the US?' },
+    { label:'Medium', instructions:'Keep this a MEDIUM-difficulty question, tied to a specific but still mainstream recent event.', example:'Should the European Central Bank raise interest rates in response to the latest inflation report?' },
+    { label:'Hard', instructions:'Keep this a HARD, NICHE question, built around an obscure event/figure most people would not recognize.', example:'How should East Timor President José Ramos-Horta best respond to criticism of his decision to partake in the AB Digital Technology Resort?' }
+  ];
+  let selectedCategory = null;
+  let lastGenDifficultyIdx = 1;
 
-  function buildQuestionGenPrompt(category, dateStr){
+  function buildQuestionGenPrompt(category, dateStr, difficultyIdx){
     const examples = QUESTION_EXAMPLES[category].slice(0,5).map(q => '- '+q).join('\n');
+    const difficulty = DIFFICULTY_LEVELS[difficultyIdx] || DIFFICULTY_LEVELS[1];
     return `You write NSDA competitive extemp questions. Today: ${dateStr}.
-Use Google Search to find real ${category} news from the last 7-14 days. Then write 3 new ${category} extemp questions, each tied to a specific real event/person/policy you found. One sentence each, ending in "?", under 30 words, analytical/predictive phrasing ("Will...","Can...","Should...","How will..."). No older than a few weeks unless still developing. Don't copy these style examples verbatim:
+Use Google Search to find real ${category} news from the last 7-14 days. Then write 3 new ${category} extemp questions, each tied to a specific real event/person/policy you found. One sentence each, ending in "?", under 30 words, analytical/predictive phrasing ("Will...","Can...","Should...","How will..."). No older than a few weeks unless still developing. ${difficulty.instructions} Don't copy these style examples verbatim:
 ${examples}
 Output ONLY this JSON, nothing else: {"questions":["...","...","..."]}`;
   }
 
+  function renderDifficultyExample(){
+    const idx = Number(qDifficultySlider.value);
+    const level = DIFFICULTY_LEVELS[idx] || DIFFICULTY_LEVELS[1];
+    qDifficultyLevelLabel.textContent = level.label;
+    qDifficultyExample.textContent = level.example;
+  }
+
+  qDifficultySlider.addEventListener('input', renderDifficultyExample);
+
+  qDifficultyBackBtn.addEventListener('click', () => {
+    qDifficultyStep.classList.add('hidden');
+    qCategoryStep.classList.remove('hidden');
+    document.querySelectorAll('.q-cat-btn').forEach(b=>b.classList.remove('active'));
+    selectedCategory = null;
+  });
+
+  qDifficultyContinueBtn.addEventListener('click', () => {
+    if(!selectedCategory || qGenBusy) return;
+    generateQuestions(selectedCategory, Number(qDifficultySlider.value));
+  });
+
   function resetGeneratedSteps(){
     qCategoryStep.classList.remove('hidden');
+    qDifficultyStep.classList.add('hidden');
     qGenLoading.classList.add('hidden');
     qGenError.style.display = 'none';
     qPickStep.classList.add('hidden');
     qConfirmedStep.classList.add('hidden');
     document.querySelectorAll('.q-cat-btn').forEach(b=>b.classList.remove('active'));
+    selectedCategory = null;
+    qDifficultySlider.value = 1;
+    renderDifficultyExample();
   }
 
   function setQuestionMode(mode){
@@ -2190,14 +2235,19 @@ Output ONLY this JSON, nothing else: {"questions":["...","...","..."]}`;
       if(qGenBusy) return; // ignore clicks while a generation is already in flight or cooling down
       document.querySelectorAll('.q-cat-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
-      generateQuestions(btn.dataset.cat);
+      selectedCategory = btn.dataset.cat;
+      qDifficultyCatLabel.textContent = selectedCategory.toLowerCase();
+      qCategoryStep.classList.add('hidden');
+      qDifficultyStep.classList.remove('hidden');
+      qDifficultySlider.value = 1;
+      renderDifficultyExample();
     });
   });
 
   document.getElementById('qRegenLink').addEventListener('click', (e) => {
     e.preventDefault();
     if(qGenBusy) return; // ignore clicks while a generation is already in flight or cooling down
-    if(lastGenCategory) generateQuestions(lastGenCategory);
+    if(lastGenCategory) generateQuestions(lastGenCategory, lastGenDifficultyIdx);
   });
 
   // Guards against the exact failure mode that was happening: rapid/duplicate
@@ -2298,20 +2348,23 @@ Output ONLY this JSON, nothing else: {"questions":["...","...","..."]}`;
     return questions;
   }
 
-  async function generateQuestions(category){
+  async function generateQuestions(category, difficultyIdx){
     if(qGenBusy) return;
     setQGenBusy(true);
     lastGenCategory = category;
+    lastGenDifficultyIdx = (difficultyIdx === undefined || difficultyIdx === null) ? lastGenDifficultyIdx : difficultyIdx;
     qCategoryStep.classList.add('hidden');
+    qDifficultyStep.classList.add('hidden');
     qPickStep.classList.add('hidden');
     qConfirmedStep.classList.add('hidden');
     qGenError.style.display = 'none';
-    qGenLoadingText.textContent = `Drafting three ${category.toLowerCase()} questions…`;
+    const difficultyLabel = (DIFFICULTY_LEVELS[lastGenDifficultyIdx] || DIFFICULTY_LEVELS[1]).label.toLowerCase();
+    qGenLoadingText.textContent = `Drafting three ${difficultyLabel} ${category.toLowerCase()} questions…`;
     qGenLoading.classList.remove('hidden');
     qGenProgress.start(QGEN_PHRASES, 90);
 
     const dateStr = new Date().toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
-    const prompt = buildQuestionGenPrompt(category, dateStr);
+    const prompt = buildQuestionGenPrompt(category, dateStr, lastGenDifficultyIdx);
 
     let lastErr = null;
     let questions = null;
@@ -2362,7 +2415,11 @@ Output ONLY this JSON, nothing else: {"questions":["...","...","..."]}`;
       const detail = (err && err.message) ? ' ('+err.message.slice(0,200)+')' : '';
       qGenError.textContent = "Couldn't draft questions right now — check your connection and try again." + waitNote + detail;
       qGenError.style.display = 'block';
-      qCategoryStep.classList.remove('hidden');
+      if(selectedCategory){
+        qDifficultyStep.classList.remove('hidden');
+      } else {
+        qCategoryStep.classList.remove('hidden');
+      }
       setQGenBusy(false, cooldown);
     }
   }

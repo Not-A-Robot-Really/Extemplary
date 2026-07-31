@@ -473,13 +473,30 @@
 
             <!-- Step 1: category select -->
             <div id="qCategoryStep">
-              <div class="q-hint" style="margin-bottom:8px;">Choose a category, then the AI will draft three current-events questions.</div>
+              <div class="q-hint" style="margin-bottom:8px;">Choose a category, then set a difficulty.</div>
               <div class="q-cat-row">
                 <button class="btn ghost q-cat-btn" data-cat="Domestic" type="button">Domestic</button>
                 <button class="btn ghost q-cat-btn" data-cat="International" type="button">International</button>
                 <button class="btn ghost q-cat-btn" data-cat="Economic" type="button">Economic</button>
               </div>
               <div class="q-hint"><a href="#" id="qModeChangeFromCat" class="q-change-link">Change method</a></div>
+            </div>
+
+            <!-- Step 1.5: difficulty slider -->
+            <div id="qDifficultyStep" class="hidden">
+              <div class="q-hint" style="margin-bottom:10px;">How difficult should the <span id="qDifficultyCatLabel"></span> question be? Difficulty is both how complex the question is and how niche the event/figure it's built around is.</div>
+              <div class="q-diff-slider-wrap">
+                <div class="q-diff-track-label" id="qDifficultyLevelLabel">Medium</div>
+                <input type="range" id="qDifficultySlider" class="q-diff-slider" min="0" max="2" step="1" value="1" aria-label="Question difficulty">
+                <div class="q-diff-ticks">
+                  <span>Easy</span><span>Medium</span><span>Hard</span>
+                </div>
+              </div>
+              <div class="q-diff-example" id="qDifficultyExample"></div>
+              <div class="q-diff-actions">
+                <button class="btn ghost" id="qDifficultyBackBtn" type="button">Back</button>
+                <button class="btn primary" id="qDifficultyContinueBtn" type="button">Draft 3 Questions</button>
+              </div>
             </div>
 
             <!-- Step 2: loading -->

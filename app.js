@@ -1437,6 +1437,8 @@ const DATA = window.APP_DATA;
   const qDifficultyCatLabel   = document.getElementById('qDifficultyCatLabel');
   const qDifficultySlider     = document.getElementById('qDifficultySlider');
   const qDifficultyLevelLabel = document.getElementById('qDifficultyLevelLabel');
+  const qDifficultyLevelNum   = document.getElementById('qDifficultyLevelNum');
+  const qDifficultyStops      = document.getElementById('qDifficultyStops');
   const qDifficultyExample    = document.getElementById('qDifficultyExample');
   const qDifficultyBackBtn    = document.getElementById('qDifficultyBackBtn');
   const qDifficultyContinueBtn = document.getElementById('qDifficultyContinueBtn');
@@ -2150,7 +2152,9 @@ const DATA = window.APP_DATA;
   // before drafting. Falls back to a safe default set if data.js is old.
   const DIFFICULTY_LEVELS = DATA.DIFFICULTY_LEVELS || [
     { label:'Easy', instructions:'Keep this an EASY question, built around a simple, widely-known current event.', example:'How will the global oil prices affect consumers in the US?' },
+    { label:'Leaning Easy', instructions:'Keep this a LEANING-EASY question, tied to a fairly well-known event or figure with slightly more specificity than a purely surface-level topic.', example:'Should the U.S. raise tariffs on Chinese-made electric vehicles?' },
     { label:'Medium', instructions:'Keep this a MEDIUM-difficulty question, tied to a specific but still mainstream recent event.', example:'Should the European Central Bank raise interest rates in response to the latest inflation report?' },
+    { label:'Leaning Hard', instructions:'Keep this a LEANING-HARD question, built around a specific, less mainstream event, policy, or regional figure.', example:"Can Bangladesh's interim government maintain stability ahead of its next national election?" },
     { label:'Hard', instructions:'Keep this a HARD, NICHE question, built around an obscure event/figure most people would not recognize.', example:'How should East Timor President José Ramos-Horta best respond to criticism of his decision to partake in the AB Digital Technology Resort?' }
   ];
   let selectedCategory = null;
@@ -2170,12 +2174,34 @@ Output ONLY this JSON, nothing else: {"questions":["...","...","..."]}`;
     const max = Number(qDifficultySlider.max) || (DIFFICULTY_LEVELS.length - 1);
     const level = DIFFICULTY_LEVELS[idx] || DIFFICULTY_LEVELS[Math.floor(DIFFICULTY_LEVELS.length/2)];
     qDifficultyLevelLabel.textContent = level.label;
+    if(qDifficultyLevelNum) qDifficultyLevelNum.textContent = `Level ${idx + 1} of ${DIFFICULTY_LEVELS.length}`;
     qDifficultyExample.textContent = level.example;
     const pct = max > 0 ? (idx / max) * 100 : 0;
     qDifficultySlider.style.setProperty('--fillpct', pct + '%');
+
+    if(qDifficultyStops){
+      qDifficultyStops.querySelectorAll('.q-diff-stop').forEach(stop => {
+        const stopIdx = Number(stop.dataset.idx);
+        stop.classList.toggle('is-active', stopIdx === idx);
+        stop.classList.toggle('is-passed', stopIdx < idx);
+      });
+    }
+    document.querySelectorAll('.q-diff-ticks span').forEach(tick => {
+      tick.classList.toggle('is-active', Number(tick.dataset.idx) === idx);
+    });
   }
 
   qDifficultySlider.addEventListener('input', renderDifficultyExample);
+  if(qDifficultyStops){
+    qDifficultyStops.querySelectorAll('.q-diff-stop').forEach(stop => {
+      stop.style.pointerEvents = 'auto';
+      stop.style.cursor = 'pointer';
+      stop.addEventListener('click', () => {
+        qDifficultySlider.value = stop.dataset.idx;
+        renderDifficultyExample();
+      });
+    });
+  }
   renderDifficultyExample();
 
   qDifficultyBackBtn.addEventListener('click', () => {

@@ -486,18 +486,28 @@
             <div id="qDifficultyStep" class="hidden">
               <div class="q-hint q-diff-intro" style="margin-bottom:10px;">How difficult should the <span id="qDifficultyCatLabel"></span> question be? Difficulty is both how complex the question is and how niche the event/figure it's built around is.</div>
               <div class="q-diff-slider-wrap">
-                <div class="q-diff-track-label" id="qDifficultyLevelLabel">Medium</div>
+                <div class="q-diff-badge-row">
+                  <span class="q-diff-badge" id="qDifficultyLevelLabel">Medium</span>
+                  <span class="q-diff-badge-sub" id="qDifficultyLevelNum">Level 3 of 5</span>
+                </div>
                 <div class="q-diff-track-outer">
-                  <div class="q-diff-track-notches">
-                    <span></span><span></span><span></span><span></span><span></span>
+                  <div class="q-diff-track-stops" id="qDifficultyStops" aria-hidden="true">
+                    <span class="q-diff-stop" data-idx="0"></span>
+                    <span class="q-diff-stop" data-idx="1"></span>
+                    <span class="q-diff-stop" data-idx="2"></span>
+                    <span class="q-diff-stop" data-idx="3"></span>
+                    <span class="q-diff-stop" data-idx="4"></span>
                   </div>
                   <input type="range" id="qDifficultySlider" class="q-diff-slider" min="0" max="4" step="1" value="2" aria-label="Question difficulty">
                 </div>
                 <div class="q-diff-ticks">
-                  <span>Easy</span><span>Leaning Easy</span><span>Medium</span><span>Leaning Hard</span><span>Hard</span>
+                  <span data-idx="0">Easy</span><span data-idx="1">Leaning<br>Easy</span><span data-idx="2">Medium</span><span data-idx="3">Leaning<br>Hard</span><span data-idx="4">Hard</span>
                 </div>
               </div>
-              <div class="q-diff-example" id="qDifficultyExample"></div>
+              <div class="q-diff-example-card">
+                <div class="q-diff-example-label">Example at this level</div>
+                <div class="q-diff-example" id="qDifficultyExample"></div>
+              </div>
               <div class="q-diff-actions">
                 <button class="btn ghost" id="qDifficultyBackBtn" type="button">Back</button>
                 <button class="btn primary" id="qDifficultyContinueBtn" type="button">Draft 3 Questions</button>

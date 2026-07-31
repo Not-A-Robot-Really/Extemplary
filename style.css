@@ -1055,68 +1055,117 @@
   .q-cat-btn{flex:1;min-width:110px;font-size:13px;padding:9px 12px;border:1px solid var(--rule);}
   .q-cat-btn.active{background:var(--brass);color:#fff;border-color:var(--brass);}
 
-  .q-diff-slider-wrap{ padding:6px 4px 0; }
-  .q-diff-track-label{
-    text-align:center;font-family:var(--font-mono);font-size:11px;letter-spacing:1px;
-    text-transform:uppercase;color:var(--brass);font-weight:700;margin-bottom:8px;
+  .q-diff-slider-wrap{ padding:8px 6px 0; }
+
+  /* Badge header: level name + "Level X of 5" pill, replaces the old skinny text label */
+  .q-diff-badge-row{
+    display:flex;align-items:center;justify-content:center;gap:10px;
+    margin-bottom:16px;flex-wrap:wrap;
   }
-  .q-diff-track-outer{ position:relative;display:flex;align-items:center;height:30px;margin:6px 0 4px; }
-  .q-diff-track-notches{
-    position:absolute;left:11px;right:11px;top:50%;transform:translateY(-50%);
+  .q-diff-badge{
+    font-family:var(--font-display);font-weight:700;font-size:19px;letter-spacing:0.2px;
+    color:#fff;background:linear-gradient(135deg, var(--brass), var(--crimson-deep));
+    padding:5px 18px;border-radius:999px;
+    box-shadow:0 3px 8px rgba(22,40,60,0.28), inset 0 1px 0 rgba(255,255,255,0.18);
+    transition:background 0.2s ease;
+  }
+  .q-diff-badge-sub{
+    font-family:var(--font-mono);font-size:10.5px;letter-spacing:1px;text-transform:uppercase;
+    color:var(--slate);font-weight:600;
+  }
+
+  /* Track: thicker, rounder, more tactile with a visible groove + glossy fill */
+  .q-diff-track-outer{
+    position:relative;display:flex;align-items:center;height:44px;margin:4px 0 10px;
+  }
+  .q-diff-track-stops{
+    position:absolute;left:14px;right:14px;top:50%;transform:translateY(-50%);
     display:flex;justify-content:space-between;pointer-events:none;z-index:1;
   }
-  .q-diff-track-notches span{
-    width:3px;height:3px;border-radius:50%;background:rgba(22,40,60,0.35);
+  .q-diff-stop{
+    width:9px;height:9px;border-radius:50%;
+    background:rgba(22,40,60,0.16);
+    border:1.5px solid rgba(22,40,60,0.22);
+    transition:background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
   }
+  .q-diff-stop.is-passed{
+    background:rgba(255,255,255,0.75);
+    border-color:rgba(255,255,255,0.85);
+  }
+  .q-diff-stop.is-active{
+    transform:scale(1.25);
+    background:#fff;
+    border-color:#fff;
+  }
+
   .q-diff-slider{
     position:relative;z-index:2;
-    -webkit-appearance:none;appearance:none;width:100%;height:12px;border-radius:7px;
+    -webkit-appearance:none;appearance:none;width:100%;height:22px;border-radius:999px;
     outline:none;cursor:grab;margin:0;
     background:var(--parchment-deep);
     border:1px solid rgba(22,40,60,0.28);
-    box-shadow:inset 0 2px 4px rgba(22,40,60,0.22);
+    box-shadow:inset 0 2px 5px rgba(22,40,60,0.24), inset 0 -1px 0 rgba(255,255,255,0.4);
   }
+  .q-diff-slider:hover{ box-shadow:inset 0 2px 5px rgba(22,40,60,0.28), inset 0 -1px 0 rgba(255,255,255,0.4), 0 0 0 3px rgba(61,110,163,0.12); }
   .q-diff-slider:active{ cursor:grabbing; }
+  .q-diff-slider:focus-visible{ box-shadow:inset 0 2px 5px rgba(22,40,60,0.24), 0 0 0 3px rgba(61,110,163,0.35); }
+
   .q-diff-slider::-webkit-slider-runnable-track{
-    height:12px;border-radius:7px;
-    background:linear-gradient(to right, var(--brass) 0%, var(--crimson) var(--fillpct,50%), var(--parchment-deep) var(--fillpct,50%), var(--parchment-deep) 100%);
+    height:22px;border-radius:999px;
+    background:linear-gradient(180deg, rgba(255,255,255,0.15), rgba(0,0,0,0.06)),
+      linear-gradient(to right, var(--brass) 0%, var(--crimson) var(--fillpct,50%), var(--parchment-deep) var(--fillpct,50%), var(--parchment-deep) 100%);
   }
   .q-diff-slider::-moz-range-track{
-    height:12px;border-radius:7px;background:var(--parchment-deep);border:1px solid rgba(22,40,60,0.28);
+    height:22px;border-radius:999px;background:var(--parchment-deep);border:1px solid rgba(22,40,60,0.28);
   }
   .q-diff-slider::-moz-range-progress{
-    height:12px;border-radius:7px 0 0 7px;
-    background:linear-gradient(90deg, var(--brass), var(--crimson));
+    height:22px;border-radius:999px 0 0 999px;
+    background:linear-gradient(180deg, rgba(255,255,255,0.15), rgba(0,0,0,0.06)), linear-gradient(90deg, var(--brass), var(--crimson));
   }
   .q-diff-slider::-webkit-slider-thumb{
     -webkit-appearance:none;appearance:none;
-    width:17px;height:30px;margin-top:-10px;border-radius:5px;
-    background-color:var(--charcoal);
-    background-image:repeating-linear-gradient(90deg, rgba(255,255,255,0.4) 0 2px, transparent 2px 5px);
-    border:2px solid var(--brass);
-    box-shadow:0 2px 7px rgba(22,40,60,0.5);
+    width:34px;height:34px;margin-top:-6px;border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, #2b4763, var(--charcoal) 65%);
+    border:3px solid var(--brass);
+    box-shadow:0 3px 9px rgba(22,40,60,0.55), inset 0 1px 1px rgba(255,255,255,0.25);
     cursor:grab;
   }
   .q-diff-slider::-moz-range-thumb{
-    width:17px;height:30px;border-radius:5px;
-    background-color:var(--charcoal);
-    background-image:repeating-linear-gradient(90deg, rgba(255,255,255,0.4) 0 2px, transparent 2px 5px);
-    border:2px solid var(--brass);
-    box-shadow:0 2px 7px rgba(22,40,60,0.5);
+    width:34px;height:34px;border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, #2b4763, var(--charcoal) 65%);
+    border:3px solid var(--brass);
+    box-shadow:0 3px 9px rgba(22,40,60,0.55), inset 0 1px 1px rgba(255,255,255,0.25);
     cursor:grab;
   }
-  .q-diff-slider:active::-webkit-slider-thumb, .q-diff-slider:active::-moz-range-thumb{ cursor:grabbing; }
-  .q-diff-ticks{
-    display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:10px;
-    color:var(--slate);padding:0 1px;margin-bottom:12px;
+  .q-diff-slider:active::-webkit-slider-thumb, .q-diff-slider:active::-moz-range-thumb{
+    cursor:grabbing; transform:scale(1.06);
   }
-  .q-diff-ticks span{ flex:1;text-align:center; }
+
+  .q-diff-ticks{
+    display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:10.5px;
+    line-height:1.3;color:var(--slate);padding:0 2px;margin-bottom:14px;
+  }
+  .q-diff-ticks span{ flex:1;text-align:center;transition:color 0.15s ease,font-weight 0.15s ease; }
   .q-diff-ticks span:first-child{ text-align:left; }
   .q-diff-ticks span:last-child{ text-align:right; }
+  .q-diff-ticks span.is-active{ color:var(--crimson-deep);font-weight:700; }
+
+  /* Example card: gives the sample question its own clear, distinct surface */
+  .q-diff-example-card{
+    background:var(--parchment-deep);
+    border:1px solid var(--rule);
+    border-left:4px solid var(--brass);
+    border-radius:8px;
+    padding:12px 14px;
+    margin-bottom:14px;
+  }
+  .q-diff-example-label{
+    font-family:var(--font-mono);font-size:10px;letter-spacing:1px;text-transform:uppercase;
+    color:var(--brass);font-weight:700;margin-bottom:5px;
+  }
   .q-diff-example{
-    font-family:var(--font-display);font-size:14px;font-style:italic;line-height:1.5;
-    color:var(--charcoal);border:1px solid var(--rule);border-radius:3px;
-    padding:12px 14px;background:#ffffff;margin-bottom:12px;
+    font-family:var(--font-display);font-size:14.5px;font-style:italic;line-height:1.55;
+    color:var(--charcoal);margin:0;
   }
   .q-diff-actions{display:flex;gap:10px;}
   .q-diff-actions .btn{flex:1;}

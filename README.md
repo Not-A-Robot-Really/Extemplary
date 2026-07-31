@@ -1,5 +1,4 @@
 # **Extemplary**
-
 ---
 
 A **free** tool for practicing **NSDA Extemporaneous Speaking**, usable either as a website or installed as a real Chrome/Edge/Firefox extension. Record a full round or a quick drill, recieve tailored comments & feedback, review your speech transcript, and automatically save a history of every round you've practiced.
@@ -8,7 +7,7 @@ Wanna know [how to deploy](#deployment)?
 
 ![Image22](Images/extemplary.png)
 
----
+
 ## -------TABLE OF CONTENTS---------
 
 1) [What is Extemp?](#what-is-extemp)

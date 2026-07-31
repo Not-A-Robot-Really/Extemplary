@@ -102,12 +102,16 @@ Use the link `not-a-robot-really.github.io/Extemplary/` to try it on the web bro
 Extemplary also serves as a browser extension (Manifest V3). Just pin it to your toolbar like any other extension. It works in Chrome, Edge, and Firefox.
 
 1. Go to `https://github.com/Not-A-Robot-Really/Extemplary`
-2. Click on `<> Code`, `Local`, and `Download ZIP`
+2. Click on `<> Code`, press `Local`, and then hit `Download ZIP`. A ZIP file of the entire repo will be downloaded on your end.
 ![downloadzippng](Images/downloadzip.png)
+
 3. Open `chrome://extensions` in Chrome.
 4. Turn on `Developer mode`.
 5. Click `Load unpacked` and select `Extemplary-main`. Make sure you pressed `Extract All` on `Extemplary-main.zip` before you do this step.
-6. Click on the puzzle icon (🧩) to the right of the search bar and click on `Extemplary`.
+![devmodepng](Images/devmode.png)
+
+6. Click on the puzzle icon 🧩 to the right of the search bar and click on `Extemplary`.
+![laststep](Images/puzzleextension.png)
 
 ### Notes:
 - Every YouTube video in the extension (the video of the example speech) is unable to be view directly in the extension. You will have to visit the external link. **This issue does not exist on GitHub pages**.

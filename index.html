@@ -901,13 +901,33 @@
         </div>
       </div>
 
+      <!-- ====== REGULAR PRACTICE: 30-minute prep countdown modal ======
+           Opened only when the user presses the "Start Timer" button next
+           to the practice mode switch while Regular Practice is selected.
+           Mirrors the Intro/Body Drill prep modals below in structure,
+           just with its own 30:00 countdown and full-round framing. -->
+      <div class="dl-modal hidden prep-modal-regular" id="regularPrepModal">
+        <div class="dl-modal-card prep-card-regular" id="regularPrepCard" style="max-width:380px;text-align:center;">
+          <div class="dl-modal-head">Regular Practice — Prep Time</div>
+          <p class="dl-modal-sub" id="regularPrepSub">Prep your full round: hook, link, thesis, three body points, and a conclusion. You'll have 7 minutes to record it once prep ends.</p>
+          <div class="timer-display" id="regularPrepDisplay" style="font-size:44px;margin:6px 0 18px;">30:00</div>
+          <div class="progress-phrase" id="regularPrepPhrase" style="margin-bottom:16px;"></div>
+          <div class="timer-btn-row" style="justify-content:center;">
+            <button class="btn ghost hidden" id="regularPrepPauseBtn" type="button">Pause</button>
+            <button class="btn ghost hidden" id="regularPrepResumeBtn" type="button">Resume</button>
+            <button class="btn ghost" id="regularPrepSkipBtn" type="button">Skip to Recording</button>
+          </div>
+          <button class="btn ghost dl-modal-btn" id="regularPrepExitBtn" type="button" style="margin-top:14px;">Exit Prep Timer</button>
+        </div>
+      </div>
+
       <!-- ====== INTRO DRILL: 5-minute prep countdown modal ======
-           Shown automatically right after a question is confirmed while
-           Intro Drill mode is active. Auto-starts a 5:00 countdown; the
-           user can pause/resume, skip straight to recording, or exit back
-           to normal practice mode. -->
-      <div class="dl-modal hidden" id="introPrepModal">
-        <div class="dl-modal-card" id="introPrepCard" style="max-width:380px;text-align:center;">
+           Shown only when the user presses the "Start Timer" button next
+           to the practice mode switch while Intro Drill mode is active.
+           Auto-starts a 5:00 countdown; the user can pause/resume, skip
+           straight to recording, or exit back to normal practice mode. -->
+      <div class="dl-modal hidden prep-modal-intro" id="introPrepModal">
+        <div class="dl-modal-card prep-card-intro" id="introPrepCard" style="max-width:380px;text-align:center;">
           <div class="dl-modal-head">Intro Drill — Prep Time</div>
           <p class="dl-modal-sub" id="introPrepSub">Craft just your introduction (hook, link, thesis, preview). You'll have about 1 minute to record it once prep ends.</p>
           <div class="timer-display" id="introPrepDisplay" style="font-size:44px;margin:6px 0 18px;">5:00</div>
@@ -922,12 +942,12 @@
       </div>
 
       <!-- ====== BODY DRILL: 10-minute prep countdown modal ======
-           Shown automatically right after a question is confirmed while
-           Body Drill mode is active. Auto-starts a 10:00 countdown; the
-           user can pause/resume, skip straight to recording, or exit back
-           to normal practice mode. -->
-      <div class="dl-modal hidden" id="bodyPrepModal">
-        <div class="dl-modal-card" id="bodyPrepCard" style="max-width:380px;text-align:center;">
+           Shown only when the user presses the "Start Timer" button next
+           to the practice mode switch while Body Drill mode is active.
+           Auto-starts a 10:00 countdown; the user can pause/resume, skip
+           straight to recording, or exit back to normal practice mode. -->
+      <div class="dl-modal hidden prep-modal-body" id="bodyPrepModal">
+        <div class="dl-modal-card prep-card-body" id="bodyPrepCard" style="max-width:380px;text-align:center;">
           <div class="dl-modal-head">Body Drill — Prep Time</div>
           <p class="dl-modal-sub" id="bodyPrepSub">Pick one main point and prep it fully (claim, evidence, analysis). You'll have about 2 minutes to record it once prep ends.</p>
           <div class="timer-display" id="bodyPrepDisplay" style="font-size:44px;margin:6px 0 18px;">10:00</div>

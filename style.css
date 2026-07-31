@@ -1591,6 +1591,43 @@
   .dl-modal-btn{display:block;width:100%;margin-bottom:10px;text-align:center;}
   .dl-modal-btn:last-child{margin-bottom:0;}
 
+  /* -------- colorful prep-timer takeover modals (Regular/Intro/Body) -------- */
+  .prep-card-regular, .prep-card-intro, .prep-card-body{
+    border-width:2px;border-top-width:8px;border-radius:10px;
+    box-shadow:0 12px 34px rgba(22,40,60,0.28);
+    background:linear-gradient(180deg, rgba(255,255,255,0.97), #ffffff 70px);
+  }
+  .prep-card-regular{ border-color:#1d5c9e; }
+  .prep-card-intro{ border-color:#a3322a; }
+  .prep-card-body{ border-color:#a6790c; }
+  .prep-card-regular .dl-modal-head{ color:#123a63; }
+  .prep-card-intro .dl-modal-head{ color:#7a231c; }
+  .prep-card-body .dl-modal-head{ color:#7a5a08; }
+  .prep-card-regular #regularPrepDisplay{ color:#1d5c9e; }
+  .prep-card-intro #introPrepDisplay{ color:#a3322a; }
+  .prep-card-body #bodyPrepDisplay{ color:#a6790c; }
+  .prep-card-regular #regularPrepDisplay.warn,
+  .prep-card-intro #introPrepDisplay.warn,
+  .prep-card-body #bodyPrepDisplay.warn{ color:var(--crimson); }
+  .prep-card-regular .progress-phrase{ color:#1d5c9e; }
+  .prep-card-intro .progress-phrase{ color:#a3322a; }
+  .prep-card-body .progress-phrase{ color:#a6790c; }
+  .prep-card-regular .timer-btn-row .btn.ghost{ border-color:#1d5c9e;color:#1d5c9e; }
+  .prep-card-regular .timer-btn-row .btn.ghost:hover{ background:rgba(29,92,158,0.1); }
+  .prep-card-intro .timer-btn-row .btn.ghost{ border-color:#a3322a;color:#a3322a; }
+  .prep-card-intro .timer-btn-row .btn.ghost:hover{ background:rgba(163,50,42,0.1); }
+  .prep-card-body .timer-btn-row .btn.ghost{ border-color:#a6790c;color:#a6790c; }
+  .prep-card-body .timer-btn-row .btn.ghost:hover{ background:rgba(166,121,12,0.1); }
+  .prep-card-regular .dl-modal-btn.btn.ghost{ border-color:#1d5c9e;color:#1d5c9e; }
+  .prep-card-regular .dl-modal-btn.btn.ghost:hover{ background:rgba(29,92,158,0.1); }
+  .prep-card-intro .dl-modal-btn.btn.ghost{ border-color:#a3322a;color:#a3322a; }
+  .prep-card-intro .dl-modal-btn.btn.ghost:hover{ background:rgba(163,50,42,0.1); }
+  .prep-card-body .dl-modal-btn.btn.ghost{ border-color:#a6790c;color:#a6790c; }
+  .prep-card-body .dl-modal-btn.btn.ghost:hover{ background:rgba(166,121,12,0.1); }
+  .prep-modal-regular{ background:rgba(18,58,99,0.55); }
+  .prep-modal-intro{ background:rgba(122,35,28,0.55); }
+  .prep-modal-body{ background:rgba(122,90,8,0.55); }
+
   /* -------- vocal delivery analysis panel -------- */
   .delivery-section{margin-top:28px;border-top:2px solid var(--charcoal);padding-top:18px;}
   .delivery-section .ts-head{font-family:var(--font-display);font-size:16px;font-weight:bold;margin:0 0 4px;display:flex;align-items:center;gap:10px;}

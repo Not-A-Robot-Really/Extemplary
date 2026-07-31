@@ -1820,6 +1820,11 @@ const DATA = window.APP_DATA;
   const INTRO_RECORD_CAP_SECONDS = 65; // ~1 minute, with a few seconds of grace
   const BODY_PREP_SECONDS = 10 * 60;
   const BODY_RECORD_CAP_SECONDS = 125; // ~2 minutes, with a few seconds of grace
+  const REGULAR_PREP_SECONDS = 30 * 60;
+  let regularPrepSecondsLeft = REGULAR_PREP_SECONDS;
+  let regularPrepRunning = false;
+  let regularPrepInterval = null;
+  let regularPrepPhraseTimer = null;
   let introPrepSecondsLeft = INTRO_PREP_SECONDS;
   let introPrepRunning = false;
   let introPrepInterval = null;
@@ -1837,6 +1842,14 @@ const DATA = window.APP_DATA;
   const startTimerBtn      = document.getElementById('startTimerBtn');
   const ballotModeLabel    = document.getElementById('ballotModeLabel');
   const ballotTitleEl      = document.getElementById('ballotTitle');
+  const regularPrepModal     = document.getElementById('regularPrepModal');
+  const regularPrepDisplay   = document.getElementById('regularPrepDisplay');
+  const regularPrepPhrase    = document.getElementById('regularPrepPhrase');
+  const regularPrepPauseBtn  = document.getElementById('regularPrepPauseBtn');
+  const regularPrepResumeBtn = document.getElementById('regularPrepResumeBtn');
+  const regularPrepSkipBtn   = document.getElementById('regularPrepSkipBtn');
+  const regularPrepExitBtn   = document.getElementById('regularPrepExitBtn');
+  const REGULAR_PREP_PHRASES = DATA.REGULAR_PREP_PHRASES || [];
   const introPrepModal     = document.getElementById('introPrepModal');
   const introPrepDisplay   = document.getElementById('introPrepDisplay');
   const introPrepPhrase    = document.getElementById('introPrepPhrase');
@@ -1878,6 +1891,10 @@ const DATA = window.APP_DATA;
     startTimerBtn.classList.toggle('mode-regular', isRegular);
     startTimerBtn.classList.toggle('mode-introdrill', introDrillMode);
     startTimerBtn.classList.toggle('mode-bodydrill', bodyDrillMode);
+    if(!isRegular){
+      stopRegularPrepTimer();
+      regularPrepModal.classList.add('hidden');
+    }
     if(!introDrillMode){
       stopIntroPrepTimer();
       introPrepModal.classList.add('hidden');
@@ -1900,6 +1917,79 @@ const DATA = window.APP_DATA;
   modeRegularBtn.addEventListener('click', () => switchPracticeMode('regular'));
   modeIntroDrillBtn.addEventListener('click', () => switchPracticeMode('introdrill'));
   modeBodyDrillBtn.addEventListener('click', () => switchPracticeMode('bodydrill'));
+
+  // ---- Regular Practice prep timer (30:00 countdown), mirrors the Intro
+  // and Body Drill prep timer functions below, just with its own state/DOM
+  // and only ever opened by the "Start Timer" button, never automatically. ----
+  function fmtRegularPrep(s){
+    const m = Math.floor(s/60), sec = s%60;
+    return m + ':' + String(sec).padStart(2,'0');
+  }
+  function renderRegularPrepTimer(){
+    regularPrepDisplay.textContent = fmtRegularPrep(regularPrepSecondsLeft);
+    regularPrepDisplay.classList.toggle('warn', regularPrepSecondsLeft <= 60 && regularPrepSecondsLeft > 0);
+    regularPrepPauseBtn.classList.toggle('hidden', !regularPrepRunning);
+    regularPrepResumeBtn.classList.toggle('hidden', regularPrepRunning || regularPrepSecondsLeft === 0);
+  }
+  function rotateRegularPrepPhrase(){
+    if(!REGULAR_PREP_PHRASES.length) return;
+    const i = Math.floor(Math.random() * REGULAR_PREP_PHRASES.length);
+    regularPrepPhrase.textContent = REGULAR_PREP_PHRASES[i];
+  }
+  function startRegularPrepTimer(){
+    if(regularPrepRunning || regularPrepSecondsLeft <= 0) return;
+    regularPrepRunning = true;
+    clearInterval(regularPrepInterval);
+    regularPrepInterval = setInterval(() => {
+      regularPrepSecondsLeft = Math.max(0, regularPrepSecondsLeft - 1);
+      renderRegularPrepTimer();
+      if(regularPrepSecondsLeft === 0){
+        clearInterval(regularPrepInterval);
+        regularPrepRunning = false;
+        finishRegularPrep();
+      }
+    }, 1000);
+    clearInterval(regularPrepPhraseTimer);
+    rotateRegularPrepPhrase();
+    regularPrepPhraseTimer = setInterval(rotateRegularPrepPhrase, 12000);
+    renderRegularPrepTimer();
+  }
+  function pauseRegularPrepTimer(){
+    regularPrepRunning = false;
+    clearInterval(regularPrepInterval);
+    clearInterval(regularPrepPhraseTimer);
+    renderRegularPrepTimer();
+  }
+  function stopRegularPrepTimer(){
+    regularPrepRunning = false;
+    clearInterval(regularPrepInterval);
+    clearInterval(regularPrepPhraseTimer);
+    regularPrepSecondsLeft = REGULAR_PREP_SECONDS;
+  }
+  function finishRegularPrep(){
+    regularPrepModal.classList.add('hidden');
+    fireSignalOverlay('⏰ Prep Time\'s Up', '0:00', 'Your 30 minutes of prep time have ended.', '', '#1d5c9e');
+  }
+  regularPrepPauseBtn.addEventListener('click', pauseRegularPrepTimer);
+  regularPrepResumeBtn.addEventListener('click', startRegularPrepTimer);
+  regularPrepSkipBtn.addEventListener('click', () => {
+    clearInterval(regularPrepInterval);
+    clearInterval(regularPrepPhraseTimer);
+    regularPrepRunning = false;
+    regularPrepSecondsLeft = 0;
+    regularPrepModal.classList.add('hidden');
+  });
+  regularPrepExitBtn.addEventListener('click', () => {
+    stopRegularPrepTimer();
+    regularPrepModal.classList.add('hidden');
+  });
+
+  function openRegularPrepModal(){
+    regularPrepSecondsLeft = REGULAR_PREP_SECONDS;
+    renderRegularPrepTimer();
+    regularPrepModal.classList.remove('hidden');
+    startRegularPrepTimer();
+  }
 
   function fmtIntroPrep(s){
     const m = Math.floor(s/60), sec = s%60;
@@ -2864,6 +2954,12 @@ Grading rules:
   });
 
   function closeIntroPrepIfOpen(){
+    if(!introDrillMode && !bodyDrillMode && regularPrepModal && !regularPrepModal.classList.contains('hidden')){
+      clearInterval(regularPrepInterval);
+      clearInterval(regularPrepPhraseTimer);
+      regularPrepRunning = false;
+      regularPrepModal.classList.add('hidden');
+    }
     if(introDrillMode && introPrepModal && !introPrepModal.classList.contains('hidden')){
       clearInterval(introPrepInterval);
       clearInterval(introPrepPhraseTimer);
@@ -3559,10 +3655,11 @@ Grading rules:
 
   // The single "Start Timer" button next to the practice mode switch. It
   // never fires on its own, the user has to press it, and which timer it
-  // kicks off depends entirely on the practice mode currently selected:
-  // Regular Practice opens the 30-minute prep panel, Rapid Drill:
-  // Introduction opens the 5-minute intro prep modal, and Rapid Drill:
-  // Body opens the 10-minute body prep modal.
+  // kicks off depends entirely on the practice mode currently selected.
+  // Each mode gets its own full-screen takeover modal (not the small
+  // gear-icon timer panel), color-matched to that mode: Regular Practice
+  // opens a 30-minute modal, Rapid Drill: Introduction opens a 5-minute
+  // modal, and Rapid Drill: Body opens a 10-minute modal.
   function startSelectedTimer(){
     if(!questionInput.value.trim()){
       requireQuestion();
@@ -3573,13 +3670,7 @@ Grading rules:
     }else if(bodyDrillMode){
       if(bodyPrepModal.classList.contains('hidden')) openBodyPrepModal();
     }else{
-      if(!timerOpen){
-        timerOpen = true;
-        if(!timerPositioned){ positionTimerPanel(); timerPositioned = true; }
-        timerPanel.classList.remove('hidden');
-        timerToggle.classList.add('active');
-      }
-      startPrepTimer();
+      if(regularPrepModal.classList.contains('hidden')) openRegularPrepModal();
     }
   }
   startTimerBtn.addEventListener('click', startSelectedTimer);

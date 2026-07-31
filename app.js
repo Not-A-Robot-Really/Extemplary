@@ -2151,11 +2151,15 @@ const DATA = window.APP_DATA;
   // next to the slider so the user knows what that difficulty looks like
   // before drafting. Falls back to a safe default set if data.js is old.
   const DIFFICULTY_LEVELS = DATA.DIFFICULTY_LEVELS || [
+    { label:'Very Easy', instructions:'Keep this a VERY EASY question, built around a major, front-page current event or globally recognized leader that almost anyone would know, with no specific policy detail required.', example:'Will inflation keep falling in the United States this year?' },
     { label:'Easy', instructions:'Keep this an EASY question, built around a simple, widely-known current event.', example:'How will the global oil prices affect consumers in the US?' },
+    { label:'Easy-Medium', instructions:'Keep this an EASY-TO-MEDIUM question, tied to a well-known event or figure but requiring slightly more specific awareness of a recent development.', example:'Is the Federal Reserve right to hold interest rates steady this quarter?' },
     { label:'Leaning Easy', instructions:'Keep this a LEANING-EASY question, tied to a fairly well-known event or figure with slightly more specificity than a purely surface-level topic.', example:'Should the U.S. raise tariffs on Chinese-made electric vehicles?' },
     { label:'Medium', instructions:'Keep this a MEDIUM-difficulty question, tied to a specific but still mainstream recent event.', example:'Should the European Central Bank raise interest rates in response to the latest inflation report?' },
     { label:'Leaning Hard', instructions:'Keep this a LEANING-HARD question, built around a specific, less mainstream event, policy, or regional figure.', example:"Can Bangladesh's interim government maintain stability ahead of its next national election?" },
-    { label:'Hard', instructions:'Keep this a HARD, NICHE question, built around an obscure event/figure most people would not recognize.', example:'How should East Timor President José Ramos-Horta best respond to criticism of his decision to partake in the AB Digital Technology Resort?' }
+    { label:'Hard-Leaning', instructions:'Keep this a HARD-LEANING question, built around a specific regional dispute, minor official, or narrow policy.', example:'Can Guyana manage the political fallout from its rapidly growing oil wealth?' },
+    { label:'Hard', instructions:'Keep this a HARD, NICHE question, built around an obscure event/figure most people would not recognize.', example:'How should East Timor President José Ramos-Horta best respond to criticism of his decision to partake in the AB Digital Technology Resort?' },
+    { label:'Very Hard', instructions:'Keep this a VERY HARD, deeply niche question, built around an extremely obscure regional figure, minor deal, or narrow trade-press-only development.', example:'Can Comoros President Azali Assoumani consolidate power after his disputed reelection amid opposition boycotts?' }
   ];
   let selectedCategory = null;
   let lastGenDifficultyIdx = 2;

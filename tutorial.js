@@ -925,16 +925,32 @@
       spotlight: '#qModeReceiveBtn',
       waitForClick: '#qModeReceiveBtn',
       hintText: 'Click "Receive a question".',
-      html: "Instead of typing your own question, let's have Extemplary draw one for you, exactly like a real tournament draw."
+      html: "Instead of typing your own question, let's have Extemplary draw one for you just like a tournament draw."
     });
 
     steps.push({
       title: 'Pick a category',
       avatar: '❓',
       spotlight: '#qCategoryStep',
-      waitForCondition: function(){ var p = byId('qPickStep'); return p && !p.classList.contains('hidden'); },
+      waitForCondition: function(){ var d = byId('qDifficultyStep'); return d && !d.classList.contains('hidden'); },
       hintText: 'Click Domestic, International, or Economic.',
       html: "Pick any category: <b>International</b>, <b>Domestic</b>, or <b>Economic</b>, and Extemplary will draft three real current-events questions for you."
+    });
+
+    steps.push({
+      title: 'Choose a difficulty',
+      avatar: '🎚️',
+      spotlight: '#qDifficultyStep',
+      before: function(){
+        var s = byId('qDifficultySlider');
+        if(s && s.value !== '10'){
+          s.value = '10';
+          s.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+      },
+      waitForClick: '#qDifficultyContinueBtn',
+      hintText: 'Leave it on "Medium" and click "Draft 3 Questions".',
+      html: "This slider controls how easy or obscure your question will be, all the way from <b>Extremely Easy</b> to <b>Extremely Hard</b>. For this tour, let's stick with <b>Medium</b> — leave the slider where it is and click <b>Draft 3 Questions</b>. On your own rounds, feel free to drag it to whatever difficulty you want to practice at."
     });
 
     steps.push({

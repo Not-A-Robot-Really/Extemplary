@@ -991,7 +991,7 @@
   .question-block{margin-bottom:20px;}
   .question-block label{
     display:block;font-family:var(--font-mono);font-size:11px;
-    text-transform:uppercase;letter-spacing:1.2px;color:var(--slate);margin-bottom:7px;
+    text-transform:uppercase;letter-spacing:1.2px;color:#000;margin-bottom:7px;
   }
   .question-block textarea{
     width:100%;font-family:var(--font-body);font-size:14px;line-height:1.5;
@@ -1058,24 +1058,61 @@
   .q-diff-slider-wrap{ padding:6px 4px 0; }
   .q-diff-track-label{
     text-align:center;font-family:var(--font-mono);font-size:11px;letter-spacing:1px;
-    text-transform:uppercase;color:var(--brass);font-weight:700;margin-bottom:6px;
+    text-transform:uppercase;color:var(--brass);font-weight:700;margin-bottom:8px;
+  }
+  .q-diff-track-outer{ position:relative;display:flex;align-items:center;height:30px;margin:6px 0 4px; }
+  .q-diff-track-notches{
+    position:absolute;left:11px;right:11px;top:50%;transform:translateY(-50%);
+    display:flex;justify-content:space-between;pointer-events:none;z-index:1;
+  }
+  .q-diff-track-notches span{
+    width:3px;height:3px;border-radius:50%;background:rgba(22,40,60,0.35);
   }
   .q-diff-slider{
-    -webkit-appearance:none;appearance:none;width:100%;height:4px;border-radius:2px;
-    background:linear-gradient(90deg, var(--rule) 0%, var(--rule) 100%);outline:none;cursor:pointer;margin:10px 0 4px;
+    position:relative;z-index:2;
+    -webkit-appearance:none;appearance:none;width:100%;height:12px;border-radius:7px;
+    outline:none;cursor:grab;margin:0;
+    background:var(--parchment-deep);
+    border:1px solid rgba(22,40,60,0.28);
+    box-shadow:inset 0 2px 4px rgba(22,40,60,0.22);
+  }
+  .q-diff-slider:active{ cursor:grabbing; }
+  .q-diff-slider::-webkit-slider-runnable-track{
+    height:12px;border-radius:7px;
+    background:linear-gradient(to right, var(--brass) 0%, var(--crimson) var(--fillpct,50%), var(--parchment-deep) var(--fillpct,50%), var(--parchment-deep) 100%);
+  }
+  .q-diff-slider::-moz-range-track{
+    height:12px;border-radius:7px;background:var(--parchment-deep);border:1px solid rgba(22,40,60,0.28);
+  }
+  .q-diff-slider::-moz-range-progress{
+    height:12px;border-radius:7px 0 0 7px;
+    background:linear-gradient(90deg, var(--brass), var(--crimson));
   }
   .q-diff-slider::-webkit-slider-thumb{
-    -webkit-appearance:none;appearance:none;width:20px;height:20px;border-radius:50%;
-    background:var(--brass);cursor:pointer;border:3px solid #ffffff;box-shadow:0 1px 4px rgba(22,40,60,0.4);
+    -webkit-appearance:none;appearance:none;
+    width:17px;height:30px;margin-top:-10px;border-radius:5px;
+    background-color:var(--charcoal);
+    background-image:repeating-linear-gradient(90deg, rgba(255,255,255,0.4) 0 2px, transparent 2px 5px);
+    border:2px solid var(--brass);
+    box-shadow:0 2px 7px rgba(22,40,60,0.5);
+    cursor:grab;
   }
   .q-diff-slider::-moz-range-thumb{
-    width:20px;height:20px;border-radius:50%;background:var(--brass);cursor:pointer;
-    border:3px solid #ffffff;box-shadow:0 1px 4px rgba(22,40,60,0.4);
+    width:17px;height:30px;border-radius:5px;
+    background-color:var(--charcoal);
+    background-image:repeating-linear-gradient(90deg, rgba(255,255,255,0.4) 0 2px, transparent 2px 5px);
+    border:2px solid var(--brass);
+    box-shadow:0 2px 7px rgba(22,40,60,0.5);
+    cursor:grab;
   }
+  .q-diff-slider:active::-webkit-slider-thumb, .q-diff-slider:active::-moz-range-thumb{ cursor:grabbing; }
   .q-diff-ticks{
-    display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:11px;
+    display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:10px;
     color:var(--slate);padding:0 1px;margin-bottom:12px;
   }
+  .q-diff-ticks span{ flex:1;text-align:center; }
+  .q-diff-ticks span:first-child{ text-align:left; }
+  .q-diff-ticks span:last-child{ text-align:right; }
   .q-diff-example{
     font-family:var(--font-display);font-size:14px;font-style:italic;line-height:1.5;
     color:var(--charcoal);border:1px solid var(--rule);border-radius:3px;

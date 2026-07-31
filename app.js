@@ -2154,11 +2154,11 @@ const DATA = window.APP_DATA;
     { label:'Hard', instructions:'Keep this a HARD, NICHE question, built around an obscure event/figure most people would not recognize.', example:'How should East Timor President José Ramos-Horta best respond to criticism of his decision to partake in the AB Digital Technology Resort?' }
   ];
   let selectedCategory = null;
-  let lastGenDifficultyIdx = 1;
+  let lastGenDifficultyIdx = 2;
 
   function buildQuestionGenPrompt(category, dateStr, difficultyIdx){
     const examples = QUESTION_EXAMPLES[category].slice(0,5).map(q => '- '+q).join('\n');
-    const difficulty = DIFFICULTY_LEVELS[difficultyIdx] || DIFFICULTY_LEVELS[1];
+    const difficulty = DIFFICULTY_LEVELS[difficultyIdx] || DIFFICULTY_LEVELS[Math.floor(DIFFICULTY_LEVELS.length/2)];
     return `You write NSDA competitive extemp questions. Today: ${dateStr}.
 Use Google Search to find real ${category} news from the last 7-14 days. Then write 3 new ${category} extemp questions, each tied to a specific real event/person/policy you found. One sentence each, ending in "?", under 30 words, analytical/predictive phrasing ("Will...","Can...","Should...","How will..."). No older than a few weeks unless still developing. ${difficulty.instructions} Don't copy these style examples verbatim:
 ${examples}
@@ -2167,12 +2167,16 @@ Output ONLY this JSON, nothing else: {"questions":["...","...","..."]}`;
 
   function renderDifficultyExample(){
     const idx = Number(qDifficultySlider.value);
-    const level = DIFFICULTY_LEVELS[idx] || DIFFICULTY_LEVELS[1];
+    const max = Number(qDifficultySlider.max) || (DIFFICULTY_LEVELS.length - 1);
+    const level = DIFFICULTY_LEVELS[idx] || DIFFICULTY_LEVELS[Math.floor(DIFFICULTY_LEVELS.length/2)];
     qDifficultyLevelLabel.textContent = level.label;
     qDifficultyExample.textContent = level.example;
+    const pct = max > 0 ? (idx / max) * 100 : 0;
+    qDifficultySlider.style.setProperty('--fillpct', pct + '%');
   }
 
   qDifficultySlider.addEventListener('input', renderDifficultyExample);
+  renderDifficultyExample();
 
   qDifficultyBackBtn.addEventListener('click', () => {
     qDifficultyStep.classList.add('hidden');
@@ -2195,7 +2199,7 @@ Output ONLY this JSON, nothing else: {"questions":["...","...","..."]}`;
     qConfirmedStep.classList.add('hidden');
     document.querySelectorAll('.q-cat-btn').forEach(b=>b.classList.remove('active'));
     selectedCategory = null;
-    qDifficultySlider.value = 1;
+    qDifficultySlider.value = 2;
     renderDifficultyExample();
   }
 
@@ -2239,7 +2243,7 @@ Output ONLY this JSON, nothing else: {"questions":["...","...","..."]}`;
       qDifficultyCatLabel.textContent = selectedCategory.toLowerCase();
       qCategoryStep.classList.add('hidden');
       qDifficultyStep.classList.remove('hidden');
-      qDifficultySlider.value = 1;
+      qDifficultySlider.value = 2;
       renderDifficultyExample();
     });
   });
@@ -2358,7 +2362,7 @@ Output ONLY this JSON, nothing else: {"questions":["...","...","..."]}`;
     qPickStep.classList.add('hidden');
     qConfirmedStep.classList.add('hidden');
     qGenError.style.display = 'none';
-    const difficultyLabel = (DIFFICULTY_LEVELS[lastGenDifficultyIdx] || DIFFICULTY_LEVELS[1]).label.toLowerCase();
+    const difficultyLabel = (DIFFICULTY_LEVELS[lastGenDifficultyIdx] || DIFFICULTY_LEVELS[Math.floor(DIFFICULTY_LEVELS.length/2)]).label.toLowerCase();
     qGenLoadingText.textContent = `Drafting three ${difficultyLabel} ${category.toLowerCase()} questions…`;
     qGenLoading.classList.remove('hidden');
     qGenProgress.start(QGEN_PHRASES, 90);

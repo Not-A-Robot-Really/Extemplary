@@ -484,12 +484,17 @@
 
             <!-- Step 1.5: difficulty slider -->
             <div id="qDifficultyStep" class="hidden">
-              <div class="q-hint" style="margin-bottom:10px;">How difficult should the <span id="qDifficultyCatLabel"></span> question be? Difficulty is both how complex the question is and how niche the event/figure it's built around is.</div>
+              <div class="q-hint q-diff-intro" style="margin-bottom:10px;">How difficult should the <span id="qDifficultyCatLabel"></span> question be? Difficulty is both how complex the question is and how niche the event/figure it's built around is.</div>
               <div class="q-diff-slider-wrap">
                 <div class="q-diff-track-label" id="qDifficultyLevelLabel">Medium</div>
-                <input type="range" id="qDifficultySlider" class="q-diff-slider" min="0" max="2" step="1" value="1" aria-label="Question difficulty">
+                <div class="q-diff-track-outer">
+                  <div class="q-diff-track-notches">
+                    <span></span><span></span><span></span><span></span><span></span>
+                  </div>
+                  <input type="range" id="qDifficultySlider" class="q-diff-slider" min="0" max="4" step="1" value="2" aria-label="Question difficulty">
+                </div>
                 <div class="q-diff-ticks">
-                  <span>Easy</span><span>Medium</span><span>Hard</span>
+                  <span>Easy</span><span>Leaning Easy</span><span>Medium</span><span>Leaning Hard</span><span>Hard</span>
                 </div>
               </div>
               <div class="q-diff-example" id="qDifficultyExample"></div>

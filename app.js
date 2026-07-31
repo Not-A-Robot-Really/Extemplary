@@ -2178,9 +2178,33 @@ const DATA = window.APP_DATA;
 
   function buildQuestionGenPrompt(category, dateStr, difficultyIdx){
     const examples = QUESTION_EXAMPLES[category].slice(0,5).map(q => '- '+q).join('\n');
-    const difficulty = DIFFICULTY_LEVELS[difficultyIdx] || DIFFICULTY_LEVELS[Math.floor(DIFFICULTY_LEVELS.length/2)];
+    const maxIdx = DIFFICULTY_LEVELS.length - 1;
+    const idx = (difficultyIdx === undefined || difficultyIdx === null || !DIFFICULTY_LEVELS[difficultyIdx])
+      ? Math.floor(DIFFICULTY_LEVELS.length/2) : difficultyIdx;
+    const difficulty = DIFFICULTY_LEVELS[idx];
+    const easierNeighbor = DIFFICULTY_LEVELS[idx-1];
+    const harderNeighbor = DIFFICULTY_LEVELS[idx+1];
+    let calibrationNote = '';
+    if(easierNeighbor && harderNeighbor){
+      calibrationNote = `For calibration, this should be noticeably harder/more obscure than a "${easierNeighbor.label}" question and noticeably easier/more mainstream than a "${harderNeighbor.label}" question.`;
+    } else if(easierNeighbor){
+      calibrationNote = `For calibration, this should be noticeably harder/more obscure than a "${easierNeighbor.label}" question — this is the hardest, most niche tier on the scale.`;
+    } else if(harderNeighbor){
+      calibrationNote = `For calibration, this should be noticeably easier/more mainstream than a "${harderNeighbor.label}" question — this is the easiest, most mainstream tier on the scale.`;
+    }
     return `You write NSDA competitive extemp questions. Today: ${dateStr}.
-Use Google Search to find real ${category} news from the last 7-14 days. Then write 3 new ${category} extemp questions, each tied to a specific real event/person/policy you found. One sentence each, ending in "?", under 30 words, analytical/predictive phrasing ("Will...","Can...","Should...","How will..."). No older than a few weeks unless still developing. ${difficulty.instructions} Don't copy these style examples verbatim:
+
+=== DIFFICULTY TARGET — READ FIRST, THIS IS THE MOST IMPORTANT CONSTRAINT ===
+Target difficulty: "${difficulty.label}" — Level ${idx + 1} of ${DIFFICULTY_LEVELS.length} on an Easy-to-Hard obscurity scale (Level 1 = "${DIFFICULTY_LEVELS[0].label}", most mainstream; Level ${DIFFICULTY_LEVELS.length} = "${DIFFICULTY_LEVELS[maxIdx].label}", most obscure/niche).
+${difficulty.instructions}
+${calibrationNote}
+A calibration example at exactly this difficulty level: "${difficulty.example}"
+Every one of the 3 questions you write MUST match this exact difficulty level — not the category's usual mainstream coverage, not one tier easier, not one tier harder. If you're unsure whether a topic is obscure enough (or mainstream enough), err toward matching this level's calibration example over defaulting to well-known headline stories.
+=== END DIFFICULTY TARGET ===
+
+Use Google Search to find real ${category} news from the last 7-14 days that fits the difficulty target above. Then write 3 new ${category} extemp questions, each tied to a specific real event/person/policy you found. One sentence each, ending in "?", under 30 words, analytical/predictive phrasing ("Will...","Can...","Should...","How will..."). No older than a few weeks unless still developing.
+
+The style examples below show typical PHRASING and CATEGORY conventions only — ignore whatever difficulty level they happen to be at, and do NOT copy them verbatim:
 ${examples}
 Output ONLY this JSON, nothing else: {"questions":["...","...","..."]}`;
   }

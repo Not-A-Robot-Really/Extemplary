@@ -5,7 +5,7 @@ A **free** tool for practicing **NSDA Extemporaneous Speaking**, usable either a
 
 Wanna know [how to deploy](#deployment)?
 
-![Image22](Images/extemplary.png)
+![Extemp Logo](Images/extemplary.png)
 
 ## ---------TABLE OF CONTENTS---------
 
@@ -96,13 +96,14 @@ Note: Extemplary requires camera and microphone access for recording speeches (d
 ---
 ### Method 1: GitHub Pages (Browser)
 Use the link `not-a-robot-really.github.io/Extemplary/` to try it on the web browser via GitHub pages.
-
+![aboutextemppng](Images/aboutextemplary.png)
 
 ### Method 2: Extension
 Extemplary also serves as a browser extension (Manifest V3). Just pin it to your toolbar like any other extension. It works in Chrome, Edge, and Firefox.
 
 1. Go to `https://github.com/Not-A-Robot-Really/Extemplary`
 2. Click on `<> Code`, `Local`, and `Download ZIP`
+![downloadzippng](Images/downloadzip.png)
 3. Open `chrome://extensions` in Chrome.
 4. Turn on `Developer mode`.
 5. Click `Load unpacked` and select `Extemplary-main`. Make sure you pressed `Extract All` on `Extemplary-main.zip` before you do this step.

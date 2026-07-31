@@ -1598,33 +1598,33 @@
     box-shadow:0 12px 34px rgba(22,40,60,0.28);
     background:linear-gradient(180deg, rgba(255,255,255,0.97), #ffffff 70px);
   }
-  .prep-card-regular{ border-color:#1d5c9e; }
-  .prep-card-intro{ border-color:#a3322a; }
-  .prep-card-body{ border-color:#a6790c; }
-  .prep-card-regular .dl-modal-head{ color:#123a63; }
-  .prep-card-intro .dl-modal-head{ color:#7a231c; }
-  .prep-card-body .dl-modal-head{ color:#7a5a08; }
-  .prep-card-regular #regularPrepDisplay{ color:#1d5c9e; }
-  .prep-card-intro #introPrepDisplay{ color:#a3322a; }
-  .prep-card-body #bodyPrepDisplay{ color:#a6790c; }
+  .prep-card-regular{ border-color:#16283c; }
+  .prep-card-intro{ border-color:#16283c; }
+  .prep-card-body{ border-color:#16283c; }
+  .prep-card-regular .dl-modal-head{ color:#16283c; }
+  .prep-card-intro .dl-modal-head{ color:#16283c; }
+  .prep-card-body .dl-modal-head{ color:#16283c; }
+  .prep-card-regular #regularPrepDisplay{ color:#16283c; }
+  .prep-card-intro #introPrepDisplay{ color:#16283c; }
+  .prep-card-body #bodyPrepDisplay{ color:#16283c; }
   .prep-card-regular #regularPrepDisplay.warn,
   .prep-card-intro #introPrepDisplay.warn,
   .prep-card-body #bodyPrepDisplay.warn{ color:var(--crimson); }
-  .prep-card-regular .progress-phrase{ color:#1d5c9e; }
-  .prep-card-intro .progress-phrase{ color:#a3322a; }
-  .prep-card-body .progress-phrase{ color:#a6790c; }
-  .prep-card-regular .timer-btn-row .btn.ghost{ border-color:#1d5c9e;color:#1d5c9e; }
-  .prep-card-regular .timer-btn-row .btn.ghost:hover{ background:rgba(29,92,158,0.1); }
-  .prep-card-intro .timer-btn-row .btn.ghost{ border-color:#a3322a;color:#a3322a; }
-  .prep-card-intro .timer-btn-row .btn.ghost:hover{ background:rgba(163,50,42,0.1); }
-  .prep-card-body .timer-btn-row .btn.ghost{ border-color:#a6790c;color:#a6790c; }
-  .prep-card-body .timer-btn-row .btn.ghost:hover{ background:rgba(166,121,12,0.1); }
-  .prep-card-regular .dl-modal-btn.btn.ghost{ border-color:#1d5c9e;color:#1d5c9e; }
-  .prep-card-regular .dl-modal-btn.btn.ghost:hover{ background:rgba(29,92,158,0.1); }
-  .prep-card-intro .dl-modal-btn.btn.ghost{ border-color:#a3322a;color:#a3322a; }
-  .prep-card-intro .dl-modal-btn.btn.ghost:hover{ background:rgba(163,50,42,0.1); }
-  .prep-card-body .dl-modal-btn.btn.ghost{ border-color:#a6790c;color:#a6790c; }
-  .prep-card-body .dl-modal-btn.btn.ghost:hover{ background:rgba(166,121,12,0.1); }
+  .prep-card-regular .progress-phrase{ color:#16283c; }
+  .prep-card-intro .progress-phrase{ color:#16283c; }
+  .prep-card-body .progress-phrase{ color:#16283c; }
+  .prep-card-regular .timer-btn-row .btn.ghost{ border-color:#16283c;color:#16283c; }
+  .prep-card-regular .timer-btn-row .btn.ghost:hover{ background:rgba(22,40,60,0.1); }
+  .prep-card-intro .timer-btn-row .btn.ghost{ border-color:#16283c;color:#16283c; }
+  .prep-card-intro .timer-btn-row .btn.ghost:hover{ background:rgba(22,40,60,0.1); }
+  .prep-card-body .timer-btn-row .btn.ghost{ border-color:#16283c;color:#16283c; }
+  .prep-card-body .timer-btn-row .btn.ghost:hover{ background:rgba(22,40,60,0.1); }
+  .prep-card-regular .dl-modal-btn.btn.ghost{ background:#1d5c9e;border-color:#123a63;color:#fff; }
+  .prep-card-regular .dl-modal-btn.btn.ghost:hover{ background:#164a80; }
+  .prep-card-intro .dl-modal-btn.btn.ghost{ background:#a3322a;border-color:#7a231c;color:#fff; }
+  .prep-card-intro .dl-modal-btn.btn.ghost:hover{ background:#872720; }
+  .prep-card-body .dl-modal-btn.btn.ghost{ background:#a6790c;border-color:#7a5a08;color:#fff; }
+  .prep-card-body .dl-modal-btn.btn.ghost:hover{ background:#8a6409; }
   .prep-modal-regular{ background:rgba(10,14,20,0.65); }
   .prep-modal-intro{ background:rgba(10,14,20,0.65); }
   .prep-modal-body{ background:rgba(10,14,20,0.65); }
@@ -2502,9 +2502,9 @@
 .tut-btn-choice{background:#1d5c9e;color:#fff;margin-left:6px;}
 .tut-btn-choice.tut-btn-no{background:#7a7264;}
 
-/* On narrower / shorter viewports, a side rail eats too much width, so the
+/* On narrower / shorter viewports a side rail eats too much width, so the
    panel becomes an anchored bottom sheet instead, still never covering
-   the spotlighted area, since the app content sits ABOVE IT!! */
+   the spotlighted area, since the app content sits above it. */
 @media (max-width: 780px), (max-height: 560px){
   #tutBox, #tutBox.tut-dock-left, #tutBox.tut-center{
     top:auto;bottom:14px;left:50%;right:auto;

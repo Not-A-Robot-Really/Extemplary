@@ -7,8 +7,7 @@ Wanna know [how to deploy](#deployment)?
 
 ![Image22](Images/extemplary.png)
 
-
-## -------TABLE OF CONTENTS---------
+## ---------TABLE OF CONTENTS---------
 
 1) [What is Extemp?](#what-is-extemp)
 

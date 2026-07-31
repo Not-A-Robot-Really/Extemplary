@@ -7,7 +7,7 @@ Wanna know [how to deploy](#deployment)?
 
 ![Extemp Logo](Images/extemplary.png)
 
-## @@---------TABLE OF CONTENTS---------@@
+## ---------TABLE OF CONTENTS---------
 
 1) [What is Extemp?](#what-is-extemp)
 
@@ -41,9 +41,9 @@ Extemporaneous Speaking refers to a speech event where you deliver a **7 minute*
 
 From `https://www.speechanddebate.org/competition-events/`:
 
-> - "International Extemporaneous Speaking (IX) is a seven-minute speech event (with a 30-second grace period) focused on current international issues. Students have 30 minutes to prepare a speech in response to one of three selected questions related to global politics, economics, or culture. During prep, students may consult research they’ve brought with them; at some tournaments, including the National Tournament, they may also use the internet. Each speech is delivered from memory without notes."
+> "International Extemporaneous Speaking (IX) is a seven-minute speech event (with a 30-second grace period) focused on current international issues. Students have 30 minutes to prepare a speech in response to one of three selected questions related to global politics, economics, or culture. During prep, students may consult research they’ve brought with them; at some tournaments, including the National Tournament, they may also use the internet. Each speech is delivered from memory without notes."
 
-> + "United States Extemporaneous Speaking (USX) is a seven-minute speech event (with a 30-second grace period) that focuses on current events within the United States. Students have 30 minutes to prepare a speech in response to one of three selected questions related to U.S. politics, economics, domestic policy, or cultural issues. During prep, students may consult research they’ve brought with them; at some tournaments, including the National Tournament, they may also use the internet. Each speech is delivered from memory without notes."
+> "United States Extemporaneous Speaking (USX) is a seven-minute speech event (with a 30-second grace period) that focuses on current events within the United States. Students have 30 minutes to prepare a speech in response to one of three selected questions related to U.S. politics, economics, domestic policy, or cultural issues. During prep, students may consult research they’ve brought with them; at some tournaments, including the National Tournament, they may also use the internet. Each speech is delivered from memory without notes."
 
 ---
 
@@ -74,7 +74,7 @@ Sign up → Generate questions → Write a speech → Record your speech → Rec
 
 - **Trends across your ballots** | The "History view" combines & stores your average score in each rubric category across every round you've recorded, with per-category bars plus your top overall strengths and weaknesses.
 
-- **Score line graphs** | Line graphs of your overall score, sorted by individual rubric category and type of practice, plotted round-by-round across all of your speeches. This not only helps with tracking your progress in a specific area across months of hard work, but also serves as a representation of your speeches as a whole. 
+- **Performance Graphs** | Line graphs illustrating your overall score, sorted by individual rubric category and type of practice, plotted round-by-round across all of your speeches. This not only helps with tracking your progress in a specific area across months of hard work, but also serves as a representation of your speeches as a whole. 
 
 - **Streak & Calendar** | A practice streak: When you record a ballot, set a goal, or complete one keeps the streak alive. Your current streak lives in a flame counter fixed to the top of the app, and the full **Streak Calendar** view lays out a month-by-month history of active days, and your current & best streak.
 
@@ -172,8 +172,8 @@ The app utilizes default Groq and Gemini API keys for transcription, judging, an
 ---
 Accounts and cloud history run on a Supabase project.
 
-If you fork this project and want your *own* Supabase backend rather than the one it comes with:
-**Create a new Supabase project**, run `setup.sql` there, and swap in your project's URL and anon key in `SUPABASE_URL` / `SUPABASE_ANON_KEY` near the top of `<script>` in `Extemplary.html`. The anon key is meant to be public, Row Level Security. It is *not* meant to be key secrecy.
+If you fork this project and want your *own* Supabase backend rather than the one it comes with...
+**Create a new Supabase project**: run `setup.sql` there, and swap in your project's URL and anon key in `SUPABASE_URL` / `SUPABASE_ANON_KEY` near the top of `<script>` in `Extemplary.html`. The anon key is meant to be public, Row Level Security. It is *not* meant to be key secrecy.
 
 ### Email delivery 🌐
 ---

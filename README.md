@@ -39,6 +39,12 @@ Wanna know [how to deploy](#deployment)?
 
 Extemporaneous Speaking refers to a speech event where you deliver a **7 minute** memorized speech (no notes!) on a topic that you will be given **30 minutes** to research. The aim of Extemporaneous Speaking is to deliver the strongest, most well crafted  speech with precise evidence and flawless reasoning, testing both your presentational and analytical writing skills.
 
+From `https://www.speechanddebate.org/competition-events/`:
+
+> "International Extemporaneous Speaking (IX) is a seven-minute speech event (with a 30-second grace period) focused on current international issues. Students have 30 minutes to prepare a speech in response to one of three selected questions related to global politics, economics, or culture. During prep, students may consult research they’ve brought with them; at some tournaments, including the National Tournament, they may also use the internet. Each speech is delivered from memory without notes."
+
+> "United States Extemporaneous Speaking (USX) is a seven-minute speech event (with a 30-second grace period) that focuses on current events within the United States. Students have 30 minutes to prepare a speech in response to one of three selected questions related to U.S. politics, economics, domestic policy, or cultural issues. During prep, students may consult research they’ve brought with them; at some tournaments, including the National Tournament, they may also use the internet. Each speech is delivered from memory without notes."
+
 ---
 
 ## Features 🧩

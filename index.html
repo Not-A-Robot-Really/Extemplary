@@ -22,7 +22,7 @@
 
 
 
-<!-- Fullscreen exit button — only shown while previewing the example ballot
+<!-- Fullscreen exit button, only shown while previewing the example ballot
      from the landing page (not signed in). Always pinned top-right. -->
 <button type="button" id="previewExitBtn" aria-label="Close example and return to sign in">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-17"></use></svg>
@@ -107,8 +107,8 @@
   </div>
 </header>
 
-<!-- ====== STREAK COUNTER — floating top-right, mirrors the hamburger fab ====== -->
-<!-- ====== HAMBURGER NAV MENU — solid header bar, top-left of the screen, ====== -->
+<!-- ====== STREAK COUNTER, floating top-right, mirrors the hamburger fab ====== -->
+<!-- ====== HAMBURGER NAV MENU, solid header bar, top-left of the screen, ====== -->
 <!-- ====== the dark header slides together with the menu list below it as ====== -->
 <!-- ====== one piece. This separate persistent button stays fixed in place ====== -->
 <!-- ====== and only shows up while the menu is collapsed, so there is always ====== -->
@@ -186,7 +186,7 @@
 
 <main>
   <div class="ballot" id="ballot">
-    <!-- Grading Rubric icon — sits on the ballot PAPER itself (top-right corner
+    <!-- Grading Rubric icon, sits on the ballot PAPER itself (top-right corner
          of the paper), separate from the header icon row above. Only shown
          while the paper is displaying Home/Record, My Ballot History, the
          Example Ballot, or the post-submission Feedback/Results view (see
@@ -212,14 +212,17 @@
       <!-- ====== RECORDING VIEW ====== -->
       <div id="view-record">
 
-        <!-- Practice mode switch — replaces the old separate Intro Drill
+        <!-- Practice mode switch, replaces the old separate Intro Drill
              page/icon. Choosing "Rapid Drill: Introduction" here is what
              now drives introDrillMode (prep timer, recording cap, rubric,
              grading prompt) everywhere else in the app. -->
-        <div class="mode-switch" id="modeSwitch" role="tablist" aria-label="Practice mode">
-          <button type="button" class="mode-switch-btn active" id="modeRegularBtn" data-mode="regular" role="tab" aria-selected="true">Regular Practice</button>
-          <button type="button" class="mode-switch-btn" id="modeIntroDrillBtn" data-mode="introdrill" role="tab" aria-selected="false">Rapid Drill: Introduction</button>
-          <button type="button" class="mode-switch-btn" id="modeBodyDrillBtn" data-mode="bodydrill" role="tab" aria-selected="false">Rapid Drill: Body</button>
+        <div class="mode-switch-row">
+          <div class="mode-switch" id="modeSwitch" role="tablist" aria-label="Practice mode">
+            <button type="button" class="mode-switch-btn active" id="modeRegularBtn" data-mode="regular" role="tab" aria-selected="true">Regular Practice</button>
+            <button type="button" class="mode-switch-btn" id="modeIntroDrillBtn" data-mode="introdrill" role="tab" aria-selected="false">Rapid Drill: Introduction</button>
+            <button type="button" class="mode-switch-btn" id="modeBodyDrillBtn" data-mode="bodydrill" role="tab" aria-selected="false">Rapid Drill: Body</button>
+          </div>
+          <button type="button" class="start-timer-btn mode-regular" id="startTimerBtn">Start Timer</button>
         </div>
         <div class="mode-switch-hint" id="modeSwitchHint">Full 7-minute round, graded on all 8 rubric categories.</div>
 
@@ -318,7 +321,7 @@
             </table>
 
             <!-- Trimmed 3-category rubric shown only while Intro Drill mode is
-                 active — body/argument/evidence/reasoning/conclusion criteria
+                 active, body/argument/evidence/reasoning/conclusion criteria
                  don't apply to an introduction-only recording. -->
             <table class="rubric-table hidden" id="introRubricTable">
               <thead>
@@ -344,7 +347,7 @@
             </table>
 
             <!-- Trimmed 6-category rubric shown only while Body Drill mode is
-                 active — hook/intro and conclusion criteria don't apply to a
+                 active, hook/intro and conclusion criteria don't apply to a
                  single-body-paragraph-only recording. -->
             <table class="rubric-table hidden" id="bodyRubricTable">
               <thead>
@@ -442,7 +445,7 @@
           </div>
         </div>
 
-        <!-- Question input — required before recording -->
+        <!-- Question input, required before recording -->
         <div class="question-block">
           <label>Your drawn question</label>
 
@@ -661,7 +664,7 @@
         </div>
       </div>
 
-      <!-- ====== EXAMPLE BALLOT VIEW (static — shown via the "?" help button) ====== -->
+      <!-- ====== EXAMPLE BALLOT VIEW (static, shown via the "?" help button) ====== -->
       <div id="view-example" class="hidden">
         <div class="page-heading">Example Ballot</div>
         <div class="result-question">
@@ -683,7 +686,7 @@
           <div class="delivery-note">These figures are measured straight from the audio waveform and word timing, then handed to the AI judge to inform the Speech Quality score above.</div>
         </div>
 
-        <!-- Synced video playback — identical interaction to a real round's results -->
+        <!-- Synced video playback, identical interaction to a real round's results -->
         <div class="playback-section" id="examplePlaybackSection">
           <div class="ts-head">Watch &amp; Read Along</div>
           <div class="ts-meta">Click any word in the transcript below (or a judge's note) to jump the video there.</div>
@@ -945,7 +948,7 @@
 </main>
 
 <!-- Body-level (not inside any single view) so the comment popover can show
-     regardless of which view/panel is currently active — including the
+     regardless of which view/panel is currently active, including the
      Example Ballot and the landing-page preview demo. -->
 <div class="comment-popover hidden" id="commentPopover">
   <div class="cp-arrow"></div>
@@ -969,7 +972,7 @@
 <script src="app.js"></script>
 
 <!-- ============================================================
-     ONBOARDING TUTORIAL — cutscene-style walkthrough shown once,
+     ONBOARDING TUTORIAL, cutscene-style walkthrough shown once,
      automatically, the first time a brand new account signs up.
      ============================================================ -->
 <div id="tutOverlayRoot" aria-live="polite">

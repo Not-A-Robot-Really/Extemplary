@@ -13,7 +13,7 @@
   // Postgres table ("ballots") plus a Storage bucket ("ballot-videos") in
   // this same Supabase project, both protected by Row Level Security so
   // each signed-in user can only ever read/write their own rows and files.
-  // One-time setup required in the Supabase SQL editor — see setup.sql.
+  // One-time setup required in the Supabase SQL editor, see setup.sql.
   const supabaseClient = (window.supabase && window.supabase.createClient)
     ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
     : null;
@@ -45,7 +45,7 @@
   // ---- Shared helpers for the landing-page free-trial demos (Generate
   // Questions / Tournament Briefing / Citation Checker), mirrored from the
   // same-named functions in index.html's script. The demo panels below
-  // call these directly, but this file never actually defined them —
+  // call these directly, but this file never actually defined them, 
   // that's what made every one of those demos throw immediately (and so
   // look completely broken) as soon as they were used. -----
   const QGEN_PHRASES = DATA.QGEN_PHRASES;
@@ -108,7 +108,7 @@
   }
 
   // Gemini calls go through the `gemini-generate` edge function, same as
-  // the signed-in app — the real Gemini key never lives in this file.
+  // the signed-in app, the real Gemini key never lives in this file.
   async function callGeminiWithKey(prompt, apiKey, maxOutputTokens){
     const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/gemini-generate`, {
       method:'POST',
@@ -295,7 +295,7 @@ Grading rules:
 
     // Measure the popover's REAL rendered width. The CSS only sets
     // max-width:300px (not a fixed width), so short comments render a
-    // narrower bubble — using a hardcoded 300 here was the bug: it clamped
+    // narrower bubble, using a hardcoded 300 here was the bug: it clamped
     // position and placed the arrow as if every popover were exactly 300px
     // wide, so on narrower bubbles the arrow landed outside the actual
     // bubble, floating over the transcript text instead of on the comment.
@@ -369,7 +369,7 @@ Grading rules:
     if(!err) return 'Unknown error.';
     // Supabase errors are usually {message, status, code}; but network/CORS
     // failures throw plain Error/TypeErrors, and some edge cases hand back
-    // odd shapes. Never trust a single field blindly — build the fullest
+    // odd shapes. Never trust a single field blindly, build the fullest
     // readable string we can so the box never shows a stray fragment.
     const parts = [];
     if(typeof err === 'string') return err;
@@ -534,7 +534,7 @@ Grading rules:
   // Both the card-hijack (which sometimes WRITES scrollTop) and the photo
   // parallax (which READS scrollTop) were each running their own independent
   // requestAnimationFrame loop. Two separate rAF chains aren't guaranteed to
-  // fire in a fixed order relative to each other — so frame to frame, the
+  // fire in a fixed order relative to each other, so frame to frame, the
   // parallax's read would sometimes land before the hijack's write and
   // sometimes after, flip-flopping between two slightly different scroll
   // values. That flip-flop is what showed up as the image vibrating. Running
@@ -560,15 +560,15 @@ Grading rules:
       return;
     }
 
-    const SENS_WHEEL = 0.0028;   // drives an active card's slide-in progress — higher = fewer scrolls needed
+    const SENS_WHEEL = 0.0028;   // drives an active card's slide-in progress, higher = fewer scrolls needed
     const SENS_TOUCH = 0.0042;
     const SENS_KEY = 0.14;
     const APPROACH_STEP_MAX = 46;      // per-event feel, used to size the per-frame cap below
-    const APPROACH_FRAME_CAP = 120;    // max px of physical scroll applied per animation frame — keeps the physical scroll pace the same as before even though input is now coalesced
+    const APPROACH_FRAME_CAP = 120;    // max px of physical scroll applied per animation frame, keeps the physical scroll pace the same as before even though input is now coalesced
     const state = cards.map((el, i) => ({ el, dir: i % 2 === 0 ? 'left' : 'right', progress: 0 }));
     let currentIndex = 0;
     // 'approach': plain, clamped, controlled scrolling toward the next card
-    //             (this is what replaces the old auto-scroll — there is no
+    //             (this is what replaces the old auto-scroll, there is no
     //             animation here, just direct 1:1 scrolling driven by input).
     // 'slide':    input instead drives that card's slide-in progress; entered
     //             only once the card has scrolled all the way up so its
@@ -580,7 +580,7 @@ Grading rules:
 
     function render(i){
       const s = state[i];
-      const eased = 1 - Math.pow(1 - s.progress, 3); // easeOutCubic — snappier near the end
+      const eased = 1 - Math.pow(1 - s.progress, 3); // easeOutCubic, snappier near the end
       const offsetPct = (1 - eased) * 100;
       if(s.progress <= 0){
         s.el.style.transform = `translateX(${s.dir === 'left' ? -100 : 100}%)`;
@@ -604,7 +604,7 @@ Grading rules:
     // both the tallest card and on a different, more fragile arming path
     // (rect.top<=0 rather than the default "whole card visible"), so a fast
     // scroll/trackpad flick can occasionally pass through its arming check
-    // without ever catching it — leaving it stuck at opacity:0 forever.
+    // without ever catching it, leaving it stuck at opacity:0 forever.
     // This only watches that one card, and only steps in if it's actually
     // scrolled substantially into view while still unrevealed, animating it
     // in smoothly (not an instant snap) so it doesn't change how the other
@@ -644,7 +644,7 @@ Grading rules:
       return window.getComputedStyle(scroller).display !== 'none';
     }
 
-    // Only step in once the grid has actually started entering the screen —
+    // Only step in once the grid has actually started entering the screen, 
     // otherwise scrolling through the hero/headline above it would get
     // hijacked too.
     function nearSection(){
@@ -687,7 +687,7 @@ Grading rules:
         } else if(next <= 0 && delta < 0){
           s.progress = 0;
           render(currentIndex);
-          mode = 'approach'; // release — scrolling back up is now plain scroll
+          mode = 'approach'; // release, scrolling back up is now plain scroll
         } else {
           s.progress = Math.max(0, Math.min(1, next));
           render(currentIndex);
@@ -695,7 +695,7 @@ Grading rules:
         return;
       }
 
-      // mode === 'approach' — handle both directions ourselves (see note
+      // mode === 'approach', handle both directions ourselves (see note
       // below on why negative deltas are no longer handed off to native
       // scroll).
       const step = Math.max(-APPROACH_FRAME_CAP, Math.min(APPROACH_FRAME_CAP, delta));
@@ -711,7 +711,7 @@ Grading rules:
     }
 
     // Raw events only accumulate a pending delta (cheap: no layout reads or
-    // writes) — the actual DOM work (scrollTop writes, getBoundingClientRect
+    // writes), the actual DOM work (scrollTop writes, getBoundingClientRect
     // checks, card transforms) happens at most once per animation frame in
     // flush(). Doing that work synchronously on every single wheel/touch tick
     // was what caused the glitching under fast scrolling: a rapid burst of
@@ -737,14 +737,14 @@ Grading rules:
       handleDelta(d, pendingSens);
     });
 
-    // IMPORTANT: while captured(), every wheel event is hijacked — including
-    // upward ones — rather than only positive deltas. Real trackpads/mice
+    // IMPORTANT: while captured(), every wheel event is hijacked, including
+    // upward ones, rather than only positive deltas. Real trackpads/mice
     // don't emit perfectly one-signed deltas during a single continuous
     // gesture (momentum deceleration and sensor noise routinely produce a
     // stray negative tick mid-swipe); letting those individual ticks fall
     // through to native scrolling handed control back and forth between two
     // uncoordinated scroll engines from one event to the next, and it was
-    // that tug-of-war over scrollTop — not the parallax math — that showed
+    // that tug-of-war over scrollTop, not the parallax math, that showed
     // up as visible vibration. Handling both directions through our own
     // coalesced/frame-batched path (handleDelta, above) keeps a single
     // authority over scrollTop for the whole gesture; captured() already
@@ -905,7 +905,7 @@ Grading rules:
     const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     let w = 0, h = 0, dpr = Math.min(window.devicePixelRatio || 1, 2);
     let nodes = [];       // free-floating scatter nodes, chained to their nearest neighbors
-    let meshNodes = [];   // jittered-grid nodes, connected to grid neighbors — the "fabric"
+    let meshNodes = [];   // jittered-grid nodes, connected to grid neighbors, the "fabric"
     let mouse = { x: null, y: null };
     let raf = null;
 
@@ -931,7 +931,7 @@ Grading rules:
       return {
         x: biasedX(),
         y: Math.random() * h,
-        z: Math.random(), // depth, 0 = far, 1 = near — drives 3D parallax + size
+        z: Math.random(), // depth, 0 = far, 1 = near, drives 3D parallax + size
         vx: (Math.random() - 0.5) * 0.35,
         vy: (Math.random() - 0.5) * 0.35,
         r: 1.1 + Math.random() * 1.6
@@ -999,7 +999,7 @@ Grading rules:
         if(n.y < -10){ n.y = h + 10; } else if(n.y > h + 10){ n.y = -10; }
       });
 
-      // connect each point to its 3 nearest neighbors — an organic
+      // connect each point to its 3 nearest neighbors, an organic
       // triangulated web instead of a fixed grid pattern
       const K = 3;
       const maxLink = Math.max(90, Math.min(w, h) * 0.14);
@@ -1044,7 +1044,7 @@ Grading rules:
       // Keep the effect strictly in the back: clip out the central content
       // zone (same inset as the photo, which also underlies the headline
       // and sign-in card) so nodes/links never paint across the photo,
-      // headline text, or auth card in front of them — only the side
+      // headline text, or auth card in front of them, only the side
       // margins behind that content are drawn into.
       const clipX = w * 0.12, clipY = h * 0.12, clipW = w * 0.76, clipH = h * 0.76;
       ctx.save();
@@ -1071,7 +1071,7 @@ Grading rules:
       drawMesh();
 
       // for each scatter node, connect to its several nearest neighbors
-      // (not just everything in radius) — that's what turns "two dots and
+      // (not just everything in radius), that's what turns "two dots and
       // a line" into long strung-together constellations threading through
       // many points.
       const K = 5;
@@ -1320,7 +1320,7 @@ Grading rules:
       demoBfProgress.start(typeof BF_PHRASES !== 'undefined' ? BF_PHRASES : ['Pulling together your briefing…'], 92);
       try{
         // A condensed version of the real briefing prompt, scoped to just
-        // one section so the free demo is quick — the full multi-section
+        // one section so the free demo is quick, the full multi-section
         // Tournament Briefing (domestic + international + economic +
         // "what to expect") is what you get once signed in.
         const dateStr = new Date().toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
@@ -1508,7 +1508,7 @@ Grading rules:
     const WORDS = DATA.WORDS;
 
     // Picks `count` distinct random words from the list and joins them into
-    // one line — regenerated fresh every time a row's animation loops, so
+    // one line, regenerated fresh every time a row's animation loops, so
     // the wall never repeats the same phrase twice in a row.
     function randomLineText(wordList){
       const count = 2 + Math.floor(Math.random() * 3); // 2, 3, or 4 words
@@ -1532,7 +1532,7 @@ Grading rules:
 
         // Every row uses the same wobble keyframe but with direction:alternate,
         // so motion continuously reverses at each extreme instead of ever
-        // snapping back to its start — that snap was what caused the visible
+        // snapping back to its start, that snap was what caused the visible
         // "skip" whenever the old animation looped. Half the rows start out
         // of phase (alternate-reverse) so they don't all move in lockstep.
         const direction = (i % 2 === 0) ? 'alternate' : 'alternate-reverse';
@@ -1544,7 +1544,7 @@ Grading rules:
         // Swap in new random words only at the extremes of the wobble (where
         // horizontal velocity is momentarily zero), and crossfade the text via
         // opacity rather than popping it, so the content change is never
-        // visible as a jump — satisfies a smooth, continuous-feeling wall.
+        // visible as a jump, satisfies a smooth, continuous-feeling wall.
         span.addEventListener('animationiteration', () => {
           span.style.opacity = '0';
           setTimeout(() => {
@@ -1560,7 +1560,7 @@ Grading rules:
     fillColumn(rightInner, WORDS, 30, 5);
 
     // Smooth, dramatic depth parallax: the word wall should barely move
-    // relative to the page — scrolling far only shifts it a tiny bit — and
+    // relative to the page, scrolling far only shifts it a tiny bit, and
     // that tiny shift is eased continuously (lerp) each frame instead of
     // being snapped straight to the scroll position, so it never feels
     // jumpy even on fast/trackpad scrolling.
@@ -1586,7 +1586,7 @@ Grading rules:
   // ---- redirect to the app once signed in; landing page itself never ----
   // ---- shows the app UI, so there's no onSignedIn/onSignedOut here. ----
   (async function initAuth(){
-    if(!supabaseClient) return; // no client lib available — let them try the form, it'll surface a clear error
+    if(!supabaseClient) return; // no client lib available, let them try the form, it'll surface a clear error
     const { data } = await supabaseClient.auth.getSession();
     if(data && data.session){
       window.location.href = 'index.html';

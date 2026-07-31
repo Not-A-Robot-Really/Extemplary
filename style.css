@@ -57,7 +57,7 @@
   /* -------- header -------- */
   /* The header bar stays a fixed dark navy in both themes (like the nav
      drawer's own header) so the white brand text, session tag, and
-     account controls always stay legible — only the page body below it
+     account controls always stay legible, only the page body below it
      switches between dark/light. */
   header.topbar{
     padding:22px 24px 16px;
@@ -124,7 +124,7 @@
     transform:translateX(-50%);
     transition:opacity 0.6s ease;
   }
-  /* Single continuous wobble keyframe — always paired with animation-direction:
+  /* Single continuous wobble keyframe, always paired with animation-direction:
      alternate in JS so the motion reverses smoothly at each extreme instead of
      snapping back to the start position, which is what caused the visible
      "skip" every time the animation used to loop. */
@@ -150,7 +150,7 @@
   }
 
   /* -------- grading rubric icon (lives on the PAPER itself, top-right
-     corner of the ballot — distinct from the header icon row) -------- */
+     corner of the ballot, distinct from the header icon row) -------- */
   .rubric-toggle-btn{
     position:absolute;top:14px;right:34px;z-index:3;
     background:none;border:none;cursor:pointer;
@@ -182,11 +182,27 @@
   }
 
   /* -------- home page practice mode switch -------- */
+  .mode-switch-row{
+    display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  }
   .mode-switch{
     display:inline-flex;gap:4px;padding:4px;background:var(--parchment-deep);
     border:1px solid rgba(22,40,60,0.22);border-radius:999px;margin-bottom:6px;
     box-shadow:inset 0 1px 3px rgba(22,40,60,0.14);
   }
+  .start-timer-btn{
+    font-family:var(--font-body);font-size:12.5px;font-weight:700;
+    padding:9px 16px;border-radius:999px;border:1px solid transparent;cursor:pointer;
+    color:#fff;margin-bottom:6px;transition:background .15s, border-color .15s, transform .1s;
+    white-space:nowrap;
+  }
+  .start-timer-btn:active{ transform:scale(0.97); }
+  .start-timer-btn.mode-regular{ background:#1d5c9e;border-color:#123a63; }
+  .start-timer-btn.mode-regular:hover{ background:#164a80; }
+  .start-timer-btn.mode-introdrill{ background:#a3322a;border-color:#7a231c; }
+  .start-timer-btn.mode-introdrill:hover{ background:#872720; }
+  .start-timer-btn.mode-bodydrill{ background:#a6790c;border-color:#7a5a08; }
+  .start-timer-btn.mode-bodydrill:hover{ background:#8a6409; }
   .mode-switch-btn{
     font-family:var(--font-body);font-size:12.5px;font-weight:600;
     padding:8px 15px;border-radius:999px;border:1px solid transparent;background:none;color:var(--charcoal);
@@ -271,7 +287,7 @@
 
   /* When previewing the example ballot from the landing page (not signed
      in), keep authGate in place (so the real app stays covered/inert) and
-     just lift <main> above it — since every other in-app view is still
+     just lift <main> above it, since every other in-app view is still
      `.hidden` at this point, only the example content actually shows. */
   body.previewing-example header.topbar{ display:none !important; }
   body.previewing-example main{ position:relative; z-index:950; max-width:none; margin:0; padding:0; min-height:100vh; }
@@ -429,7 +445,7 @@
   /* ----- feature showcase section ----- */
   /* Below the constellation/hero area the page shifts from the dark ink
      theme to a lighter blue/white one, with speechbackgr22.png as the
-     backdrop — full-bleed via .light-zone-bg (since the sections themselves
+     backdrop, full-bleed via .light-zone-bg (since the sections themselves
      are centered, max-width columns), plus local overrides of the shared
      color variables so card backgrounds, borders, and text all read
      correctly against the lighter backdrop. */
@@ -472,8 +488,7 @@
   .feature-card .fc-icon svg{width:20px;height:20px;}
   /* ---- per-card accent color: each feature card can set --fc-accent
      (inline style) to recolor its icon chip, its hover border, and its
-     hover "pulse" fidget dot, without changing the shared card layout —
-     keeps the grid feeling like one family while giving each card its
+     hover "pulse" fidget dot, without changing the shared card layout, keeps the grid feeling like one family while giving each card its
      own identity (e.g. Rapid Drill: Intro is red, Rapid Drill: Body is
      gold, Streak is flame-orange, Goals is progress-green). ---- */
   .feature-card{ position:relative; }
@@ -939,7 +954,7 @@
   #citationToggle.active{transform:none;color:var(--score-green);}
   /* Header flame icon: never rotates, and only turns orange while the
      user is on the Calendar page (.active) AND currently has an active
-     streak (.has-streak) — both classes toggled in the JS. */
+     streak (.has-streak), both classes toggled in the JS. */
   #streakToggle.active{transform:none;}
   #streakToggle.active.has-streak{color:#ff8a2b;}
   #timerToggle{position:relative;}
@@ -1734,7 +1749,7 @@
   .nav-hamburger-fab svg{transition:opacity .15s;}
   /* Persistent, separately fixed hamburger button. It only shows up while
      the drawer is minimized, so there is always a way to bring the menu
-     back — the drawer's own header slides away with it when collapsed. */
+     back, the drawer's own header slides away with it when collapsed. */
   .nav-hamburger-persistent{
     position:fixed;top:16px;left:16px;z-index:700;
     width:46px;height:46px;border-radius:50%;
@@ -1746,10 +1761,10 @@
   }
   .nav-hamburger-persistent:hover{opacity:0.8;}
   /* The drawer/menu list is shown by default and only tucks itself away
-     when the hamburger button is clicked to minimize it — see
+     when the hamburger button is clicked to minimize it, see
      .nav-drawer-collapsed below. It uses the same solid navy-header /
      white-body pattern as the other panels on the site (e.g. the Prep
-     Timer panel) — no transparency. */
+     Timer panel), no transparency. */
   .nav-drawer{
     position:fixed;top:0;left:0;bottom:0;z-index:690;
     width:270px;max-width:82vw;
@@ -1895,7 +1910,7 @@
      Four nested shapes (outer/mid/inner flame + hot core) plus a couple of
      rising sparks, each animated on its own irregular timing so the fire
      never reads as one uniform pulsing loop. Only "alive" while the user
-     actually has a current streak — JS toggles .flame-live on #streakFabIcon;
+     actually has a current streak, JS toggles .flame-live on #streakFabIcon;
      otherwise the icon sits flat and motionless in a muted grey. */
   #streakFabIcon{overflow:visible;}
   #streakFabIcon .flame-layer{transform-box:fill-box;transform-origin:50% 85%;}
@@ -2284,10 +2299,10 @@
    ONBOARDING TUTORIAL ("cutscene" walkthrough for brand-new accounts)
 
    Important: the app's nav-drawer slides with a CSS transform, which
-   creates its own stacking context — that means bumping z-index on an
+   creates its own stacking context, that means bumping z-index on an
    element INSIDE it can never lift it above things outside it. So instead
    of trying to raise the highlighted target's own z-index/position (which
-   also fought the drawer's stacking context and — worse — put a
+   also fought the drawer's stacking context and, worse, put a
    click-blocking layer over real buttons), the highlight ring/box below
    are separate, body-level elements positioned on top of whatever's being
    pointed at. The real page element itself is never touched, so it always
@@ -2311,7 +2326,7 @@
   /* The oversized 9999px spread IS the spotlight cutout: it paints the
      dim overlay for the entire viewport, clipped to this box's rounded
      rect, so only the outlined area stays at normal brightness while
-     everything else reads dim — instead of the old flat page-wide
+     everything else reads dim, instead of the old flat page-wide
      overlay that dimmed the highlighted box too. */
   box-shadow:0 0 0 9999px rgba(12,16,24,0.65);
   transition:top .15s ease, left .15s ease, width .15s ease, height .15s ease;
@@ -2337,7 +2352,7 @@
    the right half of the screen. */
 #tutBox.tut-dock-left{right:auto;left:22px;transform:translateY(-50%) translateX(-16px);}
 #tutBox.tut-dock-left.tut-visible{transform:translateY(-50%) translateX(0);}
-/* No target on this step (welcome/closing screens) — same side rail,
+/* No target on this step (welcome/closing screens), same side rail,
    just vertically centered with a touch more presence. */
 #tutBox.tut-center{right:22px;left:auto;}
 
@@ -2351,7 +2366,7 @@
    the tour doesn't point at real coach-feedback/trends/goals copy that
    simply doesn't exist for a brand-new user. Keeps the true layout
    (headings, card shapes, bar counts) but swaps every piece of real text
-   for plain colored placeholder blocks. Purely decorative — the real
+   for plain colored placeholder blocks. Purely decorative, the real
    renderHistoryList() always overwrites this the next time the section
    is actually opened. */
 .tut-skel-block{
@@ -2450,7 +2465,7 @@
 .tut-btn-choice.tut-btn-no{background:#7a7264;}
 
 /* On narrower / shorter viewports a side rail eats too much width, so the
-   panel becomes an anchored bottom sheet instead — still never covering
+   panel becomes an anchored bottom sheet instead, still never covering
    the spotlighted area, since the app content sits above it. */
 @media (max-width: 780px), (max-height: 560px){
   #tutBox, #tutBox.tut-dock-left, #tutBox.tut-center{

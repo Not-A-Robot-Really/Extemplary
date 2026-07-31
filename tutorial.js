@@ -51,9 +51,9 @@
     setTimeout(function(){ Tutorial.start(liveEmail); }, 700);
   }
 
-  // index.html (the app) no longer has an #authGate on the page -- signing
+  // NOTE: index.html (the app) no longer has an #authGate on the page. Signing
   // in there just fills in #accountEmail via the app's own onSignedIn().
-  // Watch that element instead, and also check once immediately in case
+  // PAY ATTENTION to that element instead. Also check once immediately in case
   // it was already populated before this script finished loading.
   if(accountEmail){
     new MutationObserver(maybeLaunchAfterSignIn)
@@ -334,9 +334,9 @@
   // whole viewport EXCEPT the rectangle it's drawn around, so whatever is
   // inside the outline reads at full brightness and everything else stays
   // dim, instead of the old flat overlay dimming the target too. The
-  // pulsing ring is only drawn when the current step actually needs a
+  // "pulsing ring" is only drawn when the current step actually needs a
   // real click on the target: for pure "look at this" steps it's just
-  // visual clutter that can block the very thing being shown off, so it's
+  // visual FLUFF that can block the very thing being shown off, so it's
   // left out.
   function paintHighlight(target, showRing){
     var e = el();

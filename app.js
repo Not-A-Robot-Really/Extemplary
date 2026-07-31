@@ -3,7 +3,7 @@ const DATA = window.APP_DATA;
 
   // ===== SUPABASE CONFIG =====
   // Fill these in with YOUR project's values (Project Settings → API).
-  // SUPABASE_ANON_KEY is the public "anon" key. Spefifically it's designed to be
+  // SUPABASE_ANON_KEY is the public "anon" key, it's designed to be
   // exposed in client-side code (Supabase docs make this explicit) and is
   // NOT the same thing as a service_role key or a Groq/Gemini API key. The
   // real Groq/Gemini keys now live only as server-side secrets on the edge
@@ -20,7 +20,7 @@ const DATA = window.APP_DATA;
   // Postgres table ("ballots") plus a Storage bucket ("ballot-videos") in
   // this same Supabase project, both protected by Row Level Security so
   // each signed-in user can only ever read/write their own rows and files.
-  // One-time setup required in the Supabase SQL editor.
+  // One-time setup required in the Supabase SQL editor, see setup.sql.
   const supabaseClient = (window.supabase && window.supabase.createClient)
     ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
     : null;
@@ -70,15 +70,15 @@ const DATA = window.APP_DATA;
     // Tuck how the video was captured ('camera' = recorded live, 'capture' =
     // tab/YouTube capture, 'upload' = a pre-existing file) into the existing
     // delivery_metrics JSON blob, so the "Video ballots this month" goal can
-    // count only rounds that were actually recorded live — distinct from the
+    // count only rounds that were actually recorded live, distinct from the
     // "Practice rounds this month" goal, which counts every completed round.
     // Also tuck in whether this round was an Intro Drill (introduction-only,
     // trimmed rubric) or a Body Drill (single-body-paragraph-only, trimmed
     // rubric) so History can label it distinctly without a schema change.
     const deliveryMetricsWithSource = Object.assign({}, deliveryMetrics || {}, { recordSource: recordSource || 'camera', isIntroDrill: !!isIntroDrill, isBodyDrill: !!isBodyDrill });
-    // Save everything the live results view can show — including the
+    // Save everything the live results view can show, including the
     // color-coded annotated-transcript data (sections + comments) and the
-    // measured vocal delivery metrics. This way, "My History" can reconstruct the
+    // measured vocal delivery metrics, so "My History" can reconstruct the
     // full formatted ballot later, not just a plain-text dump.
     const { error } = await supabaseClient.from('ballots').insert({
       id, user_id: currentUser.id, round, ts: new Date().toISOString(),
@@ -109,7 +109,7 @@ const DATA = window.APP_DATA;
   // ===== STREAK / CALENDAR / GOALS ====================================
   // ===================================================================
   // Two new tables are required in Supabase (same RLS pattern as `ballots`
-  // — user_id, RLS restricting rows to auth.uid()):
+  //user_id, RLS restricting rows to auth.uid()):
   //
   //   calendar_events(id uuid pk, user_id uuid, event_date date,
   //                    title text, notes text, created_at timestamptz)
@@ -119,13 +119,13 @@ const DATA = window.APP_DATA;
   //
   // An "active" day = any day you recorded a ballot, set a goal, or had a
   // goal complete. This is computed entirely client-side from the same
-  // `ballots`/`user_goals` rows already loaded for My History — no extra
+  // `ballots`/`user_goals` rows already loaded for My History, no extra
   // table needed for the streak itself.
   const GOAL_CATEGORIES = DATA.GOAL_CATEGORIES;
   const STREAK_MILESTONES = DATA.STREAK_MILESTONES;
 
   function dateKey(d){
-    // Local-time YYYY-MM-DD (never UTC — avoids the classic "yesterday at
+    // Local-time YYYY-MM-DD (never UTC, avoids the classic "yesterday at
     // 8pm" off-by-one when the user is west of UTC).
     const y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,'0'), day = String(d.getDate()).padStart(2,'0');
     return `${y}-${m}-${day}`;
@@ -134,9 +134,9 @@ const DATA = window.APP_DATA;
     const [y,m,d] = key.split('-').map(Number);
     return new Date(y, m-1, d);
   }
-  // date --> true if anything happened that day: a ballot was recorded, a
+  // date -> true if anything happened that day: a ballot was recorded, a
   // goal was set, or (best-effort, since we don't store a completion date)
-  // a goal is currently complete.
+  // a goal is currently complete, that last case can only credit today.
   function activeDaysByDay(list, goals, events){
     const map = {};
     list.forEach(e => { map[dateKey(new Date(e.ts))] = true; }); // any ballot made
@@ -155,7 +155,7 @@ const DATA = window.APP_DATA;
     const today = new Date(); today.setHours(0,0,0,0);
     let cursor = new Date(today);
     // Today doesn't have to have activity yet for the streak to still be
-    // "alive". Only step back to yesterday as the start if today has no
+    // "alive", only step back to yesterday as the start if today has no
     // recorded activity yet.
     if(!byDay[dateKey(cursor)]) cursor.setDate(cursor.getDate()-1);
     let streak = 0;
@@ -250,7 +250,7 @@ const DATA = window.APP_DATA;
     }
     // Every other goal type (besides streak/tournament, which aren't tied to
     // individual ballots) is measured only against the practice type chosen
-    // when the goal was created "Regular Practice", "Rapid Drill:
+    // when the goal was created, "Regular Practice", "Rapid Drill:
     // Introduction", or "All" (the default for goals saved before this
     // filter existed).
     const scopedList = filterByPracticeType(list, (g.params && g.params.practiceType) || 'all');
@@ -271,7 +271,7 @@ const DATA = window.APP_DATA;
         const d = new Date(e.ts);
         if(d.getFullYear()!==now.getFullYear() || d.getMonth()!==now.getMonth()) return false;
         if(g.type === 'rounds') return true; // every completed round this month, video or not
-        // 'videos': only rounds actually recorded live via camera this month:
+        // 'videos': only rounds actually recorded live via camera this month, 
         // excludes rounds where a video was merely uploaded from a file or
         // captured from a shared tab/YouTube playback, since those aren't a
         // live recording of your own delivery.
@@ -288,7 +288,7 @@ const DATA = window.APP_DATA;
   }
 
   // ---- suggested goals (My Ballot History), derived from the user's own
-  // weaknesses and Coach's Overall Notes — no extra AI call needed since
+  // weaknesses and Coach's Overall Notes, no extra AI call needed since
   // the weakness ranking is already computed from their ballot data. ----
   function computeSuggestedGoals(list, goals, events){
     if(!list.length) return [];
@@ -660,7 +660,7 @@ const DATA = window.APP_DATA;
               <button type="button" class="se-item-del" data-del-event="${e.id}" aria-label="Remove event">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-63"></use></svg>
               </button>
-            </div>`).join('') : '<div class="goals-empty">No upcoming events: add a tournament date above.</div>'}
+            </div>`).join('') : '<div class="goals-empty">No upcoming events — add a tournament date above.</div>'}
         </div>
         ${past.length ? `<div class="se-past-toggle" id="sePastToggle">Show ${past.length} past event${past.length===1?'':'s'}</div>
         <div class="se-list hidden" id="sePastList">
@@ -748,8 +748,8 @@ const DATA = window.APP_DATA;
   }
 
   // Builds a larger inline SVG line chart (values expected 0-100) with a
-  // real labeled coordinate grid — Y ticks at 0/25/50/75/100 ("Score"),
-  // X ticks per round ("Round") — used in the single big chart panel with
+  // real labeled coordinate grid, Y ticks at 0/25/50/75/100 ("Score"),
+  // X ticks per round ("Round"), used in the single big chart panel with
   // a dropdown selector. Returns an empty string if there's nothing to plot.
   function buildTrendChartSvg(values, color, rounds){
     if(!values || !values.length) return '';
@@ -986,7 +986,7 @@ const DATA = window.APP_DATA;
   // ---- overall AI coaching comment (Gemini) ----
   // Synthesizes a short, whole-history coaching note. To avoid burning API
   // calls (and to keep the note stable round-to-round), it's only
-  // regenerated at milestone round counts or after a clear breakthrough —
+  // regenerated at milestone round counts or after a clear breakthrough, 
   // never on every single history view open.
   function isMilestoneCount(n){
     if([1,2,3,5,7,10].includes(n)) return true;
@@ -1067,7 +1067,7 @@ const DATA = window.APP_DATA;
       }
     }catch(err){
       console.warn('Could not generate overall coaching comment', err);
-      // Leave whatever was already shown (cached comment, or nothing) — never block the page on this.
+      // Leave whatever was already shown (cached comment, or nothing), never block the page on this.
     }
   }
 
@@ -1147,7 +1147,7 @@ const DATA = window.APP_DATA;
             const deliveryHtml = buildDeliveryGridHtml(entry.deliveryMetrics);
             const transcriptHtml = buildTranscriptSectionHtml(entry.transcript || '', entry.annotations);
             t.innerHTML = `<div class="hc-full-ballot">${ballotHtml}</div>${deliveryHtml}${transcriptHtml}`;
-            attachCommentListeners(t, ()=>{}); // history has no per-word video sync — just show the note on click
+            attachCommentListeners(t, ()=>{}); // history has no per-word video sync, just show the note on click
           }
           t.classList.remove('hidden');
           toggleBtn.textContent = 'Hide full ballot & transcript';
@@ -1276,7 +1276,7 @@ const DATA = window.APP_DATA;
     const WORDS = DATA.WORDS;
 
     // Picks `count` distinct random words from the list and joins them into
-    // one line — regenerated fresh every time a row's animation loops, so
+    // one line, regenerated fresh every time a row's animation loops, so
     // the wall never repeats the same phrase twice in a row.
     function randomLineText(wordList){
       const count = 2 + Math.floor(Math.random() * 3); // 2, 3, or 4 words
@@ -1300,7 +1300,7 @@ const DATA = window.APP_DATA;
 
         // Every row uses the same wobble keyframe but with direction:alternate,
         // so motion continuously reverses at each extreme instead of ever
-        // snapping back to its start — that snap was what caused the visible
+        // snapping back to its start, that snap was what caused the visible
         // "skip" whenever the old animation looped. Half the rows start out
         // of phase (alternate-reverse) so they don't all move in lockstep.
         const direction = (i % 2 === 0) ? 'alternate' : 'alternate-reverse';
@@ -1312,7 +1312,7 @@ const DATA = window.APP_DATA;
         // Swap in new random words only at the extremes of the wobble (where
         // horizontal velocity is momentarily zero), and crossfade the text via
         // opacity rather than popping it, so the content change is never
-        // visible as a jump — satisfies a smooth, continuous-feeling wall.
+        // visible as a jump, satisfies a smooth, continuous-feeling wall.
         span.addEventListener('animationiteration', () => {
           span.style.opacity = '0';
           setTimeout(() => {
@@ -1328,7 +1328,7 @@ const DATA = window.APP_DATA;
     fillColumn(rightInner, WORDS, 30, 5);
 
     // Smooth, dramatic depth parallax: the word wall should barely move
-    // relative to the page — scrolling far only shifts it a tiny bit — and
+    // relative to the page, scrolling far only shifts it a tiny bit, and
     // that tiny shift is eased continuously (lerp) each frame instead of
     // being snapped straight to the scroll position, so it never feels
     // jumpy even on fast/trackpad scrolling.
@@ -1395,7 +1395,7 @@ const DATA = window.APP_DATA;
   let lastProgrammaticScrollAt = 0;
   function suspendAutoScrollToWord(){
     // Ignore scroll/touch events that fire right after our own
-    // scrollIntoView call — only a scroll the user actually initiated
+    // scrollIntoView call, only a scroll the user actually initiated
     // should suspend auto-scroll.
     if(Date.now() - lastProgrammaticScrollAt < 400) return;
     autoScrollToWordEnabled = false;
@@ -1466,7 +1466,7 @@ const DATA = window.APP_DATA;
     function rotatePhrase(){ phraseIdx++; showPhrase(phraseIdx); }
     return {
       // Begin a fresh run: resets to 0%, climbs toward `capPct` (default 90) and
-      // never gets there on its own — call setStage()/finish() to move it further.
+      // never gets there on its own, call setStage()/finish() to move it further.
       start(initialPhrases, capPct){
         current = 0; target = (capPct === undefined ? 90 : capPct);
         paint();
@@ -1538,7 +1538,7 @@ const DATA = window.APP_DATA;
   // `transform: rotate(...)` and `overflow:hidden`. A CSS transform on an
   // ancestor makes that ancestor the positioning context for any
   // position:fixed descendant (instead of the viewport), and overflow:hidden
-  // then clips it away entirely — so the popover was being positioned wrong
+  // then clips it away entirely, so the popover was being positioned wrong
   // and invisibly clipped every time. Moving it to a direct child of <body>
   // escapes that ancestor entirely so the viewport-relative math in
   // showCommentPopover() actually lines up with the real fixed position.
@@ -1802,12 +1802,12 @@ const DATA = window.APP_DATA;
   // When Intro Drill is active: after a question is confirmed, a 5-minute
   // prep countdown auto-starts (pause/skip/exit available). Recording is
   // then capped at ~1 minute and graded with a trimmed rubric (hook/link/
-  // thesis, clarity, and vocal delivery only — no body/conclusion/evidence
+  // thesis, clarity, and vocal delivery only, no body/conclusion/evidence
   // categories).
   // When Body Drill is active: same shape, but a 10-minute prep countdown
   // and a recording cap of ~2 minutes, capturing just a single body
   // paragraph, graded with a trimmed rubric (structure, argument/analysis,
-  // reasoning, evidence, clarity, and vocal delivery — no hook/intro or
+  // reasoning, evidence, clarity, and vocal delivery, no hook/intro or
   // conclusion categories).
   // practiceMode is the single source of truth for which of the three
   // modes is active; introDrillMode/bodyDrillMode below are kept as
@@ -1834,6 +1834,7 @@ const DATA = window.APP_DATA;
   const modeIntroDrillBtn  = document.getElementById('modeIntroDrillBtn');
   const modeBodyDrillBtn   = document.getElementById('modeBodyDrillBtn');
   const modeSwitchHint     = document.getElementById('modeSwitchHint');
+  const startTimerBtn      = document.getElementById('startTimerBtn');
   const ballotModeLabel    = document.getElementById('ballotModeLabel');
   const ballotTitleEl      = document.getElementById('ballotTitle');
   const introPrepModal     = document.getElementById('introPrepModal');
@@ -1874,6 +1875,9 @@ const DATA = window.APP_DATA;
     ballotModeLabel.classList.toggle('is-body', bodyDrillMode);
     ballotModeLabel.classList.toggle('is-regular', isRegular);
     ballotTitleEl.textContent = introDrillMode ? 'Intro Drill Ballot' : bodyDrillMode ? 'Body Drill Ballot' : 'Practice Ballot';
+    startTimerBtn.classList.toggle('mode-regular', isRegular);
+    startTimerBtn.classList.toggle('mode-introdrill', introDrillMode);
+    startTimerBtn.classList.toggle('mode-bodydrill', bodyDrillMode);
     if(!introDrillMode){
       stopIntroPrepTimer();
       introPrepModal.classList.add('hidden');
@@ -1968,7 +1972,7 @@ const DATA = window.APP_DATA;
     startIntroPrepTimer();
   }
 
-  // ---- Body Drill prep timer (10:00 countdown) — mirrors the Intro Drill
+  // ---- Body Drill prep timer (10:00 countdown), mirrors the Intro Drill
   // prep timer functions above exactly, just with its own state/DOM. ----
   function fmtBodyPrep(s){
     const m = Math.floor(s/60), sec = s%60;
@@ -2080,9 +2084,11 @@ Output ONLY this JSON, nothing else: {"questions":["...","...","..."]}`;
   qModeReceiveBtn.addEventListener('click', () => setQuestionMode('generated'));
 
   // In custom-question mode, Intro Drill's prep countdown should start as
-  // soon as the user finishes typing their question — mirrors the
+  // soon as the user finishes typing their question, mirrors the
   // AI-generated path's confirmGeneratedQuestion() trigger.
-  questionInput.addEventListener('blur', () => maybeStartIntroPrepForQuestion());
+  // Timers no longer auto-start when the question input loses focus. The
+  // user now starts prep explicitly via the "Start Timer" button next to
+  // the practice mode switch (see startSelectedTimer() below).
 
   ['qModeChangeFromCustom','qModeChangeFromCat','qModeChangeFromPick','qModeChangeFromConfirmed'].forEach(id => {
     const el = document.getElementById(id);
@@ -2133,11 +2139,11 @@ Output ONLY this JSON, nothing else: {"questions":["...","...","..."]}`;
 
   // Question generation uses Gemini (Google AI Studio) with the built-in
   // Google Search grounding tool. The real Gemini key never lives in this
-  // file — it's a Supabase secret, and this call goes through the
+  // file, it's a Supabase secret, and this call goes through the
   // `gemini-generate` edge function proxy (see SUPABASE_URL below).
   const GEMINI_MODEL = 'gemini-2.5-flash';
 
-  // Gemini calls go through the edge function's own server-side keys —
+  // Gemini calls go through the edge function's own server-side keys, 
   // there's no user-supplied override key anymore.
   function geminiKeyList(){
     return [];
@@ -2191,7 +2197,7 @@ Output ONLY this JSON, nothing else: {"questions":["...","...","..."]}`;
         ? data.questions.filter(q => typeof q === 'string' && q.trim()).map(q => q.trim())
         : [];
     }catch(parseErr){
-      // Response was likely truncated or had stray text around the JSON —
+      // Response was likely truncated or had stray text around the JSON, 
       // fall back to pulling out individual quoted strings directly rather
       // than failing the whole generation.
       const strMatches = [...cleaned.matchAll(/"((?:[^"\\]|\\.)*)"/g)].map(m => m[1].replace(/\\"/g,'"').trim());
@@ -2279,14 +2285,13 @@ Output ONLY this JSON, nothing else: {"questions":["...","...","..."]}`;
     questionError.style.display = 'none';
     qModeError.style.display = 'none';
     questionInput.classList.remove('error');
-    maybeStartIntroPrepForQuestion();
   }
 
   // ===== TOURNAMENT BRIEFING =====
   // Gives someone with a tournament coming up a quick, Gemini-drafted (with
   // live Google Search grounding) rundown of recent domestic, international,
   // and economic news, plus the kinds of questions/angles likely to show up
-  // at extemp that day — tuned by how soon their tournament actually is.
+  // at extemp that day, tuned by how soon their tournament actually is.
   // Opens in place of the Official Practice Ballot, the same way the
   // helpToggle ("?") button swaps in the example ballot.
   const briefingToggle    = document.getElementById('briefingToggle');
@@ -2406,7 +2411,7 @@ Formatting rules: plain text only, with the sole exception of wrapping key terms
 
   // Very small, purpose-built markdown-ish renderer for the specific
   // "## Header" / "- Label: description with **key terms**" shape we asked
-  // Gemini to produce. Not a general markdown parser — just enough to make
+  // Gemini to produce. Not a general markdown parser, just enough to make
   // the briefing readable: the label becomes a bolded link to a Google
   // search for that topic, and any "**...**" spans in the description
   // become bolded key terms (asterisks never shown literally).
@@ -2531,7 +2536,7 @@ Formatting rules: plain text only, with the sole exception of wrapping key terms
   // ===== CITATION CHECKER =====
   // Verifies a specific claim-and-source pair (e.g. "On May 23rd, 2026,
   // Trump said inflation went down 25%, according to CNN") using Gemini +
-  // live Google Search grounding — the same edge-function-backed
+  // live Google Search grounding, the same edge-function-backed
   // callGemini() used by question generation and the tournament briefing
   // above. Opens in place of the Official Practice Ballot, the same way
   // helpToggle/briefingToggle do.
@@ -2626,7 +2631,7 @@ Grading rules:
 - Never fabricate a URL — only include sourceUrl if it's a real link you found via search, and leave it as an empty string otherwise.`;
   }
 
-  // Parses Gemini's JSON verdict, and — critically — never trusts a
+  // Parses Gemini's JSON verdict, and, critically, never trusts a
   // model-typed URL at face value: it's only shown to the user if it
   // actually matches one of the real links Google Search grounding
   // surfaced for this request (candidate.groundingMetadata.groundingChunks).
@@ -2761,7 +2766,7 @@ Grading rules:
       await navigator.clipboard.writeText(text);
       showToast('Briefing copied to clipboard');
     }catch(e){
-      // Clipboard API can be blocked (e.g. non-HTTPS or embedded preview) —
+      // Clipboard API can be blocked (e.g. non-HTTPS or embedded preview), 
       // fall back to a temporary textarea + execCommand copy.
       const ta = document.createElement('textarea');
       ta.value = text;
@@ -2828,29 +2833,6 @@ Grading rules:
     showToast('Briefing PDF downloaded');
   });
 
-  // Once a question is locked in while Intro Drill or Body Drill mode is
-  // active, the prep countdown auto-starts exactly once per question
-  // (guarded by this flag so re-checking requireQuestion() on every click,
-  // e.g. the upload/record buttons, doesn't relaunch the modal on top of
-  // itself).
-  let introPrepStartedForCurrentQuestion = false;
-  let bodyPrepStartedForCurrentQuestion = false;
-
-  function maybeStartIntroPrepForQuestion(){
-    if(!questionInput.value.trim()) return;
-    if(introDrillMode){
-      if(introPrepStartedForCurrentQuestion) return;
-      if(introPrepRunning || introPrepSecondsLeft !== INTRO_PREP_SECONDS) return;
-      introPrepStartedForCurrentQuestion = true;
-      openIntroPrepModal();
-    }else if(bodyDrillMode){
-      if(bodyPrepStartedForCurrentQuestion) return;
-      if(bodyPrepRunning || bodyPrepSecondsLeft !== BODY_PREP_SECONDS) return;
-      bodyPrepStartedForCurrentQuestion = true;
-      openBodyPrepModal();
-    }
-  }
-
   function requireQuestion(){
     const q = questionInput.value.trim();
     if(!q){
@@ -2871,7 +2853,6 @@ Grading rules:
     questionInput.classList.remove('error');
     if(youtubeQuestionError) youtubeQuestionError.style.display = 'none';
     if(recordQuestionError) recordQuestionError.style.display = 'none';
-    maybeStartIntroPrepForQuestion();
     return q;
   }
 
@@ -3143,7 +3124,7 @@ Grading rules:
     rubricPanel.style.top = (rect.bottom + 8) + 'px';
   }
   // Swaps which of the two tables is shown and colors/labels the header bar
-  // to match — used both for the real practice mode (Home page) and for
+  // to match, used both for the real practice mode (Home page) and for
   // someone just browsing a rubric for reference (every other page).
   function displayRubricMode(mode){
     const isIntro = mode === 'introdrill';
@@ -3194,11 +3175,11 @@ Grading rules:
 
   // The rubric icon only makes sense on the paper for Home/Record, My Ballot
   // History, the Example Ballot, and the post-submission Feedback/Results
-  // view — hide it everywhere else (Review, Processing, Streak, Briefing,
+  // view, hide it everywhere else (Review, Processing, Streak, Briefing,
   // Citation Checker) by hooking into showView().
   const RUBRIC_VISIBLE_VIEWS = [viewRecord, viewResults, viewExample, viewHistory];
   // The ballot header itself (title/Event/Round/Speaker/Judge/mode label)
-  // only makes sense for a single round in progress or on display — Home
+  // only makes sense for a single round in progress or on display, Home
   // and a finished Results ballot. It's hidden everywhere else (My Ballot
   // History's multi-round list, Streak Calendar, Tournament Briefing,
   // Citation Checker, Review, Processing, and the sample Example ballot,
@@ -3222,7 +3203,7 @@ Grading rules:
   // ===== Hamburger nav menu (semi-transparent drawer, shown by default) =====
   // The drawer now stays open/visible at all times by default so the moving
   // wall background is always visible through it. Clicking the hamburger no
-  // longer opens/closes a backdrop-dimmed overlay — it just minimizes
+  // longer opens/closes a backdrop-dimmed overlay, it just minimizes
   // (slides away) or restores the drawer in place. The hamburger button
   // itself sits at the top of the left-side menu, doing double duty as
   // both the toggle and the drawer's visual "head" (no separate close X).
@@ -3263,18 +3244,18 @@ Grading rules:
   });
   // "Home" returns to the default Official Practice Ballot view, closing
   // whatever overlay view (History, Briefing, Citation Checker, Example
-  // Ballot) is currently open — same effect as each view's own Back button.
+  // Ballot) is currently open, same effect as each view's own Back button.
   document.getElementById('navHomeBtn').addEventListener('click', () => {
     showView(viewRecord);
   });
   // Every other menu item just triggers the click of the header icon it
   // mirrors, so it always stays perfectly in sync with that button's own
-  // open/close/toggle logic — nothing to duplicate or fall out of date.
+  // open/close/toggle logic, nothing to duplicate or fall out of date.
   navMenuPanel.querySelectorAll('.nav-menu-item[data-target]').forEach(item => {
     item.addEventListener('click', (e) => {
       // Without this, the original click event keeps bubbling up to
       // document AFTER targetBtn.click() below has already opened the
-      // panel — and the document-level "click outside closes the panel"
+      // panel, and the document-level "click outside closes the panel"
       // listeners (for settings/timer/shortcuts) see that bubbling click
       // (whose target is this menu item, i.e. outside the panel) and
       // immediately close the panel that was just opened. Stopping
@@ -3292,7 +3273,7 @@ Grading rules:
   // class (this file already adds/removes .active on open/close for every
   // button below except themeToggle, which isn't a page/panel that stays
   // "open"). A MutationObserver means the sidebar never has to duplicate
-  // any open/close logic — it just reflects whatever's already true.
+  // any open/close logic, it just reflects whatever's already true.
   navMenuPanel.querySelectorAll('.nav-menu-item[data-target]').forEach(item => {
     const targetId = item.getAttribute('data-target');
     if(targetId === 'themeToggle') return;
@@ -3576,6 +3557,33 @@ Grading rules:
   });
   window.addEventListener('resize', () => { if(timerOpen) positionTimerPanel(); });
 
+  // The single "Start Timer" button next to the practice mode switch. It
+  // never fires on its own, the user has to press it, and which timer it
+  // kicks off depends entirely on the practice mode currently selected:
+  // Regular Practice opens the 30-minute prep panel, Rapid Drill:
+  // Introduction opens the 5-minute intro prep modal, and Rapid Drill:
+  // Body opens the 10-minute body prep modal.
+  function startSelectedTimer(){
+    if(!questionInput.value.trim()){
+      requireQuestion();
+      return;
+    }
+    if(introDrillMode){
+      if(introPrepModal.classList.contains('hidden')) openIntroPrepModal();
+    }else if(bodyDrillMode){
+      if(bodyPrepModal.classList.contains('hidden')) openBodyPrepModal();
+    }else{
+      if(!timerOpen){
+        timerOpen = true;
+        if(!timerPositioned){ positionTimerPanel(); timerPositioned = true; }
+        timerPanel.classList.remove('hidden');
+        timerToggle.classList.add('active');
+      }
+      startPrepTimer();
+    }
+  }
+  startTimerBtn.addEventListener('click', startSelectedTimer);
+
   function renderSignalList(){
     const sorted = [...timeSignals].sort((a,b)=>a.seconds-b.seconds);
     timeSignals = sorted;
@@ -3669,7 +3677,7 @@ Grading rules:
   });
 
   // ===== SUBMISSION =====
-  // Real provider API keys no longer live in this file — they're Supabase
+  // Real provider API keys no longer live in this file, they're Supabase
   // secrets on the `groq-chat` / `groq-transcribe` edge functions. Anything
   // typed into Settings ("API key override") is just forwarded to those
   // functions as `overrideKey` and tried first; if omitted, the functions
@@ -3724,7 +3732,7 @@ Grading rules:
     for(let i=0;i<ch0.length;i++) out[i] = (ch0[i]+ch1[i])/2;
     return out;
   }
-  // Lightweight autocorrelation pitch detector — good enough to track relative
+  // Lightweight autocorrelation pitch detector, good enough to track relative
   // pitch movement (tone changes) frame to frame, not lab-grade Hz accuracy.
   function estimatePitch(buf, sampleRate){
     const SIZE = buf.length;
@@ -3837,11 +3845,11 @@ Grading rules:
   // A multi-minute recording is a video+audio container and can blow past that
   // easily. Whisper only needs the audio anyway, so we decode the recording
   // once, strip the video, downsample to 16kHz mono, and re-encode as a
-  // compact WAV — typically a 10-20x size reduction over the raw recording.
+  // compact WAV, typically a 10-20x size reduction over the raw recording.
   // If a single speech is still too long even after compression, we split
   // the audio into multiple chunks and transcribe them one at a time,
   // stitching the text and word timestamps back together.
-  const GROQ_UPLOAD_SAFE_BYTES = 8 * 1024 * 1024;  // conservative per-chunk budget — well under Groq's ~25MB cap and any proxy/edge-function body-size limit in front of it
+  const GROQ_UPLOAD_SAFE_BYTES = 8 * 1024 * 1024;  // conservative per-chunk budget, well under Groq's ~25MB cap and any proxy/edge-function body-size limit in front of it
   const GROQ_UPLOAD_MIN_BYTES  = 512 * 1024;        // floor so we don't recurse forever on a genuinely broken upload path
 
   async function decodeAudioFromBlob(blob){
@@ -3912,7 +3920,7 @@ Grading rules:
 
   // Tries an async call with each supplied override key in turn (falling
   // back to a final "no override" attempt so the edge function's own
-  // server-side Groq keys still get tried) — fully transparent, no user
+  // server-side Groq keys still get tried), fully transparent, no user
   // action required. Transient-looking failures (rate limits, momentary
   // network blips, 5xx from Groq) get a couple of short-backoff retries on
   // the SAME key before moving on to the next one, since those usually
@@ -3967,7 +3975,7 @@ Grading rules:
   async function transcribeChunkResilient(audioBuffer, startSec, endSec, keys, labelPrefix, onProgress){
     const wav = await audioBufferSliceToWav(audioBuffer, startSec, endSec);
     if(wav.size > GROQ_UPLOAD_SAFE_BYTES && (endSec - startSec) > 20 && wav.size/2 > GROQ_UPLOAD_MIN_BYTES){
-      // Pre-emptively split before even trying — no point uploading something
+      // Pre-emptively split before even trying, no point uploading something
       // we already know is over budget.
       const mid = startSec + (endSec - startSec) / 2;
       const [a, b] = await Promise.all([
@@ -3985,7 +3993,7 @@ Grading rules:
       const isTooLarge = s.includes(':413:') || s.toLowerCase().includes('request entity too large');
       if(isTooLarge && (endSec - startSec) > 5 && wav.size/2 > GROQ_UPLOAD_MIN_BYTES){
         // Still rejected even under our budget (a stricter real-world limit
-        // than we assumed) — self-heal by halving and retrying each half.
+        // than we assumed), self-heal by halving and retrying each half.
         const mid = startSec + (endSec - startSec) / 2;
         const [a, b] = await Promise.all([
           transcribeChunkResilient(audioBuffer, startSec, mid, keys, labelPrefix+'a', onProgress),
@@ -3999,9 +4007,9 @@ Grading rules:
 
   // Transcribes a (possibly long) decoded AudioBuffer. Always compresses to
   // 16kHz mono WAV and splits it into small, FIXED-duration chunks (60s each
-  // — about 1.9MB apiece at 16kHz/16-bit mono, far under any plausible
+  //about 1.9MB apiece at 16kHz/16-bit mono, far under any plausible
   // upload limit) rather than trying to estimate a safe chunk size from
-  // measured bytes — a fixed duration can never be wrong the way a size
+  // measured bytes, a fixed duration can never be wrong the way a size
   // estimate can. Chunks are transcribed by a pool of workers, one per
   // available API key, running in parallel. If one key hits a rate limit or
   // any other error on its chunk, that request falls back through the other
@@ -4009,10 +4017,10 @@ Grading rules:
   // their own chunks the whole time, so one key stalling out never blocks
   // the rest of the transcription. Any chunk that somehow still comes back
   // "too large" is self-healed by being recursively split further (see
-  // transcribeChunkResilient above) — so this should never fail purely on
+  // transcribeChunkResilient above), so this should never fail purely on
   // size for a normal-length speech. Results are stitched back together
   // with correct absolute timestamps.
-  const FIXED_CHUNK_SECONDS = 60; // ≈1.9MB per chunk at 16kHz/16-bit mono — small enough for any realistic limit
+  const FIXED_CHUNK_SECONDS = 60; // ≈1.9MB per chunk at 16kHz/16-bit mono, small enough for any realistic limit
   async function transcribeLongAudio(audioBuffer, keysIn, onStatus){
     const keys = [...new Set((keysIn || []).filter(Boolean))];
     if(!keys.length) keys.push(null); // fall through to the edge function's own server-side keys
@@ -4043,7 +4051,7 @@ Grading rules:
           completed / chunkRanges.length
         );
         // Try this worker's own key first, then fall back through every
-        // other available key (in order) if it fails for any reason —
+        // other available key (in order) if it fails for any reason, 
         // rate limit, auth, transient error, etc.
         const orderedKeys = [myKey, ...keys.filter(k => k !== myKey)];
         const r = await transcribeChunkResilient(audioBuffer, s, e, orderedKeys, 'part'+myIdx, null);
@@ -4087,7 +4095,7 @@ Grading rules:
   // ---- Text-based filler word + stutter/repetition counter ----
   // Runs client-side against the raw transcript text (no audio needed) so the
   // Vocal Delivery panel always has hard numbers, even if waveform analysis
-  // fails. These are an approximate, deterministic word-list scan — the AI
+  // fails. These are an approximate, deterministic word-list scan, the AI
   // judge is told to treat them as a starting point and still do its own read.
   const FILLER_SINGLE_WORDS = DATA.FILLER_SINGLE_WORDS;
   const FILLER_PHRASES = DATA.FILLER_PHRASES;
@@ -4150,7 +4158,7 @@ Grading rules:
   // each AI-quoted phrase inside the real, untouched transcript text and layers
   // on section-labeled paragraph blocks + clickable color-coded comment spans
   // (Google-Docs-style). Any individual quote that can't be located is simply
-  // skipped — never breaks the rest of the rendering. Falls back to plain text
+  // skipped, never breaks the rest of the rendering. Falls back to plain text
   // if no annotations are available at all.
   // Tokenizes plainTranscript into word-like substrings (in document order,
   // with their character offsets) and zips them 1:1 against the word-level
@@ -4198,7 +4206,7 @@ Grading rules:
   }
 
   // Finds the playback time (seconds) of the first word token starting at or
-  // after the given character offset — used to seek the video when a
+  // after the given character offset, used to seek the video when a
   // judge's-note span is clicked.
   function timeForCharOffset(charOffset){
     for(let i = 0; i < wordTokenSpans.length; i++){
@@ -4225,8 +4233,8 @@ Grading rules:
 
     // Locate section breakpoints (search progressively forward so repeated
     // wording earlier in the speech doesn't get matched twice). If a quote
-    // can't be found after the previous section's cursor — e.g. the AI's
-    // quoted phrase slightly overlaps the previous section — retry from the
+    // can't be found after the previous section's cursor, e.g. the AI's
+    // quoted phrase slightly overlaps the previous section, retry from the
     // very start of the transcript so one bad match doesn't silently delete
     // an entire section from the breakdown (this is what was causing Body 1
     // to occasionally vanish into the Introduction).
@@ -4373,7 +4381,7 @@ Grading rules:
     if(newEl){
       newEl.classList.add('tw-active');
       // Only auto-scroll the page to follow the highlighted word if the
-      // user hasn't manually scrolled away — otherwise this would yank
+      // user hasn't manually scrolled away, otherwise this would yank
       // the viewport back and trap them on the highlighted word,
       // preventing them from scrolling up to reach the pause/stop
       // controls or anything else on the page.
@@ -4401,7 +4409,7 @@ Grading rules:
   // actual speech audio: a copy of this clip was analyzed for real speech
   // vs. pause activity (silence/voice-activity detection), and each of the
   // transcript's 1114 words was placed at its proportional position within
-  // the actual spoken (non-pause) time — so the highlight now tracks real
+  // the actual spoken (non-pause) time, so the highlight now tracks real
   // pauses and pacing changes in the speech, not a flat assumed rate. Values
   // are seconds elapsed since the speech began (0:20 in the source video).
   // The playback/highlight/click-to-seek mechanics are otherwise identical
@@ -4444,7 +4452,7 @@ Grading rules:
   let ytListenTimer = null;
 
   function loadYouTubeIframeAPI(){
-    ytApiReady = true; // nothing to load — the raw postMessage protocol needs no script
+    ytApiReady = true; // nothing to load, the raw postMessage protocol needs no script
   }
 
   function ytPostCommand(func, args){
@@ -4600,7 +4608,7 @@ Grading rules:
     ytPollTimer = setInterval(()=>{
       if(!ytPlayer || !ytPlayer.getCurrentTime) return;
       const rawTime = ytPlayer.getCurrentTime();
-      // Clamp to the actual speech window (0:20–8:18) — everything outside
+      // Clamp to the actual speech window (0:20–8:18), everything outside
       // it is intro/other content, not the speech itself.
       if(rawTime >= EXAMPLE_SPEECH_END){
         ytPlayer.pauseVideo();
@@ -4693,7 +4701,7 @@ Grading rules:
     });
   }
 
-  // Delegated click handler for plain (non-comment) transcript words — clicks
+  // Delegated click handler for plain (non-comment) transcript words, clicks
   // on words wrapped inside an .ann-comment span are handled by the comment
   // listener above instead (it stops propagation before this ever fires).
   transcriptBody.addEventListener('click', (e)=>{
@@ -4724,7 +4732,7 @@ Grading rules:
 
     // Measure the popover's REAL rendered width. The CSS only sets
     // max-width:300px (not a fixed width), so short comments render a
-    // narrower bubble — using a hardcoded 300 here was the bug: it clamped
+    // narrower bubble, using a hardcoded 300 here was the bug: it clamped
     // position and placed the arrow as if every popover were exactly 300px
     // wide, so on narrower bubbles the arrow landed outside the actual
     // bubble, floating over the transcript text instead of on the comment.
@@ -4814,7 +4822,7 @@ Grading rules:
   // ===== EXAMPLE BALLOT (static, shown via the "?" help button) =====
   // Built directly from a real round (Afghanistan war question) so a new
   // user can see exactly what a finished ballot looks like before recording
-  // their first speech. No network calls — everything below is hardcoded.
+  // their first speech. No network calls, everything below is hardcoded.
   const EXAMPLE_CATEGORIES = DATA.EXAMPLE_CATEGORIES;
   const EXAMPLE_TOTAL = EXAMPLE_CATEGORIES.reduce((s,c)=>s+c.score,0);
   const EXAMPLE_RANK = DATA.EXAMPLE_RANK;
@@ -4874,7 +4882,7 @@ Grading rules:
         <div class="dv-sub">${escHtml(String(c.sub))}</div>
       </div>`).join('');
 
-    // Transcript with color-coded, clickable judge comments — same markup/
+    // Transcript with color-coded, clickable judge comments, same markup/
     // classes the real annotated transcript view uses (ann-comment + colors).
     const T = EXAMPLE_TRANSCRIPT_HTML;
     const body = document.getElementById('exampleTranscriptBody');
@@ -4883,7 +4891,7 @@ Grading rules:
     // Lay the real, audio-derived word timestamps over the transcript (see
     // EXAMPLE_WORD_TIMESTAMPS note above EXAMPLE_YT_VIDEO_ID) so the same
     // click-to-seek and live-highlight mechanics as a real round work here
-    // too — but tracking actual pauses/pacing in the speech this time.
+    // too, but tracking actual pauses/pacing in the speech this time.
     exampleActiveWordEl = null;
     exampleWordSpans = wrapWordsInDom(body, EXAMPLE_SPEECH_START, 1); // placeholder pace, overwritten below
     exampleWordEls = exampleWordSpans.map(s => s.el);
@@ -4976,7 +4984,7 @@ Grading rules:
         (main, sub, frac)=>{
           statusText.textContent = main; statusSub.textContent = sub;
           // frac (0-1), when provided, reflects progress through multi-part
-          // transcription — map it onto the 12%-40% band for this stage.
+          // transcription, map it onto the 12%-40% band for this stage.
           const pct = (typeof frac === 'number') ? 12 + frac * 28 : 40;
           pipelineProgress.setStage(pct);
         }
@@ -5038,7 +5046,7 @@ Grading rules:
   }
 
   // Makes a second, best-effort Groq call to get structural section labels and
-  // inline comment quotes for the transcript, as JSON. Never throws — returns
+  // inline comment quotes for the transcript, as JSON. Never throws, returns
   // null on any failure, and the UI gracefully falls back to a plain transcript.
   async function fetchTranscriptAnnotations(transcript, key, key2, key3){
     try{
@@ -5076,7 +5084,7 @@ Grading rules:
       };
     }catch(e){
       console.warn('Transcript annotation unavailable:', e);
-      return null; // annotation is a bonus feature — never block the ballot on it
+      return null; // annotation is a bonus feature, never block the ballot on it
     }
   }
 
@@ -5110,7 +5118,7 @@ Grading rules:
 
   // Finds the exact [start, end) character range in `original` matching `quote`,
   // searching only after `fromNormIdx` in the normalized text. Returns null if
-  // no match is found (the AI's quote simply gets skipped — graceful degrade).
+  // no match is found (the AI's quote simply gets skipped, graceful degrade).
   function locateQuote(quote, normMap, fromNormIdx){
     const nq = normalizeQuote(quote);
     if(!nq) return null;
@@ -5236,9 +5244,9 @@ Grading rules:
   }
 
   // ---- shared ballot-formatting builders (used by My History so saved
-  // ballots render exactly like the live results view — scored category
+  // ballots render exactly like the live results view, scored category
   // cards, stamps, delivery metrics, and the color-coded annotated
-  // transcript — instead of a plain text dump) ----
+  // transcript, instead of a plain text dump) ----
   function buildBallotBodyHtml(parsed, rawFeedback){
     let html = '';
     if(parsed.categories.length >= 3 && parsed.total !== null){
@@ -5311,7 +5319,7 @@ Grading rules:
   // as the live results view, but as a standalone HTML string targeting an
   // arbitrary container (used inside each My History card). Temporarily
   // clears the shared wordTokenSpans state so escWithWords degrades to
-  // plain escaped text — history entries don't have per-word timestamps
+  // plain escaped text, history entries don't have per-word timestamps
   // saved, so there's nothing to sync a video to here, just the
   // color-coded comments and section labels themselves.
   function buildAnnotatedTranscriptHtml(plainTranscript, ann){
@@ -5457,10 +5465,10 @@ Grading rules:
     // Vocal delivery analysis panel (measured client-side, independent of the AI)
     renderDeliveryMetrics(lastDeliveryMetrics);
 
-    // Synced video playback panel — load the just-recorded clip
+    // Synced video playback panel, load the just-recorded clip
     setupResultsPlayback();
 
-    // Full inline transcript — annotated with section labels + clickable comments when available
+    // Full inline transcript, annotated with section labels + clickable comments when available
     renderTranscript(transcript, lastTranscriptAnnotations);
     tsMeta_round.textContent = roundNo;
 
@@ -5750,7 +5758,7 @@ Grading rules:
       }
       throw new Error('no-share-api');
     }catch(e){
-      if(e && e.name === 'AbortError') return; // user cancelled — no message needed
+      if(e && e.name === 'AbortError') return; // user cancelled, no message needed
       // Fallback: copy a shareable summary to the clipboard instead
       try{
         await navigator.clipboard.writeText(text + '\n\n' + fileText);

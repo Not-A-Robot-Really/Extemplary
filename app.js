@@ -2439,7 +2439,7 @@ Output ONLY this JSON, nothing else: {"questions":["...","...","..."]}`;
     let searchVerified = false;
 
     try{
-      const candidate = await callGemini(prompt);
+      const candidate = await callGemini(prompt, 3200);
       questions = extractQuestions(candidate);
       // groundingMetadata is present when Gemini actually used Google Search;
       // use that to decide whether to show the "unverified" warning.

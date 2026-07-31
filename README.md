@@ -82,15 +82,15 @@ Sign up → Generate questions → Write a speech → Record your speech → Rec
 
 - **Goals** | Set some attainable goals to achieve in the future! Either hit a streak length, beat an overall score threshold, beat a threshold in one specific rubric category, complete a number of practice rounds, or live video ballots this month. Each goal tracks its own live progress. My History also contains *Suggested Goals* that are auto-generated from your own weakest rubric categories, current average score, and current streak, so there's always a sensible next target waiting for you.
 
-- **Session score tracking & export** | Precise score tracking within a session **and** over many rounds, plus export to `.txt`, printable ballot, video download, and shareable round links.
+- **Session score tracking & export** | Precise score tracking within a session. You can also export the **entire** speech ballot report to either a `.txt` file or a printable ballot. You also can download & export your speech recording.
 
-- **Extemp Rubric** | A custom, comprehensive rubric that includes all aspects of an extemp speech for grading speeches.
+- **Extemp Rubric** | A custom and comprehensive rubric that includes all aspects of an extemp speech for grading speeches.
 
 - **Installable PWA** | Works offline for timing/recording; add to your phone's home screen.
 
-- **Tutorial** | The first time you create an account, an easy to follow tutorial gides you through every part of the app, allowing the user to try every feature the site offers. The tutorial highlights actual buttons, waits for user input and before moving on. It covers **every single feature** currently present on the Extension
+- **Tutorial** | The *first* time you create an account, an easy to follow tutorial gides you through every part of the app, allowing the user to try every feature the site offers. The tutorial highlights actual buttons, waits for user input and before moving on. It covers **every single feature** currently present on the Extension
 
-Note: Extemplary requires camera and microphone access for recording speeches (duh).
+Note: Extemplary requires camera and microphone access for recording speeches (duh, unless you upload the speech).
 
 ## Deployment 📦
 ---
@@ -117,10 +117,10 @@ Extemplary also serves as a browser extension (Manifest V3). Just pin it to your
 
 ### Notes:
 - Every YouTube video in the extension (the video of the example speech) is unable to be view directly in the extension. You will have to visit the external link. **This issue does not exist on GitHub pages**.
-- `Extemplary.html` was split into separate `app.js`, `landing-app.js`, `tutorial.js`, `data.js`, `index.html`, and `landingsite.html` files so it can be packaged as an extension file.
-- `background.js` opens/focuses the landing site when you open the Extemplary extension.
-- The extension only requests the `storage` and `windows` permissions, plus host access to the Supabase project it talks to.
-- If you'd rather just use the hosted web version, that's completely fine too, nothing about the extension changes how the site works, it's just a second way to open the same app.
+- `Extemplary.html` was split into separate `app.js`, `landing-app.js`, `tutorial.js`, `data.js`, `index.html`, and `landingsite.html` files so it can be easily packaged as an extension file.
+- `background.js` opens the landing site when you open the Extemplary extension.
+- The extension only requests the `storage` and `windows` permissions, plus host access to its Supabase project.
+- If you'd rather just use the web version on GitHub pages, that's completely fine. Nothing about the extension changes how the site works except for no YouTube embeds.
 
 ## Landing Site 🏁
 ---

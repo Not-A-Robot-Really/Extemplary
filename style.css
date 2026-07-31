@@ -367,27 +367,52 @@
 
   .auth-card{
     width:100%;max-width:432px;background:var(--parchment);color:var(--charcoal);
-    border-radius:8px;box-shadow:0 12px 40px var(--shadow);padding:38px 40px 34px;
+    border-radius:3px;box-shadow:0 18px 50px rgba(0,0,0,0.4);padding:34px 40px 34px;
     border:1px solid var(--ink-line);margin-top:18px;position:relative;z-index:2;
     animation:authCardIn 0.7s cubic-bezier(.2,.8,.3,1) both;
+    overflow:hidden;
+  }
+  /* Folded top-right corner, same fold used on the ballot paper in the
+     app itself, so the very first thing you see on the site is already
+     styled like the same "paper" the rest of Extemplary is built around. */
+  .auth-card::before{
+    content:"";position:absolute;top:0;right:0;
+    width:0;height:0;border-style:solid;border-width:0 22px 22px 0;
+    border-color:transparent var(--parchment-deep) transparent transparent;
+    box-shadow:-1px 1px 3px rgba(0,0,0,0.15);
   }
   @keyframes authCardIn{
     from{opacity:0;transform:translateY(22px) scale(0.97);}
     to{opacity:1;transform:translateY(0) scale(1);}
   }
   .auth-card > *{opacity:0;animation:authFieldIn 0.5s ease both;}
-  .auth-card > *:nth-child(1){animation-delay:0.25s;}
-  .auth-card > *:nth-child(2){animation-delay:0.32s;}
-  .auth-card > *:nth-child(3){animation-delay:0.39s;}
-  .auth-card > *:nth-child(4){animation-delay:0.46s;}
+  .auth-card > *:nth-child(1){animation-delay:0.18s;}
+  .auth-card > *:nth-child(2){animation-delay:0.25s;}
+  .auth-card > *:nth-child(3){animation-delay:0.32s;}
+  .auth-card > *:nth-child(4){animation-delay:0.39s;}
+  .auth-card > *:nth-child(5){animation-delay:0.46s;}
   @keyframes authFieldIn{
     from{opacity:0;transform:translateY(8px);}
     to{opacity:1;transform:translateY(0);}
   }
+  /* Small masthead eyebrow above the wordmark: rule-flanked uppercase
+     mono text, the same "stamped kicker" language used for badges and
+     seals throughout the app, instead of dropping straight into a bare
+     logo like a generic SaaS card. */
+  .auth-kicker{
+    display:flex;align-items:center;gap:10px;margin:0 0 16px;
+  }
+  .auth-kicker::before, .auth-kicker::after{
+    content:"";flex:1;height:1px;background:var(--rule);
+  }
+  .auth-kicker span{
+    font-family:var(--font-mono);font-size:10px;letter-spacing:2px;text-transform:uppercase;
+    color:var(--brass);font-weight:700;white-space:nowrap;
+  }
   .auth-card-logo{
     font-family:var(--font-display);letter-spacing:0.5px;line-height:1;
-    display:flex;align-items:center;justify-content:center;text-align:center;margin:0 0 18px;
-    color:var(--charcoal);font-size:38px;
+    display:flex;align-items:center;justify-content:center;text-align:center;margin:0 0 10px;
+    color:var(--charcoal);font-size:36px;
   }
   .auth-card-logo .mark-e-wrap{
     position:relative;top:0.12em;display:inline-flex;align-items:center;justify-content:center;
@@ -395,19 +420,24 @@
   }
   .auth-card-logo .mark-e-wrap svg{width:100%;height:100%;display:block;}
   .auth-card .auth-sub{
-    font-family:var(--font-body);font-size:13px;color:#c0293f;margin:0 0 20px;
-    letter-spacing:-0.1px;line-height:1.4;
+    font-family:var(--font-body);font-size:13px;color:var(--slate);margin:0 0 22px;
+    letter-spacing:-0.1px;line-height:1.4;text-align:center;
   }
-  .auth-tabs{display:flex;border-bottom:1px solid var(--rule);margin-bottom:18px;position:relative;}
+  .auth-tabs{
+    display:flex;position:relative;margin-bottom:22px;
+    background:var(--parchment-deep);border:1px solid var(--rule);border-radius:5px;padding:3px;
+  }
   .auth-tab{
-    flex:1;text-align:center;padding:8px 4px;font-family:var(--font-mono);font-size:12px;
+    flex:1;text-align:center;padding:8px 4px;font-family:var(--font-mono);font-size:11.5px;
     letter-spacing:0.5px;text-transform:uppercase;color:var(--slate);background:none;border:none;
-    cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;
+    cursor:pointer;position:relative;z-index:1;border-radius:3px;font-weight:600;
     transition:color 0.25s ease;
   }
-  .auth-tab.active{color:var(--crimson);font-weight:600;}
+  .auth-tab.active{color:#fff;}
   .auth-tab-indicator{
-    position:absolute;bottom:-1px;left:0;width:50%;height:2px;background:var(--crimson);
+    position:absolute;top:3px;left:3px;bottom:3px;width:calc(50% - 3px);
+    background:var(--charcoal);border-radius:3px;
+    box-shadow:0 1px 3px rgba(0,0,0,0.25);
     transition:transform 0.3s cubic-bezier(.3,.7,.3,1);
   }
   .auth-field{margin-bottom:14px;}
@@ -415,21 +445,25 @@
   .auth-field input{
     width:100%;padding:10px 12px;border:1px solid var(--rule);border-radius:4px;
     font-family:var(--font-body);font-size:14px;background:#fff;color:var(--charcoal);
-    transition:border-color 0.2s ease;
+    transition:border-color 0.2s ease, box-shadow 0.2s ease;
   }
   .auth-field input:hover{border-color:var(--slate);}
-  .auth-field input:focus-visible{outline:2px solid var(--brass);outline-offset:1px;}
+  .auth-field input:focus-visible{outline:none;border-color:var(--brass);box-shadow:0 0 0 3px rgba(198,155,74,0.18);}
   .auth-error{
     font-family:var(--font-mono);font-size:12px;color:#a3322a;margin:-4px 0 12px;display:none;
+    padding-left:9px;border-left:2px solid #a3322a;line-height:1.4;
   }
   .auth-error.visible{display:block;}
   .auth-submit{
     width:100%;padding:12px;border:none;border-radius:4px;background:var(--crimson);
     color:var(--on-accent);font-family:var(--font-mono);font-size:13px;letter-spacing:0.5px;
     text-transform:uppercase;cursor:pointer;font-weight:600;
-    position:relative;overflow:hidden;transition:background 0.2s ease;
+    position:relative;overflow:hidden;transition:background 0.2s ease, transform 0.15s ease, box-shadow 0.15s ease;
+    box-shadow:0 2px 6px rgba(0,0,0,0.18);
   }
-  .auth-submit:hover{background:var(--crimson-deep);}
+  .auth-submit:hover{background:var(--crimson-deep);transform:translateY(-1px);box-shadow:0 4px 10px rgba(0,0,0,0.22);}
+  .auth-submit:active{transform:translateY(0);box-shadow:0 1px 3px rgba(0,0,0,0.2);}
+  .auth-submit:disabled{opacity:0.65;cursor:default;transform:none;}
 
   .landing-scroll-cue{
     position:absolute;bottom:22px;left:50%;transform:translateX(-50%);

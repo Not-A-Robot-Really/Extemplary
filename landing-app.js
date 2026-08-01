@@ -344,7 +344,39 @@ Grading rules:
   const authConfirmWrap = document.getElementById('authConfirmWrap');
   const authError = document.getElementById('authError');
   const authSubmitBtn = document.getElementById('authSubmitBtn');
+  const authCardEl = document.querySelector('.auth-card');
   let authMode = 'login'; // 'login' | 'signup'
+
+  // The card is normally vertically centered by its flex parent
+  // (.landing-hero), but that means switching to "Sign Up" (which adds
+  // the confirm-password field and makes the card taller) shifts the
+  // TOP edge upward too, since flexbox re-centers around the box's
+  // current height. To keep the top edge fixed and only let the bottom
+  // grow, we measure where the card naturally centers in its shorter
+  // "Log In" state once, then pin it there with a fixed margin-top and
+  // align-self:flex-start (which doesn't re-center on height changes).
+  function lockAuthCardTop(){
+    if(!authCardEl) return;
+    var wasSignup = authConfirmWrap && !authConfirmWrap.classList.contains('hidden');
+    if(wasSignup) authConfirmWrap.classList.add('hidden');
+    authCardEl.style.alignSelf = '';
+    authCardEl.style.marginTop = '';
+    var hero = authCardEl.closest('.landing-hero');
+    if(hero){
+      var heroRect = hero.getBoundingClientRect();
+      var cardRect = authCardEl.getBoundingClientRect();
+      var offset = Math.max(0, cardRect.top - heroRect.top);
+      authCardEl.style.alignSelf = 'flex-start';
+      authCardEl.style.marginTop = offset + 'px';
+    }
+    if(wasSignup) authConfirmWrap.classList.remove('hidden');
+  }
+  lockAuthCardTop();
+  let authLockResizeTimer = null;
+  window.addEventListener('resize', function(){
+    clearTimeout(authLockResizeTimer);
+    authLockResizeTimer = setTimeout(lockAuthCardTop, 150);
+  });
 
   function setAuthMode(mode){
     authMode = mode;

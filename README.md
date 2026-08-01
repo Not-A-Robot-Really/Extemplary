@@ -54,27 +54,51 @@ Sign up → Generate questions → Write a speech → Record your speech → Rec
 
 - **Record a round** | Generate 3 realistic practice questions, run a prep timer, then record on your webcam for your speech. There are actually 3 practice modes to pick from right on the record screen: **Regular Practice** (30 minute prep, 7 minute round, graded on 8 categories), **Rapid Drill: Introduction** (5 minute prep, 1 minute intro, graded on 5 categories), and **Rapid Drill: Body** (10 minute prep, a 2 minute body paragraph, graded on 6 categories). Each mode has its own timer and own rubric.
 
+![record](Images/recordround.png)
+
 - **AI judged Ballot** | Extemplary Transcribes your speech, analyzes vocal delivery from the extracted audio, and scores you on a custom made **8-category NSDA extemp rubric**, all using the model: Llama 3.3 70B on Groq.
+
+![rubric1](Images/rubric1.png)
+
+- **Tournament Briefings** | Extemplary has a built in feature that allows you to generate a comprehensive overview on current events (domestic, international, *and* economic). This overview contains important news in the US, internationally, and in the economy. Every bullet point/piece of current event also contains a link if users need to research/learn more about that spefific topic topic. There is also a section for "What to Expect at Your Tournament" are options to download/save for later viewing.
+
+![briefingimg](Images/tourneyoverview.png)
 
 - **Vocal Delivery Analysis** | Each speech will be measured for volume, emphasis, tone/pitch variety, pauses, pace (WPM), filler words, and stutters/repetitions.
 
+![test](Images/vdanalysis.png)
+
 - **Annotated transcript** | An automated transcript with personalized comments (🟥 = big mistake, 🟦 = comment, 🟩 = brilliant move, 🟨 = minor error).
+
+![annotation](Images/comments1.png)
 
 - **Watch & Read Along** | The video of your speech plays along with the transcript. Click any word to jump the video to that **exact** moment (precise down to the tenth of a second). The current word will be highlighted live as it plays so you can comfortably follow along.
 
 - **Citation checker** | Before you use a statistic/quote or want to verify someone else's claim and evidence, paste the claim, the date, and the source in the citation checker and Extemplary will search the web to verify it. The result could either be **TRUE**, **FALSE**, or **UNVERIFIED**, with a 2-3 sentence explanation and a link to the source of the claim/evidence. If you're not sure of the exact date, you can swap any unknown digit for `?` (ex. `06/??/2025`) for a range of possible dates.
 
+![sschecker](Images/sschecker.png)
+
 - **Example ballot** | An example sample round (with speech and ballot) so first-time users can see what a finished round looks like before recording their own, including the same synced playback experience.
+
+![feedback](Images/ballotfeedback.png)
 
 - **Accounts & sign-in** | Sign up with an email and password to use Extemplary and track your progress. Sessions are saved automatically. If you close the tab and come back later, you will be still signed in. Sign out any time from the account menu.
 
 - **Cloud-saved ballot history** | Every completed round, whether it is regular practice or a rapid drill, is saved and automatically stored onto your account and available from any device you sign in on, via the **My History** page. Each entry is tagged with which of the 3 practice modes it came from, and a dropdown filter lets you narrow the whole page (round list, trend graphs, and averages included) down to just Regular Practice, Rapid Drill: Introduction, or Rapid Drill: Body instead of always seeing everything mixed together.
 
+![bhistory1](Images/ballothistory1.png)
+
 - **Coach's Overall Notes** | Comprehensive feedback of your Extemp journey that finds patterns across your *entire* practice history, naming your biggest recurring strength, your biggest recurring area to improve, and one concrete next step. It's designed to update automatically at designated milestone rounds or whenever you record a particularly brillian round.
+
+![coach](Images/coachnotes.png)
 
 - **Trends across your ballots** | The "History view" combines & stores your average score in each rubric category across every round you've recorded, with per-category bars plus your top overall strengths and weaknesses.
 
-- **Performance Graphs** | Line graphs illustrating your overall score, sorted by individual rubric category and type of practice, plotted round-by-round across all of your speeches. This not only helps with tracking your progress in a specific area across months of hard work, but also serves as a representation of your speeches as a whole. 
+![tredn](Images/trend.png)
+
+- **Line Graphs** | Line graphs illustrating your overall score, sorted by individual rubric category and type of practice, plotted round-by-round across all of your speeches. This not only helps with tracking your progress in a specific area across months of hard work, but also serves as a representation of your speeches as a whole.
+
+![lineg](Images/lineg.png)
 
 - **Streak & Calendar** | A practice streak: When you record a ballot, set a goal, or complete one keeps the streak alive. Your current streak lives in a flame counter fixed to the top of the app, and the full **Streak Calendar** view lays out a month-by-month history of active days, and your current & best streak.
 
@@ -89,6 +113,8 @@ Sign up → Generate questions → Write a speech → Record your speech → Rec
 - **Installable PWA** | Works offline for timing/recording; add to your phone's home screen.
 
 - **Tutorial** | The *first* time you create an account, an easy to follow tutorial gides you through every part of the app, allowing the user to try every feature the site offers. The tutorial highlights actual buttons, waits for user input and before moving on. It covers **every single feature** currently present on the Extension
+
+![tutorial_image](Images/tutorial1.png)
 
 Note: Extemplary requires camera and microphone access for recording speeches (duh, unless you upload the speech).
 

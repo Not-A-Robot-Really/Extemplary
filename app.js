@@ -1,7 +1,7 @@
 const DATA = window.APP_DATA;
 (function(){
 
-  // ------ SUPABASE CONFIG ------
+  // ===== SUPABASE CONFIG =====
   // Fill these in with YOUR project's values (Project Settings → API).
   // SUPABASE_ANON_KEY is the public "anon" key, it's designed to be
   // exposed in client-side code (Supabase docs make this explicit) and is
@@ -12,7 +12,7 @@ const DATA = window.APP_DATA;
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlpZWhobWVsZm90d2tkcXhwbHVnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzNDYxMzEsImV4cCI6MjA5ODkyMjEzMX0.8QzN1LJmr70Sidxp2RsOq-z3S_NX5lN9QWTr45CSaHo';
   const SUPABASE_FUNCTIONS_URL = SUPABASE_URL + '/functions/v1';
 
-  // ----- Auth/Verification & SAVED PROGRESS ----
+  // ===== AUTH + SAVED PROGRESS =====
   // Real accounts via Supabase Auth (email + password). Session tokens are
   // persisted by supabase-js itself (localStorage), which is what makes
   // "stay signed in across tabs/reopens" work with zero extra code.
@@ -53,8 +53,7 @@ const DATA = window.APP_DATA;
       isBodyDrill: !!(row.delivery_metrics && row.delivery_metrics.isBodyDrill)
     }));
   }
-  // **NOTE: DON'T FORGET TO INCLUDE row.delivery_metrics in line 50 to ~57
-  
+
   // Records one completed round (called from renderResults once feedback
   // has been parsed) so it shows up later in "My History".
   async function recordBallotToHistory(parsed, feedback, transcript, question, round, videoBlob, annotations, deliveryMetrics, recordSource, isIntroDrill, isBodyDrill){
@@ -2165,8 +2164,11 @@ const DATA = window.APP_DATA;
     { label:'Medium-Easy Plus', instructions:'Keep this a MEDIUM-EASY-PLUS question, tied to a specific, actively-developing domestic regulatory or corporate story that requires having followed recent business/tech news, not just the general topic.', example:'Will the FTC\'s latest antitrust suit change how Big Tech companies acquire startups?' },
     { label:'Easy-Leaning Medium', instructions:'Keep this an EASY-LEANING-MEDIUM question, tied to a specific piece of domestic economic legislation or its expiring provisions, requiring more than surface awareness of the policy debate.', example:'Should Congress renew the expiring provisions of the CHIPS Act\'s semiconductor subsidies?' },
     { label:'Medium-Minus', instructions:'Keep this a MEDIUM-MINUS question, built around a well-known international institution but tied to a specific recent funding or leadership development within it.', example:'Can the World Health Organization close the funding gap left by the U.S. withdrawal?' },
+    { label:'Medium-Minus Plus', instructions:'Keep this a MEDIUM-MINUS-PLUS question, built around a specific U.S. space-policy program and a concrete funding or scheduling development within it, not just general space news.', example:'Will NASA\'s commercial low-Earth-orbit station timeline survive further funding delays before the ISS retires?' },
+    { label:'Medium-Near', instructions:'Keep this a question just below true MEDIUM, built around a specific pending court ruling or legal dispute with concrete business/governance implications, requiring more than headline familiarity with corporate law.', example:'Could a pending Delaware Chancery Court ruling reshape how founders retain voting control after IPOs?' },
     { label:'Medium', instructions:'Keep this a MEDIUM-difficulty question: it should require knowing a specific recent event, policy, or somewhat-less-famous public figure, but still be findable in mainstream news coverage from the last couple weeks — not obscure enough to require specialty trade press.', example:'Should the European Central Bank cut rates again after its latest inflation report?' },
     { label:'Medium-Plus', instructions:'Keep this a MEDIUM-PLUS question, built around a specific international legal or diplomatic development that requires having followed the story beyond a single headline.', example:'Will the International Criminal Court\'s arrest warrant change how governments host wanted officials at summits?' },
+    { label:'Medium-Plus Two', instructions:'Keep this a MEDIUM-PLUS question, built around a specific trade/environmental regulation and its concrete effect on a named export industry, requiring more than general awareness of the policy area.', example:'Will a new EU deforestation-import rule force Brazilian soy exporters to overhaul their supply chains?' },
     { label:'Medium-Hard', instructions:'Keep this a MEDIUM-HARD question, tied to a specific domestic regulatory or health-policy debate that requires having followed the story somewhat closely, not just the headline.', example:'Should the FDA speed up approval timelines for next-generation weight-loss drugs?' },
     { label:'Medium-Leaning Hard', instructions:'Keep this a MEDIUM question that leans slightly hard, built around a specific financial-regulatory body and a narrow rule change that requires having read beyond general headlines to recognize.', example:'Should the Basel Committee tighten capital rules for regional banks after last year\'s mid-size bank failures?' },
     { label:'Mostly Hard', instructions:'Keep this a MOSTLY-HARD question, built around a specific regional economic institution or trade bloc and a narrow, less mainstream development within it.', example:'Can the African Continental Free Trade Area deliver tariff-free trade before member states abandon its timeline?' },
@@ -2178,7 +2180,7 @@ const DATA = window.APP_DATA;
     { label:'Very Hard-Leaning Plus', instructions:'Keep this a question just below the hardest tier, built around a specific regional political bloc or forum and a narrow diplomatic strain within it, requiring specialist-level regional news familiarity.', example:'Can the Pacific Islands Forum hold together after Kiribati\'s renewed ties with Beijing strain the bloc?' },
     { label:'Very Hard', instructions:'Keep this a VERY HARD, deeply niche question, built around an extremely obscure bilateral agreement, minor deal, or narrow trade-press-only development that virtually no one outside specialist coverage would recognize. Prefer a specific treaty, compact, or agreement over a \'can this leader survive\' framing.', example:'Will the U.S.–Micronesia Compact of Free Association renewal survive this session\'s congressional budget fights?' },
     { label:'Extremely Hard-Leaning', instructions:'Keep this an EXTREMELY niche question, built around an extremely obscure regional figure and a disputed political development that virtually no one outside specialist coverage would recognize.', example:'Can Comoros President Azali Assoumani consolidate power after his disputed reelection and the opposition\'s boycott?' },
-    { label:'Extremely Hard', instructions:'Keep this an EXTREMELY HARD question — the most niche tier available, built around a highly specific minor trade-law ruling, obscure regulatory dispute, or narrow diplomatic/legal development that only someone reading specialist/trade press coverage within the last few days would recognize. Go more obscure than the \'Very Hard\' tier, and prefer an institutional/legal/regulatory angle over a \'can this leader survive\' framing.', example:'Will a WTO fisheries-subsidy ruling force the Faroe Islands to renegotiate its mackerel quota with the EU?' }
+    { label:'Extremely Hard', instructions:'Keep this an EXTREMELY HARD question — the most niche tier available, built around a highly specific, emerging international regulatory dispute (deep-sea mining rights, orbital slot allocation, submarine cable law, river-basin water treaties, etc.) that only someone reading specialist/trade press coverage within the last few days would recognize. Go more obscure than the \'Very Hard\' tier, and prefer an institutional/legal/regulatory angle over a \'can this leader survive\' framing.', example:'Will the International Seabed Authority\'s stalled mining code push Pacific nations toward issuing unilateral deep-sea mining licenses?' }
   ];
   let selectedCategory = null;
   let lastGenDifficultyIdx = 2;

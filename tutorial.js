@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Extemplary: first-run onboarding tutorial ("cutscene" walkthrough)
+   Extemplary: first-run tutorial (cutscene) walkthrough
 
    Runs ONLY the first time a brand-new account is created. Never runs for
    people logging in to an existing account, and never runs again once
@@ -11,6 +11,8 @@
    them, and watching the app's own hidden/shown classes to know when a
    real action (a goal was saved, a briefing came back, a question was
    picked, etc.) actually happened.
+
+   Remember: KEEP skelPct AT (55, 90), it'll look wonky if it isn't
    ========================================================================== */
 (function(){
   "use strict";
@@ -288,7 +290,7 @@
     paintGoalsSkeleton();
     paintListSkeleton();
   }
-
+  // Don't use 'tutInputRow' for 39e
   function el(){ // dom refs, grabbed lazily since app builds some content late
     return {
       dim: byId('tutDim'), box: byId('tutBox'), ring: byId('tutRing'), hlbox: byId('tutHighlightBox'),
@@ -943,8 +945,8 @@
       spotlight: '#qDifficultyStep',
       before: function(){
         var s = byId('qDifficultySlider');
-        if(s && s.value !== '10'){
-          s.value = '10';
+        if(s && s.value !== '15'){
+          s.value = '15';
           s.dispatchEvent(new Event('input', { bubbles: true }));
         }
       },

@@ -190,7 +190,7 @@ You'll land on the sign in screen (landing page) the first time you open the app
 
 Every round completed while signed in is saved **automatically**. Click on any past round in the "My Ballot History" page to rewatch the video, re-read the transcript, or re-read the full judge's feedback, read your Coach's Overall Notes, view your progress graphs, general strengths/weaknesses and view & add **Goals** (with auto-suggested ones based on your own weak spots).
 
-### API keys 🔑
+## API keys 🔑
 ---
 The app utilizes default Groq and Gemini API keys for transcription, judging, and question/briefing/citation generation. **As of now, the API keys now cannot be replaced by your own**.
 
@@ -201,7 +201,7 @@ Accounts and cloud history run on a Supabase project.
 If you fork this project and want your *own* Supabase backend rather than the one it comes with...
 **Create a new Supabase project**: run `setup.sql` there, and swap in your project's URL and anon key in `SUPABASE_URL` / `SUPABASE_ANON_KEY` near the top of `<script>` in `Extemplary.html`. The anon key is meant to be public, Row Level Security. It is *not* meant to be key secrecy.
 
-### Email delivery 🌐
+## Email delivery 🌐
 ---
 Supabase's built in email sender only allows 2 emails/hour. Other email verification services like Resend, Brevo, or SendGrid all are free, but all require a valid domain. Therefore, there is **currently no built in email verification system for sign ups**. However, we are trying to resolve the issue soon.
 

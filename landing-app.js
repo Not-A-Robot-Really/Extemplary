@@ -365,7 +365,7 @@ Grading rules:
     if(hero){
       var heroRect = hero.getBoundingClientRect();
       var cardRect = authCardEl.getBoundingClientRect();
-      var offset = Math.max(0, cardRect.top - heroRect.top);
+      var offset = Math.max(0, (cardRect.top - heroRect.top) - 48);
       authCardEl.style.alignSelf = 'flex-start';
       authCardEl.style.marginTop = offset + 'px';
     }

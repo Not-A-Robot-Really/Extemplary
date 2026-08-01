@@ -116,6 +116,8 @@ Sign up → Generate questions → Write a speech → Record your speech → Rec
 
 - **Extemp Rubric** | A custom and comprehensive rubric that includes all aspects of an extemp speech for grading speeches.
 
+![rubric1](Images/rubric1.png)
+
 - **Installable PWA** | Works offline for timing/recording; add to your phone's home screen.
 
 - **Tutorial** | The *first* time you create an account, an easy to follow tutorial gides you through every part of the app, allowing the user to try every feature the site offers. The tutorial highlights actual buttons, waits for user input and before moving on. It covers **every single feature** currently present on the Extension

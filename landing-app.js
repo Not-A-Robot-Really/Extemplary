@@ -359,15 +359,20 @@ Grading rules:
     if(!authCardEl) return;
     var wasSignup = authConfirmWrap && !authConfirmWrap.classList.contains('hidden');
     if(wasSignup) authConfirmWrap.classList.add('hidden');
-    authCardEl.style.alignSelf = '';
-    authCardEl.style.marginTop = '';
     var hero = authCardEl.closest('.landing-hero');
     if(hero){
-      var heroRect = hero.getBoundingClientRect();
-      var cardRect = authCardEl.getBoundingClientRect();
-      var offset = Math.max(0, (cardRect.top - heroRect.top) - 48);
+      var photo = hero.querySelector('.landing-hero-photo');
+      // Measure the flex-start baseline (top of the hero's content box)
+      // by pinning the card there with zero margin first.
       authCardEl.style.alignSelf = 'flex-start';
-      authCardEl.style.marginTop = offset + 'px';
+      authCardEl.style.marginTop = '0px';
+      var baselineTop = authCardEl.getBoundingClientRect().top;
+      var cardHeight = authCardEl.getBoundingClientRect().height;
+      var photoRect = photo ? photo.getBoundingClientRect() : hero.getBoundingClientRect();
+      var photoCenterY = photoRect.top + photoRect.height / 2;
+      var desiredTop = photoCenterY - cardHeight / 2;
+      var marginTop = Math.max(0, desiredTop - baselineTop);
+      authCardEl.style.marginTop = marginTop + 'px';
     }
     if(wasSignup) authConfirmWrap.classList.remove('hidden');
   }

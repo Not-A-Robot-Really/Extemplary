@@ -89,14 +89,14 @@
   .mark-e-wrap svg{width:100%;height:100%;display:block;}
   .brand .brand-desc{
     font-family:var(--font-mono);font-size:11.5px;letter-spacing:0.3px;
-    color:#ffffff;line-height:1.4;
+    color:#ffffff;max-width:360px;line-height:1.4;
     align-self:center;
     padding-left:14px;border-left:1px solid rgba(255,255,255,0.2);
-    display:flex;align-items:center;flex-wrap:nowrap;white-space:nowrap;align-self:stretch;
+    display:flex;align-items:center;flex-wrap:nowrap;align-self:stretch;
   }
   .brand-username{
     font-family:var(--font-display);font-size:22px;font-weight:700;letter-spacing:0.3px;
-    color:#ffffff;margin-left:8px;white-space:nowrap;flex-shrink:0;
+    color:#ffffff;margin-left:18px;white-space:nowrap;flex-shrink:0;
     cursor:pointer;background:none;border:none;padding:0;line-height:1;
     transition:opacity .15s ease;
   }
@@ -2655,4 +2655,5 @@
 @media (max-width:640px){
   #tutBox{max-width:88vw;min-width:0;left:6vw !important;right:6vw !important;}
 }
-/* Remember keep @media max width 640 px !
+
+/* Remember @media MAX WIDTH 640 px!

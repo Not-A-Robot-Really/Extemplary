@@ -27,6 +27,7 @@
     /* text that sits on solid accent-colored chips/buttons (always light, constant) */
     --on-accent:#f8f6f0;
     --watermark:rgba(255,255,255,0.09);
+    --watermark-hover:rgba(255,255,255,0.55);
   }
   :root[data-theme="light"]{
     --ink:#dde3ea;
@@ -38,6 +39,7 @@
     --chrome-text:#182233;
     --chrome-text-dim:#54637a;
     --watermark:rgba(24,34,51,0.08);
+    --watermark-hover:rgba(24,34,51,0.5);
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
@@ -130,8 +132,11 @@
     font-family:var(--font-mono);font-size:13px;line-height:1.5;letter-spacing:4px;text-transform:uppercase;
     color:var(--watermark);white-space:nowrap;font-weight:600;
     transform:translateX(-50%);
-    transition:opacity 0.6s ease;
+    transition:opacity 0.6s ease, color 0.25s ease;
+    pointer-events:auto;
+    cursor:default;
   }
+  .side-word:hover{color:var(--watermark-hover);}
   /* Single continuous wobble keyframe, always paired with animation-direction:
      alternate in JS so the motion reverses smoothly at each extreme instead of
      snapping back to the start position, which is what caused the visible

@@ -60,28 +60,86 @@ const DATA = window.APP_DATA;
     { key: 'question_generator',label: 'Question Generator', limit: 40 },
     { key: 'current_events',    label: 'Current Events',     limit: 15 }
   ];
+  const RATE_LIMIT_ROBOT_ICON_SVG =
+    '<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+    '<rect x="5" y="9" width="14" height="10" rx="2"></rect>' +
+    '<line x1="12" y1="9" x2="12" y2="5"></line>' +
+    '<circle cx="12" cy="3" r="1.4"></circle>' +
+    '<circle cx="9" cy="14" r="1.2" fill="currentColor" stroke="none"></circle>' +
+    '<circle cx="15" cy="14" r="1.2" fill="currentColor" stroke="none"></circle>' +
+    '<line x1="5" y1="13" x2="3" y2="13"></line>' +
+    '<line x1="19" y1="13" x2="21" y2="13"></line>' +
+    '</svg>';
   const RateLimitUI = (function(){
-    let built = false, panelEl, btnEl, barsEl;
+    let built = false, panelEl, btnEl, barsEl, styleInjected = false;
+    function injectStyles(){
+      if(styleInjected) return;
+      styleInjected = true;
+      const style = document.createElement('style');
+      style.textContent = `
+        .ai-usage-btn{
+          position:fixed;left:16px;bottom:16px;z-index:99999;
+          width:29px;height:29px;box-sizing:border-box;padding:5px;border-radius:4px;
+          display:flex;align-items:center;justify-content:center;
+          background:var(--charcoal);border:1px solid var(--charcoal);color:var(--on-accent);
+          cursor:pointer;box-shadow:none;transition:color .15s, background .15s;
+        }
+        .ai-usage-btn:hover{color:var(--crimson-bright);}
+        .ai-usage-panel{
+          position:fixed;left:16px;bottom:56px;z-index:99999;
+          width:270px;max-width:calc(100vw - 32px);
+          background:var(--parchment);border:1px solid var(--charcoal);border-radius:5px;
+          box-shadow:none;display:none;overflow:hidden;
+        }
+        .ai-usage-panel .sp-head{
+          background:var(--charcoal);padding:13px 16px;
+          font-family:var(--font-display);font-size:15px;letter-spacing:0.3px;
+          color:var(--on-accent);border-bottom:3px double var(--crimson);
+        }
+        .ai-usage-panel .sp-body{padding:14px 16px 12px;}
+        .ai-usage-row{margin-bottom:11px;}
+        .ai-usage-row:last-child{margin-bottom:0;}
+        .ai-usage-label-row{
+          display:flex;justify-content:space-between;align-items:baseline;
+          font-family:var(--font-body);font-size:12.5px;color:var(--ink);margin-bottom:5px;
+        }
+        .ai-usage-count{
+          font-family:var(--font-mono);font-size:10px;letter-spacing:0.5px;color:var(--slate);
+        }
+        .ai-usage-track{height:6px;border-radius:3px;background:var(--rule);overflow:hidden;}
+        .ai-usage-fill{height:100%;transition:width 0.3s ease;}
+        .ai-usage-note{
+          font-family:var(--font-body);font-size:11px;color:var(--slate);
+          margin-top:10px;padding-top:10px;border-top:1px solid var(--rule);
+        }
+      `;
+      document.head.appendChild(style);
+    }
     function build(){
       if(built) return;
       built = true;
+      injectStyles();
       btnEl = document.createElement('button');
       btnEl.type = 'button';
+      btnEl.className = 'ai-usage-btn';
+      btnEl.setAttribute('aria-label', "Today's AI usage");
       btnEl.title = "Today's AI usage";
-      btnEl.textContent = '📊';
-      btnEl.style.cssText = 'position:fixed;left:16px;bottom:16px;z-index:99999;width:46px;height:46px;border-radius:50%;border:none;background:#1e2327;color:#fff;font-size:19px;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,0.35);';
+      btnEl.innerHTML = RATE_LIMIT_ROBOT_ICON_SVG;
       panelEl = document.createElement('div');
-      panelEl.style.cssText = 'position:fixed;left:16px;bottom:70px;z-index:99999;width:270px;max-width:calc(100vw - 32px);background:#fff;border-radius:12px;box-shadow:0 6px 24px rgba(0,0,0,0.3);padding:14px 16px;display:none;font-family:inherit;';
-      const title = document.createElement('div');
-      title.textContent = "Today's AI usage";
-      title.style.cssText = 'font-weight:700;margin-bottom:12px;font-size:0.95em;color:#1e2327;';
-      panelEl.appendChild(title);
+      panelEl.className = 'ai-usage-panel';
+      const head = document.createElement('div');
+      head.className = 'sp-head';
+      head.textContent = "Today's AI Usage";
+      panelEl.appendChild(head);
+      const body = document.createElement('div');
+      body.className = 'sp-body';
       barsEl = document.createElement('div');
-      panelEl.appendChild(barsEl);
+      body.appendChild(barsEl);
       const note = document.createElement('div');
+      note.className = 'ai-usage-note';
       note.textContent = 'Resets daily at midnight UTC.';
-      note.style.cssText = 'font-size:0.72em;color:#888;margin-top:6px;';
-      panelEl.appendChild(note);
+      body.appendChild(note);
+      panelEl.appendChild(body);
       document.body.appendChild(btnEl);
       document.body.appendChild(panelEl);
       btnEl.addEventListener('click', (e) => {
@@ -103,15 +161,16 @@ const DATA = window.APP_DATA;
         const count = counts[cat.key] || 0;
         const pct = Math.min(100, Math.round((count / cat.limit) * 100));
         const row = document.createElement('div');
-        row.style.cssText = 'margin-bottom:10px;';
+        row.className = 'ai-usage-row';
         const labelRow = document.createElement('div');
-        labelRow.style.cssText = 'display:flex;justify-content:space-between;font-size:0.78em;color:#444;margin-bottom:4px;';
-        labelRow.innerHTML = `<span>${cat.label}</span><span>${count}/${cat.limit}</span>`;
+        labelRow.className = 'ai-usage-label-row';
+        labelRow.innerHTML = `<span>${cat.label}</span><span class="ai-usage-count">${count}/${cat.limit}</span>`;
         const track = document.createElement('div');
-        track.style.cssText = 'height:7px;border-radius:4px;background:#eee;overflow:hidden;';
+        track.className = 'ai-usage-track';
         const fill = document.createElement('div');
-        const color = pct >= 100 ? '#d64545' : pct >= 75 ? '#e0a020' : '#2f9e44';
-        fill.style.cssText = `height:100%;width:${pct}%;background:${color};transition:width 0.3s ease;`;
+        fill.className = 'ai-usage-fill';
+        const color = pct >= 100 ? 'var(--score-red)' : pct >= 75 ? 'var(--score-yellow)' : 'var(--score-green)';
+        fill.style.cssText = `width:${pct}%;background:${color};`;
         track.appendChild(fill);
         row.appendChild(labelRow);
         row.appendChild(track);

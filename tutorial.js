@@ -404,6 +404,7 @@
     var e = el();
     e.dim.classList.add('tut-visible');
     e.box.classList.add('tut-visible');
+    e.box.classList.toggle('tut-box-formal', !!step.formal);
     e.avatar.textContent = step.avatar || '🎙️';
     e.title.textContent = step.title;
     e.text.innerHTML = step.html || '';
@@ -610,10 +611,11 @@
 
     // ---- Capture the speaker's name -----------------------------------------
     steps.push({
-      title: "What should we call you?",
-      avatar: '👋',
+      title: "Official Speaker Name",
+      avatar: '🖋️',
       input: true,
-      html: "Every ballot has a Speaker field on it. Type your name below and we'll use it on your ballots from here on out.",
+      formal: true,
+      html: "Before we go any further, let's set this properly. Every ballot you ever submit carries a <b>Speaker</b> field, and this is what fills it in. It's how your feedback, your history, and your judge's comments all refer to you from here on out.<br><br>Take a second and enter the name you actually want to see on your ballots.",
       onSubmit: function(name){
         try{ localStorage.setItem(nameKeyFor(state && state.email), name); }catch(e){}
         try{
@@ -768,6 +770,14 @@
       spotlight: '#settingsToggle',
       after: function(){ var p = byId('settingsPanel'); var t = byId('settingsToggle'); if(p) p.classList.add('hidden'); if(t) t.classList.remove('active'); },
       html: "This is where you customize <b>time signals</b>, little on-screen alerts that pop up at specific points while you're recording (e.g. \"1 minute left\"). Add, relabel, recolor, or remove signals here, or reset to the defaults. This is also where you can paste your own Groq/Gemini API keys if you ever hit rate limits.<br><br>Your signals fire for real while you're actually recording: the on-screen clock turns amber at 6:00 and red with a hard stop warning at 7:00, so you always know exactly how much time is left, even without opening this panel."
+    });
+
+    // ---- AI Token Usage widget ------------------------------------------------
+    steps.push({
+      title: 'Keeping an eye on AI usage',
+      avatar: '🤖',
+      spotlight: '.ai-usage-btn',
+      html: "Every AI feature on Extemplary — ballot feedback, the citation checker, the practice question generator, and current-events summaries — shares a fair daily usage budget per account. Click this robot icon any time to see exactly how much of each you've used today, as a set of progress bars. It resets every day at midnight UTC, and if you ever run up against a limit, this is the first place to check."
     });
 
     // ---- Tournament Briefing (forced use) ---------------------------------

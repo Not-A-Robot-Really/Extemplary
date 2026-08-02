@@ -63,7 +63,7 @@
 <header class="topbar">
   <div class="brand">
     <div class="mark"><span class="mark-e-wrap" aria-hidden="true"><svg viewBox="0 0 36 37" fill="none"><use href="#icon-18"></use></svg></span>xtemplary</div>
-    <div class="brand-desc">Record, analyze, and practice your extemporaneous speeches <span class="brand-username" id="speakerName">@you</span></div>
+    <div class="brand-desc">Record, analyze, and practice your extemporaneous speeches <button type="button" class="brand-username" id="speakerName" title="Click to copy">@you</button></div>
   </div>
   <div style="display:flex;align-items:center;gap:12px;">
     <div class="session-tag" id="sessionTag"><span class="rt-num">Round 1</span></div>
@@ -1069,6 +1069,7 @@
     <div class="tut-text" id="tutText"></div>
     <div class="tut-hint hidden" id="tutHint"><span class="tut-dot"></span><span id="tutHintText"></span></div>
     <div id="tutInputRow" style="display:none;">
+      <div class="tut-field-label">Speaker Name</div>
       <input type="text" id="tutNameInput" class="tut-name-input" maxlength="20" autocomplete="off" placeholder="Type your name…">
     </div>
     <div class="tut-actions">

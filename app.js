@@ -112,7 +112,7 @@ const DATA = window.APP_DATA;
         .ai-usage-count{
           font-family:var(--font-mono);font-size:10px;letter-spacing:0.5px;color:var(--slate);
         }
-        .ai-usage-track{height:6px;border-radius:3px;background:var(--rule);overflow:hidden;}
+        .ai-usage-track{height:7px;box-sizing:border-box;border-radius:4px;background:#ffffff;border:1px solid var(--rule);overflow:hidden;}
         .ai-usage-fill{height:100%;transition:width 0.3s ease;}
         .ai-usage-note{
           font-family:var(--font-body);font-size:11px;color:var(--slate);
@@ -1724,6 +1724,35 @@ const DATA = window.APP_DATA;
   const processErrorActions = document.getElementById('processErrorActions');
   const roundNoEl      = document.getElementById('roundNo');
   const speakerNameEl  = document.getElementById('speakerName');
+  if(speakerNameEl){
+    speakerNameEl.addEventListener('click', async () => {
+      const text = speakerNameEl.textContent || '';
+      try{
+        if(navigator.clipboard && navigator.clipboard.writeText){
+          await navigator.clipboard.writeText(text);
+        }else{
+          // Fallback for contexts where the async Clipboard API isn't available.
+          const ta = document.createElement('textarea');
+          ta.value = text;
+          ta.style.position = 'fixed';
+          ta.style.opacity = '0';
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand('copy');
+          document.body.removeChild(ta);
+        }
+        const original = text;
+        speakerNameEl.textContent = 'Copied!';
+        speakerNameEl.title = 'Copied!';
+        setTimeout(() => {
+          speakerNameEl.textContent = original;
+          speakerNameEl.title = 'Click to copy';
+        }, 1100);
+      }catch(e){
+        console.warn('copy failed', e);
+      }
+    });
+  }
   const sessionTag     = document.getElementById('sessionTag');
   const flightStripResults = document.getElementById('flightStripResults');
   const resultsContent = document.getElementById('resultsContent');

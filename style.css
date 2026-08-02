@@ -74,7 +74,7 @@
     position:relative;
     z-index:2;
   }
-  header.topbar{padding-left:calc((100% - 880px)/2);padding-right:calc((100% - 880px)/2);}
+  header.topbar{padding-left:calc((100% - 880px)/2 + 24px);padding-right:calc((100% - 880px)/2 + 24px);}
   @media(max-width:928px){ header.topbar{padding-left:24px;padding-right:24px;} }
   .brand{display:flex;flex-direction:row;align-items:center;gap:14px;flex-wrap:wrap;}
   .brand .mark{
@@ -1319,12 +1319,13 @@
   }
   .signal-row .sig-del:hover{background:#dc2626;color:#fff;transform:scale(1.06);}
   .signal-row .sig-edit{
-    background:none;border:1px solid var(--rule);cursor:pointer;color:var(--slate);
-    font-size:10.5px;line-height:1;padding:5px 9px;border-radius:20px;
-    font-family:var(--font-mono);text-transform:uppercase;letter-spacing:0.5px;
-    transition:background .12s, color .12s, border-color .12s;
+    display:flex;align-items:center;justify-content:center;width:24px;height:24px;flex-shrink:0;
+    background:#fff;border:1.5px solid #16a34a;border-radius:4px;cursor:pointer;color:#16a34a;
+    padding:0;
+    transition:background .12s, color .12s, transform .12s;
   }
-  .signal-row .sig-edit:hover{background:var(--charcoal);color:#fff;border-color:var(--charcoal);}
+  .signal-row .sig-edit svg{width:13px;height:13px;display:block;}
+  .signal-row .sig-edit:hover{background:#16a34a;color:#fff;transform:scale(1.06);}
 
   .add-signal-form{
     display:grid;grid-template-columns:1fr 1fr;
@@ -2655,5 +2656,3 @@
 @media (max-width:640px){
   #tutBox{max-width:88vw;min-width:0;left:6vw !important;right:6vw !important;}
 }
-
-/* Remember @media MAX WIDTH 640 px!

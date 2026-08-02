@@ -4065,7 +4065,7 @@ Grading rules:
       li.innerHTML = `
         <span class="sig-time">${fmt(sig.seconds)}</span>
         <span class="sig-label">${escHtml(sig.label)}</span>
-        <button class="sig-edit" data-i="${i}" title="Edit" type="button">Edit</button>
+        <button class="sig-edit" data-i="${i}" title="Edit" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg></button>
         <button class="sig-del" data-i="${i}" title="Delete" type="button">✕</button>
       `;
       signalList.appendChild(li);
@@ -4089,7 +4089,7 @@ Grading rules:
         document.getElementById('addSignalBtn').textContent = '✓ Save';
       });
     });
-    signalCount.textContent = sorted.length + (sorted.length === 1 ? ' signal' : ' signals');
+    if(signalCount) signalCount.textContent = sorted.length + (sorted.length === 1 ? ' signal' : ' signals');
   }
 
   document.getElementById('addSignalBtn').addEventListener('click', () => {

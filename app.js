@@ -1,10 +1,10 @@
 const DATA = window.APP_DATA;
 (function(){
 
-  // ===== SUPABASE CONFIG =====
-  // Fill these in with YOUR project's values (Project Settings → API).
-  // SUPABASE_ANON_KEY is the public "anon" key, it's designed to be
-  // exposed in client-side code (Supabase docs make this explicit) and is
+  // ------ SUPABASE CONFIG -------
+  // NOTE Fill these in with YOUR project's values (Project Settings to API).
+  // SUPABASE_ANON_KEY is the public anon key and IT IS DESIGNED to be
+  // exposed in raw code (Supabase docs make this explicit). This is different and
   // NOT the same thing as a service_role key or a Groq/Gemini API key. The
   // real Groq/Gemini keys now live only as server-side secrets on the edge
   // functions below and never ship in this file.
@@ -12,7 +12,7 @@ const DATA = window.APP_DATA;
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlpZWhobWVsZm90d2tkcXhwbHVnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzNDYxMzEsImV4cCI6MjA5ODkyMjEzMX0.8QzN1LJmr70Sidxp2RsOq-z3S_NX5lN9QWTr45CSaHo';
   const SUPABASE_FUNCTIONS_URL = SUPABASE_URL + '/functions/v1';
 
-  // ===== AUTH + SAVED PROGRESS =====
+  // ----- AUTHENTICATION & SAVE PROGRESS -----
   // Real accounts via Supabase Auth (email + password). Session tokens are
   // persisted by supabase-js itself (localStorage), which is what makes
   // "stay signed in across tabs/reopens" work with zero extra code.
@@ -64,7 +64,7 @@ const DATA = window.APP_DATA;
     '<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
     '<rect x="5" y="9" width="14" height="10" rx="2"></rect>' +
     '<line x1="12" y1="9" x2="12" y2="5"></line>' +
-    '<circle cx="12" cy="3" r="1.4"></circle>' +
+    '<circle cx="12" cy="3" r="1.4" fill="#ffffff"></circle>' +
     '<circle cx="9" cy="14" r="1.2" fill="currentColor" stroke="none"></circle>' +
     '<circle cx="15" cy="14" r="1.2" fill="currentColor" stroke="none"></circle>' +
     '<line x1="5" y1="13" x2="3" y2="13"></line>' +
@@ -78,7 +78,7 @@ const DATA = window.APP_DATA;
       const style = document.createElement('style');
       style.textContent = `
         .ai-usage-btn{
-          position:fixed;left:16px;bottom:16px;z-index:99999;
+          position:fixed;right:16px;bottom:16px;z-index:99999;
           width:29px;height:29px;box-sizing:border-box;padding:5px;border-radius:4px;
           display:flex;align-items:center;justify-content:center;
           background:var(--charcoal);border:1px solid var(--charcoal);color:var(--on-accent);
@@ -86,10 +86,16 @@ const DATA = window.APP_DATA;
         }
         .ai-usage-btn:hover{color:var(--crimson-bright);}
         .ai-usage-panel{
-          position:fixed;left:16px;bottom:56px;z-index:99999;
+          position:fixed;right:16px;bottom:56px;z-index:99999;
           width:270px;max-width:calc(100vw - 32px);
           background:var(--parchment);border:1px solid var(--charcoal);border-radius:5px;
-          box-shadow:none;display:none;overflow:hidden;
+          box-shadow:none;overflow:hidden;
+          visibility:hidden;opacity:0;transform:translateX(24px);
+          transition:opacity .22s cubic-bezier(0.2,0.8,0.3,1), transform .22s cubic-bezier(0.2,0.8,0.3,1), visibility .22s;
+          pointer-events:none;
+        }
+        .ai-usage-panel.open{
+          visibility:visible;opacity:1;transform:translateX(0);pointer-events:auto;
         }
         .ai-usage-panel .sp-head{
           background:var(--charcoal);padding:13px 16px;
@@ -122,8 +128,8 @@ const DATA = window.APP_DATA;
       btnEl = document.createElement('button');
       btnEl.type = 'button';
       btnEl.className = 'ai-usage-btn';
-      btnEl.setAttribute('aria-label', "Today's AI usage");
-      btnEl.title = "Today's AI usage";
+      btnEl.setAttribute('aria-label', "AI Token Usage");
+      btnEl.title = "AI Token Usage";
       btnEl.innerHTML = RATE_LIMIT_ROBOT_ICON_SVG;
       panelEl = document.createElement('div');
       panelEl.className = 'ai-usage-panel';
@@ -144,13 +150,13 @@ const DATA = window.APP_DATA;
       document.body.appendChild(panelEl);
       btnEl.addEventListener('click', (e) => {
         e.stopPropagation();
-        const willOpen = panelEl.style.display !== 'block';
-        panelEl.style.display = willOpen ? 'block' : 'none';
+        const willOpen = !panelEl.classList.contains('open');
+        panelEl.classList.toggle('open', willOpen);
         if(willOpen) refresh();
       });
       document.addEventListener('click', (e) => {
-        if(panelEl.style.display === 'block' && !panelEl.contains(e.target) && e.target !== btnEl){
-          panelEl.style.display = 'none';
+        if(panelEl.classList.contains('open') && !panelEl.contains(e.target) && e.target !== btnEl){
+          panelEl.classList.remove('open');
         }
       });
       render({});

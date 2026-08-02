@@ -101,7 +101,7 @@ const DATA = window.APP_DATA;
         .ai-usage-row:last-child{margin-bottom:0;}
         .ai-usage-label-row{
           display:flex;justify-content:space-between;align-items:baseline;
-          font-family:var(--font-body);font-size:12.5px;color:var(--ink);margin-bottom:5px;
+          font-family:var(--font-body);font-size:12.5px;color:var(--charcoal);margin-bottom:5px;
         }
         .ai-usage-count{
           font-family:var(--font-mono);font-size:10px;letter-spacing:0.5px;color:var(--slate);
@@ -129,7 +129,7 @@ const DATA = window.APP_DATA;
       panelEl.className = 'ai-usage-panel';
       const head = document.createElement('div');
       head.className = 'sp-head';
-      head.textContent = "Today's AI Usage";
+      head.textContent = "AI Token Usage";
       panelEl.appendChild(head);
       const body = document.createElement('div');
       body.className = 'sp-body';

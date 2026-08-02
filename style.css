@@ -132,11 +132,25 @@
     font-family:var(--font-mono);font-size:13px;line-height:1.5;letter-spacing:4px;text-transform:uppercase;
     color:var(--watermark);white-space:nowrap;font-weight:600;
     transform:translateX(-50%);
-    transition:opacity 0.6s ease, color 0.25s ease;
-    pointer-events:auto;
-    cursor:default;
+    transition:opacity 0.6s ease;
   }
-  .side-word:hover{color:var(--watermark-hover);}
+  /* Flashlight overlay: an exact bright duplicate of the word wall, stacked
+     on top of the faint base layer and masked down to a small soft circle
+     that tracks the cursor (see the mousemove handler in setupSideWords()).
+     Only the words physically under the cursor's circle become visible
+     here, giving the effect of the pointer "revealing" that patch of the
+     wall instead of the wall's opacity changing wholesale. */
+  .side-words-glow{
+    position:fixed;top:0;height:100vh;
+    width:calc((100vw - 928px)/2);
+    overflow:hidden;pointer-events:none;z-index:0;
+    -webkit-mask-image:radial-gradient(circle 130px at var(--gx,-9999px) var(--gy,-9999px), black 0%, black 55%, transparent 100%);
+    mask-image:radial-gradient(circle 130px at var(--gx,-9999px) var(--gy,-9999px), black 0%, black 55%, transparent 100%);
+  }
+  .side-words-glow.left{left:0;}
+  .side-words-glow.right{right:0;}
+  .side-words-glow .side-word{color:var(--watermark-hover);transition:none;}
+  @media(max-width:1180px){ .side-words-glow{display:none;} }
   /* Single continuous wobble keyframe, always paired with animation-direction:
      alternate in JS so the motion reverses smoothly at each extreme instead of
      snapping back to the start position, which is what caused the visible

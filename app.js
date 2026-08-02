@@ -1468,6 +1468,10 @@ const DATA = window.APP_DATA;
   (function setupSideWords(){
     const leftInner  = document.getElementById('sideWordsLeftInner');
     const rightInner = document.getElementById('sideWordsRightInner');
+    const leftGlowInner  = document.getElementById('sideWordsLeftGlowInner');
+    const rightGlowInner = document.getElementById('sideWordsRightGlowInner');
+    const leftGlow  = document.getElementById('sideWordsLeftGlow');
+    const rightGlow = document.getElementById('sideWordsRightGlow');
     if(!leftInner || !rightInner) return;
     const WORDS = DATA.WORDS;
 
@@ -1485,13 +1489,19 @@ const DATA = window.APP_DATA;
       return picked.join('   ·   ');
     }
 
-    function fillColumn(container, wordList, spacing, offset){
+    // Builds each row twice: once into the faint base layer, once into the
+    // bright glow layer (masked to a circle around the cursor — see the
+    // mousemove handler below). Both spans share identical position/timing
+    // and have their text swapped together in lockstep, so the glow layer
+    // is always showing exactly what's underneath it, just brighter.
+    function fillColumn(container, glowContainer, wordList, spacing){
       const totalHeight = container.offsetHeight || (window.innerHeight * 4);
       const count = Math.ceil(totalHeight / spacing);
       for(let i=0;i<count;i++){
         const span = document.createElement('div');
         span.className = 'side-word';
-        span.textContent = randomLineText(wordList);
+        const text = randomLineText(wordList);
+        span.textContent = text;
         span.style.top = (i * spacing + 40) + 'px';
 
         // Every row uses the same wobble keyframe but with direction:alternate,
@@ -1501,27 +1511,48 @@ const DATA = window.APP_DATA;
         // of phase (alternate-reverse) so they don't all move in lockstep.
         const direction = (i % 2 === 0) ? 'alternate' : 'alternate-reverse';
         const duration = 18 + (i % 5) * 3; // 18–30s, slow and varied per row
-        span.style.animation = 'driftWobble ' + duration + 's ease-in-out infinite';
+        const anim = 'driftWobble ' + duration + 's ease-in-out infinite';
+        const delay = '-' + ((i * 1.7) % duration).toFixed(1) + 's';
+        span.style.animation = anim;
         span.style.animationDirection = direction;
-        span.style.animationDelay = '-' + ((i * 1.7) % duration).toFixed(1) + 's';
+        span.style.animationDelay = delay;
+
+        const glowSpan = glowContainer ? document.createElement('div') : null;
+        if(glowSpan){
+          glowSpan.className = 'side-word';
+          glowSpan.textContent = text;
+          glowSpan.style.top = span.style.top;
+          glowSpan.style.animation = anim;
+          glowSpan.style.animationDirection = direction;
+          glowSpan.style.animationDelay = delay;
+        }
 
         // Swap in new random words only at the extremes of the wobble (where
         // horizontal velocity is momentarily zero), and crossfade the text via
         // opacity rather than popping it, so the content change is never
         // visible as a jump, satisfies a smooth, continuous-feeling wall.
+        // Both layers swap together so the glow layer never shows text that
+        // doesn't match what's directly underneath it.
         span.addEventListener('animationiteration', () => {
           span.style.opacity = '0';
+          if(glowSpan) glowSpan.style.opacity = '0';
           setTimeout(() => {
-            span.textContent = randomLineText(wordList);
+            const next = randomLineText(wordList);
+            span.textContent = next;
             span.style.opacity = '1';
+            if(glowSpan){
+              glowSpan.textContent = next;
+              glowSpan.style.opacity = '1';
+            }
           }, 300);
         });
 
         container.appendChild(span);
+        if(glowSpan) glowContainer.appendChild(glowSpan);
       }
     }
-    fillColumn(leftInner, WORDS, 30, 0);
-    fillColumn(rightInner, WORDS, 30, 5);
+    fillColumn(leftInner, leftGlowInner, WORDS, 30);
+    fillColumn(rightInner, rightGlowInner, WORDS, 30);
 
     // Smooth, dramatic depth parallax: the word wall should barely move
     // relative to the page, scrolling far only shifts it a tiny bit, and
@@ -1538,13 +1569,48 @@ const DATA = window.APP_DATA;
     function animateParallax(){
       currentLeftY  += (targetLeftY  - currentLeftY)  * 0.06;
       currentRightY += (targetRightY - currentRightY) * 0.06;
-      leftInner.style.transform  = 'translateY(' + currentLeftY.toFixed(2)  + 'px)';
-      rightInner.style.transform = 'translateY(' + currentRightY.toFixed(2) + 'px)';
+      const leftT  = 'translateY(' + currentLeftY.toFixed(2)  + 'px)';
+      const rightT = 'translateY(' + currentRightY.toFixed(2) + 'px)';
+      leftInner.style.transform  = leftT;
+      rightInner.style.transform = rightT;
+      if(leftGlowInner)  leftGlowInner.style.transform  = leftT;
+      if(rightGlowInner) rightGlowInner.style.transform = rightT;
       requestAnimationFrame(animateParallax);
     }
     window.addEventListener('scroll', computeParallaxTargets, { passive:true });
     computeParallaxTargets();
     requestAnimationFrame(animateParallax);
+
+    // Flashlight cursor tracking: converts the pointer's viewport position
+    // into each glow container's own local coordinate space (CSS mask
+    // position is relative to the masked box, not the viewport), then
+    // writes it into --gx/--gy, which the radial-gradient mask in CSS
+    // reads to position the circle. rAF-throttled so fast mouse movement
+    // doesn't spam layout reads/writes.
+    if(leftGlow && rightGlow){
+      let pendingX = null, pendingY = null, rafScheduled = false;
+      function applyPointer(){
+        rafScheduled = false;
+        if(pendingX === null) return;
+        const lRect = leftGlow.getBoundingClientRect();
+        const rRect = rightGlow.getBoundingClientRect();
+        leftGlow.style.setProperty('--gx', (pendingX - lRect.left) + 'px');
+        leftGlow.style.setProperty('--gy', (pendingY - lRect.top) + 'px');
+        rightGlow.style.setProperty('--gx', (pendingX - rRect.left) + 'px');
+        rightGlow.style.setProperty('--gy', (pendingY - rRect.top) + 'px');
+      }
+      window.addEventListener('mousemove', (e) => {
+        pendingX = e.clientX;
+        pendingY = e.clientY;
+        if(!rafScheduled){ rafScheduled = true; requestAnimationFrame(applyPointer); }
+      }, { passive:true });
+      // Cursor leaving the window entirely — send the circle far off so
+      // nothing lingers lit up after the mouse is gone.
+      document.addEventListener('mouseleave', () => {
+        leftGlow.style.setProperty('--gx', '-9999px');
+        rightGlow.style.setProperty('--gx', '-9999px');
+      });
+    }
   })();
 
   const RUBRIC_PROMPT = DATA.RUBRIC_PROMPT;

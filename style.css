@@ -144,8 +144,8 @@
     position:fixed;top:0;height:100vh;
     width:calc((100vw - 928px)/2);
     overflow:hidden;pointer-events:none;z-index:0;
-    -webkit-mask-image:radial-gradient(circle 45px at var(--gx,-9999px) var(--gy,-9999px), black 0%, black 55%, transparent 100%);
-    mask-image:radial-gradient(circle 45px at var(--gx,-9999px) var(--gy,-9999px), black 0%, black 55%, transparent 100%);
+    -webkit-mask-image:radial-gradient(circle 220px at var(--gx,-9999px) var(--gy,-9999px), black 0%, transparent 100%);
+    mask-image:radial-gradient(circle 220px at var(--gx,-9999px) var(--gy,-9999px), black 0%, transparent 100%);
   }
   .side-words-glow.left{left:0;}
   .side-words-glow.right{right:0;}

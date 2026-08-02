@@ -47,7 +47,7 @@
   ],
   "browser_specific_settings": {
     "gecko": {
-      "id": "extemplary@example.com",
+      "id": "{90bf4f57-8c75-409f-86ac-4686b7d8ef45}",
       "strict_min_version": "109.0"
     }
   }

@@ -26,6 +26,122 @@ const DATA = window.APP_DATA;
     : null;
   const VIDEO_BUCKET = 'ballot-videos';
 
+  // ===== EDGE FUNCTION AUTH =====
+  // The edge functions require verify_jwt now, so the plain anon key is no
+  // longer enough to call them — the request needs a real Supabase-issued
+  // user JWT. Signed-in users already have one from their session. Anyone
+  // else (e.g. mid-signup, or a session that hasn't hydrated yet) gets a
+  // lightweight anonymous-auth session instead, so nothing here has to wait
+  // on or force a real signup.
+  let anonSignInPromise = null;
+  async function getAuthToken(){
+    if(!supabaseClient) return SUPABASE_ANON_KEY;
+    const { data } = await supabaseClient.auth.getSession();
+    if(data?.session?.access_token) return data.session.access_token;
+    if(!anonSignInPromise) anonSignInPromise = supabaseClient.auth.signInAnonymously();
+    const { data: anonData, error } = await anonSignInPromise;
+    anonSignInPromise = null;
+    if(error || !anonData?.session?.access_token){
+      throw new Error('auth_failed:could not establish a session for this request.');
+    }
+    return anonData.session.access_token;
+  }
+
+  // ===== USAGE LIMIT WIDGET =====
+  // Bottom-left floating button + panel showing today's AI usage per
+  // category, as progress bars. Reads directly from the `api_usage` table
+  // (RLS lets a user select only their own rows); the edge functions are
+  // the ones that actually enforce the caps server-side via
+  // increment_api_usage() — these numbers here are just for display.
+  // Keep this list in sync with DAILY_LIMITS in the three edge functions.
+  const RATE_CATEGORIES = [
+    { key: 'ballot_feedback',   label: 'Ballot Feedback',    limit: 20 },
+    { key: 'citation_checker',  label: 'Citation Checker',   limit: 40 },
+    { key: 'question_generator',label: 'Question Generator', limit: 40 },
+    { key: 'current_events',    label: 'Current Events',     limit: 15 }
+  ];
+  const RateLimitUI = (function(){
+    let built = false, panelEl, btnEl, barsEl;
+    function build(){
+      if(built) return;
+      built = true;
+      btnEl = document.createElement('button');
+      btnEl.type = 'button';
+      btnEl.title = "Today's AI usage";
+      btnEl.textContent = '📊';
+      btnEl.style.cssText = 'position:fixed;left:16px;bottom:16px;z-index:99999;width:46px;height:46px;border-radius:50%;border:none;background:#1e2327;color:#fff;font-size:19px;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,0.35);';
+      panelEl = document.createElement('div');
+      panelEl.style.cssText = 'position:fixed;left:16px;bottom:70px;z-index:99999;width:270px;max-width:calc(100vw - 32px);background:#fff;border-radius:12px;box-shadow:0 6px 24px rgba(0,0,0,0.3);padding:14px 16px;display:none;font-family:inherit;';
+      const title = document.createElement('div');
+      title.textContent = "Today's AI usage";
+      title.style.cssText = 'font-weight:700;margin-bottom:12px;font-size:0.95em;color:#1e2327;';
+      panelEl.appendChild(title);
+      barsEl = document.createElement('div');
+      panelEl.appendChild(barsEl);
+      const note = document.createElement('div');
+      note.textContent = 'Resets daily at midnight UTC.';
+      note.style.cssText = 'font-size:0.72em;color:#888;margin-top:6px;';
+      panelEl.appendChild(note);
+      document.body.appendChild(btnEl);
+      document.body.appendChild(panelEl);
+      btnEl.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const willOpen = panelEl.style.display !== 'block';
+        panelEl.style.display = willOpen ? 'block' : 'none';
+        if(willOpen) refresh();
+      });
+      document.addEventListener('click', (e) => {
+        if(panelEl.style.display === 'block' && !panelEl.contains(e.target) && e.target !== btnEl){
+          panelEl.style.display = 'none';
+        }
+      });
+      render({});
+    }
+    function render(counts){
+      barsEl.innerHTML = '';
+      RATE_CATEGORIES.forEach(cat => {
+        const count = counts[cat.key] || 0;
+        const pct = Math.min(100, Math.round((count / cat.limit) * 100));
+        const row = document.createElement('div');
+        row.style.cssText = 'margin-bottom:10px;';
+        const labelRow = document.createElement('div');
+        labelRow.style.cssText = 'display:flex;justify-content:space-between;font-size:0.78em;color:#444;margin-bottom:4px;';
+        labelRow.innerHTML = `<span>${cat.label}</span><span>${count}/${cat.limit}</span>`;
+        const track = document.createElement('div');
+        track.style.cssText = 'height:7px;border-radius:4px;background:#eee;overflow:hidden;';
+        const fill = document.createElement('div');
+        const color = pct >= 100 ? '#d64545' : pct >= 75 ? '#e0a020' : '#2f9e44';
+        fill.style.cssText = `height:100%;width:${pct}%;background:${color};transition:width 0.3s ease;`;
+        track.appendChild(fill);
+        row.appendChild(labelRow);
+        row.appendChild(track);
+        barsEl.appendChild(row);
+      });
+    }
+    async function refresh(){
+      build();
+      try{
+        if(!supabaseClient) return;
+        const { data: sessionData } = await supabaseClient.auth.getSession();
+        const userId = sessionData?.session?.user?.id;
+        if(!userId){ render({}); return; }
+        const today = new Date().toISOString().slice(0,10);
+        const { data, error } = await supabaseClient
+          .from('api_usage')
+          .select('category,count')
+          .eq('usage_date', today);
+        if(error){ console.warn('usage fetch failed', error); return; }
+        const counts = {};
+        (data||[]).forEach(row => { counts[row.category] = row.count; });
+        render(counts);
+      }catch(e){ console.warn('usage refresh failed', e); }
+    }
+    return { build, refresh };
+  })();
+  window.RateLimitUI = RateLimitUI;
+  RateLimitUI.build();
+  RateLimitUI.refresh();
+
   let currentUser = null; // { id, email }
 
   async function loadHistory(){
@@ -1024,7 +1140,7 @@ const DATA = window.APP_DATA;
     return `You are an expert NSDA Extemporaneous Speaking coach reviewing a student's full practice history across ${asc.length} round${asc.length===1?'':'s'}:\n\n${rounds}\n\nWrite a concise, honest, encouraging OVERALL coaching comment in 2-3 sentences, addressed directly to the student ("you"), synthesizing patterns across ALL of these rounds — not just the most recent one. Name their single biggest recurring strength and, more importantly, their single biggest recurring area to improve, then give one concrete, actionable next step. Write it as natural flowing coaching prose, not a list of category names. Return ONLY the 2-3 sentence comment — no headers, no markdown, no preamble.`;
   }
   async function generateOverallCoachingComment(asc){
-    const candidate = await callGemini(buildOverallFeedbackPrompt(asc), 300);
+    const candidate = await callGemini(buildOverallFeedbackPrompt(asc), 300, 'ballot_feedback');
     return (candidate.content?.parts || []).map(p => p.text || '').join('').trim();
   }
   function renderOverallFeedbackBox(text, loading){
@@ -1264,6 +1380,7 @@ const DATA = window.APP_DATA;
     supabaseClient.auth.onAuthStateChange((event, session) => {
       if(event === 'SIGNED_IN' && session) onSignedIn(session.user);
       else if(event === 'SIGNED_OUT') onSignedOut();
+      if(window.RateLimitUI) window.RateLimitUI.refresh();
     });
   })();
 
@@ -2366,20 +2483,28 @@ Output ONLY this JSON, nothing else: {"questions":["...","...","..."]}`;
     return [];
   }
 
-  async function callGeminiWithKey(prompt, apiKey, maxOutputTokens){
+  async function callGeminiWithKey(prompt, apiKey, maxOutputTokens, category){
     const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/gemini-generate`, {
       method:'POST',
       headers:{
         'Content-Type':'application/json',
-        'Authorization':'Bearer '+SUPABASE_ANON_KEY,
+        'Authorization':'Bearer '+(await getAuthToken()),
         'apikey': SUPABASE_ANON_KEY
       },
-      body: JSON.stringify({ prompt, maxOutputTokens: maxOutputTokens||1024, overrideKey: apiKey || undefined })
+      body: JSON.stringify({ prompt, maxOutputTokens: maxOutputTokens||1024, overrideKey: apiKey || undefined, category })
     });
+    if(res.status === 429){
+      const info = await res.json().catch(()=> ({}));
+      if(window.RateLimitUI) window.RateLimitUI.refresh();
+      const err = new Error('rate_limited');
+      err.rateLimited = true; err.category = info.category || category; err.count = info.currentCount; err.limit = info.usageLimit;
+      throw err;
+    }
     if(!res.ok){
       const bodyText = await res.text().catch(()=> '');
       throw new Error('gemini_failed:'+res.status+':'+bodyText.slice(0,300));
     }
+    if(window.RateLimitUI) window.RateLimitUI.refresh();
     const json = await res.json();
     const candidate = json.candidates?.[0];
     if(!candidate) throw new Error('gemini_no_candidate:'+JSON.stringify(json).slice(0,200));
@@ -2388,15 +2513,16 @@ Output ONLY this JSON, nothing else: {"questions":["...","...","..."]}`;
 
   // Tries each available override key in order, then lets the edge function
   // fall back through its own server-side keys if none are supplied/work.
-  async function callGemini(prompt, maxOutputTokens){
+  async function callGemini(prompt, maxOutputTokens, category){
     const keys = geminiKeyList();
-    if(!keys.length) return await callGeminiWithKey(prompt, null, maxOutputTokens);
+    if(!keys.length) return await callGeminiWithKey(prompt, null, maxOutputTokens, category);
     let lastErr = null;
     for(const key of keys){
       try{
-        return await callGeminiWithKey(prompt, key, maxOutputTokens);
+        return await callGeminiWithKey(prompt, key, maxOutputTokens, category);
       }catch(err){
         lastErr = err;
+        if(err.rateLimited) throw err;
       }
     }
     throw lastErr || new Error('gemini_no_keys');
@@ -2448,7 +2574,7 @@ Output ONLY this JSON, nothing else: {"questions":["...","...","..."]}`;
     let searchVerified = false;
 
     try{
-      const candidate = await callGemini(prompt, 3200);
+      const candidate = await callGemini(prompt, 3200, 'question_generator');
       questions = extractQuestions(candidate);
       // groundingMetadata is present when Gemini actually used Google Search;
       // use that to decide whether to show the "unverified" warning.
@@ -2490,7 +2616,9 @@ Output ONLY this JSON, nothing else: {"questions":["...","...","..."]}`;
       const cooldown = wasRateLimited ? 45000 : Q_GEN_COOLDOWN_MS;
       const waitNote = wasRateLimited ? ' This account is at its per-minute usage limit — please wait about 45 seconds before trying again.' : '';
       const detail = (err && err.message) ? ' ('+err.message.slice(0,200)+')' : '';
-      qGenError.textContent = "Couldn't draft questions right now — check your connection and try again." + waitNote + detail;
+      qGenError.textContent = err?.rateLimited
+        ? `You've hit today's Question Generator limit (${err.count||'?'}/${err.limit||'?'}). It resets tomorrow — check the usage button in the bottom-left corner.`
+        : "Couldn't draft questions right now — check your connection and try again." + waitNote + detail;
       qGenError.style.display = 'block';
       if(selectedCategory){
         qDifficultyStep.classList.remove('hidden');
@@ -2715,7 +2843,7 @@ Formatting rules: plain text only, with the sole exception of wrapping key terms
 
     const prompt = buildBriefingPrompt();
     try{
-      const candidate = await callGemini(prompt, 2400);
+      const candidate = await callGemini(prompt, 2400, 'current_events');
       const raw = (candidate.content?.parts || []).map(p => p.text || '').join('').trim();
       if(!raw) throw new Error('bf_empty_response');
       const grounding = candidate.groundingMetadata;
@@ -2743,7 +2871,9 @@ Formatting rules: plain text only, with the sole exception of wrapping key terms
       const wasRateLimited = /:429:/.test(err?.message || '');
       const waitNote = wasRateLimited ? ' This account is at its per-minute usage limit — please wait about 45 seconds before trying again.' : '';
       const detail = (err && err.message) ? ' ('+err.message.slice(0,200)+')' : '';
-      bfError.textContent = "Couldn't put together a briefing right now — check your connection and try again." + waitNote + detail;
+      bfError.textContent = err?.rateLimited
+        ? `You've hit today's Current Events limit (${err.count||'?'}/${err.limit||'?'}). It resets tomorrow — check the usage button in the bottom-left corner.`
+        : "Couldn't put together a briefing right now — check your connection and try again." + waitNote + detail;
       bfError.style.display = 'block';
       bfSetupStep.classList.remove('hidden');
       setBriefingBusy(false);
@@ -2918,7 +3048,7 @@ Grading rules:
 
     const prompt = buildCitationPrompt(claim, date, source);
     try{
-      const candidate = await callGemini(prompt, 700);
+      const candidate = await callGemini(prompt, 700, 'citation_checker');
       const result = extractCitationVerdict(candidate);
 
       ccProgress.finish();
@@ -2945,7 +3075,9 @@ Grading rules:
       const wasRateLimited = /:429:/.test(err?.message || '');
       const waitNote = wasRateLimited ? ' This account is at its per-minute usage limit — please wait about 45 seconds before trying again.' : '';
       const detail = (err && err.message) ? ' ('+err.message.slice(0,200)+')' : '';
-      ccError.textContent = "Couldn't check that citation right now — check your connection and try again." + waitNote + detail;
+      ccError.textContent = err?.rateLimited
+        ? `You've hit today's Citation Checker limit (${err.count||'?'}/${err.limit||'?'}). It resets tomorrow — check the usage button in the bottom-left corner.`
+        : "Couldn't check that citation right now — check your connection and try again." + waitNote + detail;
       ccError.style.display = 'block';
       ccSetupStep.classList.remove('hidden');
       setCcBusy(false);
@@ -4164,6 +4296,7 @@ Grading rules:
           return await fn(k);
         }catch(err){
           lastErr = err;
+          if(err.rateLimited) throw err; // our own daily cap — retrying only burns more of it
           if(attempt < 2 && isTransientError(err)){
             await new Promise(r => setTimeout(r, 600 * (attempt+1)));
             continue;
@@ -4179,15 +4312,24 @@ Grading rules:
     const form = new FormData();
     form.append('file', blob, filename);
     form.append('filename', filename);
+    form.append('category', 'ballot_feedback');
     if(key) form.append('overrideKey', key);
     const res = await fetchWithTimeout(`${SUPABASE_FUNCTIONS_URL}/groq-transcribe`,{
       method:'POST',
       headers:{
-        'Authorization':'Bearer '+SUPABASE_ANON_KEY,
+        'Authorization':'Bearer '+(await getAuthToken()),
         'apikey': SUPABASE_ANON_KEY
       },
       body:form
     }, 75000);
+    if(res.status === 429){
+      const info = await res.json().catch(()=> ({}));
+      if(window.RateLimitUI) window.RateLimitUI.refresh();
+      const err = new Error('rate_limited');
+      err.rateLimited = true; err.category = info.category || 'ballot_feedback'; err.count = info.currentCount; err.limit = info.usageLimit;
+      throw err;
+    }
+    if(window.RateLimitUI) window.RateLimitUI.refresh();
     if(!res.ok) throw new Error('transcription_failed:'+res.status+':'+await safeErrText(res));
     const json = await res.json();
     return { text:(json.text||'').trim(), words: Array.isArray(json.words) ? json.words : [] };
@@ -5240,7 +5382,7 @@ Grading rules:
         const res = await fetchWithTimeout(`${SUPABASE_FUNCTIONS_URL}/groq-chat`,{
           method:'POST',
           headers:{
-            'Authorization':'Bearer '+SUPABASE_ANON_KEY,
+            'Authorization':'Bearer '+(await getAuthToken()),
             'apikey': SUPABASE_ANON_KEY,
             'Content-Type':'application/json'
           },
@@ -5250,9 +5392,18 @@ Grading rules:
               {role:'system', content: introDrillMode ? INTRO_RUBRIC_PROMPT : bodyDrillMode ? BODY_RUBRIC_PROMPT : RUBRIC_PROMPT},
               {role:'user', content:'TRANSCRIPT:\n\n'+transcript+'\n\n'+metricsBlock}
             ],
-            overrideKey: k || undefined
+            overrideKey: k || undefined,
+            category: 'ballot_feedback'
           })
         }, 60000);
+        if(res.status === 429){
+          const info = await res.json().catch(()=> ({}));
+          if(window.RateLimitUI) window.RateLimitUI.refresh();
+          const err = new Error('rate_limited');
+          err.rateLimited = true; err.category = info.category || 'ballot_feedback'; err.count = info.currentCount; err.limit = info.usageLimit;
+          throw err;
+        }
+        if(window.RateLimitUI) window.RateLimitUI.refresh();
         if(!res.ok) throw new Error('judging_failed:'+res.status+':'+await safeErrText(res));
         return await res.json();
       }, key, key2, key3);
@@ -5279,7 +5430,7 @@ Grading rules:
         const res = await fetchWithTimeout(`${SUPABASE_FUNCTIONS_URL}/groq-chat`,{
           method:'POST',
           headers:{
-            'Authorization':'Bearer '+SUPABASE_ANON_KEY,
+            'Authorization':'Bearer '+(await getAuthToken()),
             'apikey': SUPABASE_ANON_KEY,
             'Content-Type':'application/json'
           },
@@ -5290,9 +5441,11 @@ Grading rules:
               {role:'system', content: introDrillMode ? INTRO_ANNOTATION_PROMPT : bodyDrillMode ? BODY_ANNOTATION_PROMPT : ANNOTATION_PROMPT},
               {role:'user', content:'TRANSCRIPT:\n\n'+transcript}
             ],
-            overrideKey: k || undefined
+            overrideKey: k || undefined,
+            category: 'ballot_feedback'
           })
         }, 45000);
+        if(window.RateLimitUI) window.RateLimitUI.refresh();
         if(!res.ok) throw new Error('annotation_failed:'+res.status);
         return await res.json();
       }, key, key2, key3);
@@ -5365,7 +5518,9 @@ Grading rules:
   function handlePipelineError(err){
     let msg = 'Something went wrong talking to Groq.';
     const s = String(err.message || err);
-    if(s.includes('Failed to fetch')||err instanceof TypeError)
+    if(err.rateLimited)
+      msg = `You've hit today's Ballot Feedback limit (${err.count||'?'}/${err.limit||'?'}). It resets tomorrow — check the usage button in the bottom-left corner.`;
+    else if(s.includes('Failed to fetch')||err instanceof TypeError)
       msg = "Couldn't reach Groq's API — open this file directly in your browser (not an embedded preview) and check your internet connection.";
     else if(s.includes(':401:')||s.toLowerCase().includes('invalid api key'))
       msg = 'Groq rejected the API key (401). Double-check you pasted the correct key.';

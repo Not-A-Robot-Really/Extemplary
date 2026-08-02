@@ -18,6 +18,26 @@
     ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
     : null;
 
+  // ===== EDGE FUNCTION AUTH =====
+  // The edge functions require verify_jwt now, so the bare anon key is no
+  // longer enough to call them. The free-try demos on this landing page run
+  // before anyone signs up, so they get a lightweight anonymous-auth session
+  // instead — this still passes verify_jwt and keeps the "no account
+  // required" free try working exactly as before.
+  let anonSignInPromise = null;
+  async function getAuthToken(){
+    if(!supabaseClient) return SUPABASE_ANON_KEY;
+    const { data } = await supabaseClient.auth.getSession();
+    if(data?.session?.access_token) return data.session.access_token;
+    if(!anonSignInPromise) anonSignInPromise = supabaseClient.auth.signInAnonymously();
+    const { data: anonData, error } = await anonSignInPromise;
+    anonSignInPromise = null;
+    if(error || !anonData?.session?.access_token){
+      throw new Error('auth_failed:could not establish a session for this request.');
+    }
+    return anonData.session.access_token;
+  }
+
   const DATA = window.APP_DATA;
   const SPECTRUM_STOPS = DATA.SPECTRUM_STOPS;
   function colorFromRatio(ratio){
@@ -109,16 +129,22 @@
 
   // Gemini calls go through the `gemini-generate` edge function, same as
   // the signed-in app, the real Gemini key never lives in this file.
-  async function callGeminiWithKey(prompt, apiKey, maxOutputTokens){
+  async function callGeminiWithKey(prompt, apiKey, maxOutputTokens, category){
     const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/gemini-generate`, {
       method:'POST',
       headers:{
         'Content-Type':'application/json',
-        'Authorization':'Bearer '+SUPABASE_ANON_KEY,
+        'Authorization':'Bearer '+(await getAuthToken()),
         'apikey': SUPABASE_ANON_KEY
       },
-      body: JSON.stringify({ prompt, maxOutputTokens: maxOutputTokens||1024, overrideKey: apiKey || undefined })
+      body: JSON.stringify({ prompt, maxOutputTokens: maxOutputTokens||1024, overrideKey: apiKey || undefined, category })
     });
+    if(res.status === 429){
+      const info = await res.json().catch(()=> ({}));
+      const err = new Error('rate_limited');
+      err.rateLimited = true; err.category = info.category || category; err.count = info.currentCount; err.limit = info.usageLimit;
+      throw err;
+    }
     if(!res.ok){
       const bodyText = await res.text().catch(()=> '');
       throw new Error('gemini_failed:'+res.status+':'+bodyText.slice(0,300));
@@ -128,8 +154,8 @@
     if(!candidate) throw new Error('gemini_no_candidate:'+JSON.stringify(json).slice(0,200));
     return candidate;
   }
-  async function callGemini(prompt, maxOutputTokens){
-    return await callGeminiWithKey(prompt, null, maxOutputTokens);
+  async function callGemini(prompt, maxOutputTokens, category){
+    return await callGeminiWithKey(prompt, null, maxOutputTokens, category);
   }
 
   function buildQuestionGenPrompt(category, dateStr){
@@ -1248,7 +1274,7 @@ Grading rules:
       try{
         const dateStr = new Date().toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
         const prompt = buildQuestionGenPrompt(category, dateStr);
-        const candidate = await callGemini(prompt);
+        const candidate = await callGemini(prompt, undefined, 'question_generator');
         const questions = extractQuestions(candidate);
         demoQProgress.finish();
         await new Promise(r => setTimeout(r, 220));
@@ -1336,14 +1362,14 @@ Grading rules:
     // HTTP status at all. Worth one silent retry before bothering the person
     // with an error, since a real failure (bad prompt, quota, etc.) will
     // fail the same way twice in a row anyway.
-    async function callGeminiWithRetry(prompt){
+    async function callGeminiWithRetry(prompt, category){
       try{
-        return await callGemini(prompt);
+        return await callGemini(prompt, undefined, category);
       }catch(err){
         const isNetworkError = err instanceof TypeError || /failed to fetch/i.test(err?.message || '');
         if(!isNetworkError) throw err;
         await new Promise(r => setTimeout(r, 1200));
-        return await callGemini(prompt);
+        return await callGemini(prompt, undefined, category);
       }
     }
 
@@ -1363,7 +1389,7 @@ Grading rules:
         const dateStr = new Date().toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
         const timingDesc = describeDemoTiming();
         const prompt = `You are prepping a competitive NSDA extemp speaker whose tournament is ${timingDesc}. Today is ${dateStr}. Use Google Search to find real, current news from the last week. Write a brief briefing in exactly this plain-text structure (use this exact "## " header, nothing before it):\n\n## Domestic\n4-5 bullet points ("- ") on the most important U.S. domestic stories from the last week. Each bullet MUST start with a short label followed by a colon, like "- Government Shutdown Fight: description here." Wrap the 2-3 most important key terms in double asterisks like **this**.\n\nFormatting rules: plain text only besides the "**bold**" spans, no other markdown, no intro or closing remarks, nothing before "## Domestic" or after the last bullet.`;
-        const candidate = await callGeminiWithRetry(prompt);
+        const candidate = await callGeminiWithRetry(prompt, 'current_events');
         const raw = (candidate.content?.parts || []).map(p => p.text || '').join('').trim();
         demoBfProgress.finish();
         await new Promise(r => setTimeout(r, 220));
@@ -1440,7 +1466,7 @@ Grading rules:
 
       try{
         const prompt = buildCitationPrompt(claim, date, source);
-        const candidate = await callGemini(prompt, 700);
+        const candidate = await callGemini(prompt, 700, 'citation_checker');
         const result = extractCitationVerdict(candidate);
 
         demoCcProgress.finish();

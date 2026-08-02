@@ -1378,17 +1378,21 @@ const DATA = window.APP_DATA;
   });
 
 
+  function toHandle(name){
+    const clean = (name || '').trim().slice(0, 20).toLowerCase().replace(/\s+/g, '');
+    return '@' + (clean || 'you');
+  }
   function applySpeakerName(email){
     if(!speakerNameEl) return;
     var stored = null;
     try{ stored = localStorage.getItem('extemplary_speaker_name:' + (email||'').toLowerCase()); }catch(e){}
-    speakerNameEl.textContent = (stored && stored.trim()) ? stored.trim().slice(0, 20) : 'You';
+    speakerNameEl.textContent = toHandle(stored);
   }
 
   window.addEventListener('extemplary:speaker-name-set', function(ev){
     if(!speakerNameEl) return;
     var name = (ev.detail && ev.detail.name || '').trim().slice(0, 20);
-    speakerNameEl.textContent = name || 'You';
+    speakerNameEl.textContent = toHandle(name);
   });
 
   const accountChip = document.getElementById('accountChip');

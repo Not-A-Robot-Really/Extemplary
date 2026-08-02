@@ -63,7 +63,7 @@
 <header class="topbar">
   <div class="brand">
     <div class="mark"><span class="mark-e-wrap" aria-hidden="true"><svg viewBox="0 0 36 37" fill="none"><use href="#icon-18"></use></svg></span>xtemplary</div>
-    <div class="brand-desc">Record, analyze, and practice your extemporaneous speeches</div>
+    <div class="brand-desc">Record, analyze, and practice your extemporaneous speeches <span class="brand-username" id="speakerName">@you</span></div>
   </div>
   <div style="display:flex;align-items:center;gap:12px;">
     <div class="session-tag" id="sessionTag"><span class="rt-num">Round 1</span></div>
@@ -200,10 +200,6 @@
     </div>
     <div class="ballot-head">
       <div class="ballot-title" id="ballotTitle">Practice Ballot</div>
-      <div class="field"><b>Event</b>Extemporaneous Speaking</div>
-      <div class="field"><b>Round</b><span id="roundNo">1</span></div>
-      <div class="field"><b>Speaker</b><span id="speakerName">You</span></div>
-      <div class="field"><b>Judge</b>Llama 3.3 70B</div>
       <div class="field ballot-mode-label is-regular" id="ballotModeLabel">Regular Practice</div>
     </div>
 
@@ -463,7 +459,6 @@
           <!-- Custom-entry mode -->
           <div id="customQuestionBlock" class="hidden">
             <textarea id="extempQuestion" placeholder="Type or paste your extemp question here before recording…" rows="3"></textarea>
-            <div class="q-hint">Required · will appear at the top of your ballot. <a href="#" id="qModeChangeFromCustom" class="q-change-link">Change method</a></div>
             <div class="q-error" id="questionError">Please enter your question before recording.</div>
           </div>
 
@@ -472,13 +467,11 @@
 
             <!-- Step 1: category select -->
             <div id="qCategoryStep">
-              <div class="q-hint" style="margin-bottom:8px;">Choose a category, then set a difficulty.</div>
               <div class="q-cat-row">
                 <button class="btn ghost q-cat-btn" data-cat="Domestic" type="button">Domestic</button>
                 <button class="btn ghost q-cat-btn" data-cat="International" type="button">International</button>
                 <button class="btn ghost q-cat-btn" data-cat="Economic" type="button">Economic</button>
               </div>
-              <div class="q-hint"><a href="#" id="qModeChangeFromCat" class="q-change-link">Change method</a></div>
             </div>
 
             <!-- Step 1.5: difficulty slider -->

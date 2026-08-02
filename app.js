@@ -118,6 +118,16 @@ const DATA = window.APP_DATA;
           font-family:var(--font-body);font-size:11px;color:var(--slate);
           margin-top:10px;padding-top:10px;border-top:1px solid var(--rule);
         }
+        .copy-confirm-toast{
+          position:fixed;right:20px;bottom:20px;z-index:2147483100;
+          background:var(--crimson);color:var(--on-accent);border:1px solid var(--crimson-deep);
+          font-family:var(--font-body);font-size:13px;font-weight:600;
+          padding:10px 16px;border-radius:6px;
+          opacity:0;transform:translateY(8px);
+          transition:opacity .2s ease, transform .2s ease;
+          pointer-events:none;
+        }
+        .copy-confirm-toast.show{opacity:1;transform:translateY(0);}
       `;
       document.head.appendChild(style);
     }
@@ -1724,6 +1734,17 @@ const DATA = window.APP_DATA;
   const processErrorActions = document.getElementById('processErrorActions');
   const roundNoEl      = document.getElementById('roundNo');
   const speakerNameEl  = document.getElementById('speakerName');
+  function showCopyConfirmToast(message){
+    const t = document.createElement('div');
+    t.className = 'copy-confirm-toast';
+    t.textContent = message;
+    document.body.appendChild(t);
+    requestAnimationFrame(() => t.classList.add('show'));
+    setTimeout(() => {
+      t.classList.remove('show');
+      setTimeout(() => t.remove(), 220);
+    }, 1800);
+  }
   if(speakerNameEl){
     speakerNameEl.addEventListener('click', async () => {
       const text = speakerNameEl.textContent || '';
@@ -1741,13 +1762,7 @@ const DATA = window.APP_DATA;
           document.execCommand('copy');
           document.body.removeChild(ta);
         }
-        const original = text;
-        speakerNameEl.textContent = 'Copied!';
-        speakerNameEl.title = 'Copied!';
-        setTimeout(() => {
-          speakerNameEl.textContent = original;
-          speakerNameEl.title = 'Click to copy';
-        }, 1100);
+        showCopyConfirmToast('Copied to clipboard');
       }catch(e){
         console.warn('copy failed', e);
       }

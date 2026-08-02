@@ -56,6 +56,10 @@ Sign up → Generate questions → Write a speech → Record your speech → Rec
 
 ![record](Images/recordround.png)
 
+- **Extemp Practice Question Difficulty Selection** | Allows the user to select how niche and complex the auto-generated extemp questions will be. With 30 total difficulty levels and a unique example of a question at that level, the user can adjust the difficulty of the questions based on their own personal skill level (novice, varsity,etc).
+
+
+
 - **AI judged Ballot** | Extemplary Transcribes your speech, analyzes vocal delivery from the extracted audio, and scores you on a custom made **8-category NSDA extemp rubric**, all using the model: Llama 3.3 70B on Groq.
 
 ![rubric1](Images/rubric1.png)

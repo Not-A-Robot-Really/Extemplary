@@ -1,10 +1,10 @@
 const DATA = window.APP_DATA;
 (function(){
 
-  // ------ SUPABASE CONFIG -------
-  // NOTE Fill these in with YOUR project's values (Project Settings to API).
-  // SUPABASE_ANON_KEY is the public anon key and IT IS DESIGNED to be
-  // exposed in raw code (Supabase docs make this explicit). This is different and
+  // ===== SUPABASE CONFIG =====
+  // Fill these in with YOUR project's values (Project Settings → API).
+  // SUPABASE_ANON_KEY is the public "anon" key, it's designed to be
+  // exposed in client-side code (Supabase docs make this explicit) and is
   // NOT the same thing as a service_role key or a Groq/Gemini API key. The
   // real Groq/Gemini keys now live only as server-side secrets on the edge
   // functions below and never ship in this file.
@@ -12,7 +12,7 @@ const DATA = window.APP_DATA;
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlpZWhobWVsZm90d2tkcXhwbHVnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzNDYxMzEsImV4cCI6MjA5ODkyMjEzMX0.8QzN1LJmr70Sidxp2RsOq-z3S_NX5lN9QWTr45CSaHo';
   const SUPABASE_FUNCTIONS_URL = SUPABASE_URL + '/functions/v1';
 
-  // ----- AUTHENTICATION & SAVE PROGRESS -----
+  // ===== AUTH + SAVED PROGRESS =====
   // Real accounts via Supabase Auth (email + password). Session tokens are
   // persisted by supabase-js itself (localStorage), which is what makes
   // "stay signed in across tabs/reopens" work with zero extra code.
@@ -55,20 +55,20 @@ const DATA = window.APP_DATA;
   // increment_api_usage() — these numbers here are just for display.
   // Keep this list in sync with DAILY_LIMITS in the three edge functions.
   const RATE_CATEGORIES = [
-    { key: 'ballot_feedback',   label: 'Ballot Feedback',    limit: 20 },
-    { key: 'citation_checker',  label: 'Citation Checker',   limit: 40 },
-    { key: 'question_generator',label: 'Question Generator', limit: 40 },
-    { key: 'current_events',    label: 'Current Events',     limit: 15 }
+    { key: 'ballot_feedback',   label: 'Ballot Feedback',              limit: 20 },
+    { key: 'citation_checker',  label: 'Citation Checker',             limit: 40 },
+    { key: 'question_generator',label: 'Practice Question Generator',  limit: 40 },
+    { key: 'current_events',    label: 'Current Events Summary',       limit: 15 }
   ];
   const RATE_LIMIT_ROBOT_ICON_SVG =
-    '<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
-    '<rect x="5" y="9" width="14" height="10" rx="2"></rect>' +
-    '<line x1="12" y1="9" x2="12" y2="5"></line>' +
-    '<circle cx="12" cy="3" r="1.4" fill="#ffffff"></circle>' +
-    '<circle cx="9" cy="14" r="1.2" fill="currentColor" stroke="none"></circle>' +
-    '<circle cx="15" cy="14" r="1.2" fill="currentColor" stroke="none"></circle>' +
-    '<line x1="5" y1="13" x2="3" y2="13"></line>' +
-    '<line x1="19" y1="13" x2="21" y2="13"></line>' +
+    '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+    '<rect x="4" y="8" width="16" height="12" rx="2"></rect>' +
+    '<line x1="12" y1="8" x2="12" y2="4"></line>' +
+    '<circle cx="12" cy="4" r="1.3" fill="#ffffff"></circle>' +
+    '<line x1="2" y1="14" x2="4" y2="14"></line>' +
+    '<line x1="20" y1="14" x2="22" y2="14"></line>' +
+    '<line x1="9" y1="13" x2="9" y2="15"></line>' +
+    '<line x1="15" y1="13" x2="15" y2="15"></line>' +
     '</svg>';
   const RateLimitUI = (function(){
     let built = false, panelEl, btnEl, barsEl, styleInjected = false;
@@ -79,7 +79,7 @@ const DATA = window.APP_DATA;
       style.textContent = `
         .ai-usage-btn{
           position:fixed;right:16px;bottom:16px;z-index:99999;
-          width:29px;height:29px;box-sizing:border-box;padding:5px;border-radius:4px;
+          width:36px;height:36px;box-sizing:border-box;padding:6px;border-radius:5px;
           display:flex;align-items:center;justify-content:center;
           background:var(--charcoal);border:1px solid var(--charcoal);color:var(--on-accent);
           cursor:pointer;box-shadow:none;transition:color .15s, background .15s;
@@ -87,7 +87,7 @@ const DATA = window.APP_DATA;
         .ai-usage-btn:hover{color:var(--crimson-bright);}
         .ai-usage-panel{
           position:fixed;right:16px;bottom:56px;z-index:99999;
-          width:270px;max-width:calc(100vw - 32px);
+          width:290px;max-width:calc(100vw - 32px);
           background:var(--parchment);border:1px solid var(--charcoal);border-radius:5px;
           box-shadow:none;overflow:hidden;
           visibility:hidden;opacity:0;transform:translateX(24px);
@@ -2495,7 +2495,7 @@ Output ONLY this JSON, nothing else: {"questions":["...","...","..."]}`;
       document.querySelectorAll('.q-cat-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       selectedCategory = btn.dataset.cat;
-      qDifficultyCatLabel.textContent = selectedCategory.toLowerCase();
+      if(qDifficultyCatLabel) qDifficultyCatLabel.textContent = selectedCategory.toLowerCase();
       qCategoryStep.classList.add('hidden');
       qDifficultyStep.classList.remove('hidden');
       qDifficultySlider.value = 2;

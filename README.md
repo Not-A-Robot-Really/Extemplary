@@ -60,7 +60,14 @@ Sign up → Generate questions → Write a speech → Record your speech → Rec
 
 
 
-- **AI judged Ballot** | Extemplary Transcribes your speech, analyzes vocal delivery from the extracted audio, and scores you on a custom made **8-category NSDA extemp rubric**, all using the model: Llama 3.3 70B on Groq.
+- **AI judged Ballot** | Extemplary Transcribes your speech, analyzes vocal delivery from the extracted audio, and scores you on a custom made **8-category NSDA extemp rubric**. The user can select their perferred AI model from the list below, in order from cheapest & weakest to most expensive & advanced.
+1) Llama 3.3 (default)
+2) DeepSeek V4 pro
+3) Claude Sonnet 5
+4) Kimi K3
+5) Claude Opus 5
+
+Opus 5, Kimi K3, Sonnet 5, DeepSeek V4 
 
 ![rubric1](Images/rubric1.png)
 
@@ -183,7 +190,7 @@ The sign-in screen is also a landing page. Scroll down past the log in info to s
 Supabase: provides authentication and cloud storage
 
 - **Transcription:** Groq's Whisper (`whisper-large-v3`)
-- **Judging:** Groq's Llama 3.3 70B 
+- **Judging:** Groq's Llama 3.3 70B, Opus 5, Kimi K3, Sonnet 5, **OR** DeepSeek V4
 - **Question drafting, briefings & citation checking:** Google's Gemini (using live web searches)
 - **Audio analysis:** Web Audio API (client-side FFT/pitch/volume analysis)
 - **Video:** `MediaRecorder` for capture and`<video>` for review/playback. The example ballot utilizes the YouTube IFrame API for its sample speech.

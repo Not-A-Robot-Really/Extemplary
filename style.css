@@ -1366,6 +1366,12 @@
     outline:none;border-color:var(--brass);
   }
   .add-signal-form input[type=number]{width:100%;}
+  .judge-model-select{
+    width:100%;font-family:var(--font-mono);font-size:13px;padding:8px 9px;
+    border:2px solid var(--rule);border-radius:3px;background:#ffffff;color:var(--charcoal);
+    transition:border-color .15s;cursor:pointer;
+  }
+  .judge-model-select:focus{outline:none;border-color:var(--brass);}
   .add-signal-form label.color-pick{
     display:flex;align-items:center;gap:6px;cursor:pointer;
     font-family:var(--font-mono);font-size:11px;color:var(--slate);

@@ -5591,9 +5591,15 @@ Grading rules:
       pipelineProgress.setStage(88, phrases.judging);
 
       const metricsBlock = buildDeliveryMetricsBlock(deliveryMetrics, fillerStutterStats);
-      const judgeChoice = getJudgeModelChoice();
-      const chatJson = await withKeyFallback(async (k) => {
-        const res = await fetchWithTimeout(`${SUPABASE_FUNCTIONS_URL}/${judgeChoice.fn}`,{
+      let judgeChoice = getJudgeModelChoice();
+      // Runs the actual judging request against whichever edge function/model
+      // `choice` points to. Kept as its own function so we can retry once
+      // against the default Llama/groq-chat judge below if the person's
+      // chosen AI (Hack Club AI models) is unavailable — e.g. the
+      // hackclub-chat edge function isn't deployed yet, or rejects the
+      // model id — instead of just failing the whole round silently.
+      const runJudging = async (choice) => withKeyFallback(async (k) => {
+        const res = await fetchWithTimeout(`${SUPABASE_FUNCTIONS_URL}/${choice.fn}`,{
           method:'POST',
           headers:{
             'Authorization':'Bearer '+(await getAuthToken()),
@@ -5601,12 +5607,12 @@ Grading rules:
             'Content-Type':'application/json'
           },
           body: JSON.stringify({
-            model: judgeChoice.model, temperature:0.4, max_tokens:3000,
+            model: choice.model, temperature:0.4, max_tokens:3000,
             messages:[
               {role:'system', content: introDrillMode ? INTRO_RUBRIC_PROMPT : bodyDrillMode ? BODY_RUBRIC_PROMPT : RUBRIC_PROMPT},
               {role:'user', content:'TRANSCRIPT:\n\n'+transcript+'\n\n'+metricsBlock}
             ],
-            overrideKey: judgeChoice.fn === 'groq-chat' ? (k || undefined) : undefined,
+            overrideKey: choice.fn === 'groq-chat' ? (k || undefined) : undefined,
             category: 'ballot_feedback'
           })
         }, 60000);
@@ -5621,6 +5627,20 @@ Grading rules:
         if(!res.ok) throw new Error('judging_failed:'+res.status+':'+await safeErrText(res));
         return await res.json();
       }, key, key2, key3);
+
+      let chatJson;
+      try{
+        chatJson = await runJudging(judgeChoice);
+      }catch(err){
+        // Only fall back for genuine failures of a *non-default* judge model
+        // (missing/misconfigured Hack Club AI endpoint, unsupported model
+        // id, etc.) — never mask our own rate limiting, and never loop if
+        // Llama itself was already the one that failed.
+        if(err.rateLimited || judgeChoice.fn === 'groq-chat') throw err;
+        try{ showCopyConfirmToast(`${judgeModelLabel} is unavailable right now — falling back to Llama 3.3 70B.`); }catch(e){}
+        judgeChoice = JUDGE_MODELS.llama;
+        chatJson = await runJudging(judgeChoice);
+      }
       const feedback = chatJson.choices?.[0]?.message?.content || '';
       if(!feedback) throw new Error('judging_failed:empty:No content returned.');
       lastRawFeedback = feedback;

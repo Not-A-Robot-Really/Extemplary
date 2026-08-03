@@ -220,8 +220,54 @@
   .start-timer-btn{
     font-family:var(--font-body);font-size:12.5px;font-weight:700;
     width:38px;height:38px;padding:0;border-radius:10px;border:1px solid transparent;cursor:pointer;
-    color:#fff;margin-bottom:6px;margin-left:auto;transition:background .15s, border-color .15s, transform .1s;
+    color:#fff;margin-bottom:6px;transition:background .15s, border-color .15s, transform .1s;
     white-space:nowrap;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;
+  }
+
+  /* -------- AI judge model picker (sits between the practice-mode tabs
+     and the start-timer button; styled like the model switcher on LLM
+     chat sites) -------- */
+  .model-picker{
+    position:relative;margin-left:auto;margin-bottom:6px;flex-shrink:0;
+  }
+  .model-picker-btn{
+    display:inline-flex;align-items:center;gap:6px;
+    font-family:var(--font-body);font-size:12.5px;font-weight:600;
+    padding:8px 12px;border-radius:999px;border:1px solid rgba(22,40,60,0.22);
+    background:var(--parchment-deep);color:var(--charcoal);cursor:pointer;
+    box-shadow:inset 0 1px 3px rgba(22,40,60,0.10);
+    transition:background .15s, border-color .15s;white-space:nowrap;
+  }
+  .model-picker-btn:hover{background:#fff;border-color:rgba(22,40,60,0.32);}
+  .model-picker.open .model-picker-btn{background:#fff;border-color:var(--brass);}
+  .model-picker-icon{flex-shrink:0;opacity:0.75;}
+  .model-picker-label{max-width:150px;overflow:hidden;text-overflow:ellipsis;}
+  .model-picker-chevron{flex-shrink:0;opacity:0.6;transition:transform .15s;}
+  .model-picker.open .model-picker-chevron{transform:rotate(180deg);}
+  .model-picker-menu{
+    position:absolute;top:calc(100% + 6px);right:0;z-index:60;
+    width:236px;max-width:min(236px, calc(100vw - 48px));
+    background:#ffffff;border:1px solid rgba(22,40,60,0.18);border-radius:10px;
+    box-shadow:0 10px 28px rgba(22,40,60,0.20);padding:6px;
+  }
+  .model-picker-menu.hidden{display:none;}
+  .model-picker-option{
+    display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;
+    text-align:left;padding:8px 9px;border-radius:6px;border:none;background:none;cursor:pointer;
+    color:var(--charcoal);transition:background .12s;
+  }
+  .model-picker-option:hover{background:var(--parchment-deep);}
+  .model-picker-option.active{background:rgba(29,92,158,0.08);}
+  .model-picker-option-text{display:flex;flex-direction:column;gap:1px;}
+  .model-picker-option-name{font-family:var(--font-body);font-size:12.5px;font-weight:600;}
+  .model-picker-option-sub{font-family:var(--font-mono);font-size:10px;color:var(--slate);}
+  .model-picker-check{flex-shrink:0;color:#1d5c9e;visibility:hidden;}
+  .model-picker-option.active .model-picker-check{visibility:visible;}
+  @media(max-width:600px){
+    .model-picker{order:1;margin-left:0;}
+    .model-picker-label{max-width:110px;}
+    .start-timer-btn{order:2;margin-left:auto;}
+    .mode-switch-row{flex-wrap:wrap;}
   }
   .start-timer-btn svg{ width:19px;height:19px;stroke:#fff;fill:none; }
   .start-timer-btn:active{ transform:scale(0.97); }
@@ -1366,12 +1412,6 @@
     outline:none;border-color:var(--brass);
   }
   .add-signal-form input[type=number]{width:100%;}
-  .judge-model-select{
-    width:100%;font-family:var(--font-mono);font-size:13px;padding:8px 9px;
-    border:2px solid var(--rule);border-radius:3px;background:#ffffff;color:var(--charcoal);
-    transition:border-color .15s;cursor:pointer;
-  }
-  .judge-model-select:focus{outline:none;border-color:var(--brass);}
   .add-signal-form label.color-pick{
     display:flex;align-items:center;gap:6px;cursor:pointer;
     font-family:var(--font-mono);font-size:11px;color:var(--slate);

@@ -1885,30 +1885,75 @@ const DATA = window.APP_DATA;
   }
   const signalList     = document.getElementById('signalList');
   const signalCount    = document.getElementById('signalCount');
-  const judgeModelSelect = document.getElementById('judgeModelSelect');
+  // ----- AI judge model picker (button + menu next to the practice-mode
+  // tabs, styled like the model switcher on LLM chat sites) -----
+  const modelPicker      = document.getElementById('modelPicker');
+  const modelPickerBtn   = document.getElementById('modelPickerBtn');
+  const modelPickerLabel = document.getElementById('modelPickerLabel');
+  const modelPickerMenu  = document.getElementById('modelPickerMenu');
   const JUDGE_MODEL_KEY = 'extemplary_judge_model';
-  // Maps the dropdown's stored value to what the judging call actually
+  // Maps the picker's stored value to what the judging call actually
   // needs: which edge function to hit, and (for Hack Club AI) which model
   // id to send. Keep this in sync with ALLOWED_MODELS in the hackclub-chat
-  // edge function.
+  // edge function. `label` drives the picker button text.
   const JUDGE_MODELS = {
-    llama:    { fn: 'groq-chat',     model: 'llama-3.3-70b-versatile' },
-    opus5:    { fn: 'hackclub-chat', model: 'anthropic/claude-opus-5' },
-    kimik3:   { fn: 'hackclub-chat', model: 'moonshotai/kimi-k3' },
-    sonnet5:  { fn: 'hackclub-chat', model: 'anthropic/claude-sonnet-5' },
-    deepseekv4: { fn: 'hackclub-chat', model: 'deepseek/deepseek-v4-pro' }
+    llama:    { fn: 'groq-chat',     model: 'llama-3.3-70b-versatile',   label: 'Llama 3.3 70B' },
+    opus5:    { fn: 'hackclub-chat', model: 'anthropic/claude-opus-5',   label: 'Claude Opus 5' },
+    kimik3:   { fn: 'hackclub-chat', model: 'moonshotai/kimi-k3',        label: 'Kimi K3' },
+    sonnet5:  { fn: 'hackclub-chat', model: 'anthropic/claude-sonnet-5', label: 'Claude Sonnet 5' },
+    deepseekv4: { fn: 'hackclub-chat', model: 'deepseek/deepseek-v4-pro',label: 'DeepSeek V4' }
   };
+  let judgeModelValue = 'llama';
   function getJudgeModelChoice(){
-    const val = judgeModelSelect ? judgeModelSelect.value : 'llama';
-    return JUDGE_MODELS[val] || JUDGE_MODELS.llama;
+    return JUDGE_MODELS[judgeModelValue] || JUDGE_MODELS.llama;
   }
-  if(judgeModelSelect){
+  function setJudgeModel(val, persist){
+    if(!JUDGE_MODELS[val]) val = 'llama';
+    judgeModelValue = val;
+    if(modelPickerLabel) modelPickerLabel.textContent = JUDGE_MODELS[val].label;
+    if(modelPickerMenu){
+      modelPickerMenu.querySelectorAll('.model-picker-option').forEach(opt => {
+        const isActive = opt.dataset.model === val;
+        opt.classList.toggle('active', isActive);
+        opt.setAttribute('aria-selected', isActive ? 'true' : 'false');
+      });
+    }
+    if(persist){ try{ localStorage.setItem(JUDGE_MODEL_KEY, val); }catch(e){} }
+  }
+  function closeModelPicker(){
+    if(!modelPicker) return;
+    modelPicker.classList.remove('open');
+    if(modelPickerMenu) modelPickerMenu.classList.add('hidden');
+    if(modelPickerBtn) modelPickerBtn.setAttribute('aria-expanded', 'false');
+  }
+  if(modelPickerBtn && modelPickerMenu && modelPicker){
     try{
       const saved = localStorage.getItem(JUDGE_MODEL_KEY);
-      if(saved && JUDGE_MODELS[saved]) judgeModelSelect.value = saved;
-    }catch(e){}
-    judgeModelSelect.addEventListener('change', () => {
-      try{ localStorage.setItem(JUDGE_MODEL_KEY, judgeModelSelect.value); }catch(e){}
+      setJudgeModel(saved && JUDGE_MODELS[saved] ? saved : 'llama', false);
+    }catch(e){ setJudgeModel('llama', false); }
+    modelPickerBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const willOpen = modelPickerMenu.classList.contains('hidden');
+      if(willOpen){
+        modelPicker.classList.add('open');
+        modelPickerMenu.classList.remove('hidden');
+        modelPickerBtn.setAttribute('aria-expanded', 'true');
+      }else{
+        closeModelPicker();
+      }
+    });
+    modelPickerMenu.querySelectorAll('.model-picker-option').forEach(opt => {
+      opt.addEventListener('click', (e) => {
+        e.stopPropagation();
+        setJudgeModel(opt.dataset.model, true);
+        closeModelPicker();
+      });
+    });
+    document.addEventListener('click', (e) => {
+      if(!modelPickerMenu.classList.contains('hidden') && !modelPicker.contains(e.target)) closeModelPicker();
+    });
+    document.addEventListener('keydown', (e) => {
+      if(e.key === 'Escape' && !modelPickerMenu.classList.contains('hidden')) closeModelPicker();
     });
   }
   const sigMin         = document.getElementById('sigMin');
@@ -5581,7 +5626,7 @@ Grading rules:
         sonnet5: 'Claude Sonnet 5',
         deepseekv4: 'DeepSeek V4'
       };
-      const judgeModelLabel = JUDGE_MODEL_LABELS[judgeModelSelect ? judgeModelSelect.value : 'llama'] || 'Llama 3.3 70B Versatile';
+      const judgeModelLabel = JUDGE_MODEL_LABELS[judgeModelValue] || 'Llama 3.3 70B Versatile';
       statusText.textContent = 'The panel is deliberating…';
       statusSub.textContent = introDrillMode
         ? `${judgeModelLabel} is scoring your introduction against the intro-drill rubric.`

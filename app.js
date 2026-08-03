@@ -1885,6 +1885,32 @@ const DATA = window.APP_DATA;
   }
   const signalList     = document.getElementById('signalList');
   const signalCount    = document.getElementById('signalCount');
+  const judgeModelSelect = document.getElementById('judgeModelSelect');
+  const JUDGE_MODEL_KEY = 'extemplary_judge_model';
+  // Maps the dropdown's stored value to what the judging call actually
+  // needs: which edge function to hit, and (for Hack Club AI) which model
+  // id to send. Keep this in sync with ALLOWED_MODELS in the hackclub-chat
+  // edge function.
+  const JUDGE_MODELS = {
+    llama:    { fn: 'groq-chat',     model: 'llama-3.3-70b-versatile' },
+    opus5:    { fn: 'hackclub-chat', model: 'anthropic/claude-opus-5' },
+    kimik3:   { fn: 'hackclub-chat', model: 'moonshotai/kimi-k3' },
+    sonnet5:  { fn: 'hackclub-chat', model: 'anthropic/claude-sonnet-5' },
+    deepseekv4: { fn: 'hackclub-chat', model: 'deepseek/deepseek-v4-pro' }
+  };
+  function getJudgeModelChoice(){
+    const val = judgeModelSelect ? judgeModelSelect.value : 'llama';
+    return JUDGE_MODELS[val] || JUDGE_MODELS.llama;
+  }
+  if(judgeModelSelect){
+    try{
+      const saved = localStorage.getItem(JUDGE_MODEL_KEY);
+      if(saved && JUDGE_MODELS[saved]) judgeModelSelect.value = saved;
+    }catch(e){}
+    judgeModelSelect.addEventListener('change', () => {
+      try{ localStorage.setItem(JUDGE_MODEL_KEY, judgeModelSelect.value); }catch(e){}
+    });
+  }
   const sigMin         = document.getElementById('sigMin');
   const sigSec         = document.getElementById('sigSec');
   const sigLabel       = document.getElementById('sigLabel');
@@ -5548,17 +5574,26 @@ Grading rules:
         ? Object.assign(deliveryMetrics, fillerStutterStats)
         : Object.assign({ audioUnavailable:true }, fillerStutterStats);
 
+      const JUDGE_MODEL_LABELS = {
+        llama: 'Llama 3.3 70B Versatile',
+        opus5: 'Claude Opus 5',
+        kimik3: 'Kimi K3',
+        sonnet5: 'Claude Sonnet 5',
+        deepseekv4: 'DeepSeek V4'
+      };
+      const judgeModelLabel = JUDGE_MODEL_LABELS[judgeModelSelect ? judgeModelSelect.value : 'llama'] || 'Llama 3.3 70B Versatile';
       statusText.textContent = 'The panel is deliberating…';
       statusSub.textContent = introDrillMode
-        ? 'Llama 3.3 70B Versatile is scoring your introduction against the intro-drill rubric.'
+        ? `${judgeModelLabel} is scoring your introduction against the intro-drill rubric.`
         : bodyDrillMode
-        ? 'Llama 3.3 70B Versatile is scoring your body point against the body-drill rubric.'
-        : 'Llama 3.3 70B Versatile is scoring your speech against the rubric.';
+        ? `${judgeModelLabel} is scoring your body point against the body-drill rubric.`
+        : `${judgeModelLabel} is scoring your speech against the rubric.`;
       pipelineProgress.setStage(88, phrases.judging);
 
       const metricsBlock = buildDeliveryMetricsBlock(deliveryMetrics, fillerStutterStats);
+      const judgeChoice = getJudgeModelChoice();
       const chatJson = await withKeyFallback(async (k) => {
-        const res = await fetchWithTimeout(`${SUPABASE_FUNCTIONS_URL}/groq-chat`,{
+        const res = await fetchWithTimeout(`${SUPABASE_FUNCTIONS_URL}/${judgeChoice.fn}`,{
           method:'POST',
           headers:{
             'Authorization':'Bearer '+(await getAuthToken()),
@@ -5566,12 +5601,12 @@ Grading rules:
             'Content-Type':'application/json'
           },
           body: JSON.stringify({
-            model:'llama-3.3-70b-versatile', temperature:0.4, max_tokens:3000,
+            model: judgeChoice.model, temperature:0.4, max_tokens:3000,
             messages:[
               {role:'system', content: introDrillMode ? INTRO_RUBRIC_PROMPT : bodyDrillMode ? BODY_RUBRIC_PROMPT : RUBRIC_PROMPT},
               {role:'user', content:'TRANSCRIPT:\n\n'+transcript+'\n\n'+metricsBlock}
             ],
-            overrideKey: k || undefined,
+            overrideKey: judgeChoice.fn === 'groq-chat' ? (k || undefined) : undefined,
             category: 'ballot_feedback'
           })
         }, 60000);

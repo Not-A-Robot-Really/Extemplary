@@ -3809,7 +3809,7 @@ Grading rules:
   });
   window.addEventListener('resize', () => { if(rubricOpen) positionRubricPanel(); });
 
-  // ===== Compare AI Judges panel (icon sits left of the rubric icon on
+  // ===== LLM Model Rankings panel (icon sits left of the rubric icon on
   // the ballot paper) — same open/close/position pattern as the rubric
   // panel above, just simpler since there's no mode-dependent content. =====
   const aiCompareToggle = document.getElementById('aiCompareToggle');
@@ -3820,7 +3820,7 @@ Grading rules:
   let aiCompareOpen = false;
   function positionAiComparePanel(){
     const rect = aiCompareToggle.getBoundingClientRect();
-    const width = Math.min(560, window.innerWidth - 24);
+    const width = Math.min(680, window.innerWidth - 24);
     aiComparePanel.style.width = width + 'px';
     aiComparePanel.style.left = 'auto';
     let right = window.innerWidth - rect.right;

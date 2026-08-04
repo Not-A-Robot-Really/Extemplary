@@ -154,4 +154,6 @@
 <symbol id="icon-70" viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="1.5"/><path d="M9 2h6a1 1 0 0 1 1 1v2H8V3a1 1 0 0 1 1-1Z"/><path d="M8.5 11.5l1.5 1.5 3-3"/><line x1="8.5" y1="16.5" x2="15.5" y2="16.5"/></symbol>
 <symbol id="icon-71" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></symbol>
 <symbol id="icon-72" viewBox="0 0 24 24"><path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 4h10v5a5 5 0 0 1-10 0V4Z"/><path d="M7 5H4a1 1 0 0 0-1 1v1a4 4 0 0 0 4 4"/><path d="M17 5h3a1 1 0 0 1 1 1v1a4 4 0 0 1-4 4"/></symbol>
+<!-- The AI Chip Icon is used by the "LLM Model Rankings" toggle! -->
+<symbol id="icon-73" viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="2"/><path d="M12 7V3M12 21v-4M17 12h4M3 12h4"/></symbol>
 </svg>

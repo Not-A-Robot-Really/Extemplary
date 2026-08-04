@@ -193,13 +193,13 @@
          while the paper is displaying Home/Record, My Ballot History, the
          Example Ballot, or the post-submission Feedback/Results view (see
          showView()'s rubricToggle.classList.toggle logic in the JS below). -->
-    <!-- Compare AI Judges icon, sits directly left of the Grading Rubric
+    <!-- LLM Model Rankings icon, sits directly left of the Grading Rubric
          icon on the ballot paper. Opens a panel ranking the available
          judge models by quality/cost, mirroring the same
          RUBRIC_VISIBLE_VIEWS show/hide + positioning pattern as
          rubricToggle/rubricPanel below. -->
-    <button class="ai-compare-toggle-btn" id="aiCompareToggle" type="button" aria-label="Compare AI Judges" title="Compare AI Judges">
-      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="7" width="10" height="10" rx="2"/><path d="M12 7V3M12 21v-4M17 12h4M3 12h4"/></svg>
+    <button class="ai-compare-toggle-btn" id="aiCompareToggle" type="button" aria-label="LLM Model Rankings" title="LLM Model Rankings">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-73"></use></svg>
     </button>
     <button class="rubric-toggle-btn" id="rubricToggle" type="button" aria-label="Grading Rubric" title="Grading Rubric">
       <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-70"></use></svg>
@@ -447,14 +447,19 @@
           </div>
         </div>
 
-        <!-- Compare AI Judges panel (toggled by the AI chip icon on the
+        <!-- LLM Model Rankings panel (toggled by the AI chip icon on the
              ballot paper, immediately left of the rubric icon). Ranks
              every judge model by third-party quality/cost benchmarks;
              the ones actually selectable in the model picker are bolded
-             and marked "Available Here". -->
+             and marked "Available Here". Bar colors are solid (not a
+             gradient) and picked per score from the same red→orange→
+             yellow→green→teal spectrum the app already uses for its
+             delivery-metric scores (see colorFromRatio in app.js), so a
+             glance at the color alone tells you roughly how good a score
+             is without reading the number. -->
         <div class="settings-panel hidden ai-compare-panel" id="aiComparePanel">
           <div class="sp-head">
-            <span>Compare AI Judges</span>
+            <span>LLM Model Rankings</span>
             <span>Quality vs. Cost</span>
           </div>
           <div class="sp-body">
@@ -468,65 +473,64 @@
               <div class="ai-compare-row available">
                 <span class="ai-compare-rank">1</span>
                 <span class="ai-compare-model">Claude Opus 5 <em>Available Here</em></span>
-                <span class="ai-compare-metric"><span class="ai-bar-track"><span class="ai-bar-fill quality" style="width:96%;"></span></span><span class="ai-bar-num">96</span></span>
-                <span class="ai-compare-metric"><span class="ai-bar-track"><span class="ai-bar-fill cost" style="width:35%;"></span></span><span class="ai-bar-num">35</span></span>
+                <span class="ai-compare-metric"><span class="ai-bar-track"><span class="ai-bar-fill" style="width:96%;background:rgb(23,174,171);"></span></span><span class="ai-bar-num">96</span></span>
+                <span class="ai-compare-metric"><span class="ai-bar-track"><span class="ai-bar-fill" style="width:35%;background:rgb(215,149,28);"></span></span><span class="ai-bar-num">35</span></span>
               </div>
               <div class="ai-compare-row">
                 <span class="ai-compare-rank">2</span>
                 <span class="ai-compare-model">Fable 5</span>
-                <span class="ai-compare-metric"><span class="ai-bar-track"><span class="ai-bar-fill quality" style="width:90%;"></span></span><span class="ai-bar-num">90</span></span>
-                <span class="ai-compare-metric"><span class="ai-bar-track"><span class="ai-bar-fill cost" style="width:15%;"></span></span><span class="ai-bar-num">15</span></span>
+                <span class="ai-compare-metric"><span class="ai-bar-track"><span class="ai-bar-fill" style="width:90%;background:rgb(30,174,145);"></span></span><span class="ai-bar-num">90</span></span>
+                <span class="ai-compare-metric"><span class="ai-bar-track"><span class="ai-bar-fill" style="width:15%;background:rgb(207,101,43);"></span></span><span class="ai-bar-num">15</span></span>
               </div>
               <div class="ai-compare-row">
                 <span class="ai-compare-rank">3</span>
                 <span class="ai-compare-model">GPT-5.6 Sol</span>
-                <span class="ai-compare-metric"><span class="ai-bar-track"><span class="ai-bar-fill quality" style="width:90%;"></span></span><span class="ai-bar-num">90</span></span>
-                <span class="ai-compare-metric"><span class="ai-bar-track"><span class="ai-bar-fill cost" style="width:30%;"></span></span><span class="ai-bar-num">30</span></span>
+                <span class="ai-compare-metric"><span class="ai-bar-track"><span class="ai-bar-fill" style="width:90%;background:rgb(30,174,145);"></span></span><span class="ai-bar-num">90</span></span>
+                <span class="ai-compare-metric"><span class="ai-bar-track"><span class="ai-bar-fill" style="width:30%;background:rgb(216,139,36);"></span></span><span class="ai-bar-num">30</span></span>
               </div>
               <div class="ai-compare-row available">
                 <span class="ai-compare-rank">4</span>
                 <span class="ai-compare-model">Kimi K3 <em>Available Here</em></span>
-                <span class="ai-compare-metric"><span class="ai-bar-track"><span class="ai-bar-fill quality" style="width:86%;"></span></span><span class="ai-bar-num">86</span></span>
-                <span class="ai-compare-metric"><span class="ai-bar-track"><span class="ai-bar-fill cost" style="width:60%;"></span></span><span class="ai-bar-num">60</span></span>
+                <span class="ai-compare-metric"><span class="ai-bar-track"><span class="ai-bar-fill" style="width:86%;background:rgb(34,174,127);"></span></span><span class="ai-bar-num">86</span></span>
+                <span class="ai-compare-metric"><span class="ai-bar-track"><span class="ai-bar-fill" style="width:60%;background:rgb(146,176,35);"></span></span><span class="ai-bar-num">60</span></span>
               </div>
               <div class="ai-compare-row available">
                 <span class="ai-compare-rank">5</span>
                 <span class="ai-compare-model">Claude Sonnet 5 <em>Available Here</em></span>
-                <span class="ai-compare-metric"><span class="ai-bar-track"><span class="ai-bar-fill quality" style="width:83%;"></span></span><span class="ai-bar-num">83</span></span>
-                <span class="ai-compare-metric"><span class="ai-bar-track"><span class="ai-bar-fill cost" style="width:75%;"></span></span><span class="ai-bar-num">75</span></span>
+                <span class="ai-compare-metric"><span class="ai-bar-track"><span class="ai-bar-fill" style="width:83%;background:rgb(38,174,114);"></span></span><span class="ai-bar-num">83</span></span>
+                <span class="ai-compare-metric"><span class="ai-bar-track"><span class="ai-bar-fill" style="width:75%;background:rgb(47,174,78);"></span></span><span class="ai-bar-num">75</span></span>
               </div>
               <div class="ai-compare-row">
                 <span class="ai-compare-rank">6</span>
                 <span class="ai-compare-model">Grok 4.5</span>
-                <span class="ai-compare-metric"><span class="ai-bar-track"><span class="ai-bar-fill quality" style="width:80%;"></span></span><span class="ai-bar-num">80</span></span>
-                <span class="ai-compare-metric"><span class="ai-bar-track"><span class="ai-bar-fill cost" style="width:72%;"></span></span><span class="ai-bar-num">72</span></span>
+                <span class="ai-compare-metric"><span class="ai-bar-track"><span class="ai-bar-fill" style="width:80%;background:rgb(41,174,100);"></span></span><span class="ai-bar-num">80</span></span>
+                <span class="ai-compare-metric"><span class="ai-bar-track"><span class="ai-bar-fill" style="width:72%;background:rgb(67,174,69);"></span></span><span class="ai-bar-num">72</span></span>
               </div>
               <div class="ai-compare-row available">
                 <span class="ai-compare-rank">7</span>
                 <span class="ai-compare-model">DeepSeek V4 <em>Available Here</em></span>
-                <span class="ai-compare-metric"><span class="ai-bar-track"><span class="ai-bar-fill quality" style="width:80%;"></span></span><span class="ai-bar-num">80</span></span>
-                <span class="ai-compare-metric"><span class="ai-bar-track"><span class="ai-bar-fill cost" style="width:90%;"></span></span><span class="ai-bar-num">90</span></span>
+                <span class="ai-compare-metric"><span class="ai-bar-track"><span class="ai-bar-fill" style="width:80%;background:rgb(41,174,100);"></span></span><span class="ai-bar-num">80</span></span>
+                <span class="ai-compare-metric"><span class="ai-bar-track"><span class="ai-bar-fill" style="width:90%;background:rgb(30,174,145);"></span></span><span class="ai-bar-num">90</span></span>
               </div>
               <div class="ai-compare-row">
                 <span class="ai-compare-rank">8</span>
                 <span class="ai-compare-model">GLM-5.2</span>
-                <span class="ai-compare-metric"><span class="ai-bar-track"><span class="ai-bar-fill quality" style="width:79%;"></span></span><span class="ai-bar-num">79</span></span>
-                <span class="ai-compare-metric"><span class="ai-bar-track"><span class="ai-bar-fill cost" style="width:88%;"></span></span><span class="ai-bar-num">88</span></span>
+                <span class="ai-compare-metric"><span class="ai-bar-track"><span class="ai-bar-fill" style="width:79%;background:rgb(42,174,96);"></span></span><span class="ai-bar-num">79</span></span>
+                <span class="ai-compare-metric"><span class="ai-bar-track"><span class="ai-bar-fill" style="width:88%;background:rgb(32,174,136);"></span></span><span class="ai-bar-num">88</span></span>
               </div>
               <div class="ai-compare-row">
                 <span class="ai-compare-rank">9</span>
                 <span class="ai-compare-model">Gemini 3.1 Pro</span>
-                <span class="ai-compare-metric"><span class="ai-bar-track"><span class="ai-bar-fill quality" style="width:68%;"></span></span><span class="ai-bar-num">68</span></span>
-                <span class="ai-compare-metric"><span class="ai-bar-track"><span class="ai-bar-fill cost" style="width:65%;"></span></span><span class="ai-bar-num">65</span></span>
+                <span class="ai-compare-metric"><span class="ai-bar-track"><span class="ai-bar-fill" style="width:68%;background:rgb(93,175,58);"></span></span><span class="ai-bar-num">68</span></span>
+                <span class="ai-compare-metric"><span class="ai-bar-track"><span class="ai-bar-fill" style="width:65%;background:rgb(113,175,49);"></span></span><span class="ai-bar-num">65</span></span>
               </div>
               <div class="ai-compare-row available">
                 <span class="ai-compare-rank">—</span>
                 <span class="ai-compare-model">Llama 3.3 70B <em>Available Here</em></span>
-                <span class="ai-compare-metric"><span class="ai-bar-track"><span class="ai-bar-fill quality" style="width:58%;"></span></span><span class="ai-bar-num">58</span></span>
-                <span class="ai-compare-metric"><span class="ai-bar-track"><span class="ai-bar-fill cost" style="width:95%;"></span></span><span class="ai-bar-num">95</span></span>
+                <span class="ai-compare-metric"><span class="ai-bar-track"><span class="ai-bar-fill" style="width:58%;background:rgb(159,176,29);"></span></span><span class="ai-bar-num">58</span></span>
+                <span class="ai-compare-metric"><span class="ai-bar-track"><span class="ai-bar-fill" style="width:95%;background:rgb(24,174,167);"></span></span><span class="ai-bar-num">95</span></span>
               </div>
             </div>
-            <div class="ai-compare-footnote">Cost score is normalized so 100 = cheapest. Bolded models with <em>Available Here</em> are selectable in the AI judge picker.</div>
           </div>
         </div>
 

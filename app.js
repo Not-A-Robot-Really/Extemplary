@@ -1904,6 +1904,30 @@ const DATA = window.APP_DATA;
     deepseekv4: { fn: 'hackclub-chat', model: 'deepseek/deepseek-v4-pro',label: 'DeepSeek V4' }
   };
   let judgeModelValue = 'llama';
+  // Different chat-completion backends shape their JSON response
+  // differently. Groq (and most OpenAI-compatible endpoints) use
+  // choices[0].message.content. Anthropic's native Messages API (which
+  // hackclub-chat may be proxying to for the Claude options) uses a
+  // content[] array of blocks instead. This tries every shape we know
+  // about so a real, billed response never gets discarded as "empty"
+  // just because of a format mismatch.
+  function extractChatContent(json){
+    if(!json) return '';
+    const asText = (v) => {
+      if(typeof v === 'string') return v.trim();
+      if(Array.isArray(v)) return v.map(b => (typeof b === 'string' ? b : b?.text || '')).join('').trim();
+      return '';
+    };
+    return (
+      asText(json.choices?.[0]?.message?.content) ||
+      asText(json.choices?.[0]?.text) ||
+      asText(json.content) ||
+      asText(json.message?.content) ||
+      asText(json.completion) ||
+      asText(json.output_text) ||
+      ''
+    );
+  }
   function getJudgeModelChoice(){
     return JUDGE_MODELS[judgeModelValue] || JUDGE_MODELS.llama;
   }
@@ -5641,8 +5665,9 @@ Grading rules:
       // `choice` points to. Kept as its own function so we can retry once
       // against the default Llama/groq-chat judge below if the person's
       // chosen AI (Hack Club AI models) is unavailable — e.g. the
-      // hackclub-chat edge function isn't deployed yet, or rejects the
-      // model id — instead of just failing the whole round silently.
+      // hackclub-chat edge function isn't deployed yet, rejects the model
+      // id, or returns a differently-shaped response — instead of just
+      // failing the whole round silently.
       const runJudging = async (choice) => withKeyFallback(async (k) => {
         const res = await fetchWithTimeout(`${SUPABASE_FUNCTIONS_URL}/${choice.fn}`,{
           method:'POST',
@@ -5670,23 +5695,35 @@ Grading rules:
         }
         if(window.RateLimitUI) window.RateLimitUI.refresh();
         if(!res.ok) throw new Error('judging_failed:'+res.status+':'+await safeErrText(res));
-        return await res.json();
+        const json = await res.json();
+        const content = extractChatContent(json);
+        // The HTTP call itself succeeded (the model billed real tokens),
+        // but if we can't find text in any shape we recognize, treat it
+        // the same as a failed call so the caller can fall back to Llama
+        // instead of surfacing an opaque "no content" error.
+        if(!content){
+          const err = new Error('judging_failed:unrecognized_response_shape');
+          err.rawResponse = json;
+          throw err;
+        }
+        return content;
       }, key, key2, key3);
 
-      let chatJson;
+      let feedback;
       try{
-        chatJson = await runJudging(judgeChoice);
+        feedback = await runJudging(judgeChoice);
       }catch(err){
         // Only fall back for genuine failures of a *non-default* judge model
         // (missing/misconfigured Hack Club AI endpoint, unsupported model
-        // id, etc.) — never mask our own rate limiting, and never loop if
-        // Llama itself was already the one that failed.
+        // id, unrecognized response shape, etc.) — never mask our own rate
+        // limiting, and never loop if Llama itself was already the one that
+        // failed.
         if(err.rateLimited || judgeChoice.fn === 'groq-chat') throw err;
+        console.error('Judge model failed, falling back to Llama:', judgeChoice.model, err);
         try{ showCopyConfirmToast(`${judgeModelLabel} is unavailable right now — falling back to Llama 3.3 70B.`); }catch(e){}
         judgeChoice = JUDGE_MODELS.llama;
-        chatJson = await runJudging(judgeChoice);
+        feedback = await runJudging(judgeChoice);
       }
-      const feedback = chatJson.choices?.[0]?.message?.content || '';
       if(!feedback) throw new Error('judging_failed:empty:No content returned.');
       lastRawFeedback = feedback;
 
@@ -5728,7 +5765,7 @@ Grading rules:
         if(!res.ok) throw new Error('annotation_failed:'+res.status);
         return await res.json();
       }, key, key2, key3);
-      const raw = chatJson.choices?.[0]?.message?.content || '';
+      const raw = extractChatContent(chatJson);
       if(!raw) return null;
       let cleaned = raw.trim();
       // Strip stray code fences in case the model adds them despite instructions.

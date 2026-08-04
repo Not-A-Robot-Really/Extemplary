@@ -243,14 +243,6 @@
     --acc:var(--crimson-bright);
     --acc-glow:rgba(47,121,201,0.4);
   }
-  .ai-compare-row::before{
-    content:'';
-    position:absolute;z-index:-1;
-    left:-9px;top:-8px;bottom:-8px;width:26px;
-    border-radius:13px;
-    background:var(--acc);
-    box-shadow:0 0 16px 1px var(--acc-glow);
-  }
   .ai-compare-row[data-provider="anthropic"]{--acc:#d97706;--acc-glow:rgba(217,119,6,0.45);}
   .ai-compare-row[data-provider="deepseek"]{--acc:#2563eb;--acc-glow:rgba(37,99,235,0.45);}
   .ai-compare-row[data-provider="moonshot"]{--acc:#7c3aed;--acc-glow:rgba(124,58,237,0.45);}
@@ -265,7 +257,7 @@
     border-color:var(--acc);
   }
   .ai-compare-row.available{
-    border-left:3px solid var(--acc);
+    border-left:6px solid var(--acc);
   }
   /* Plain bold number, no badge/circle behind it — same treatment
      whether the model ranks #1 or #9 or is available here, since the

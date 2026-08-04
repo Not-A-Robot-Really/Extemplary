@@ -191,6 +191,60 @@
 
   .rubric-panel{width:min(640px, calc(100vw - 24px));}
 
+  /* -------- compare-AI-judges icon (sits directly left of the rubric
+     icon, same paper-corner treatment) -------- */
+  .ai-compare-toggle-btn{
+    position:absolute;top:14px;right:70px;z-index:3;
+    background:none;border:none;cursor:pointer;
+    color:var(--slate);padding:4px;border-radius:4px;
+    display:flex;align-items:center;justify-content:center;
+    width:28px;height:28px;box-sizing:border-box;
+    transition:color .15s;
+  }
+  .ai-compare-toggle-btn:hover, .ai-compare-toggle-btn.active{color:var(--crimson);}
+  body.previewing-example .ai-compare-toggle-btn{display:none;}
+
+  .ai-compare-panel{width:min(560px, calc(100vw - 24px));}
+  .ai-compare-table{
+    display:flex;flex-direction:column;font-family:var(--font-body);
+  }
+  .ai-compare-row{
+    display:grid;grid-template-columns:32px 1fr 110px 110px;
+    align-items:center;gap:10px;padding:8px 4px;border-bottom:1px solid var(--rule);
+  }
+  .ai-compare-row:last-child{border-bottom:none;}
+  .ai-compare-row-head{
+    font-family:var(--font-mono);font-size:10px;text-transform:uppercase;
+    letter-spacing:0.8px;color:var(--slate);padding-bottom:7px;border-bottom:2px solid var(--charcoal);
+  }
+  .ai-compare-rank{font-family:var(--font-mono);font-size:12px;color:var(--slate);text-align:center;}
+  .ai-compare-row.available .ai-compare-rank{color:var(--crimson-deep);font-weight:700;}
+  .ai-compare-model{font-size:13px;color:var(--charcoal);display:flex;align-items:center;gap:7px;flex-wrap:wrap;}
+  .ai-compare-row.available .ai-compare-model{font-weight:700;}
+  .ai-compare-model em{
+    font-style:normal;font-family:var(--font-mono);font-size:9px;font-weight:700;
+    text-transform:uppercase;letter-spacing:0.6px;color:var(--on-accent);
+    background:var(--crimson);border-radius:20px;padding:2px 7px;
+  }
+  .ai-compare-metric{display:flex;align-items:center;gap:7px;}
+  .ai-bar-track{
+    flex:1;height:9px;border-radius:5px;background:var(--parchment-deep);
+    border:1px solid var(--rule);overflow:hidden;box-shadow:inset 0 1px 2px rgba(22,40,60,0.15);
+  }
+  .ai-bar-fill{display:block;height:100%;border-radius:5px 0 0 5px;transition:width .3s ease;}
+  .ai-bar-fill.quality{background:linear-gradient(90deg, var(--crimson-deep), var(--crimson-bright));}
+  .ai-bar-fill.cost{background:linear-gradient(90deg, #7a5a08, var(--brass));}
+  .ai-bar-num{font-family:var(--font-mono);font-size:11px;font-weight:700;color:var(--charcoal);min-width:20px;text-align:right;}
+  .ai-compare-footnote{
+    font-family:var(--font-mono);font-size:10.5px;color:var(--slate);
+    margin-top:12px;line-height:1.5;
+  }
+  .ai-compare-footnote em{font-style:normal;font-weight:700;color:var(--charcoal);}
+  @media(max-width:600px){
+    .ai-compare-row{grid-template-columns:24px 1fr 90px 90px;gap:6px;font-size:12px;}
+    .ai-compare-metric{gap:4px;}
+  }
+
   /* -------- rubric mode bar (label + optional browse dropdown) -------- */
   .rubric-mode-bar{
     display:flex;align-items:center;justify-content:space-between;gap:10px;

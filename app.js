@@ -3809,6 +3809,49 @@ Grading rules:
   });
   window.addEventListener('resize', () => { if(rubricOpen) positionRubricPanel(); });
 
+  // ===== Compare AI Judges panel (icon sits left of the rubric icon on
+  // the ballot paper) — same open/close/position pattern as the rubric
+  // panel above, just simpler since there's no mode-dependent content. =====
+  const aiCompareToggle = document.getElementById('aiCompareToggle');
+  const aiComparePanel  = document.getElementById('aiComparePanel');
+  if(aiComparePanel && aiComparePanel.parentElement !== document.body){
+    document.body.appendChild(aiComparePanel);
+  }
+  let aiCompareOpen = false;
+  function positionAiComparePanel(){
+    const rect = aiCompareToggle.getBoundingClientRect();
+    const width = Math.min(560, window.innerWidth - 24);
+    aiComparePanel.style.width = width + 'px';
+    aiComparePanel.style.left = 'auto';
+    let right = window.innerWidth - rect.right;
+    right = Math.max(12, Math.min(right, window.innerWidth - width - 12));
+    aiComparePanel.style.right = right + 'px';
+    aiComparePanel.style.top = (rect.bottom + 8) + 'px';
+  }
+  function openAiComparePanel(){
+    aiCompareOpen = true;
+    positionAiComparePanel();
+    aiComparePanel.classList.remove('hidden');
+    aiCompareToggle.classList.add('active');
+  }
+  function closeAiComparePanel(){
+    aiCompareOpen = false;
+    aiComparePanel.classList.add('hidden');
+    aiCompareToggle.classList.remove('active');
+  }
+  if(aiCompareToggle && aiComparePanel){
+    aiCompareToggle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if(aiCompareOpen) closeAiComparePanel(); else openAiComparePanel();
+    });
+    document.addEventListener('click', (e) => {
+      if(aiCompareOpen && !e.target.closest('#aiComparePanel') && !e.target.closest('#aiCompareToggle')){
+        closeAiComparePanel();
+      }
+    });
+    window.addEventListener('resize', () => { if(aiCompareOpen) positionAiComparePanel(); });
+  }
+
   // The rubric icon only makes sense on the paper for Home/Record, My Ballot
   // History, the Example Ballot, and the post-submission Feedback/Results
   // view, hide it everywhere else (Review, Processing, Streak, Briefing,
@@ -3831,9 +3874,14 @@ Grading rules:
     const shouldShow = RUBRIC_VISIBLE_VIEWS.includes(v);
     rubricToggle.classList.toggle('hidden', !shouldShow);
     if(!shouldShow && rubricOpen) closeRubricPanel();
+    if(aiCompareToggle){
+      aiCompareToggle.classList.toggle('hidden', !shouldShow);
+      if(!shouldShow && aiCompareOpen) closeAiComparePanel();
+    }
     if(ballotHeadEl) ballotHeadEl.classList.toggle('hidden', !BALLOT_HEAD_VISIBLE_VIEWS.includes(v));
   };
   rubricToggle.classList.toggle('hidden', !RUBRIC_VISIBLE_VIEWS.includes(viewRecord));
+  if(aiCompareToggle) aiCompareToggle.classList.toggle('hidden', !RUBRIC_VISIBLE_VIEWS.includes(viewRecord));
   if(ballotHeadEl) ballotHeadEl.classList.toggle('hidden', !BALLOT_HEAD_VISIBLE_VIEWS.includes(viewRecord));
 
   // ===== Hamburger nav menu (semi-transparent drawer, shown by default) =====

@@ -405,7 +405,7 @@
   .landing-hero{
     min-height:100vh;display:flex;flex-direction:row;align-items:center;justify-content:center;
     gap:64px;flex-wrap:wrap;
-    padding:40px 24px 60px;position:relative;
+    padding:24px 24px 100px;position:relative;
     perspective:1200px;overflow:hidden;
   }
   #heroConstellation{
@@ -504,25 +504,27 @@
   .auth-field{margin-bottom:14px;}
   .auth-field label{display:block;font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:var(--charcoal);font-weight:700;margin-bottom:5px;}
   .auth-field input{
-    width:100%;padding:10px 12px;border:1px solid var(--rule);border-radius:4px;
+    width:100%;padding:10px 12px;border:2px solid var(--charcoal);border-radius:4px;
     font-family:var(--font-body);font-size:14px;background:#fff;color:var(--charcoal);
-    transition:border-color 0.2s ease;
+    transition:border-color 0.2s ease;outline:none;
   }
-  .auth-field input:hover{border-color:var(--slate);}
-  .auth-field input:focus-visible{outline:none;border-color:var(--brass);}
+  .auth-field input:hover{border-color:var(--ink-line);}
+  .auth-field input:focus{outline:none;border-color:var(--crimson-deep);}
+  .auth-field input:focus-visible{outline:none;border-color:var(--crimson-deep);}
   .auth-error{
     font-family:var(--font-mono);font-size:12px;color:#a3322a;margin:-4px 0 12px;display:none;
     padding-left:9px;border-left:2px solid #a3322a;line-height:1.4;
   }
   .auth-error.visible{display:block;}
   .auth-submit{
-    width:100%;padding:12px;border:none;border-radius:4px;background:var(--crimson);
+    width:100%;padding:12px;border:2px solid var(--crimson-deep);border-radius:4px;background:var(--crimson);
     color:var(--on-accent);font-family:var(--font-mono);font-size:13px;letter-spacing:0.5px;
-    text-transform:uppercase;cursor:pointer;font-weight:600;
-    position:relative;overflow:hidden;transition:background 0.2s ease;
+    text-transform:uppercase;cursor:pointer;font-weight:600;outline:none;
+    position:relative;overflow:hidden;transition:background 0.2s ease, border-color 0.2s ease;
   }
   .auth-submit:hover{background:var(--crimson-deep);}
   .auth-submit:active{background:var(--crimson-deep);}
+  .auth-submit:focus, .auth-submit:focus-visible{outline:none;border-color:var(--charcoal);}
   .auth-submit:disabled{opacity:0.65;cursor:default;transform:none;}
 
   .landing-scroll-cue{

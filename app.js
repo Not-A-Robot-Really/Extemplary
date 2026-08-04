@@ -6183,10 +6183,10 @@ Grading rules:
   }
 
   function renderFlightStrips(){
-    if(!flightHistory.length){ flightStripResults.classList.add('hidden'); return; }
-    const chips = flightHistory.map(f=>`<span class="chip">R${f.round}: <b>${f.total}/100</b></span>`).join('');
-    flightStripResults.innerHTML = chips;
-    flightStripResults.classList.remove('hidden');
+    // Round-history chips ("R1: 73/100", etc.) removed from the ballot
+    // feedback view per request — keep flightHistory tracking intact
+    // (still used elsewhere) but never render/show the chip strip.
+    if(flightStripResults) flightStripResults.classList.add('hidden');
   }
 
   function resetHomeView(){

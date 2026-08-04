@@ -3809,47 +3809,45 @@ Grading rules:
   });
   window.addEventListener('resize', () => { if(rubricOpen) positionRubricPanel(); });
 
-  // ===== LLM Model Rankings panel (icon sits left of the rubric icon on
-  // the ballot paper) — same open/close/position pattern as the rubric
-  // panel above, just simpler since there's no mode-dependent content. =====
+  // ===== LLM Model Rankings page (icon sits left of the rubric icon on
+  // the ballot paper) — opens as a full page laid over the app rather
+  // than an anchored popup, so there's no dynamic positioning: just
+  // show/hide plus a body-scroll lock, dismissed via the explicit
+  // close button (×) in its header instead of an outside-click. =====
   const aiCompareToggle = document.getElementById('aiCompareToggle');
   const aiComparePanel  = document.getElementById('aiComparePanel');
+  const aiCompareClose  = document.getElementById('aiCompareClose');
   if(aiComparePanel && aiComparePanel.parentElement !== document.body){
     document.body.appendChild(aiComparePanel);
   }
   let aiCompareOpen = false;
-  function positionAiComparePanel(){
-    const rect = aiCompareToggle.getBoundingClientRect();
-    const width = Math.min(680, window.innerWidth - 24);
-    aiComparePanel.style.width = width + 'px';
-    aiComparePanel.style.left = 'auto';
-    let right = window.innerWidth - rect.right;
-    right = Math.max(12, Math.min(right, window.innerWidth - width - 12));
-    aiComparePanel.style.right = right + 'px';
-    aiComparePanel.style.top = (rect.bottom + 8) + 'px';
-  }
   function openAiComparePanel(){
     aiCompareOpen = true;
-    positionAiComparePanel();
     aiComparePanel.classList.remove('hidden');
+    aiComparePanel.scrollTop = 0;
     aiCompareToggle.classList.add('active');
+    document.body.style.overflow = 'hidden';
   }
   function closeAiComparePanel(){
     aiCompareOpen = false;
     aiComparePanel.classList.add('hidden');
     aiCompareToggle.classList.remove('active');
+    document.body.style.overflow = '';
   }
   if(aiCompareToggle && aiComparePanel){
     aiCompareToggle.addEventListener('click', (e) => {
       e.stopPropagation();
       if(aiCompareOpen) closeAiComparePanel(); else openAiComparePanel();
     });
-    document.addEventListener('click', (e) => {
-      if(aiCompareOpen && !e.target.closest('#aiComparePanel') && !e.target.closest('#aiCompareToggle')){
+    if(aiCompareClose){
+      aiCompareClose.addEventListener('click', (e) => {
+        e.stopPropagation();
         closeAiComparePanel();
-      }
+      });
+    }
+    document.addEventListener('keydown', (e) => {
+      if(aiCompareOpen && e.key === 'Escape') closeAiComparePanel();
     });
-    window.addEventListener('resize', () => { if(aiCompareOpen) positionAiComparePanel(); });
   }
 
   // The rubric icon only makes sense on the paper for Home/Record, My Ballot

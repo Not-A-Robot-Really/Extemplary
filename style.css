@@ -204,11 +204,37 @@
   .ai-compare-toggle-btn:hover, .ai-compare-toggle-btn.active{color:var(--crimson);}
   body.previewing-example .ai-compare-toggle-btn{display:none;}
 
-  .ai-compare-panel{width:min(680px, calc(100vw - 24px));}
-  .ai-compare-panel .sp-head, .ai-compare-panel .sp-head span{color:#ffffff;}
-  .ai-compare-panel .sp-body{padding:14px 14px 12px;background:var(--parchment-deep);}
+  /* This panel behaves like its own full page laid over the app rather
+     than a small anchored popup: it covers the whole viewport, scrolls
+     independently, and is dismissed with an explicit close button
+     instead of an outside-click. */
+  .ai-compare-panel{
+    position:fixed;inset:0;top:0;right:0;left:0;bottom:0;
+    width:100%;height:100%;max-height:100vh;max-width:none;
+    border:none;border-radius:0;box-shadow:none;
+    overflow-y:auto;z-index:900;
+  }
+  .ai-compare-panel:not(.hidden){animation:aiComparePageIn .22s cubic-bezier(0.2,0.8,0.3,1) both;}
+  @keyframes aiComparePageIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+  .ai-compare-panel .sp-head{
+    position:sticky;top:0;z-index:2;
+    color:#ffffff;padding:18px 20px;
+  }
+  .ai-compare-panel .sp-head span{color:#ffffff;font-size:18px;}
+  .ai-compare-close-btn{
+    background:none;border:none;cursor:pointer;color:#ffffff;
+    display:flex;align-items:center;justify-content:center;
+    width:30px;height:30px;border-radius:50%;
+    transition:background .15s;
+  }
+  .ai-compare-close-btn:hover{background:rgba(255,255,255,0.15);}
+  .ai-compare-panel .sp-body{
+    padding:20px clamp(14px, 4vw, 40px) 60px;background:var(--parchment-deep);
+    min-height:calc(100vh - 58px);
+  }
   .ai-compare-table{
     display:flex;flex-direction:column;font-family:var(--font-body);gap:8px;
+    max-width:900px;margin:0 auto;
   }
   .ai-compare-row.ai-compare-row-head{
     display:grid;grid-template-columns:34px 1fr 150px 150px;align-items:center;gap:18px;
@@ -217,7 +243,8 @@
     background:none;border:none;box-shadow:none;
   }
   .ai-compare-row.ai-compare-row-head:hover{transform:none;box-shadow:none;border-color:transparent;}
-  .ai-compare-row.ai-compare-row-head .ai-compare-model{padding-left:14px;}
+  .ai-compare-row.ai-compare-row-head .ai-compare-rank{color:var(--charcoal);}
+  .ai-compare-row.ai-compare-row-head .ai-compare-model{padding-left:14px;color:#000000;}
   /* Each model reads like its own dark ledger card — a soft top-to-
      bottom navy gradient (instead of a flat fill) plus a faint border
      and rounded corners so it feels smoother/more tactile, and a
@@ -241,23 +268,21 @@
   .ai-compare-row.available{
     border-left:3px solid var(--crimson-bright);
   }
-  /* Uniform badge for every row: plain white circle, bold dark number,
-     identical treatment whether the model ranks #1 or #9 or is
-     available here — the "Available Here" tag and left accent stripe
-     already carry that distinction, so the badge stays neutral. */
+  /* Plain bold number, no badge/circle behind it — same treatment
+     whether the model ranks #1 or #9 or is available here, since the
+     logo/left accent stripe already carries that distinction. */
   .ai-compare-rank{
-    font-family:var(--font-mono);font-size:13px;color:var(--charcoal);font-weight:700;text-align:center;
-    width:26px;height:26px;line-height:26px;border-radius:50%;
-    background:#ffffff;border:1px solid rgba(255,255,255,0.5);
-    box-shadow:0 1px 2px rgba(0,0,0,0.2);
+    font-family:var(--font-mono);font-size:14px;color:#ffffff;font-weight:700;text-align:center;
     justify-self:center;
   }
   .ai-compare-model{font-size:13.5px;color:#ffffff;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
   .ai-compare-row.available .ai-compare-model{font-weight:700;}
-  .ai-compare-model em{
-    font-style:normal;font-family:var(--font-mono);font-size:9px;font-weight:700;
-    text-transform:uppercase;letter-spacing:0.6px;color:#ffffff;
-    background:var(--crimson-bright);border-radius:20px;padding:3px 8px;
+  /* "Available Here" is now shown as the provider's own logo mark
+     instead of a text pill, sized to sit comfortably next to the
+     model name. */
+  .ai-compare-model .ai-model-logo{
+    width:18px;height:18px;object-fit:contain;
+    filter:drop-shadow(0 1px 1px rgba(0,0,0,0.35));
   }
   .ai-compare-metric{display:flex;align-items:center;gap:9px;}
   /* Flat ledger-style bar with a touch more depth than a plain hairline:

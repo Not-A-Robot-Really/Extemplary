@@ -471,7 +471,9 @@
         <div class="settings-panel hidden ai-compare-panel" id="aiComparePanel">
           <div class="sp-head">
             <span>LLM Model Rankings</span>
-            <span>Quality vs. Cost</span>
+            <button type="button" class="ai-compare-close-btn" id="aiCompareClose" aria-label="Close">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="5" x2="19" y2="19"></line><line x1="19" y1="5" x2="5" y2="19"></line></svg>
+            </button>
           </div>
           <div class="sp-body">
             <div class="ai-compare-table">
@@ -483,7 +485,7 @@
               </div>
               <div class="ai-compare-row available" data-rank="1">
                 <span class="ai-compare-rank">1</span>
-                <span class="ai-compare-model">Claude Opus 5 <em>Available Here</em></span>
+                <span class="ai-compare-model">Claude Opus 5 <img class="ai-model-logo" src="logos/claude.svg" alt="Claude"></span>
                 <span class="ai-compare-metric"><span class="ai-bar-track"><span class="ai-bar-fill" style="width:96%;background:rgb(23,174,171);"></span></span><span class="ai-bar-num">96</span></span>
                 <span class="ai-compare-metric"><span class="ai-bar-track"><span class="ai-bar-fill" style="width:35%;background:rgb(215,149,28);"></span></span><span class="ai-bar-num">35</span></span>
               </div>
@@ -501,13 +503,13 @@
               </div>
               <div class="ai-compare-row available">
                 <span class="ai-compare-rank">4</span>
-                <span class="ai-compare-model">Kimi K3 <em>Available Here</em></span>
+                <span class="ai-compare-model">Kimi K3 <img class="ai-model-logo" src="logos/kimi.svg" alt="Kimi"></span>
                 <span class="ai-compare-metric"><span class="ai-bar-track"><span class="ai-bar-fill" style="width:86%;background:rgb(34,174,127);"></span></span><span class="ai-bar-num">86</span></span>
                 <span class="ai-compare-metric"><span class="ai-bar-track"><span class="ai-bar-fill" style="width:60%;background:rgb(146,176,35);"></span></span><span class="ai-bar-num">60</span></span>
               </div>
               <div class="ai-compare-row available">
                 <span class="ai-compare-rank">5</span>
-                <span class="ai-compare-model">Claude Sonnet 5 <em>Available Here</em></span>
+                <span class="ai-compare-model">Claude Sonnet 5 <img class="ai-model-logo" src="logos/claude.svg" alt="Claude"></span>
                 <span class="ai-compare-metric"><span class="ai-bar-track"><span class="ai-bar-fill" style="width:83%;background:rgb(38,174,114);"></span></span><span class="ai-bar-num">83</span></span>
                 <span class="ai-compare-metric"><span class="ai-bar-track"><span class="ai-bar-fill" style="width:75%;background:rgb(47,174,78);"></span></span><span class="ai-bar-num">75</span></span>
               </div>
@@ -519,7 +521,7 @@
               </div>
               <div class="ai-compare-row available">
                 <span class="ai-compare-rank">7</span>
-                <span class="ai-compare-model">DeepSeek V4 <em>Available Here</em></span>
+                <span class="ai-compare-model">DeepSeek V4 <img class="ai-model-logo" src="logos/deepseek.svg" alt="DeepSeek"></span>
                 <span class="ai-compare-metric"><span class="ai-bar-track"><span class="ai-bar-fill" style="width:80%;background:rgb(41,174,100);"></span></span><span class="ai-bar-num">80</span></span>
                 <span class="ai-compare-metric"><span class="ai-bar-track"><span class="ai-bar-fill" style="width:90%;background:rgb(30,174,145);"></span></span><span class="ai-bar-num">90</span></span>
               </div>
@@ -537,7 +539,7 @@
               </div>
               <div class="ai-compare-row available">
                 <span class="ai-compare-rank">—</span>
-                <span class="ai-compare-model">Llama 3.3 70B <em>Available Here</em></span>
+                <span class="ai-compare-model">Llama 3.3 70B <img class="ai-model-logo" src="logos/meta.svg" alt="Meta"></span>
                 <span class="ai-compare-metric"><span class="ai-bar-track"><span class="ai-bar-fill" style="width:58%;background:rgb(159,176,29);"></span></span><span class="ai-bar-num">58</span></span>
                 <span class="ai-compare-metric"><span class="ai-bar-track"><span class="ai-bar-fill" style="width:95%;background:rgb(24,174,167);"></span></span><span class="ai-bar-num">95</span></span>
               </div>

@@ -244,27 +244,26 @@
   .model-picker-chevron{flex-shrink:0;opacity:0.6;transition:transform .15s;}
   .model-picker.open .model-picker-chevron{transform:rotate(180deg);}
   .model-picker-menu{
-    position:absolute;top:calc(100% + 6px);right:0;z-index:60;
-    width:230px;max-width:min(230px, calc(100vw - 48px));
-    background:var(--parchment);border:1px solid var(--charcoal);border-radius:5px;
-    box-shadow:0 10px 30px rgba(10,20,35,0.28), 0 2px 8px rgba(10,20,35,0.14);
-    padding:5px;
+    position:absolute;top:calc(100% + 8px);right:0;z-index:60;
+    width:236px;max-width:min(236px, calc(100vw - 48px));
+    background:var(--parchment);border:1px solid var(--rule);border-radius:12px;
+    box-shadow:0 14px 34px rgba(10,20,35,0.22), 0 3px 10px rgba(10,20,35,0.12);
+    padding:6px;display:flex;flex-direction:column;gap:2px;
   }
   .model-picker-menu.hidden{display:none;}
   .model-picker-option{
-    display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;
-    text-align:left;padding:8px 9px;border-radius:3px;border:none;border-bottom:1px solid var(--rule);
+    display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;
+    text-align:left;padding:8px 10px;border-radius:8px;border:none;
     background:none;cursor:pointer;color:var(--charcoal);transition:background .12s;
   }
-  .model-picker-option:last-child{border-bottom:none;}
   .model-picker-option:hover{background:var(--parchment-deep);}
-  .model-picker-option.active{background:rgba(29,92,158,0.08);}
+  .model-picker-option.active{background:rgba(29,92,158,0.10);}
   .model-picker-option-text{display:flex;flex-direction:column;gap:2px;min-width:0;}
-  .model-picker-option-name-row{display:flex;align-items:baseline;gap:7px;}
+  .model-picker-option-name-row{display:flex;align-items:center;gap:7px;}
   .model-picker-option-name{font-family:var(--font-body);font-size:12.5px;font-weight:600;color:var(--charcoal);}
   .model-picker-option-badge{
-    font-family:var(--font-mono);font-size:9px;text-transform:uppercase;letter-spacing:0.8px;
-    color:var(--slate);border:1px solid var(--rule);border-radius:20px;padding:1px 7px;
+    font-family:var(--font-mono);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;
+    color:var(--slate);text-align:center;
   }
   .model-picker-option-sub{font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:0.8px;color:var(--slate);}
   .model-picker-check{flex-shrink:0;color:var(--crimson);visibility:hidden;}

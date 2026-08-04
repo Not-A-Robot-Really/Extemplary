@@ -1791,6 +1791,7 @@ const DATA = window.APP_DATA;
   const viewResults    = document.getElementById('view-results');
   const viewExample    = document.getElementById('view-example');
   const viewBriefing   = document.getElementById('view-briefing');
+  const viewAiCompare  = document.getElementById('view-aiCompare');
   const viewCitation   = document.getElementById('view-citation');
   const viewHistory    = document.getElementById('view-history');
   const viewStreak     = document.getElementById('view-streak');
@@ -1989,7 +1990,7 @@ const DATA = window.APP_DATA;
   let viewBeforeExample = null;
   let viewBeforeBriefing = null;
   function showView(v){
-    [viewRecord, viewReview, viewProcessing, viewResults, viewExample, viewBriefing, viewHistory, viewCitation, viewStreak].forEach(x => x.classList.add('hidden'));
+    [viewRecord, viewReview, viewProcessing, viewResults, viewExample, viewBriefing, viewAiCompare, viewHistory, viewCitation, viewStreak].forEach(x => x.classList.add('hidden'));
     v.classList.remove('hidden');
     if(v !== viewExample && typeof exampleOpen !== 'undefined' && exampleOpen){
       exampleOpen = false;
@@ -3810,44 +3811,32 @@ Grading rules:
   window.addEventListener('resize', () => { if(rubricOpen) positionRubricPanel(); });
 
   // ===== LLM Model Rankings page (icon sits left of the rubric icon on
-  // the ballot paper) — opens as a full page laid over the app rather
-  // than an anchored popup, so there's no dynamic positioning: just
-  // show/hide plus a body-scroll lock, dismissed via the explicit
-  // close button (×) in its header instead of an outside-click. =====
+  // the ballot paper) — opens as its own page on the paper, the same
+  // way the briefingToggle button swaps in the Tournament Briefing
+  // view, instead of an anchored popup. =====
   const aiCompareToggle = document.getElementById('aiCompareToggle');
-  const aiComparePanel  = document.getElementById('aiComparePanel');
-  const aiCompareClose  = document.getElementById('aiCompareClose');
-  if(aiComparePanel && aiComparePanel.parentElement !== document.body){
-    document.body.appendChild(aiComparePanel);
-  }
+  const aiCompareBackBtn  = document.getElementById('aiCompareBackBtn');
+  const aiCompareBackBtn2 = document.getElementById('aiCompareBackBtn2');
   let aiCompareOpen = false;
+  let viewBeforeAiCompare = null;
   function openAiComparePanel(){
     aiCompareOpen = true;
-    aiComparePanel.classList.remove('hidden');
-    aiComparePanel.scrollTop = 0;
     aiCompareToggle.classList.add('active');
-    document.body.style.overflow = 'hidden';
+    viewBeforeAiCompare = [viewRecord, viewReview, viewProcessing, viewResults].find(v => !v.classList.contains('hidden')) || viewRecord;
+    showView(viewAiCompare);
   }
   function closeAiComparePanel(){
     aiCompareOpen = false;
-    aiComparePanel.classList.add('hidden');
     aiCompareToggle.classList.remove('active');
-    document.body.style.overflow = '';
+    showView(viewBeforeAiCompare || viewRecord);
   }
-  if(aiCompareToggle && aiComparePanel){
+  if(aiCompareToggle && viewAiCompare){
     aiCompareToggle.addEventListener('click', (e) => {
       e.stopPropagation();
       if(aiCompareOpen) closeAiComparePanel(); else openAiComparePanel();
     });
-    if(aiCompareClose){
-      aiCompareClose.addEventListener('click', (e) => {
-        e.stopPropagation();
-        closeAiComparePanel();
-      });
-    }
-    document.addEventListener('keydown', (e) => {
-      if(aiCompareOpen && e.key === 'Escape') closeAiComparePanel();
-    });
+    if(aiCompareBackBtn) aiCompareBackBtn.addEventListener('click', closeAiComparePanel);
+    if(aiCompareBackBtn2) aiCompareBackBtn2.addEventListener('click', closeAiComparePanel);
   }
 
   // The rubric icon only makes sense on the paper for Home/Record, My Ballot

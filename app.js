@@ -3863,7 +3863,7 @@ Grading rules:
     if(!shouldShow && rubricOpen) closeRubricPanel();
     if(aiCompareToggle){
       aiCompareToggle.classList.toggle('hidden', !shouldShow);
-      if(!shouldShow && aiCompareOpen) closeAiComparePanel();
+      if(!shouldShow && aiCompareOpen && v !== viewAiCompare) closeAiComparePanel();
     }
     if(ballotHeadEl) ballotHeadEl.classList.toggle('hidden', !BALLOT_HEAD_VISIBLE_VIEWS.includes(v));
   };

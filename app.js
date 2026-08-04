@@ -5677,7 +5677,15 @@ Grading rules:
             'Content-Type':'application/json'
           },
           body: JSON.stringify({
-            model: choice.model, temperature:0.4, max_tokens:3000,
+            // Groq/Llama writes the rubric feedback directly, so 3000
+            // tokens is plenty. The Hack Club AI models (Claude, Kimi,
+            // DeepSeek) appear to spend part of their budget on internal
+            // reasoning before writing the actual answer — on a long
+            // transcript graded against 8 rubric categories, 3000 total
+            // isn't enough room for that reasoning *and* a full answer,
+            // so the call succeeds (real tokens billed) but returns no
+            // finished text. Give those models a much bigger ceiling.
+            model: choice.model, temperature:0.4, max_tokens: choice.fn === 'hackclub-chat' ? 8000 : 3000,
             messages:[
               {role:'system', content: introDrillMode ? INTRO_RUBRIC_PROMPT : bodyDrillMode ? BODY_RUBRIC_PROMPT : RUBRIC_PROMPT},
               {role:'user', content:'TRANSCRIPT:\n\n'+transcript+'\n\n'+metricsBlock}

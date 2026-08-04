@@ -205,17 +205,19 @@
   body.previewing-example .ai-compare-toggle-btn{display:none;}
 
   .ai-compare-panel{width:min(680px, calc(100vw - 24px));}
+  .ai-compare-panel .sp-head, .ai-compare-panel .sp-head span{color:#ffffff;}
   .ai-compare-panel .sp-body{padding:14px 14px 12px;background:var(--parchment-deep);}
   .ai-compare-table{
     display:flex;flex-direction:column;font-family:var(--font-body);gap:6px;
   }
   .ai-compare-row.ai-compare-row-head{
     display:grid;grid-template-columns:34px 1fr 150px 150px;align-items:center;gap:18px;
-    font-family:var(--font-mono);font-size:9.5px;text-transform:uppercase;
-    letter-spacing:0.9px;color:var(--slate);padding:0 12px 8px;
+    font-family:var(--font-display);font-size:12px;font-weight:700;text-transform:uppercase;
+    letter-spacing:0.9px;color:var(--charcoal);padding:0 12px 8px;
     background:none;border:none;box-shadow:none;
   }
   .ai-compare-row.ai-compare-row-head:hover{transform:none;box-shadow:none;border-color:transparent;}
+  .ai-compare-row.ai-compare-row-head .ai-compare-model{padding-left:14px;}
   /* Each model reads like its own ledger card rather than a bare grid
      line: a soft paper card, a hairline border, and a gentle lift on
      hover so the list feels tactile instead of static, matching the
@@ -234,24 +236,16 @@
   .ai-compare-row.available{
     border-left:3px solid var(--crimson);
   }
+  /* Uniform badge for every row: plain white circle, bold dark number,
+     identical treatment whether the model ranks #1 or #9 or is
+     available here — the "Available Here" tag and left accent stripe
+     already carry that distinction, so the badge stays neutral. */
   .ai-compare-rank{
-    font-family:var(--font-mono);font-size:12.5px;color:var(--slate);text-align:center;
+    font-family:var(--font-mono);font-size:13px;color:var(--charcoal);font-weight:700;text-align:center;
     width:26px;height:26px;line-height:26px;border-radius:50%;
-    background:var(--parchment-deep);border:1px solid var(--rule);
+    background:#ffffff;border:1px solid var(--rule);
     justify-self:center;
   }
-  /* Podium treatment: ranks 1-3 get a solid ink badge so the top of
-     the list reads at a glance, echoing the wax-seal / stamp accents
-     used for scores elsewhere rather than adding a literal medal icon. */
-  .ai-compare-row[data-rank="1"] .ai-compare-rank,
-  .ai-compare-row[data-rank="2"] .ai-compare-rank,
-  .ai-compare-row[data-rank="3"] .ai-compare-rank{
-    background:var(--charcoal);border-color:var(--charcoal);color:var(--on-accent);font-weight:700;
-  }
-  .ai-compare-row.available .ai-compare-rank{color:var(--crimson-deep);font-weight:700;border-color:var(--crimson);}
-  .ai-compare-row[data-rank="1"].available .ai-compare-rank,
-  .ai-compare-row[data-rank="2"].available .ai-compare-rank,
-  .ai-compare-row[data-rank="3"].available .ai-compare-rank{color:var(--on-accent);}
   .ai-compare-model{font-size:13.5px;color:var(--charcoal);display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
   .ai-compare-row.available .ai-compare-model{font-weight:700;}
   .ai-compare-model em{
@@ -267,12 +261,12 @@
      red→orange→yellow→green→teal spectrum (see colorFromRatio in
      app.js), so it stays a single flat color per bar. */
   .ai-bar-track{
-    flex:1;height:8px;border-radius:5px;background:var(--parchment-deep);
-    border:1px solid var(--rule);overflow:hidden;
+    flex:1;height:14px;min-width:80px;border-radius:7px;background:var(--parchment-deep);
+    border:none;overflow:hidden;
     box-shadow:inset 0 1px 2px rgba(10,20,35,0.12);
   }
   .ai-bar-fill{
-    display:block;height:100%;border-radius:5px;
+    display:block;height:100%;border-radius:7px;
     background-image:linear-gradient(to bottom, rgba(255,255,255,0.22), rgba(255,255,255,0) 55%);
     background-blend-mode:overlay;
     transition:width .4s cubic-bezier(0.2,0.8,0.3,1);

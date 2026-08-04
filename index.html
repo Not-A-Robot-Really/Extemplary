@@ -227,29 +227,43 @@
                localStorage and read by getJudgeModelChoice() in app.js. -->
           <div class="model-picker" id="modelPicker">
             <button type="button" class="model-picker-btn" id="modelPickerBtn" aria-haspopup="listbox" aria-expanded="false" title="Choose the AI that judges your speech">
-              <svg class="model-picker-icon" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a4 4 0 0 1 4 4v1a4 4 0 0 1 4 4 4 4 0 0 1-1.1 2.76A4 4 0 0 1 20 17a4 4 0 0 1-4 4 4 4 0 0 1-7.75 1.3A4 4 0 0 1 4 18.5 4 4 0 0 1 3.1 11.76 4 4 0 0 1 4 7a4 4 0 0 1 4-4 4 4 0 0 1 4-1Z"></path></svg>
               <span class="model-picker-label" id="modelPickerLabel">Llama 3.3 70B</span>
               <svg class="model-picker-chevron" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
             </button>
             <div class="model-picker-menu hidden" id="modelPickerMenu" role="listbox" aria-label="Judge model">
               <button type="button" class="model-picker-option active" data-model="llama" role="option" aria-selected="true">
-                <span class="model-picker-option-text"><span class="model-picker-option-name">Llama 3.3 70B</span><span class="model-picker-option-sub">Groq — default</span></span>
+                <span class="model-picker-option-text">
+                  <span class="model-picker-option-name-row"><span class="model-picker-option-name">Llama 3.3 70B</span><span class="model-picker-option-badge">default</span></span>
+                  <span class="model-picker-option-sub">Groq</span>
+                </span>
                 <svg class="model-picker-check" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
               </button>
               <button type="button" class="model-picker-option" data-model="opus5" role="option" aria-selected="false">
-                <span class="model-picker-option-text"><span class="model-picker-option-name">Claude Opus 5</span><span class="model-picker-option-sub">Hack Club AI</span></span>
+                <span class="model-picker-option-text">
+                  <span class="model-picker-option-name-row"><span class="model-picker-option-name">Claude Opus 5</span></span>
+                  <span class="model-picker-option-sub">Anthropic</span>
+                </span>
                 <svg class="model-picker-check" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
               </button>
               <button type="button" class="model-picker-option" data-model="kimik3" role="option" aria-selected="false">
-                <span class="model-picker-option-text"><span class="model-picker-option-name">Kimi K3</span><span class="model-picker-option-sub">Hack Club AI</span></span>
+                <span class="model-picker-option-text">
+                  <span class="model-picker-option-name-row"><span class="model-picker-option-name">Kimi K3</span></span>
+                  <span class="model-picker-option-sub">Moonshot AI</span>
+                </span>
                 <svg class="model-picker-check" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
               </button>
               <button type="button" class="model-picker-option" data-model="sonnet5" role="option" aria-selected="false">
-                <span class="model-picker-option-text"><span class="model-picker-option-name">Claude Sonnet 5</span><span class="model-picker-option-sub">Hack Club AI</span></span>
+                <span class="model-picker-option-text">
+                  <span class="model-picker-option-name-row"><span class="model-picker-option-name">Claude Sonnet 5</span></span>
+                  <span class="model-picker-option-sub">Anthropic</span>
+                </span>
                 <svg class="model-picker-check" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
               </button>
               <button type="button" class="model-picker-option" data-model="deepseekv4" role="option" aria-selected="false">
-                <span class="model-picker-option-text"><span class="model-picker-option-name">DeepSeek V4</span><span class="model-picker-option-sub">Hack Club AI</span></span>
+                <span class="model-picker-option-text">
+                  <span class="model-picker-option-name-row"><span class="model-picker-option-name">DeepSeek V4</span></span>
+                  <span class="model-picker-option-sub">DeepSeek</span>
+                </span>
                 <svg class="model-picker-check" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
               </button>
             </div>

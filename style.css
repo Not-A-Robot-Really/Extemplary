@@ -212,7 +212,7 @@
     max-width:900px;margin:0 auto;
   }
   .ai-compare-row.ai-compare-row-head{
-    display:grid;grid-template-columns:34px 1fr 150px 150px;align-items:center;gap:18px;
+    display:grid;grid-template-columns:34px 200px 1fr 1fr;align-items:center;gap:18px;
     font-family:var(--font-display);font-size:12px;font-weight:700;text-transform:uppercase;
     letter-spacing:0.9px;color:var(--charcoal);padding:0 12px 8px;
     background:none;border:none;box-shadow:none;
@@ -220,24 +220,21 @@
   .ai-compare-row.ai-compare-row-head:hover{transform:none;box-shadow:none;border-color:transparent;}
   .ai-compare-row.ai-compare-row-head .ai-compare-rank{color:var(--charcoal);}
   .ai-compare-row.ai-compare-row-head .ai-compare-model{padding-left:14px;color:#000000;}
-  /* Each model reads like its own dark ledger card — a soft top-to-
-     bottom navy gradient (instead of a flat fill) plus a faint border
-     and rounded corners so it feels smoother/more tactile, and a
-     gentle lift + brighter edge on hover rather than a hard snap.
-     All text inside is set explicitly to white/near-white since the
-     card itself is dark, matching the "on-accent" text convention
-     used for other dark surfaces (sp-head, badges) in this app. */
+  /* Each model reads like its own light ledger card — a soft parchment
+     fill with a subtle border and rounded corners, and a gentle lift +
+     brighter edge on hover rather than a hard snap. Text is dark since
+     the card itself is now light. */
   .ai-compare-row{
-    display:grid;grid-template-columns:34px 1fr 150px 150px;
+    display:grid;grid-template-columns:34px 200px 1fr 1fr;
     align-items:center;gap:18px;padding:12px 14px;
-    background:linear-gradient(180deg, var(--ink-soft), var(--charcoal));
-    border:1px solid rgba(255,255,255,0.08);border-radius:10px;
-    box-shadow:0 1px 3px rgba(10,20,35,0.2);
+    background:var(--parchment);
+    border:1px solid var(--rule);border-radius:10px;
+    box-shadow:0 1px 3px rgba(10,20,35,0.06);
     transition:transform .16s ease, box-shadow .16s ease, border-color .16s ease;
   }
   .ai-compare-row:hover{
     transform:translateY(-1px);
-    box-shadow:0 6px 16px rgba(10,20,35,0.28);
+    box-shadow:0 6px 16px rgba(10,20,35,0.12);
     border-color:var(--crimson-bright);
   }
   .ai-compare-row.available{
@@ -247,17 +244,17 @@
      whether the model ranks #1 or #9 or is available here, since the
      logo/left accent stripe already carries that distinction. */
   .ai-compare-rank{
-    font-family:var(--font-mono);font-size:14px;color:#ffffff;font-weight:700;text-align:center;
+    font-family:var(--font-mono);font-size:14px;color:var(--charcoal);font-weight:700;text-align:center;
     justify-self:center;
   }
-  .ai-compare-model{font-size:13.5px;color:#ffffff;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+  .ai-compare-model{font-size:13.5px;color:var(--charcoal);display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
   .ai-compare-row.available .ai-compare-model{font-weight:700;}
   /* "Available Here" is now shown as the provider's own logo mark
      instead of a text pill, sized to sit comfortably next to the
      model name. */
   .ai-compare-model .ai-model-logo{
     width:18px;height:18px;object-fit:contain;
-    filter:drop-shadow(0 1px 1px rgba(0,0,0,0.35));
+    filter:drop-shadow(0 1px 1px rgba(10,20,35,0.18));
   }
   .ai-compare-metric{display:flex;align-items:center;gap:9px;}
   /* Flat ledger-style bar with a touch more depth than a plain hairline:
@@ -265,11 +262,14 @@
      highlight, so it reads as smooth/tactile without becoming a shiny
      gradient. Fill color is still picked per-score from the app's own
      red→orange→yellow→green→teal spectrum (see colorFromRatio in
-     app.js), so it stays a single flat color per bar. */
+     app.js), so it stays a single flat color per bar. The track now
+     spans the full width of its column (rather than a fixed min-width)
+     so the bars fill the space freed up by the lighter, narrower model
+     column. */
   .ai-bar-track{
-    flex:1;height:14px;min-width:80px;border-radius:7px;background:rgba(255,255,255,0.14);
+    flex:1;height:14px;min-width:80px;border-radius:7px;background:rgba(10,20,35,0.08);
     border:none;overflow:hidden;
-    box-shadow:inset 0 1px 3px rgba(0,0,0,0.3);
+    box-shadow:inset 0 1px 3px rgba(10,20,35,0.12);
   }
   .ai-bar-fill{
     display:block;height:100%;border-radius:7px;
@@ -277,10 +277,10 @@
     background-blend-mode:overlay;
     transition:width .4s cubic-bezier(0.2,0.8,0.3,1);
   }
-  .ai-bar-num{font-family:var(--font-mono);font-size:11.5px;font-weight:700;color:#ffffff;min-width:22px;text-align:right;}
+  .ai-bar-num{font-family:var(--font-mono);font-size:11.5px;font-weight:700;color:var(--charcoal);min-width:22px;text-align:right;}
   @media(max-width:600px){
-    .ai-compare-row.ai-compare-row-head{grid-template-columns:24px 1fr 100px 100px;gap:10px;padding:0 8px 8px;}
-    .ai-compare-row{grid-template-columns:24px 1fr 100px 100px;gap:10px;font-size:12px;padding:10px 8px;}
+    .ai-compare-row.ai-compare-row-head{grid-template-columns:24px 130px 1fr 1fr;gap:10px;padding:0 8px 8px;}
+    .ai-compare-row{grid-template-columns:24px 130px 1fr 1fr;gap:10px;font-size:12px;padding:10px 8px;}
     .ai-compare-metric{gap:5px;}
   }
 

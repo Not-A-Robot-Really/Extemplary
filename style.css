@@ -208,11 +208,11 @@
      Tournament Briefing / Citation Checker pages) rather than an
      overlay panel, so it just inherits the normal page flow here. */
   .ai-compare-table{
-    display:flex;flex-direction:column;font-family:var(--font-body);gap:8px;
-    max-width:900px;margin:0 auto;
+    display:flex;flex-direction:column;font-family:var(--font-body);gap:14px;
+    max-width:900px;margin:0 auto;padding-left:6px;
   }
   .ai-compare-row.ai-compare-row-head{
-    display:grid;grid-template-columns:34px 200px 1fr 1fr;align-items:center;gap:18px;
+    display:grid;grid-template-columns:34px 168px 1fr 1fr;align-items:center;gap:12px;
     font-family:var(--font-display);font-size:12px;font-weight:700;text-transform:uppercase;
     letter-spacing:0.9px;color:var(--charcoal);padding:0 12px 8px;
     background:none;border:none;box-shadow:none;
@@ -223,22 +223,49 @@
   /* Each model reads like its own light ledger card — a soft parchment
      fill with a subtle border and rounded corners, and a gentle lift +
      brighter edge on hover rather than a hard snap. Text is dark since
-     the card itself is now light. */
+     the card itself is light.
+
+     The signature touch is the curved accent capsule bleeding out from
+     the left edge (::before): it's a rounded pill positioned partly
+     behind the card (z-index:-1 on a position:relative parent with no
+     stacking context of its own paints it *under* the row's own
+     background), so only the sliver that pokes out past the card's
+     top/bottom/left survives — reading as a bold colored bracket
+     hugging the corner, distinct per AI lab via data-provider. */
   .ai-compare-row{
-    display:grid;grid-template-columns:34px 200px 1fr 1fr;
-    align-items:center;gap:18px;padding:12px 14px;
+    position:relative;
+    display:grid;grid-template-columns:34px 168px 1fr 1fr;
+    align-items:center;gap:12px;padding:12px 14px 12px 20px;
     background:var(--parchment);
     border:1px solid var(--rule);border-radius:10px;
     box-shadow:0 1px 3px rgba(10,20,35,0.06);
     transition:transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+    --acc:var(--crimson-bright);
+    --acc-glow:rgba(47,121,201,0.4);
   }
+  .ai-compare-row::before{
+    content:'';
+    position:absolute;z-index:-1;
+    left:-9px;top:-8px;bottom:-8px;width:26px;
+    border-radius:13px;
+    background:var(--acc);
+    box-shadow:0 0 16px 1px var(--acc-glow);
+  }
+  .ai-compare-row[data-provider="anthropic"]{--acc:#d97706;--acc-glow:rgba(217,119,6,0.45);}
+  .ai-compare-row[data-provider="deepseek"]{--acc:#2563eb;--acc-glow:rgba(37,99,235,0.45);}
+  .ai-compare-row[data-provider="moonshot"]{--acc:#7c3aed;--acc-glow:rgba(124,58,237,0.45);}
+  .ai-compare-row[data-provider="openai"]{--acc:#059669;--acc-glow:rgba(5,150,105,0.45);}
+  .ai-compare-row[data-provider="xai"]{--acc:#111827;--acc-glow:rgba(17,24,39,0.4);}
+  .ai-compare-row[data-provider="meta"]{--acc:#db2777;--acc-glow:rgba(219,39,119,0.45);}
+  .ai-compare-row[data-provider="google"]{--acc:#eab308;--acc-glow:rgba(234,179,8,0.45);}
+  .ai-compare-row[data-provider="zhipu"]{--acc:#0891b2;--acc-glow:rgba(8,145,178,0.45);}
   .ai-compare-row:hover{
     transform:translateY(-1px);
     box-shadow:0 6px 16px rgba(10,20,35,0.12);
-    border-color:var(--crimson-bright);
+    border-color:var(--acc);
   }
   .ai-compare-row.available{
-    border-left:3px solid var(--crimson-bright);
+    border-left:3px solid var(--acc);
   }
   /* Plain bold number, no badge/circle behind it — same treatment
      whether the model ranks #1 or #9 or is available here, since the
@@ -249,11 +276,11 @@
   }
   .ai-compare-model{font-size:13.5px;color:var(--charcoal);display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
   .ai-compare-row.available .ai-compare-model{font-weight:700;}
-  /* "Available Here" is now shown as the provider's own logo mark
-     instead of a text pill, sized to sit comfortably next to the
+  /* Provider mark (real brand logo where we have the asset, a colored
+     monogram badge otherwise) sized to sit comfortably next to the
      model name. */
   .ai-compare-model .ai-model-logo{
-    width:18px;height:18px;object-fit:contain;
+    width:18px;height:18px;object-fit:contain;border-radius:50%;
     filter:drop-shadow(0 1px 1px rgba(10,20,35,0.18));
   }
   .ai-compare-metric{display:flex;align-items:center;gap:9px;}
@@ -262,10 +289,10 @@
      highlight, so it reads as smooth/tactile without becoming a shiny
      gradient. Fill color is still picked per-score from the app's own
      red→orange→yellow→green→teal spectrum (see colorFromRatio in
-     app.js), so it stays a single flat color per bar. The track now
-     spans the full width of its column (rather than a fixed min-width)
-     so the bars fill the space freed up by the lighter, narrower model
-     column. */
+     app.js), so it stays a single flat color per bar. The track spans
+     the full width of its column so the bars fill the space freed up
+     by the lighter, narrower model column, and the whole table is
+     pulled left (see column widths/gaps above) so bars start sooner. */
   .ai-bar-track{
     flex:1;height:14px;min-width:80px;border-radius:7px;background:rgba(10,20,35,0.08);
     border:none;overflow:hidden;
@@ -279,8 +306,9 @@
   }
   .ai-bar-num{font-family:var(--font-mono);font-size:11.5px;font-weight:700;color:var(--charcoal);min-width:22px;text-align:right;}
   @media(max-width:600px){
-    .ai-compare-row.ai-compare-row-head{grid-template-columns:24px 130px 1fr 1fr;gap:10px;padding:0 8px 8px;}
-    .ai-compare-row{grid-template-columns:24px 130px 1fr 1fr;gap:10px;font-size:12px;padding:10px 8px;}
+    .ai-compare-table{padding-left:4px;}
+    .ai-compare-row.ai-compare-row-head{grid-template-columns:24px 110px 1fr 1fr;gap:8px;padding:0 8px 8px;}
+    .ai-compare-row{grid-template-columns:24px 110px 1fr 1fr;gap:8px;font-size:12px;padding:10px 8px 10px 16px;}
     .ai-compare-metric{gap:5px;}
   }
 

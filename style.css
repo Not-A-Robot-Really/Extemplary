@@ -206,124 +206,103 @@
 
   /* Opens as its own page on the ballot paper (same treatment as the
      Tournament Briefing / Citation Checker pages) rather than an
-     overlay panel, so it just inherits the normal page flow here.
-
-     -------- LLM Model Rankings — ledger card redesign --------
-     Same DNA as the rest of the app (parchment cards, mono
-     micro-labels, dashed rules, crimson/brass accents, the
-     red→orange→yellow→green→teal score spectrum already used for
-     delivery scores) instead of a generic data-table look. Rank is a
-     small stamped medallion (echoes .rank-stamp / .cc-verdict-stamp),
-     provider identity is a flush color bar down the left edge (no
-     glow, no bleed past the card), and "available here" models get an
-     explicit mono pill instead of relying on bold text alone. */
-  .ai-compare-subtitle{
-    font-family:var(--font-mono);font-size:12px;line-height:1.6;color:var(--slate);
-    max-width:640px;margin:-6px 0 18px;
-  }
+     overlay panel, so it just inherits the normal page flow here. */
   .ai-compare-table{
-    display:flex;flex-direction:column;font-family:var(--font-body);gap:10px;
+    display:flex;flex-direction:column;font-family:var(--font-body);gap:14px;
     max-width:900px;margin:0 auto;padding-left:6px;
   }
   .ai-compare-row.ai-compare-row-head{
-    display:grid;grid-template-columns:38px 178px 1fr 1fr;align-items:end;gap:12px;
-    font-family:var(--font-mono);font-size:10.5px;font-weight:700;text-transform:uppercase;
-    letter-spacing:1.4px;color:var(--slate);padding:0 12px 10px;margin-bottom:2px;
-    background:none;border:none;border-bottom:1px dashed var(--rule);border-radius:0;
-    box-shadow:none;
+    display:grid;grid-template-columns:34px 168px 1fr 1fr;align-items:center;gap:12px;
+    font-family:var(--font-display);font-size:12px;font-weight:700;text-transform:uppercase;
+    letter-spacing:0.9px;color:var(--charcoal);padding:0 12px 8px;
+    background:none;border:none;box-shadow:none;
   }
-  .ai-compare-row.ai-compare-row-head:hover{transform:none;box-shadow:none;border-bottom-color:var(--rule);}
-  .ai-compare-row.ai-compare-row-head .ai-compare-rank{color:var(--slate);}
-  .ai-compare-row.ai-compare-row-head .ai-compare-model{padding-left:18px;color:var(--slate);}
-  /* Each model reads like its own light ledger card — soft parchment
-     fill, subtle border, gentle lift + brighter edge on hover. Provider
-     identity is a flush 6px color bar flush against the card's own
-     rounded left corners (no separate positioned/glowing element, so
-     nothing bleeds out past the card's own edges). */
+  .ai-compare-row.ai-compare-row-head:hover{transform:none;box-shadow:none;border-color:transparent;}
+  .ai-compare-row.ai-compare-row-head .ai-compare-rank{color:var(--charcoal);}
+  .ai-compare-row.ai-compare-row-head .ai-compare-model{padding-left:14px;color:#000000;}
+  /* Each model reads like its own light ledger card — a soft parchment
+     fill with a subtle border and rounded corners, and a gentle lift +
+     brighter edge on hover rather than a hard snap. Text is dark since
+     the card itself is light. Provider identity is a flush colored
+     left border (data-provider), matching the accent-stripe language
+     used elsewhere on the site rather than a floating/glowing shape. */
   .ai-compare-row{
     position:relative;
-    display:grid;grid-template-columns:38px 178px 1fr 1fr;
-    align-items:center;gap:12px;padding:11px 16px 11px 14px;
+    display:grid;grid-template-columns:34px 168px 1fr 1fr;
+    align-items:center;gap:12px;padding:12px 14px 12px 20px;
     background:var(--parchment);
-    border:1px solid var(--rule);border-left:6px solid var(--rule);border-radius:10px;
+    border:1px solid var(--rule);border-radius:10px;
     box-shadow:0 1px 3px rgba(10,20,35,0.06);
-    transition:transform .16s cubic-bezier(0.2,0.8,0.3,1), box-shadow .16s ease, border-color .16s ease, background-color .16s ease;
+    transition:transform .16s ease, box-shadow .16s ease, border-color .16s ease;
     --acc:var(--crimson-bright);
+    --acc-glow:rgba(47,121,201,0.4);
   }
-  .ai-compare-row[data-provider="anthropic"]{--acc:#d97706;}
-  .ai-compare-row[data-provider="deepseek"]{--acc:#2563eb;}
-  .ai-compare-row[data-provider="moonshot"]{--acc:#7c3aed;}
-  .ai-compare-row[data-provider="openai"]{--acc:#059669;}
-  .ai-compare-row[data-provider="xai"]{--acc:#111827;}
-  .ai-compare-row[data-provider="meta"]{--acc:#db2777;}
-  .ai-compare-row[data-provider="google"]{--acc:#eab308;}
-  .ai-compare-row[data-provider="zhipu"]{--acc:#0891b2;}
-  .ai-compare-row{border-left-color:var(--acc);}
+  .ai-compare-row[data-provider="anthropic"]{--acc:#d97706;--acc-glow:rgba(217,119,6,0.45);}
+  .ai-compare-row[data-provider="deepseek"]{--acc:#2563eb;--acc-glow:rgba(37,99,235,0.45);}
+  .ai-compare-row[data-provider="moonshot"]{--acc:#7c3aed;--acc-glow:rgba(124,58,237,0.45);}
+  .ai-compare-row[data-provider="openai"]{--acc:#059669;--acc-glow:rgba(5,150,105,0.45);}
+  .ai-compare-row[data-provider="xai"]{--acc:#111827;--acc-glow:rgba(17,24,39,0.4);}
+  .ai-compare-row[data-provider="meta"]{--acc:#db2777;--acc-glow:rgba(219,39,119,0.45);}
+  .ai-compare-row[data-provider="google"]{--acc:#eab308;--acc-glow:rgba(234,179,8,0.45);}
+  .ai-compare-row[data-provider="zhipu"]{--acc:#0891b2;--acc-glow:rgba(8,145,178,0.45);}
   .ai-compare-row:hover{
-    transform:translateY(-2px);
-    box-shadow:0 8px 18px rgba(10,20,35,0.13);
-    border-color:var(--acc);border-left-color:var(--acc);
-    background:color-mix(in srgb, var(--acc) 5%, var(--parchment));
+    transform:translateY(-1px);
+    box-shadow:0 6px 16px rgba(10,20,35,0.12);
+    border-color:var(--acc);
   }
   .ai-compare-row.available{
-    background:color-mix(in srgb, var(--acc) 4%, var(--parchment));
+    border-left:6px solid var(--acc);
   }
-  /* Rank medallion — a small stamped numeral rather than a bare digit,
-     matching the site's other "stamp" treatments (rank-stamp,
-     cc-verdict-stamp): thin colored ring, mono numeral, no fill. */
+  /* Plain bold number, no badge/circle behind it — same treatment
+     whether the model ranks #1 or #9 or is available here, since the
+     logo/left accent stripe already carries that distinction. */
   .ai-compare-rank{
-    font-family:var(--font-mono);font-size:13px;color:var(--charcoal);font-weight:700;
-    justify-self:center;width:26px;height:26px;border-radius:50%;
-    display:flex;align-items:center;justify-content:center;
-    border:1.5px solid var(--rule);background:rgba(255,255,255,0.5);
+    font-family:var(--font-mono);font-size:14px;color:var(--charcoal);font-weight:700;text-align:center;
+    justify-self:center;
   }
-  .ai-compare-row.available .ai-compare-rank{border-color:var(--acc);color:var(--acc);}
   .ai-compare-model{font-size:13.5px;color:var(--charcoal);display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
   .ai-compare-row.available .ai-compare-model{font-weight:700;}
   /* Provider mark (real brand logo where we have the asset, a colored
      monogram badge otherwise) sized to sit comfortably next to the
-     model name. */
+     model name. Square-ish, only lightly rounded — like a favicon —
+     rather than forced into a circle, since most of these brand marks
+     (Kimi's wordmark, ChatGPT's whorl-on-square) aren't circular
+     marks to begin with. Kimi's asset is a plain flat square logo, so
+     it gets zero rounding; ChatGPT's asset is already a rounded
+     square icon at the source, so it just needs to keep that same
+     rounding here instead of being clipped into a circle. */
   .ai-compare-model .ai-model-logo{
-    width:18px;height:18px;object-fit:contain;border-radius:50%;
+    width:18px;height:18px;object-fit:contain;border-radius:5px;
     filter:drop-shadow(0 1px 1px rgba(10,20,35,0.18));
   }
-  /* Explicit "available here" pill, same shape/voice as the judge
-     model picker's own "default" badge, so the two places in the app
-     that talk about selectable judge models agree visually. */
-  .ai-available-badge{
-    font-family:var(--font-mono);font-size:9.5px;font-weight:700;text-transform:uppercase;
-    letter-spacing:0.7px;color:var(--acc);border:1px solid var(--acc);border-radius:20px;
-    padding:2px 8px;white-space:nowrap;
-  }
+  .ai-compare-model .ai-model-logo[src*="kimi"]{border-radius:0;}
+  .ai-compare-model .ai-model-logo[src*="openai"]{border-radius:6px;}
   .ai-compare-metric{display:flex;align-items:center;gap:9px;}
   /* Flat ledger-style bar with a touch more depth than a plain hairline:
      a recessed track plus a rounded fill that catches a faint top
      highlight, so it reads as smooth/tactile without becoming a shiny
      gradient. Fill color is still picked per-score from the app's own
      red→orange→yellow→green→teal spectrum (see colorFromRatio in
-     app.js), so it stays a single flat color per bar. The track spans
-     the full width of its column so the bars fill the space freed up
-     by the lighter, narrower model column, and the whole table is
-     pulled left (see column widths/gaps above) so bars start sooner. */
+     app.js), so it stays a single flat color per bar. The number sits
+     to the left of its bar (ledger-style, value leads the measure)
+     with a fixed width so every bar in the column still lines up. */
+  .ai-bar-num{font-family:var(--font-mono);font-size:11.5px;font-weight:700;color:var(--charcoal);min-width:22px;text-align:right;}
   .ai-bar-track{
-    flex:1;height:12px;min-width:80px;border-radius:20px;background:rgba(10,20,35,0.08);
+    flex:1;height:14px;min-width:80px;border-radius:7px;background:rgba(10,20,35,0.08);
     border:none;overflow:hidden;
     box-shadow:inset 0 1px 3px rgba(10,20,35,0.12);
   }
   .ai-bar-fill{
-    display:block;height:100%;border-radius:20px;
+    display:block;height:100%;border-radius:7px;
     background-image:linear-gradient(to bottom, rgba(255,255,255,0.22), rgba(255,255,255,0) 55%);
     background-blend-mode:overlay;
-    transition:width .5s cubic-bezier(0.2,0.8,0.3,1);
+    transition:width .4s cubic-bezier(0.2,0.8,0.3,1);
   }
-  .ai-bar-num{font-family:var(--font-mono);font-size:11.5px;font-weight:700;color:var(--charcoal);min-width:22px;text-align:right;}
   @media(max-width:600px){
     .ai-compare-table{padding-left:4px;}
-    .ai-compare-row.ai-compare-row-head{grid-template-columns:26px 108px 1fr 1fr;gap:8px;padding:0 8px 10px;}
-    .ai-compare-row{grid-template-columns:26px 108px 1fr 1fr;gap:8px;font-size:12px;padding:10px 10px 10px 12px;}
-    .ai-compare-rank{width:22px;height:22px;font-size:11.5px;}
+    .ai-compare-row.ai-compare-row-head{grid-template-columns:24px 110px 1fr 1fr;gap:8px;padding:0 8px 8px;}
+    .ai-compare-row{grid-template-columns:24px 110px 1fr 1fr;gap:8px;font-size:12px;padding:10px 8px 10px 16px;}
     .ai-compare-metric{gap:5px;}
-    .ai-available-badge{display:block;margin-top:2px;}
   }
 
   /* -------- rubric mode bar (label + optional browse dropdown) -------- */

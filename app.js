@@ -5741,7 +5741,7 @@ Grading rules:
       // hackclub-chat edge function isn't deployed yet, rejects the model
       // id, or returns a differently-shaped response — instead of just
       // failing the whole round silently.
-      const runJudging = async (choice) => withKeyFallback(async (k) => {
+      const runJudging = async (choice, weightKey) => withKeyFallback(async (k) => {
         const res = await fetchWithTimeout(`${SUPABASE_FUNCTIONS_URL}/${choice.fn}`,{
           method:'POST',
           headers:{
@@ -5764,7 +5764,13 @@ Grading rules:
               {role:'user', content:'TRANSCRIPT:\n\n'+transcript+'\n\n'+metricsBlock}
             ],
             overrideKey: choice.fn === 'groq-chat' ? (k || undefined) : undefined,
-            category: 'ballot_feedback'
+            category: 'ballot_feedback',
+            // How many units of the daily cap this call should cost —
+            // mirrors BALLOT_FEEDBACK_MODEL_WEIGHTS above so pricier
+            // models (Opus 5) drain the cap faster than cheaper ones
+            // (Llama/DeepSeek). Enforced server-side in groq-chat /
+            // hackclub-chat; see those files for the p_amount plumbing.
+            weight: BALLOT_FEEDBACK_MODEL_WEIGHTS[weightKey] || 1
           })
         }, 60000);
         if(res.status === 429){
@@ -5792,7 +5798,7 @@ Grading rules:
 
       let feedback;
       try{
-        feedback = await runJudging(judgeChoice);
+        feedback = await runJudging(judgeChoice, judgeWeightKey);
       }catch(err){
         // Only fall back for genuine failures of a *non-default* judge model
         // (missing/misconfigured Hack Club AI endpoint, unsupported model
@@ -5804,7 +5810,7 @@ Grading rules:
         try{ showCopyConfirmToast(`${judgeModelLabel} is unavailable right now — falling back to Llama 3.3 70B.`); }catch(e){}
         judgeChoice = JUDGE_MODELS.llama;
         judgeWeightKey = 'llama';
-        feedback = await runJudging(judgeChoice);
+        feedback = await runJudging(judgeChoice, judgeWeightKey);
       }
       if(!feedback) throw new Error('judging_failed:empty:No content returned.');
       lastRawFeedback = feedback;

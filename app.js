@@ -6180,7 +6180,15 @@ Grading rules:
   // transcript, instead of a plain text dump) ----
   function buildBallotBodyHtml(parsed, rawFeedback){
     let html = '';
-    if(parsed.categories.length >= 3 && parsed.total !== null){
+    // Previously this required >=3 categories AND a parsed composite
+    // total before showing the styled cards at all — anything short of
+    // a fully complete ballot (e.g. a response cut off mid-stream by an
+    // upstream/network issue) silently fell back to a plain unstyled
+    // text dump, which reads as broken even when most of the ballot
+    // parsed fine. Now: show styled cards for whatever categories did
+    // parse, and only fall back to the raw dump if we got essentially
+    // nothing usable out of it.
+    if(parsed.categories.length >= 1){
       html += scoreKeyHtml();
       parsed.categories.forEach(cat => {
         const band = bandClass(cat.score, cat.max);
@@ -6198,19 +6206,32 @@ Grading rules:
             </div>
           </div>`;
       });
-      html += `
+      if(parsed.total !== null){
+        html += `
         <div class="stamp-row">
           <div class="verdict-stamp">
             <div class="label">Composite Score</div>
             <div class="num">${parsed.total}<small>/100</small></div>
           </div>`;
-      if(parsed.rank !== null) html += `
+        if(parsed.rank !== null) html += `
           <div class="rank-stamp">
             <div class="label">Judge's Rank</div>
             <div class="num">${ordinal(parsed.rank)}</div>
           </div>`;
-      html += `
+        html += `
         </div>`;
+      }else{
+        // The ballot stopped before ever reaching a Composite Score —
+        // almost always means the response got cut off partway through
+        // (network hiccup or the judge model's connection dropping),
+        // not that anything is wrong with the categories that did come
+        // through. Say so plainly instead of just quietly omitting the
+        // score, which otherwise looks like a rendering bug.
+        html += `
+        <div class="raw-fallback" style="margin-top:12px">
+          <strong>This ballot looks like it was cut off before finishing</strong> — no Composite Score came through, so some categories below may be missing entirely. Try running judging again for the full ballot.
+        </div>`;
+      }
       if(parsed.rankExplanation) html += `
         <div class="rank-explanation">${inlineMd(parsed.rankExplanation)}</div>`;
       if(parsed.drill) html += `
@@ -6349,7 +6370,7 @@ Grading rules:
       resultQuestion.classList.add('hidden');
     }
 
-    if(parsed.categories.length >= 3 && parsed.total !== null){
+    if(parsed.categories.length >= 1){
       html += scoreKeyHtml();
       parsed.categories.forEach(cat => {
         const band = bandClass(cat.score, cat.max);
@@ -6367,19 +6388,26 @@ Grading rules:
             </div>
           </div>`;
       });
-      html += `
+      if(parsed.total !== null){
+        html += `
         <div class="stamp-row">
           <div class="verdict-stamp">
             <div class="label">Composite Score</div>
             <div class="num">${parsed.total}<small>/100</small></div>
           </div>`;
-      if(parsed.rank !== null) html += `
+        if(parsed.rank !== null) html += `
           <div class="rank-stamp">
             <div class="label">Judge's Rank</div>
             <div class="num">${ordinal(parsed.rank)}</div>
           </div>`;
-      html += `
+        html += `
         </div>`;
+      }else{
+        html += `
+        <div class="raw-fallback" style="margin-top:12px">
+          <strong>This ballot looks like it was cut off before finishing</strong> — no Composite Score came through, so some categories below may be missing entirely. Try running judging again for the full ballot.
+        </div>`;
+      }
       if(parsed.rankExplanation) html += `
         <div class="rank-explanation">${inlineMd(parsed.rankExplanation)}</div>`;
       if(parsed.drill) html += `

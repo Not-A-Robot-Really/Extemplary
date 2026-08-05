@@ -1953,7 +1953,29 @@ const DATA = window.APP_DATA;
     if(!json) return '';
     const asText = (v) => {
       if(typeof v === 'string') return v.trim();
-      if(Array.isArray(v)) return v.map(b => (typeof b === 'string' ? b : b?.text || '')).join('').trim();
+      if(Array.isArray(v)){
+        // Claude-style responses can return an array of typed content
+        // blocks — e.g. { type: 'thinking', thinking: '...' } for extended
+        // reasoning and { type: 'text', text: '...' } for the actual
+        // answer. Reasoning blocks store their content under `.thinking`,
+        // not `.text`, so reading only `.text` (as before) silently
+        // dropped the whole response whenever a model returned thinking
+        // blocks — the call succeeded and billed real tokens, but
+        // extractChatContent saw '' and the caller treated it as a
+        // failure, triggering an unnecessary fallback to Llama.
+        // Prefer real `text` blocks; only fall back to `thinking` content
+        // if no text block was present at all, so a genuinely
+        // thinking-only response still surfaces something instead of
+        // silently failing.
+        const textBlocks = v
+          .map(b => (typeof b === 'string' ? b : (b?.type === 'thinking' ? '' : b?.text || '')))
+          .join('').trim();
+        if(textBlocks) return textBlocks;
+        const thinkingBlocks = v
+          .map(b => (typeof b === 'string' ? '' : (b?.type === 'thinking' ? b?.thinking || '' : '')))
+          .join('').trim();
+        return thinkingBlocks;
+      }
       return '';
     };
     return (
@@ -1965,6 +1987,47 @@ const DATA = window.APP_DATA;
       asText(json.output_text) ||
       ''
     );
+  }
+  // hackclub-chat now always streams its response back as Server-Sent
+  // Events instead of one buffered JSON blob — see the comment in
+  // supabase/functions/hackclub-chat/index.ts for why (Supabase kills
+  // any edge function invocation that runs past a fixed wall-clock
+  // limit, ~150s observed, even though slow models like Opus 5 routinely
+  // take 4+ minutes and still bill/finish successfully upstream).
+  // Reading the stream and reassembling text here is what lets those
+  // slower calls actually make it back to the app instead of dying
+  // server-side before a response is ever returned.
+  async function readHackClubStream(res){
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let text = '';
+    // Some reasoning models expose their internal reasoning under a
+    // separate field (reasoning_content / thinking) rather than the
+    // normal `content` delta. Track it separately and only fall back to
+    // it if the model genuinely never produced real answer text, same
+    // principle as the thinking-block handling in extractChatContent.
+    let reasoning = '';
+    while(true){
+      const {done, value} = await reader.read();
+      if(done) break;
+      buffer += decoder.decode(value, {stream:true});
+      const lines = buffer.split('\n');
+      buffer = lines.pop(); // last line may be a partial chunk — keep it for next read
+      for(const line of lines){
+        const trimmed = line.trim();
+        if(!trimmed.startsWith('data:')) continue;
+        const data = trimmed.slice(5).trim();
+        if(!data || data === '[DONE]') continue;
+        let json;
+        try{ json = JSON.parse(data); }catch(e){ continue; }
+        const delta = json?.choices?.[0]?.delta || json?.choices?.[0]?.message || {};
+        if(typeof delta.content === 'string') text += delta.content;
+        if(typeof delta.reasoning_content === 'string') reasoning += delta.reasoning_content;
+        if(typeof delta.thinking === 'string') reasoning += delta.thinking;
+      }
+    }
+    return (text.trim() || reasoning.trim() || '');
   }
   function getJudgeModelChoice(){
     return JUDGE_MODELS[judgeModelValue] || JUDGE_MODELS.llama;
@@ -5802,15 +5865,19 @@ Grading rules:
         }
         if(window.RateLimitUI) window.RateLimitUI.refresh();
         if(!res.ok) throw new Error('judging_failed:'+res.status+':'+await safeErrText(res));
-        const json = await res.json();
-        const content = extractChatContent(json);
+        // hackclub-chat streams its response as SSE (see readHackClubStream
+        // above); groq-chat still returns one buffered JSON object, since
+        // Llama via Groq comfortably finishes well inside the wall-clock
+        // limit and never needed the streaming workaround.
+        const content = choice.fn === 'hackclub-chat'
+          ? await readHackClubStream(res)
+          : extractChatContent(await res.json());
         // The HTTP call itself succeeded (the model billed real tokens),
         // but if we can't find text in any shape we recognize, treat it
         // the same as a failed call so the caller can fall back to Llama
         // instead of surfacing an opaque "no content" error.
         if(!content){
           const err = new Error('judging_failed:unrecognized_response_shape');
-          err.rawResponse = json;
           throw err;
         }
         return content;

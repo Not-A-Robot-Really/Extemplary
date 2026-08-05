@@ -5758,7 +5758,7 @@ Grading rules:
             // isn't enough room for that reasoning *and* a full answer,
             // so the call succeeds (real tokens billed) but returns no
             // finished text. Give those models a much bigger ceiling.
-            model: choice.model, temperature:0.4, max_tokens: choice.fn === 'hackclub-chat' ? 8000 : 3000,
+            model: choice.model, temperature:0.4, max_tokens: choice.fn === 'hackclub-chat' ? 16000 : 3000,
             messages:[
               {role:'system', content: introDrillMode ? INTRO_RUBRIC_PROMPT : bodyDrillMode ? BODY_RUBRIC_PROMPT : RUBRIC_PROMPT},
               {role:'user', content:'TRANSCRIPT:\n\n'+transcript+'\n\n'+metricsBlock}

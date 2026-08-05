@@ -2008,13 +2008,13 @@ const DATA = window.APP_DATA;
     // it if the model genuinely never produced real answer text, same
     // principle as the thinking-block handling in extractChatContent.
     let reasoning = '';
-    while(true){
-      const {done, value} = await reader.read();
-      if(done) break;
-      buffer += decoder.decode(value, {stream:true});
-      const lines = buffer.split('\n');
-      buffer = lines.pop(); // last line may be a partial chunk — keep it for next read
-      for(const line of lines){
+    // Processes any complete "data: {...}" lines found in `chunk` and
+    // folds their content into text/reasoning. Shared by the main read
+    // loop and by the final flush below, so the last line read from the
+    // stream is handled identically to every other line instead of being
+    // silently dropped.
+    const consumeLines = (chunk) => {
+      for(const line of chunk.split('\n')){
         const trimmed = line.trim();
         if(!trimmed.startsWith('data:')) continue;
         const data = trimmed.slice(5).trim();
@@ -2026,7 +2026,24 @@ const DATA = window.APP_DATA;
         if(typeof delta.reasoning_content === 'string') reasoning += delta.reasoning_content;
         if(typeof delta.thinking === 'string') reasoning += delta.thinking;
       }
+    };
+    while(true){
+      const {done, value} = await reader.read();
+      if(done) break;
+      buffer += decoder.decode(value, {stream:true});
+      const lines = buffer.split('\n');
+      buffer = lines.pop(); // last line may be a partial chunk — keep it for next read
+      consumeLines(lines.join('\n'));
     }
+    // The stream is done, but `buffer` can still hold the final line —
+    // the underlying connection has no obligation to end on a '\n', so
+    // the last SSE event (often the tail of the actual answer, right
+    // before the closing "data: [DONE]") was landing here and getting
+    // thrown away instead of parsed. Flush the decoder for any trailing
+    // multi-byte characters, then process whatever's left the same way
+    // as every other line.
+    buffer += decoder.decode();
+    if(buffer) consumeLines(buffer);
     return (text.trim() || reasoning.trim() || '');
   }
   function getJudgeModelChoice(){

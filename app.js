@@ -4395,7 +4395,7 @@ Grading rules:
     try{
       return await fetch(url, { ...options, signal: controller.signal });
     }catch(err){
-      if(err.name === 'AbortError') throw new Error('timeout:Groq took too long to respond ('+Math.round(timeoutMs/1000)+'s) — it may be overloaded. Try again.');
+      if(err.name === 'AbortError') throw new Error('timeout:The model took too long to respond ('+Math.round(timeoutMs/1000)+'s) — it may be overloaded. Try again.');
       throw err;
     }finally{
       clearTimeout(timer);
@@ -5754,11 +5754,17 @@ Grading rules:
             // tokens is plenty. The Hack Club AI models (Claude, Kimi,
             // DeepSeek) appear to spend part of their budget on internal
             // reasoning before writing the actual answer — on a long
-            // transcript graded against 8 rubric categories, 3000 total
-            // isn't enough room for that reasoning *and* a full answer,
-            // so the call succeeds (real tokens billed) but returns no
-            // finished text. Give those models a much bigger ceiling.
-            model: choice.model, temperature:0.4, max_tokens: choice.fn === 'hackclub-chat' ? 16000 : 3000,
+            // transcript graded against 8 rubric categories, a fixed
+            // budget can run out mid-answer, so the call succeeds (real
+            // tokens billed) but returns no finished text. Give those
+            // models a much bigger ceiling — bumped further from 16000
+            // after DeepSeek V4 Pro used the full 16,000-token budget
+            // without finishing (316s runtime), and because the
+            // SPECIFICITY MANDATE / DEPTH REQUIREMENT additions to the
+            // rubric prompt now explicitly ask for more bullets per
+            // category, which increases the length a complete answer
+            // needs on top of whatever reasoning tokens the model spends.
+            model: choice.model, temperature:0.4, max_tokens: choice.fn === 'hackclub-chat' ? 32000 : 3000,
             messages:[
               {role:'system', content: introDrillMode ? INTRO_RUBRIC_PROMPT : bodyDrillMode ? BODY_RUBRIC_PROMPT : RUBRIC_PROMPT},
               {role:'user', content:'TRANSCRIPT:\n\n'+transcript+'\n\n'+metricsBlock}
@@ -5772,7 +5778,21 @@ Grading rules:
             // hackclub-chat; see those files for the p_amount plumbing.
             weight: BALLOT_FEEDBACK_MODEL_WEIGHTS[weightKey] || 1
           })
-        }, 60000);
+        // Groq's LPU inference is genuinely fast — Llama 3.3 70B via
+        // groq-chat comfortably finishes well inside 60s. The Hack Club AI
+        // models (Claude, Kimi, DeepSeek) run on normal inference and can
+        // spend real time on internal reasoning before writing a single
+        // word of the actual ballot — observed DeepSeek V4 Pro taking over
+        // 5 minutes (316s) to fully use a 16,000-token budget, which is
+        // roughly ~0.02s/token. max_tokens for this branch is now 32000
+        // (doubled, see above), so worst case is roughly double the
+        // observed runtime too — give enough margin above that estimate
+        // rather than cutting it close. A flat 60s timeout aborts these
+        // calls client-side long before the model is done, even though
+        // the request keeps running server-side and still gets billed
+        // (which is why it can show "OK" in the usage dashboard while the
+        // person sees a failure/fallback in the app).
+        }, choice.fn === 'hackclub-chat' ? 720000 : 60000);
         if(res.status === 429){
           const info = await res.json().catch(()=> ({}));
           if(window.RateLimitUI) window.RateLimitUI.refresh();
@@ -5807,7 +5827,26 @@ Grading rules:
         // failed.
         if(err.rateLimited || judgeChoice.fn === 'groq-chat') throw err;
         console.error('Judge model failed, falling back to Llama:', judgeChoice.model, err);
-        try{ showCopyConfirmToast(`${judgeModelLabel} is unavailable right now — falling back to Llama 3.3 70B.`); }catch(e){}
+        // Surface the *actual* failure reason instead of a generic message —
+        // err.message is either "judging_failed:<http status>:<error text
+        // from Hack Club>" or "judging_failed:unrecognized_response_shape".
+        // Showing the real status (404 = model id not recognized upstream,
+        // 429/503 = rate-limited or temporarily overloaded, 500 = server
+        // error, etc.) means a failure can be diagnosed from the toast alone
+        // next time, without having to reopen DevTools.
+        let reason = '';
+        const msg = String(err && err.message || '');
+        const statusMatch = msg.match(/^judging_failed:(\d{3}):(.*)$/s);
+        if(statusMatch){
+          const status = statusMatch[1];
+          const detail = statusMatch[2].trim().slice(0, 120);
+          reason = ` (HTTP ${status}${detail ? ': '+detail : ''})`;
+        } else if(/unrecognized_response_shape/.test(msg)){
+          reason = ' (model responded, but in an unexpected format)';
+        } else if(/^timeout:/.test(msg)){
+          reason = ' (timed out — model was still generating)';
+        }
+        try{ showCopyConfirmToast(`${judgeModelLabel} is unavailable right now${reason} — falling back to Llama 3.3 70B.`); }catch(e){}
         judgeChoice = JUDGE_MODELS.llama;
         judgeWeightKey = 'llama';
         feedback = await runJudging(judgeChoice, judgeWeightKey);

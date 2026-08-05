@@ -55,11 +55,41 @@ const DATA = window.APP_DATA;
   // increment_api_usage() — these numbers here are just for display.
   // Keep this list in sync with DAILY_LIMITS in the three edge functions.
   const RATE_CATEGORIES = [
-    { key: 'ballot_feedback',   label: 'Ballot Feedback',              limit: 20 },
+    { key: 'ballot_feedback',   label: 'Ballot Feedback',              limit: 100 },
     { key: 'citation_checker',  label: 'Citation Checker',             limit: 40 },
     { key: 'question_generator',label: 'Practice Question Generator',  limit: 40 },
     { key: 'current_events',    label: 'Current Events Summary',       limit: 15 }
   ];
+  // Ballot Feedback is judged by whichever model the picker has selected
+  // (see JUDGE_MODELS / judgeModelValue further down), and those models
+  // don't cost the same to run. Rather than every judging call draining
+  // the daily cap by a flat 1 unit, pricier models drain it faster and
+  // cheaper ones drain it slower — weighted roughly (inversely) against
+  // each model's Cost score on the "LLM Model Rankings" panel: a low
+  // cost score (expensive) burns more units per call, a high cost score
+  // (cheap) burns fewer. Keep the keys in sync with JUDGE_MODELS below.
+  const BALLOT_FEEDBACK_MODEL_WEIGHTS = {
+    llama:      1,  // Llama 3.3 70B  — cost score 95 (cheapest)
+    deepseekv4: 1,  // DeepSeek V4    — cost score 90
+    sonnet5:    2,  // Claude Sonnet 5— cost score 75
+    kimik3:     3,  // Kimi K3        — cost score 60
+    opus5:      5   // Claude Opus 5  — cost score 35 (priciest)
+  };
+  const BALLOT_FEEDBACK_USAGE_KEY = 'extemplary_bf_weighted_usage';
+  function todayISO(){ return new Date().toISOString().slice(0,10); }
+  function getWeightedBallotFeedbackUnits(){
+    try{
+      const raw = JSON.parse(localStorage.getItem(BALLOT_FEEDBACK_USAGE_KEY) || 'null');
+      return (raw && raw.date === todayISO()) ? (raw.units || 0) : 0;
+    }catch(e){ return 0; }
+  }
+  function addWeightedBallotFeedbackUnits(modelKey){
+    try{
+      const weight = BALLOT_FEEDBACK_MODEL_WEIGHTS[modelKey] || 1;
+      const units = getWeightedBallotFeedbackUnits() + weight;
+      localStorage.setItem(BALLOT_FEEDBACK_USAGE_KEY, JSON.stringify({ date: todayISO(), units }));
+    }catch(e){}
+  }
   const RATE_LIMIT_ROBOT_ICON_SVG =
     '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
     '<rect x="4" y="8" width="16" height="12" rx="2"></rect>' +
@@ -174,7 +204,9 @@ const DATA = window.APP_DATA;
     function render(counts){
       barsEl.innerHTML = '';
       RATE_CATEGORIES.forEach(cat => {
-        const count = counts[cat.key] || 0;
+        const count = cat.key === 'ballot_feedback'
+          ? Math.max(counts[cat.key] || 0, getWeightedBallotFeedbackUnits())
+          : (counts[cat.key] || 0);
         const pct = Math.min(100, Math.round((count / cat.limit) * 100));
         const row = document.createElement('div');
         row.className = 'ai-usage-row';
@@ -211,7 +243,11 @@ const DATA = window.APP_DATA;
         render(counts);
       }catch(e){ console.warn('usage refresh failed', e); }
     }
-    return { build, refresh };
+    function addBallotFeedbackUsage(modelKey){
+      addWeightedBallotFeedbackUnits(modelKey);
+      refresh();
+    }
+    return { build, refresh, addBallotFeedbackUsage };
   })();
   window.RateLimitUI = RateLimitUI;
   RateLimitUI.build();
@@ -1216,6 +1252,7 @@ const DATA = window.APP_DATA;
   }
   async function generateOverallCoachingComment(asc){
     const candidate = await callGemini(buildOverallFeedbackPrompt(asc), 300, 'ballot_feedback');
+    if(window.RateLimitUI) window.RateLimitUI.addBallotFeedbackUsage('llama');
     return (candidate.content?.parts || []).map(p => p.text || '').join('').trim();
   }
   function renderOverallFeedbackBox(text, loading){
@@ -5696,6 +5733,7 @@ Grading rules:
 
       const metricsBlock = buildDeliveryMetricsBlock(deliveryMetrics, fillerStutterStats);
       let judgeChoice = getJudgeModelChoice();
+      let judgeWeightKey = judgeModelValue;
       // Runs the actual judging request against whichever edge function/model
       // `choice` points to. Kept as its own function so we can retry once
       // against the default Llama/groq-chat judge below if the person's
@@ -5765,10 +5803,15 @@ Grading rules:
         console.error('Judge model failed, falling back to Llama:', judgeChoice.model, err);
         try{ showCopyConfirmToast(`${judgeModelLabel} is unavailable right now — falling back to Llama 3.3 70B.`); }catch(e){}
         judgeChoice = JUDGE_MODELS.llama;
+        judgeWeightKey = 'llama';
         feedback = await runJudging(judgeChoice);
       }
       if(!feedback) throw new Error('judging_failed:empty:No content returned.');
       lastRawFeedback = feedback;
+      // The judging call is the real cost driver for Ballot Feedback, so
+      // this is where we log weighted usage against whichever model
+      // actually ended up answering (post-fallback, if any).
+      if(window.RateLimitUI) window.RateLimitUI.addBallotFeedbackUsage(judgeWeightKey);
 
       statusText.textContent = 'Marking up the transcript…';
       statusSub.textContent = 'Adding inline judge comments and paragraph structure.';

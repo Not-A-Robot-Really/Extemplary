@@ -5975,14 +5975,34 @@ Grading rules:
       }
       else if(rankExplMatch) out.rankExplanation = (title.replace(/Rank Explanation:?/i,'').trim()+' '+body).trim();
       else if(drillMatch) out.drill = (title.replace(/Actionable Drill for Next Round:?/i,'').trim()+' '+body).trim();
-      else if(catMatch && !totalMatch && !rankMatch) out.categories.push({
-        name: catMatch[1].replace(/[-–—:\s]+$/,'').trim(),
-        score: parseFloat(catMatch[2]),
-        max: parseInt(catMatch[3],10),
-        whatWorked:  extractField(body,'What Worked'),
-        criticalFlaws: extractField(body,'Critical Flaws'),
-        evidence:    extractField(body,'What You Could Have Done')
-      });
+      else if(catMatch && !totalMatch && !rankMatch){
+        let whatWorked = extractField(body,'What Worked');
+        // Fallback: some models (seen with Opus 5) sometimes drop the literal
+        // "**What Worked:**" label and just start straight into the numbered
+        // list. Per the prompt's own field ordering, "What Worked" is always
+        // first, so if the labeled extraction comes up empty, grab everything
+        // from the top of the body up to whichever known label appears first
+        // (Critical Flaws / What You Could Have Done) instead of silently
+        // dropping the content.
+        if(!whatWorked){
+          const stopAlternation = BALLOT_FIELD_LABELS.map(l => l.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('|');
+          const leadRe = new RegExp('^([\\s\\S]*?)(?=\\n{0,2}-?\\s*\\*\\*(?:'+stopAlternation+'):?\\*\\*|$)', 'i');
+          const leadMatch = body.match(leadRe);
+          const candidate = leadMatch ? leadMatch[1].trim() : '';
+          // Only use this fallback if it actually looks like content (not a
+          // stray blank), and don't reuse it if it's identical to a field
+          // we already extracted elsewhere in this category.
+          if(candidate) whatWorked = candidate;
+        }
+        out.categories.push({
+          name: catMatch[1].replace(/[-–—:\s]+$/,'').trim(),
+          score: parseFloat(catMatch[2]),
+          max: parseInt(catMatch[3],10),
+          whatWorked,
+          criticalFlaws: extractField(body,'Critical Flaws'),
+          evidence:    extractField(body,'What You Could Have Done')
+        });
+      }
     }
     return out;
   }

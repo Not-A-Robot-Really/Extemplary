@@ -92,6 +92,28 @@ const DATA = window.APP_DATA;
     const count = category === 'ballot_feedback' ? getWeightedBallotFeedbackUnits() : null;
     return { count, limit };
   }
+  // A 429 from one of our own edge functions means the daily quota was
+  // genuinely hit, and always comes back as {error:'rate_limited',
+  // currentCount, usageLimit}. But Supabase also enforces its own
+  // platform-level rate limit (a per-project/per-function requests-per-
+  // second cap, separate from the app's quota system) — e.g. when the
+  // Opus 5 / Kimi / DeepSeek judging loop fires several hackclub-chat
+  // calls in quick succession across continuation rounds. THAT 429's
+  // body doesn't match our app's shape, so treating every 429 as a real
+  // quota block used to surface a locally-tracked fallback number
+  // (whatever this browser had guessed so far, e.g. "11") mislabeled as
+  // if it were the real daily count — even though the actual server
+  // count (checkable directly in the DB) was correctly much higher, and
+  // a genuine quota block literally cannot fire below the limit since
+  // the counter only ever increases. Callers should use isRealQuotaBlock
+  // to decide whether to show "you've hit your daily limit" at all, vs.
+  // treating it as a transient error worth retrying.
+  async function readRateLimitInfo(res, fallbackCategory){
+    const info = await res.json().catch(()=> ({}));
+    const isRealQuotaBlock = !!(info && info.error === 'rate_limited');
+    const fallback = rateLimitFallback(info.category || fallbackCategory);
+    return { info, isRealQuotaBlock, fallback };
+  }
   function getWeightedBallotFeedbackUnits(){
     try{
       const raw = JSON.parse(localStorage.getItem(BALLOT_FEEDBACK_USAGE_KEY) || 'null');
@@ -2132,6 +2154,12 @@ const DATA = window.APP_DATA;
     let fullReasoning = '';
     let currentMessages = messages;
     for(let round = 0; round < MAX_ROUNDS; round++){
+      // A short pause before every round after the first spaces out the
+      // burst of requests the continuation loop fires, which is what was
+      // tripping Supabase's platform-level rate limit (separate from our
+      // own daily-quota system) in the first place — see
+      // readRateLimitInfo above.
+      if(round > 0) await new Promise(r => setTimeout(r, 800));
       const res = await doFetch(currentMessages);
       const { text, reasoning, needsContinuation } = await readHackClubStream(res);
       fullText += text;
@@ -3021,13 +3049,19 @@ Output ONLY this JSON, nothing else: {"questions":["...","...","..."]}`;
       body: JSON.stringify({ prompt, maxOutputTokens: maxOutputTokens||1024, overrideKey: apiKey || undefined, category })
     });
     if(res.status === 429){
-      const info = await res.json().catch(()=> ({}));
+      const { info, isRealQuotaBlock, fallback } = await readRateLimitInfo(res, category);
       if(window.RateLimitUI) window.RateLimitUI.refresh();
-      const fallback = rateLimitFallback(info.category || category);
-      const err = new Error('rate_limited');
-      err.rateLimited = true; err.category = info.category || category;
-      err.count = info.currentCount ?? fallback.count; err.limit = info.usageLimit ?? fallback.limit;
-      throw err;
+      if(isRealQuotaBlock){
+        const err = new Error('rate_limited');
+        err.rateLimited = true; err.category = info.category || category;
+        err.count = info.currentCount ?? fallback.count; err.limit = info.usageLimit ?? fallback.limit;
+        throw err;
+      }
+      // Not our app's own quota (see readRateLimitInfo) — most likely
+      // Supabase's platform-level rate limit. Throw a plain transient
+      // error (no .rateLimited flag) so this gets retried instead of
+      // shown as a fake "you hit your limit" toast.
+      throw new Error('platform_rate_limited:429:'+JSON.stringify(info).slice(0,200));
     }
     if(!res.ok){
       const bodyText = await res.text().catch(()=> '');
@@ -4898,13 +4932,15 @@ Grading rules:
       body:form
     }, 75000);
     if(res.status === 429){
-      const info = await res.json().catch(()=> ({}));
+      const { info, isRealQuotaBlock, fallback } = await readRateLimitInfo(res, 'ballot_feedback');
       if(window.RateLimitUI) window.RateLimitUI.refresh();
-      const fallback = rateLimitFallback(info.category || 'ballot_feedback');
-      const err = new Error('rate_limited');
-      err.rateLimited = true; err.category = info.category || 'ballot_feedback';
-      err.count = info.currentCount ?? fallback.count; err.limit = info.usageLimit ?? fallback.limit;
-      throw err;
+      if(isRealQuotaBlock){
+        const err = new Error('rate_limited');
+        err.rateLimited = true; err.category = info.category || 'ballot_feedback';
+        err.count = info.currentCount ?? fallback.count; err.limit = info.usageLimit ?? fallback.limit;
+        throw err;
+      }
+      throw new Error('platform_rate_limited:429:'+JSON.stringify(info).slice(0,200));
     }
     if(window.RateLimitUI) window.RateLimitUI.refresh();
     if(!res.ok) throw new Error('transcription_failed:'+res.status+':'+await safeErrText(res));
@@ -6020,13 +6056,22 @@ Grading rules:
           // observed generation time (280s+) like before.
           }, choice.fn === 'hackclub-chat' ? 150000 : 60000);
           if(res.status === 429){
-            const info = await res.json().catch(()=> ({}));
+            const { info, isRealQuotaBlock, fallback } = await readRateLimitInfo(res, 'ballot_feedback');
             if(window.RateLimitUI) window.RateLimitUI.refresh();
-            const fallback = rateLimitFallback(info.category || 'ballot_feedback');
-            const err = new Error('rate_limited');
-            err.rateLimited = true; err.category = info.category || 'ballot_feedback';
-            err.count = info.currentCount ?? fallback.count; err.limit = info.usageLimit ?? fallback.limit;
-            throw err;
+            if(isRealQuotaBlock){
+              const err = new Error('rate_limited');
+              err.rateLimited = true; err.category = info.category || 'ballot_feedback';
+              err.count = info.currentCount ?? fallback.count; err.limit = info.usageLimit ?? fallback.limit;
+              throw err;
+            }
+            // Not a real quota block — almost certainly Supabase's own
+            // platform-level rate limit tripping because the continuation
+            // loop can fire several hackclub-chat calls in quick
+            // succession (see readRateLimitInfo above). Throw a plain
+            // transient error so withKeyFallback retries with backoff
+            // instead of this surfacing as a fake "you hit your daily
+            // limit" toast with a made-up count.
+            throw new Error('platform_rate_limited:429:'+JSON.stringify(info).slice(0,200));
           }
           if(window.RateLimitUI) window.RateLimitUI.refresh();
           if(!res.ok) throw new Error('judging_failed:'+res.status+':'+await safeErrText(res));

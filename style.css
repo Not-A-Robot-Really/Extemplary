@@ -98,10 +98,11 @@
   }
   .brand .sub{font-family:var(--font-mono);font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#9fb0c4;margin-top:4px;}
   .session-tag{
-    font-family:var(--font-mono);font-size:19px;line-height:1;color:#ffffff;letter-spacing:0.5px;
+    font-family:var(--font-mono);font-size:12px;line-height:1;letter-spacing:0.6px;
     display:inline-flex;align-items:center;height:29px;
+    background:#1d5c9e;border-radius:4px;padding:0 12px;
   }
-  .session-tag .rt-num{color:#8fb4e0;font-weight:bold;}
+  .session-tag .rt-num{color:#ffffff;font-weight:800;text-transform:uppercase;}
 
   main{max-width:880px;margin:0 auto;padding:28px 24px 60px;position:relative;z-index:1;}
 

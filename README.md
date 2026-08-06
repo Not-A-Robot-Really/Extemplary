@@ -56,20 +56,22 @@ Sign up → Generate questions → Write a speech → Record your speech → Rec
 
 ![record](Images/recordround.png)
 
-- **Extemp Practice Question Difficulty Selection** | Allows the user to select how niche and complex the auto-generated extemp questions will be. With 30 total difficulty levels and a unique example of a question at that level, the user can adjust the difficulty of the questions based on their own personal skill level (novice, varsity,etc).
+- **Extemp Practice Question Difficulty Selection** | Allows the user to select how niche and complex the auto-generated extemp questions will be. With **30** total difficulty levels and a unique example of a question at that level, the user can adjust the difficulty of the questions based on their own personal skill level (novice, varsity,etc).
 
-
+![qdiff](Images/questiondiff.png)
 
 - **AI judged Ballot** | Extemplary Transcribes your speech, analyzes vocal delivery from the extracted audio, and scores you on a custom made **8-category NSDA extemp rubric**. The user can select their perferred AI model from the list below, in order from cheapest & weakest to most expensive & advanced.
-1) Llama 3.3 (default)
+1) Llama 3.3 (default option)
 2) DeepSeek V4 pro
 3) Claude Sonnet 5
 4) Kimi K3
 5) Claude Opus 5
 
-Opus 5, Kimi K3, Sonnet 5, DeepSeek V4 
-
 ![rubric1](Images/rubric1.png)
+
+-**Ballot Feedback Model Selection** | As previously stated, the user can select which perferred LLM they would like to use to provide them feedback on their speeches. The 5 options are Llama 3.3, DeepSeek V4, Claude Sonnet 5, Kimi K3, and Claude Opus 5. To help users choose which model suits their Extemp needs, Extemplary provides a visual graphic illustrating the overall "score" of said model based in 2 categories: their intellectual ability & deep reasoning skills and their cost. These values reached via holistic approach. I based the scores off **openrouter rankings** `https://openrouter.ai/rankings`, tests on the Extemplary platform, and other misc. LLM rankings. For experienced Extempers & more difficult questions, use Opus 5. For more prolithic uses of the Ballot Feedback feature (if you intend to use it multiple times daily), use Deepseek V4 Pro. If you are a beginner or doing an easy question, use the default Llama 3.3 70B.
+
+-**AI Token Usage** | In order to keep Extemplary free and open sources, every aspect that involes an LLM or API key is rate limited to a certain amount daily (resets midnight UTC). This includes featues such as: Ballot Feedback, Citation Checker, Practice Question Generator, Current Events Summary, Resets daily at midnight UTC. You should be able to comfortably get ~15-40 uses of each depending on the complexity. If you choose to use a more expensive model for Ballot Feedback, it will be more around 5-10 uses.
 
 - **Tournament Briefings** | Extemplary has a built in feature that allows you to generate a comprehensive overview on current events (domestic, international, *and* economic). This overview contains important news in the US, internationally, and in the economy. Every bullet point/piece of current event also contains a link if users need to research/learn more about that spefific topic topic. There is also a section for "What to Expect at Your Tournament" are options to download/save for later viewing.
 

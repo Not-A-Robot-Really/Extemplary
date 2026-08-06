@@ -227,6 +227,8 @@
   }
   .ai-compare-row.ai-compare-row-head:hover{transform:none;box-shadow:none;}
   .ai-compare-row.ai-compare-row-head .ai-compare-rank{text-align:left;}
+  .ai-compare-row.ai-compare-row-head .ai-compare-model{padding-left:8px;}
+  .ai-compare-row.ai-compare-row-head .ai-compare-metric{font-weight:800;}
   /* Each model reads like its own light ledger card — a soft parchment
      fill with a subtle border and rounded corners, and a gentle lift
      on hover rather than a hard snap. Every row carries a flush
@@ -241,7 +243,7 @@
     display:grid;grid-template-columns:30px 168px 1fr 1fr;
     align-items:center;gap:14px;padding:12px 16px 12px 14px;
     background:var(--parchment);
-    border:1px solid var(--rule);border-left:4px solid var(--acc);border-radius:8px;
+    border:1px solid var(--rule);border-left:6px solid var(--acc);border-radius:8px;
     box-shadow:0 1px 3px rgba(10,20,35,0.06);
     transition:transform .16s ease, box-shadow .16s ease, border-color .16s ease;
     --acc:var(--crimson-bright);
@@ -259,9 +261,11 @@
     box-shadow:0 5px 14px rgba(10,20,35,0.1);
     border-color:var(--acc);
   }
-  .ai-compare-row.available{
-    border-left-width:6px;
-  }
+  /* Selectable rows are still distinguished by the bold model name
+     (see .ai-compare-model rule below), not by stripe thickness —
+     every row now uses the same (thicker) stripe width from
+     .ai-compare-row so the left edge reads evenly down the whole
+     table. */
   /* Plain bold number, no badge/circle behind it — same treatment
      whether the model ranks #1 or #9 or is available here, since the
      stripe + logo already carry that distinction. */
@@ -293,14 +297,13 @@
      reads first, to the left of its bar, in a fixed-width mono column
      so every bar in the table still lines up regardless of the
      number's digit count. */
-  .ai-bar-num{font-family:var(--font-mono);font-size:11.5px;font-weight:700;color:var(--charcoal);min-width:20px;text-align:right;}
+  .ai-bar-num{font-family:var(--font-mono);font-size:13.5px;font-weight:700;color:var(--charcoal);min-width:24px;text-align:right;}
   .ai-bar-track{
-    flex:1;height:8px;min-width:70px;border-radius:999px;background:rgba(10,20,35,0.08);
+    flex:1;height:10px;min-width:70px;border-radius:3px;background:var(--rule);
     border:none;overflow:hidden;
-    box-shadow:inset 0 1px 2px rgba(10,20,35,0.1);
   }
   .ai-bar-fill{
-    display:block;height:100%;border-radius:999px;
+    display:block;height:100%;border-radius:3px;min-width:2px;
     transition:width .4s cubic-bezier(0.2,0.8,0.3,1);
   }
   @media(max-width:600px){

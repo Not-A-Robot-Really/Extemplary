@@ -1259,14 +1259,29 @@ const DATA = window.APP_DATA;
     if(error) console.warn('Could not save overall feedback', error);
   }
   function buildOverallFeedbackPrompt(asc){
+    // Give the model real per-round substance to point to — not just
+    // scores — so the write-up can cite specific topics, specific category
+    // trends, and specific judge comments instead of staying generic. Full
+    // feedback text is only included for the most recent rounds (it's the
+    // most relevant and keeps the prompt a reasonable size); older rounds
+    // still contribute their topic/score/category data for trend-spotting.
+    const RECENT_FEEDBACK_COUNT = 5;
+    const FEEDBACK_EXCERPT_CHARS = 600;
     const rounds = asc.map((e,i) => {
       const cats = (e.categories||[]).map(c => `${c.name} ${c.score}/${c.max||10}`).join(', ');
-      return `Round ${i+1}: ${e.total !== null && e.total !== undefined ? e.total : '—'}/100 total. Categories — ${cats || 'n/a'}`;
-    }).join('\n');
-    return `You are an expert NSDA Extemporaneous Speaking coach reviewing a student's full practice history across ${asc.length} round${asc.length===1?'':'s'}:\n\n${rounds}\n\nWrite a concise, honest, encouraging OVERALL coaching comment in 2-3 sentences, addressed directly to the student ("you"), synthesizing patterns across ALL of these rounds — not just the most recent one. Name their single biggest recurring strength and, more importantly, their single biggest recurring area to improve, then give one concrete, actionable next step. Write it as natural flowing coaching prose, not a list of category names. Return ONLY the 2-3 sentence comment — no headers, no markdown, no preamble.`;
+      const date = e.ts ? new Date(e.ts).toLocaleDateString() : '';
+      const isRecent = i >= asc.length - RECENT_FEEDBACK_COUNT;
+      let line = `Round ${i+1} (${date}) — Topic: "${e.question || 'n/a'}". Total: ${e.total !== null && e.total !== undefined ? e.total : '—'}/100. Categories — ${cats || 'n/a'}.`;
+      if(isRecent && e.feedback){
+        const excerpt = e.feedback.slice(0, FEEDBACK_EXCERPT_CHARS).trim();
+        line += `\nJudge notes excerpt: ${excerpt}${e.feedback.length > FEEDBACK_EXCERPT_CHARS ? '…' : ''}`;
+      }
+      return line;
+    }).join('\n\n');
+    return `You are an expert NSDA Extemporaneous Speaking coach who has personally watched and judged a student's full practice history across ${asc.length} round${asc.length===1?'':'s'}. Here is the detailed record, in chronological order:\n\n${rounds}\n\nWrite a thorough, honest, encouraging OVERALL coaching write-up addressed directly to the student ("you"). This should read like a coach who has actually paid close attention to THIS student's rounds — not a generic extemp pep talk. Be as SPECIFIC and PERSONAL as the data allows:\n- Reference actual round numbers and/or topics when you bring up an example ("back in your round on [topic]...", "since round 3...").\n- Cite actual category names and how their scores moved over time, not just vague category labels ("your Evidence & Analysis score climbed from X to Y over your last three rounds" beats "your evidence has improved").\n- Pull concrete language or specific issues from the judge notes excerpts where relevant (a recurring phrase a judge used, a specific structural habit, a specific delivery tic) rather than restating category names.\n- If you don't have enough rounds or detail to be specific about something, don't fabricate specifics — just say it plainly instead.\n\nStructure it as 3-4 full paragraphs, in this order: (1) their recurring strengths, with specific evidence; (2) their recurring weaknesses / areas to improve, with specific evidence; (3) the clearest trend or trajectory you can see across the rounds over time (improving, plateauing, or backsliding, and in what specifically); (4) an overall summary with one or two concrete, actionable next steps tailored to what you actually saw, not generic extemp advice. Write each paragraph as complete, natural flowing coaching prose — full sentences, never cut off, not a list of category names. Return ONLY the paragraphs of the write-up — no headers, no markdown, no preamble.`;
   }
   async function generateOverallCoachingComment(asc){
-    const candidate = await callGemini(buildOverallFeedbackPrompt(asc), 300, 'ballot_feedback');
+    const candidate = await callGemini(buildOverallFeedbackPrompt(asc), 2048, 'ballot_feedback');
     if(window.RateLimitUI) window.RateLimitUI.addBallotFeedbackUsage('llama');
     return (candidate.content?.parts || []).map(p => p.text || '').join('').trim();
   }

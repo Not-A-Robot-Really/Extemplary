@@ -77,6 +77,21 @@ const DATA = window.APP_DATA;
   };
   const BALLOT_FEEDBACK_USAGE_KEY = 'extemplary_bf_weighted_usage';
   function todayISO(){ return new Date().toISOString().slice(0,10); }
+  // When a 429 response body fails to parse (res.json() throws — a
+  // network blip, or a stream cut short right at a day-boundary isolate
+  // rotation), info.currentCount/info.usageLimit end up undefined, which
+  // rendered as a literal "?/?" in the rate-limit toast — technically
+  // correct but useless to the person reading it. Fall back to a real
+  // number instead: the category's known daily limit, plus (for
+  // ballot_feedback specifically) the locally tracked weighted usage
+  // count, which is our best guess at the real server-side count even
+  // without a parseable response.
+  function rateLimitFallback(category){
+    const cat = RATE_CATEGORIES.find(c => c.key === category);
+    const limit = cat ? cat.limit : null;
+    const count = category === 'ballot_feedback' ? getWeightedBallotFeedbackUnits() : null;
+    return { count, limit };
+  }
   function getWeightedBallotFeedbackUnits(){
     try{
       const raw = JSON.parse(localStorage.getItem(BALLOT_FEEDBACK_USAGE_KEY) || 'null');
@@ -2888,8 +2903,10 @@ Output ONLY this JSON, nothing else: {"questions":["...","...","..."]}`;
     if(res.status === 429){
       const info = await res.json().catch(()=> ({}));
       if(window.RateLimitUI) window.RateLimitUI.refresh();
+      const fallback = rateLimitFallback(info.category || category);
       const err = new Error('rate_limited');
-      err.rateLimited = true; err.category = info.category || category; err.count = info.currentCount; err.limit = info.usageLimit;
+      err.rateLimited = true; err.category = info.category || category;
+      err.count = info.currentCount ?? fallback.count; err.limit = info.usageLimit ?? fallback.limit;
       throw err;
     }
     if(!res.ok){
@@ -4751,8 +4768,10 @@ Grading rules:
     if(res.status === 429){
       const info = await res.json().catch(()=> ({}));
       if(window.RateLimitUI) window.RateLimitUI.refresh();
+      const fallback = rateLimitFallback(info.category || 'ballot_feedback');
       const err = new Error('rate_limited');
-      err.rateLimited = true; err.category = info.category || 'ballot_feedback'; err.count = info.currentCount; err.limit = info.usageLimit;
+      err.rateLimited = true; err.category = info.category || 'ballot_feedback';
+      err.count = info.currentCount ?? fallback.count; err.limit = info.usageLimit ?? fallback.limit;
       throw err;
     }
     if(window.RateLimitUI) window.RateLimitUI.refresh();
@@ -5876,8 +5895,10 @@ Grading rules:
         if(res.status === 429){
           const info = await res.json().catch(()=> ({}));
           if(window.RateLimitUI) window.RateLimitUI.refresh();
+          const fallback = rateLimitFallback(info.category || 'ballot_feedback');
           const err = new Error('rate_limited');
-          err.rateLimited = true; err.category = info.category || 'ballot_feedback'; err.count = info.currentCount; err.limit = info.usageLimit;
+          err.rateLimited = true; err.category = info.category || 'ballot_feedback';
+          err.count = info.currentCount ?? fallback.count; err.limit = info.usageLimit ?? fallback.limit;
           throw err;
         }
         if(window.RateLimitUI) window.RateLimitUI.refresh();

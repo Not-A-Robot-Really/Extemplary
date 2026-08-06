@@ -24,6 +24,11 @@ const DATA = window.APP_DATA;
   const supabaseClient = (window.supabase && window.supabase.createClient)
     ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
     : null;
+  // Exposed so tutorial.js can reuse this exact client instance instead of
+  // creating a second one. Two live GoTrueClient instances in the same tab
+  // can deadlock on the session-refresh lock, which is what was hanging the
+  // tutorial's "Next" button on the speaker-name step.
+  window.ExtemplarySupabase = supabaseClient;
   const VIDEO_BUCKET = 'ballot-videos';
 
   // ===== EDGE FUNCTION AUTH =====

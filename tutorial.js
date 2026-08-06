@@ -307,12 +307,11 @@
   function nameKeyFor(email){ return 'extemplary_speaker_name:' + (email||'').toLowerCase(); }
 
   /* ---------------------------------------------------------------------
-     Speaker name uniqueness, checked against Supabase (same project/anon
-     key app.js uses -- the anon key is public by design, safe to reuse
-     here). This is a SEPARATE client instance, but supabase-js persists
-     the auth session to localStorage under a key derived from the project
-     ref, so it shares the same signed-in session as app.js's client
-     without needing to sign in again.
+     Speaker name uniqueness, checked against Supabase. Reuses the SAME
+     client instance app.js already created (via window.ExtemplarySupabase)
+     rather than creating a second one -- two separate GoTrueClient
+     instances in the same tab can deadlock on the session-refresh lock,
+     which is what was hanging "Next" on this step before.
 
      Requires a "usernames" table in Supabase (see setup_usernames.sql):
        user_id uuid primary key references auth.users(id)
@@ -322,18 +321,10 @@
      If that table doesn't exist yet, or the request fails for any other
      reason (offline, RLS misconfigured, etc.), this fails OPEN -- it lets
      the name through rather than getting a brand-new user stuck on step 2
-     of the tutorial forever. Run the SQL file once and it starts actually
-     enforcing uniqueness.
+     of the tutorial forever.
      --------------------------------------------------------------------- */
-  var SUPABASE_URL = 'https://iiehhmelfotwkdqxplug.supabase.co';
-  var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlpZWhobWVsZm90d2tkcXhwbHVnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzNDYxMzEsImV4cCI6MjA5ODkyMjEzMX0.8QzN1LJmr70Sidxp2RsOq-z3S_NX5lN9QWTr45CSaHo';
-  var _tutSupabase = null;
   function tutSupabase(){
-    if(_tutSupabase) return _tutSupabase;
-    if(window.supabase && window.supabase.createClient){
-      _tutSupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    }
-    return _tutSupabase;
+    return window.ExtemplarySupabase || null;
   }
 
   // Resolves { ok:true } if the name is free (and claims it for this
@@ -343,7 +334,7 @@
     if(!sb) return Promise.resolve({ ok:true });
     var lower = (name || '').trim().toLowerCase();
     if(!lower) return Promise.resolve({ ok:true });
-    return sb.auth.getSession().then(function(res){
+    var attempt = sb.auth.getSession().then(function(res){
       var session = res && res.data && res.data.session;
       var uid = session && session.user && session.user.id;
       if(!uid) return { ok:true }; // no session yet -- can't enforce, don't block
@@ -368,6 +359,14 @@
             });
         });
     }).catch(function(){ return { ok:true }; });
+
+    // Safety net: never let a slow/stuck network request leave the person
+    // stranded on this step. If nothing comes back in 8s, let them through
+    // (same fail-open policy as every other error path above).
+    var timeout = new Promise(function(resolve){
+      setTimeout(function(){ resolve({ ok:true }); }, 8000);
+    });
+    return Promise.race([attempt, timeout]);
   }
 
   function clearSpotlight(){

@@ -2145,12 +2145,33 @@ const DATA = window.APP_DATA;
       const tail = fullText.length > CONTINUATION_TAIL_CHARS
         ? '…(earlier categories omitted here to save tokens — see the "already covered" list above; they are already complete, do not rewrite them)…\n\n' + fullText.slice(-CONTINUATION_TAIL_CHARS)
         : fullText;
+      // IMPORTANT: this used to inject the partial answer as a fake
+      // trailing `assistant` turn (a "prefill", asking the model to
+      // resume from exactly that text) followed by a new `user` turn
+      // asking it to continue. That silently broke on Opus 5: models
+      // running with extended thinking enabled don't support assistant
+      // message prefill — the API can reject the whole request outright
+      // when a thinking-enabled model gets a prefilled final assistant
+      // turn. Hack Club's proxy appears to swallow that rejection into
+      // an empty-but-200 response rather than surfacing a real error,
+      // which showed up as a "0 in / 0 out · Free · OK" call that
+      // produced no content at all — not a time-budget cutoff, a
+      // silently rejected request.
+      //
+      // Fix: never inject a synthetic assistant turn. Every round is a
+      // fresh, single system+user exchange — the partial answer is
+      // embedded as quoted context *inside* the user message asking for
+      // continuation, not passed off as a real prior assistant turn.
+      // This can't collide with prefill/thinking restrictions because
+      // there's no prefill involved, and it trivially satisfies strict
+      // user/assistant alternation since there's only ever one user turn.
       currentMessages = [
-        ...messages,
-        { role:'assistant', content: tail || '(internal reasoning only so far, no visible text yet)' },
+        messages[0], // system prompt (rubric)
         { role:'user', content:
-          'Continue exactly where you left off. Do not repeat, restate, or summarize anything already written above — continue directly, picking up mid-sentence if needed, until the full ballot (including the Composite Score, Judge\'s Rank, and Feedback section) is completely finished.'
+          messages[1].content
+          + '\n\n---\n\nYou already began writing this ballot below before being cut off by a technical limit partway through generating it. Continue writing IMMEDIATELY after the partial content shown below, in the exact same format. Do NOT repeat, restate, quote, or re-include any of the partial content shown below in your reply — your reply should contain ONLY new content that picks up exactly where the partial content stops (mid-sentence if needed), through to the fully finished ballot (including the Composite Score, Judge\'s Rank, and Feedback section).'
           + (covered.length ? ('\n\nCategories already fully covered in earlier rounds (do not redo these): ' + covered.join(', ') + '.') : '')
+          + '\n\n=== PARTIAL BALLOT ALREADY WRITTEN (do not repeat any of this) ===\n' + tail
         }
       ];
     }

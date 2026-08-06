@@ -1903,6 +1903,13 @@ const DATA = window.APP_DATA;
     });
   }
   const sessionTag     = document.getElementById('sessionTag');
+  // Header used to show a static "Round 1" placeholder here — now shows
+  // today's date instead, in the same span/font/color, computed once on
+  // load since it's just a date display, not tied to round state.
+  const sessionDateLabel = document.getElementById('sessionDateLabel');
+  if(sessionDateLabel){
+    sessionDateLabel.textContent = new Date().toLocaleDateString('en-US', { month:'long', day:'numeric', year:'numeric' });
+  }
   const flightStripResults = document.getElementById('flightStripResults');
   const resultsContent = document.getElementById('resultsContent');
   const transcriptBody = document.getElementById('transcriptBody');

@@ -1484,7 +1484,14 @@ const DATA = window.APP_DATA;
   function applySpeakerName(email){
     if(!speakerNameEl) return;
     var stored = null;
-    try{ stored = localStorage.getItem('extemplary_speaker_name:' + (email||'').toLowerCase()); }catch(e){}
+    // The "latest" key (set the moment the tutorial's name step is
+    // submitted) always takes priority -- it's exactly what the person
+    // typed, and doesn't depend on this session's email matching the
+    // email it was originally saved under.
+    try{ stored = localStorage.getItem('extemplary_speaker_name_latest'); }catch(e){}
+    if(!stored){
+      try{ stored = localStorage.getItem('extemplary_speaker_name:' + (email||'').toLowerCase()); }catch(e){}
+    }
     speakerNameEl.textContent = toHandle(stored);
   }
 
@@ -1512,6 +1519,7 @@ const DATA = window.APP_DATA;
     currentUser = null;
     accountChip.classList.add('hidden');
     accountEmail.classList.add('hidden');
+    try{ localStorage.removeItem('extemplary_speaker_name_latest'); }catch(e){}
     applySpeakerName(null);
     // No auth form lives in this file anymore -- signing out sends the
     // person back to the landing page to log in or make a new account.

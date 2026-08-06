@@ -617,13 +617,25 @@
       formal: true,
       html: "Before we go any further, let's set this properly. Every ballot you ever submit carries a <b>Speaker</b> field, and this is what fills it in. It's how your feedback, your history, and your judge's comments all refer to you from here on out.<br><br>Take a second and enter the name you actually want to see on your ballots.",
       onSubmit: function(name){
+        // Persist under the per-account key (used for future logins) AND a
+        // single global "latest name entered" key. The global key is the
+        // real source of truth for what shows on screen right now -- it
+        // sidesteps any mismatch between the email this session thinks
+        // it's on and whatever app.js re-reads later (case differences,
+        // a delayed/duplicate SIGNED_IN re-fire, etc). Whatever the person
+        // just typed here always wins.
         try{ localStorage.setItem(nameKeyFor(state && state.email), name); }catch(e){}
+        try{ localStorage.setItem('extemplary_speaker_name_latest', name); }catch(e){}
+        // Write the DOM directly, right now -- don't only rely on the
+        // custom event being caught by a listener that may not exist yet.
+        var el2 = byId('speakerName');
+        if(el2){
+          var clean = (name || '').trim().slice(0, 20).toLowerCase().replace(/\s+/g, '');
+          el2.textContent = '@' + (clean || 'you');
+        }
         try{
           window.dispatchEvent(new CustomEvent('extemplary:speaker-name-set', { detail: { name: name } }));
-        }catch(e){
-          var el2 = byId('speakerName');
-          if(el2) el2.textContent = name || 'You';
-        }
+        }catch(e){}
       }
     });
 
@@ -861,6 +873,23 @@
       html: "This is the full rubric: Creative Hook &amp; Intro, Structure, Strength of Argument &amp; Analysis, Flaws in Reasoning, Strength of Evidence, and more. Each category has its own point value and the exact criteria the AI judge checks for. It's the same rubric used to score every round you record, so it's worth a skim before your first one. You can reopen this any time from the same icon on the paper."
     });
 
+    // ---- LLM Model Rankings icon on the paper -------------------------------
+    steps.push({
+      title: 'The LLM Model Rankings',
+      avatar: '📊',
+      spotlight: '#aiCompareToggle',
+      waitForClick: '#aiCompareToggle',
+      hintText: 'Click the highlighted chip icon on the paper.',
+      html: "Right next to the rubric icon is another one, click it now and it opens the <b>LLM Model Rankings</b>. This ranks every AI model available as a judge by quality and cost, so you can see how they stack up against each other before picking one."
+    });
+
+    steps.push({
+      title: 'Comparing the judges',
+      avatar: '📊',
+      spotlight: '#view-aiCompare',
+      html: "Each row is a model you could pick as your judge, with its quality and cost scores side by side. The ones marked \"Available Here\" are the ones you can actually select in the model picker. You can reopen this page any time from the same icon on the paper."
+    });
+
 
     steps.push({
       title: 'The Citation Checker',
@@ -920,6 +949,14 @@
       avatar: '\u26A1',
       spotlight: '#modeSwitch',
       html: "Before you record, pick a mode here. <b>Regular Practice</b> is a full 7-minute round graded on all 8 rubric categories, the standard tournament format. <b>Rapid Drill: Introduction</b> is a short-form drill focused only on your opening (hook, link, thesis) so you can rep intros fast without recording a whole speech. <b>Rapid Drill: Body</b> does the same for your body paragraphs: structure, argument strength, evidence, and reasoning, without needing a full intro or conclusion. Each drill grades against its own separate, focused rubric, different from Regular Practice's full 8-category rubric, and shows up tagged in your Ballot History, so you can track all three separately."
+    });
+
+    // ---- AI judge model picker dropdown, sits right next to the mode switch -
+    steps.push({
+      title: 'Choose your AI judge',
+      avatar: '🤖',
+      spotlight: '#modelPicker',
+      html: "This dropdown picks which AI model grades your speech. It's set to <b>Llama 3.3 70B</b> by default, and that's a good place to start. You can compare all the available models on the <b>LLM Model Rankings</b> page we just looked at, then come back here and switch any time."
     });
 
     steps.push({

@@ -298,13 +298,77 @@
       count: byId('tutStepCount'), hint: byId('tutHint'), hintText: byId('tutHintText'),
       next: byId('tutNextBtn'), skip: byId('tutSkipBtn'), choiceRow: byId('tutChoiceRow'),
       yes: byId('tutYesBtn'), no: byId('tutNoBtn'),
-      inputRow: byId('tutInputRow'), nameInput: byId('tutNameInput')
+      inputRow: byId('tutInputRow'), nameInput: byId('tutNameInput'), nameError: byId('tutNameError')
     };
   }
 
   var NAME_MAX_LEN = 20; // secretly capped (the person is never told this number)
 
   function nameKeyFor(email){ return 'extemplary_speaker_name:' + (email||'').toLowerCase(); }
+
+  /* ---------------------------------------------------------------------
+     Speaker name uniqueness, checked against Supabase (same project/anon
+     key app.js uses -- the anon key is public by design, safe to reuse
+     here). This is a SEPARATE client instance, but supabase-js persists
+     the auth session to localStorage under a key derived from the project
+     ref, so it shares the same signed-in session as app.js's client
+     without needing to sign in again.
+
+     Requires a "usernames" table in Supabase (see setup_usernames.sql):
+       user_id uuid primary key references auth.users(id)
+       name text
+       name_lower text  (unique index on this, case-insensitive uniqueness)
+
+     If that table doesn't exist yet, or the request fails for any other
+     reason (offline, RLS misconfigured, etc.), this fails OPEN -- it lets
+     the name through rather than getting a brand-new user stuck on step 2
+     of the tutorial forever. Run the SQL file once and it starts actually
+     enforcing uniqueness.
+     --------------------------------------------------------------------- */
+  var SUPABASE_URL = 'https://iiehhmelfotwkdqxplug.supabase.co';
+  var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlpZWhobWVsZm90d2tkcXhwbHVnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzNDYxMzEsImV4cCI6MjA5ODkyMjEzMX0.8QzN1LJmr70Sidxp2RsOq-z3S_NX5lN9QWTr45CSaHo';
+  var _tutSupabase = null;
+  function tutSupabase(){
+    if(_tutSupabase) return _tutSupabase;
+    if(window.supabase && window.supabase.createClient){
+      _tutSupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    }
+    return _tutSupabase;
+  }
+
+  // Resolves { ok:true } if the name is free (and claims it for this
+  // account) or { ok:false, message } if someone else already has it.
+  function claimSpeakerName(name){
+    var sb = tutSupabase();
+    if(!sb) return Promise.resolve({ ok:true });
+    var lower = (name || '').trim().toLowerCase();
+    if(!lower) return Promise.resolve({ ok:true });
+    return sb.auth.getSession().then(function(res){
+      var session = res && res.data && res.data.session;
+      var uid = session && session.user && session.user.id;
+      if(!uid) return { ok:true }; // no session yet -- can't enforce, don't block
+
+      return sb.from('usernames').select('user_id').eq('name_lower', lower).maybeSingle()
+        .then(function(sel){
+          if(sel.error && sel.error.code && sel.error.code !== 'PGRST116'){
+            return { ok:true }; // table missing / RLS issue -- fail open
+          }
+          var takenByOther = sel.data && sel.data.user_id && sel.data.user_id !== uid;
+          if(takenByOther){
+            return { ok:false, message: "That name is already taken. Try a different one." };
+          }
+          return sb.from('usernames')
+            .upsert({ user_id: uid, name: name, name_lower: lower }, { onConflict: 'user_id' })
+            .then(function(up){
+              if(up.error && up.error.code === '23505'){
+                // Unique-index race: someone else claimed it a moment ago.
+                return { ok:false, message: "That name is already taken. Try a different one." };
+              }
+              return { ok:true };
+            });
+        });
+    }).catch(function(){ return { ok:true }; });
+  }
 
   function clearSpotlight(){
     var e = el();
@@ -449,25 +513,51 @@
         e.inputRow.style.display = 'block';
         e.nameInput.value = '';
         e.nameInput.maxLength = NAME_MAX_LEN;
+        if(e.nameError){ e.nameError.style.display = 'none'; e.nameError.textContent = ''; }
         e.next.setAttribute('disabled', 'disabled');
         e.next.style.opacity = '0.5';
         var onInput = function(){
           var v = e.nameInput.value.slice(0, NAME_MAX_LEN);
           if(v !== e.nameInput.value) e.nameInput.value = v;
+          if(e.nameError){ e.nameError.style.display = 'none'; e.nameError.textContent = ''; }
           var ok = v.trim().length > 0;
           if(ok){ e.next.removeAttribute('disabled'); e.next.style.opacity = '1'; }
           else { e.next.setAttribute('disabled', 'disabled'); e.next.style.opacity = '0.5'; }
         };
         e.nameInput.oninput = onInput;
+        var submitting = false;
+        var trySubmit = function(){
+          if(e.next.hasAttribute('disabled') || submitting) return;
+          var name = e.nameInput.value.trim().slice(0, NAME_MAX_LEN);
+          submitting = true;
+          e.next.setAttribute('disabled', 'disabled');
+          e.next.style.opacity = '0.5';
+          e.nameInput.classList.add('tut-name-input-checking');
+          var prevLabel = e.next.textContent;
+          e.next.textContent = 'Checking…';
+          claimSpeakerName(name).then(function(result){
+            if(result.ok){
+              if(step.onSubmit) step.onSubmit(name);
+              advance();
+              return;
+            }
+            submitting = false;
+            e.nameInput.classList.remove('tut-name-input-checking');
+            e.next.textContent = prevLabel;
+            e.next.removeAttribute('disabled');
+            e.next.style.opacity = '1';
+            if(e.nameError){
+              e.nameError.textContent = result.message || "That name is already taken. Try a different one.";
+              e.nameError.style.display = 'block';
+            }
+            setTimeout(function(){ e.nameInput.focus(); e.nameInput.select(); }, 30);
+          });
+        };
         e.nameInput.onkeydown = function(ev){
-          if(ev.key === 'Enter' && !e.next.hasAttribute('disabled')) advance();
+          if(ev.key === 'Enter' && !e.next.hasAttribute('disabled')) trySubmit();
         };
         setTimeout(function(){ e.nameInput.focus(); }, 50);
-        e.next.onclick = function(){
-          if(e.next.hasAttribute('disabled')) return;
-          if(step.onSubmit) step.onSubmit(e.nameInput.value.trim().slice(0, NAME_MAX_LEN));
-          advance();
-        };
+        e.next.onclick = trySubmit;
       }
     } else if(step.choice){
       e.next.style.display = 'none';
@@ -615,7 +705,7 @@
       avatar: '🖋️',
       input: true,
       formal: true,
-      html: "Before we go any further, let's set this properly. Every ballot you ever submit carries a <b>Speaker</b> field, and this is what fills it in. It's how your feedback, your history, and your judge's comments all refer to you from here on out.<br><br>Take a second and enter the name you actually want to see on your ballots.",
+      html: "Before we go any further, let's set this properly. Every ballot you ever submit carries a <b>Speaker</b> field, and this is what fills it in. It's how your feedback, your history, and your judge's comments all refer to you from here on out.<br><br>Take a second and enter the name you actually want to see on your ballots. It needs to be unique, so if someone else already has it, you'll need to pick a different one.",
       onSubmit: function(name){
         // Persist under the per-account key (used for future logins) AND a
         // single global "latest name entered" key. The global key is the

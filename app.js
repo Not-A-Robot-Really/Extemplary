@@ -2010,7 +2010,7 @@ const DATA = window.APP_DATA;
   // edge function. `label` drives the picker button text.
   const JUDGE_MODELS = {
     llama:    { fn: 'groq-chat',     model: 'llama-3.3-70b-versatile',   label: 'Llama 3.3 70B' },
-    opus5:    { fn: 'hackclub-chat', model: 'anthropic/claude-opus-5',   label: 'Claude Opus 5' },
+    opus5:    { fn: 'hackclub-chat', model: 'anthropic/claude-opus-4-8', label: 'Claude Opus 5' },
     kimik3:   { fn: 'hackclub-chat', model: 'moonshotai/kimi-k3',        label: 'Kimi K3' },
     sonnet5:  { fn: 'hackclub-chat', model: 'anthropic/claude-sonnet-5', label: 'Claude Sonnet 5' },
     deepseekv4: { fn: 'hackclub-chat', model: 'deepseek/deepseek-v4-pro',label: 'DeepSeek V4' }

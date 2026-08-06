@@ -1472,12 +1472,13 @@ const DATA = window.APP_DATA;
     speakerNameEl.textContent = toHandle(name);
   });
 
-  const accountChip = document.getElementById('accountChip');
+  const accountChip = document.getElementById('signOutBtn');
   const accountEmail = document.getElementById('accountEmail');
 
   function onSignedIn(user){
     currentUser = { id: user.id, email: user.email };
     accountChip.classList.remove('hidden');
+    accountEmail.classList.remove('hidden');
     accountEmail.textContent = currentUser.email;
     accountEmail.title = currentUser.email;
     document.body.classList.remove('previewing-example');
@@ -1488,6 +1489,7 @@ const DATA = window.APP_DATA;
   function onSignedOut(){
     currentUser = null;
     accountChip.classList.add('hidden');
+    accountEmail.classList.add('hidden');
     applySpeakerName(null);
     // No auth form lives in this file anymore -- signing out sends the
     // person back to the landing page to log in or make a new account.

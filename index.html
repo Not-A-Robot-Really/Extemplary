@@ -65,14 +65,10 @@
 <header class="topbar">
   <div class="brand">
     <div class="mark"><span class="mark-e-wrap" aria-hidden="true"><svg viewBox="0 0 36 37" fill="none"><use href="#icon-18"></use></svg></span>xtemplary</div>
-    <div class="brand-desc">Record, analyze, and practice your extemporaneous speeches <button type="button" class="brand-username" id="speakerName" title="Click to copy">@you</button></div>
+    <div class="brand-desc">Record, analyze, and practice your extemporaneous speeches</div>
   </div>
   <div style="display:flex;align-items:center;gap:12px;">
     <div class="session-tag" id="sessionTag"><span class="rt-num" id="sessionDateLabel">Round 1</span></div>
-    <div class="account-chip hidden" id="accountChip">
-      <span class="acc-email" id="accountEmail"></span>
-      <button type="button" id="signOutBtn">Sign out</button>
-    </div>
     <button class="gear-btn" id="streakToggle" type="button" aria-label="Streak Calendar" title="Streak Calendar">
       <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-19"></use></svg>
     </button>
@@ -139,6 +135,10 @@
     <button class="nav-hamburger-fab" id="navMenuToggle" type="button" aria-label="Menu" title="Menu" aria-haspopup="true" aria-expanded="true">
       <svg viewBox="0 0 24 24" width="27" height="27" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-30"></use></svg>
     </button>
+    <div class="nav-drawer-user">
+      <button type="button" class="nav-drawer-username" id="speakerName" title="Click to copy">@you</button>
+      <span class="nav-drawer-email hidden" id="accountEmail"></span>
+    </div>
   </div>
   <div class="sp-body nav-menu-body">
     <button type="button" class="nav-menu-item" id="navHomeBtn">
@@ -183,6 +183,8 @@
       <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-41"></use></svg>
       <span>Example Ballot</span>
     </button>
+    <div class="nav-menu-divider"></div>
+    <button type="button" class="btn primary nav-signout-btn hidden" id="signOutBtn">Sign out</button>
   </div>
 </div>
 

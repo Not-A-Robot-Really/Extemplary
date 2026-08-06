@@ -349,7 +349,7 @@
             return { ok:false, message: "That name is already taken. Try a different one." };
           }
           return sb.from('usernames')
-            .upsert({ user_id: uid, name: name, name_lower: lower }, { onConflict: 'user_id' })
+            .upsert({ user_id: uid, name: name }, { onConflict: 'user_id' })
             .then(function(up){
               if(up.error && up.error.code === '23505'){
                 // Unique-index race: someone else claimed it a moment ago.

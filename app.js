@@ -2047,6 +2047,13 @@ const DATA = window.APP_DATA;
     // it if the model genuinely never produced real answer text, same
     // principle as the thinking-block handling in extractChatContent.
     let reasoning = '';
+    // Set when hackclub-chat's own time budget (well under Supabase's
+    // wall-clock ceiling) runs out before the model naturally finished —
+    // signaled by one synthetic sentinel line, {"extemplary_continue":true},
+    // appended right before the stream closes. Not an error: it just means
+    // the caller (runHackClubChatToCompletion below) should re-request with
+    // the partial answer fed back in and let the model keep going.
+    let needsContinuation = false;
     // Processes any complete "data: {...}" lines found in `chunk` and
     // folds their content into text/reasoning. Shared by the main read
     // loop and by the final flush below, so the last line read from the
@@ -2060,6 +2067,7 @@ const DATA = window.APP_DATA;
         if(!data || data === '[DONE]') continue;
         let json;
         try{ json = JSON.parse(data); }catch(e){ continue; }
+        if(json && json.extemplary_continue === true){ needsContinuation = true; continue; }
         const delta = json?.choices?.[0]?.delta || json?.choices?.[0]?.message || {};
         if(typeof delta.content === 'string') text += delta.content;
         if(typeof delta.reasoning_content === 'string') reasoning += delta.reasoning_content;
@@ -2083,7 +2091,74 @@ const DATA = window.APP_DATA;
     // as every other line.
     buffer += decoder.decode();
     if(buffer) consumeLines(buffer);
-    return (text.trim() || reasoning.trim() || '');
+    return { text: text.trim(), reasoning: reasoning.trim(), needsContinuation };
+  }
+  // Repeatedly calls hackclub-chat, feeding the partial answer back in as
+  // prior context whenever a call gets cut off by the server's own time
+  // budget (needsContinuation), until the model genuinely finishes or a
+  // safety cap on rounds is hit. This is what lets a single logical
+  // judging request span multiple short server invocations — each one
+  // safely under Supabase's wall-clock ceiling — instead of requiring one
+  // continuous call long enough to hold the whole thing, which isn't
+  // possible on the Free plan for slow models like Opus 5 (observed
+  // 280-300s total, well over the 150s Free-tier ceiling).
+  //
+  // `doFetch(messages)` runs one round: POST the given message list to
+  // hackclub-chat and resolve to the raw streaming Response, or throw
+  // (rate-limited / non-ok) exactly like every other call in this file —
+  // so normal withKeyFallback retry/error handling upstream still works
+  // unchanged. This function only adds the "ask it to keep going" loop
+  // on top of that.
+  // Rubric category names, used only to build a cheap "already covered"
+  // list for continuation rounds (see below) — not used for scoring.
+  const RUBRIC_CATEGORY_NAMES = [
+    'Creative Hook & Intro','Structure','Strength of Argument & Analysis',
+    'Flaws in Reasoning','Strength of Evidence','Clarity',
+    'Conclusion Strength','Speech Quality'
+  ];
+  // Caps how much of the already-written answer gets resent verbatim on
+  // a continuation round. Sending the *entire* accumulated text back
+  // every round means round 2 pays for round 1's output as input tokens,
+  // round 3 pays for rounds 1+2's, etc — real, avoidable cost that grows
+  // roughly with the square of the round count, not just a straight
+  // split of one total. A bounded tail keeps the model's immediate
+  // continuation point sharp (which is what actually matters for not
+  // repeating itself or breaking mid-sentence) without re-billing
+  // everything written several rounds ago.
+  const CONTINUATION_TAIL_CHARS = 6000;
+  async function runHackClubChatToCompletion(doFetch, messages){
+    const MAX_ROUNDS = 6; // ~6 * 128s server-side time budget per round ≈ 12.8 minutes of total generation headroom — comfortably above any observed Opus 5 / DeepSeek run
+    let fullText = '';
+    let fullReasoning = '';
+    let currentMessages = messages;
+    for(let round = 0; round < MAX_ROUNDS; round++){
+      const res = await doFetch(currentMessages);
+      const { text, reasoning, needsContinuation } = await readHackClubStream(res);
+      fullText += text;
+      fullReasoning += reasoning;
+      if(!needsContinuation) return fullText.trim() || fullReasoning.trim();
+      // Covered-category list is a cheap substitute for re-sending
+      // everything already written — the model just needs to know which
+      // categories are done so it doesn't redo one it covered several
+      // rounds back and outside the tail window below.
+      const covered = RUBRIC_CATEGORY_NAMES.filter(name => fullText.includes(name));
+      const tail = fullText.length > CONTINUATION_TAIL_CHARS
+        ? '…(earlier categories omitted here to save tokens — see the "already covered" list above; they are already complete, do not rewrite them)…\n\n' + fullText.slice(-CONTINUATION_TAIL_CHARS)
+        : fullText;
+      currentMessages = [
+        ...messages,
+        { role:'assistant', content: tail || '(internal reasoning only so far, no visible text yet)' },
+        { role:'user', content:
+          'Continue exactly where you left off. Do not repeat, restate, or summarize anything already written above — continue directly, picking up mid-sentence if needed, until the full ballot (including the Composite Score, Judge\'s Rank, and Feedback section) is completely finished.'
+          + (covered.length ? ('\n\nCategories already fully covered in earlier rounds (do not redo these): ' + covered.join(', ') + '.') : '')
+        }
+      ];
+    }
+    // Hit the round cap without the model ever signaling it was done —
+    // return whatever was assembled so far rather than throwing, since
+    // the graceful "cut off" ballot UI already handles a partial result
+    // reasonably. This should be rare: 6 rounds is a lot of headroom.
+    return fullText.trim() || fullReasoning.trim();
   }
   function getJudgeModelChoice(){
     return JUDGE_MODELS[judgeModelValue] || JUDGE_MODELS.llama;
@@ -5877,75 +5952,73 @@ Grading rules:
       // id, or returns a differently-shaped response — instead of just
       // failing the whole round silently.
       const runJudging = async (choice, weightKey) => withKeyFallback(async (k) => {
-        const res = await fetchWithTimeout(`${SUPABASE_FUNCTIONS_URL}/${choice.fn}`,{
-          method:'POST',
-          headers:{
-            'Authorization':'Bearer '+(await getAuthToken()),
-            'apikey': SUPABASE_ANON_KEY,
-            'Content-Type':'application/json'
-          },
-          body: JSON.stringify({
-            // Groq/Llama writes the rubric feedback directly, so 3000
-            // tokens is plenty. The Hack Club AI models (Claude, Kimi,
-            // DeepSeek) appear to spend part of their budget on internal
-            // reasoning before writing the actual answer — on a long
-            // transcript graded against 8 rubric categories, a fixed
-            // budget can run out mid-answer, so the call succeeds (real
-            // tokens billed) but returns no finished text. Give those
-            // models a much bigger ceiling — bumped further from 16000
-            // after DeepSeek V4 Pro used the full 16,000-token budget
-            // without finishing (316s runtime), and because the
-            // SPECIFICITY MANDATE / DEPTH REQUIREMENT additions to the
-            // rubric prompt now explicitly ask for more bullets per
-            // category, which increases the length a complete answer
-            // needs on top of whatever reasoning tokens the model spends.
-            model: choice.model, temperature:0.4, max_tokens: choice.fn === 'hackclub-chat' ? 32000 : 3000,
-            messages:[
-              {role:'system', content: introDrillMode ? INTRO_RUBRIC_PROMPT : bodyDrillMode ? BODY_RUBRIC_PROMPT : RUBRIC_PROMPT},
-              {role:'user', content:'TRANSCRIPT:\n\n'+transcript+'\n\n'+metricsBlock}
-            ],
-            overrideKey: choice.fn === 'groq-chat' ? (k || undefined) : undefined,
-            category: 'ballot_feedback',
-            // How many units of the daily cap this call should cost —
-            // mirrors BALLOT_FEEDBACK_MODEL_WEIGHTS above so pricier
-            // models (Opus 5) drain the cap faster than cheaper ones
-            // (Llama/DeepSeek). Enforced server-side in groq-chat /
-            // hackclub-chat; see those files for the p_amount plumbing.
-            weight: BALLOT_FEEDBACK_MODEL_WEIGHTS[weightKey] || 1
-          })
-        // Groq's LPU inference is genuinely fast — Llama 3.3 70B via
-        // groq-chat comfortably finishes well inside 60s. The Hack Club AI
-        // models (Claude, Kimi, DeepSeek) run on normal inference and can
-        // spend real time on internal reasoning before writing a single
-        // word of the actual ballot — observed DeepSeek V4 Pro taking over
-        // 5 minutes (316s) to fully use a 16,000-token budget, which is
-        // roughly ~0.02s/token. max_tokens for this branch is now 32000
-        // (doubled, see above), so worst case is roughly double the
-        // observed runtime too — give enough margin above that estimate
-        // rather than cutting it close. A flat 60s timeout aborts these
-        // calls client-side long before the model is done, even though
-        // the request keeps running server-side and still gets billed
-        // (which is why it can show "OK" in the usage dashboard while the
-        // person sees a failure/fallback in the app).
-        }, choice.fn === 'hackclub-chat' ? 720000 : 60000);
-        if(res.status === 429){
-          const info = await res.json().catch(()=> ({}));
+        const baseMessages = [
+          {role:'system', content: introDrillMode ? INTRO_RUBRIC_PROMPT : bodyDrillMode ? BODY_RUBRIC_PROMPT : RUBRIC_PROMPT},
+          {role:'user', content:'TRANSCRIPT:\n\n'+transcript+'\n\n'+metricsBlock}
+        ];
+        // Runs one HTTP round against choice.fn for the given message
+        // list. Kept separate from the continuation loop below so a
+        // single round's error handling (429 / non-ok) stays identical
+        // to how every other call in this file works — throw, and let
+        // withKeyFallback's existing retry logic take over.
+        const doFetch = async (messages) => {
+          const res = await fetchWithTimeout(`${SUPABASE_FUNCTIONS_URL}/${choice.fn}`,{
+            method:'POST',
+            headers:{
+              'Authorization':'Bearer '+(await getAuthToken()),
+              'apikey': SUPABASE_ANON_KEY,
+              'Content-Type':'application/json'
+            },
+            body: JSON.stringify({
+              // Groq/Llama writes the rubric feedback directly, so 3000
+              // tokens is plenty. The Hack Club AI models (Claude, Kimi,
+              // DeepSeek) appear to spend part of their budget on internal
+              // reasoning before writing the actual answer, so give those
+              // a much bigger per-round ceiling. Each round is now capped
+              // in time (by hackclub-chat's own TIME_BUDGET_MS), not just
+              // tokens, and runHackClubChatToCompletion below chains
+              // rounds together, so 32000 just needs to be enough for one
+              // ~128s round's worth of output, not the whole ballot.
+              model: choice.model, temperature:0.4, max_tokens: choice.fn === 'hackclub-chat' ? 32000 : 3000,
+              messages,
+              overrideKey: choice.fn === 'groq-chat' ? (k || undefined) : undefined,
+              category: 'ballot_feedback',
+              // How many units of the daily cap this call should cost —
+              // mirrors BALLOT_FEEDBACK_MODEL_WEIGHTS above so pricier
+              // models (Opus 5) drain the cap faster than cheaper ones
+              // (Llama/DeepSeek). Enforced server-side in groq-chat /
+              // hackclub-chat; see those files for the p_amount plumbing.
+              weight: BALLOT_FEEDBACK_MODEL_WEIGHTS[weightKey] || 1
+            })
+          // Groq's LPU inference is genuinely fast — Llama 3.3 70B via
+          // groq-chat comfortably finishes well inside 60s. hackclub-chat
+          // now self-limits each round to ~128s server-side (see that
+          // function's TIME_BUDGET_MS) and hands back a "please continue"
+          // sentinel instead of running long, so the client-side timeout
+          // here only needs enough margin above that, not the full
+          // observed generation time (280s+) like before.
+          }, choice.fn === 'hackclub-chat' ? 150000 : 60000);
+          if(res.status === 429){
+            const info = await res.json().catch(()=> ({}));
+            if(window.RateLimitUI) window.RateLimitUI.refresh();
+            const fallback = rateLimitFallback(info.category || 'ballot_feedback');
+            const err = new Error('rate_limited');
+            err.rateLimited = true; err.category = info.category || 'ballot_feedback';
+            err.count = info.currentCount ?? fallback.count; err.limit = info.usageLimit ?? fallback.limit;
+            throw err;
+          }
           if(window.RateLimitUI) window.RateLimitUI.refresh();
-          const fallback = rateLimitFallback(info.category || 'ballot_feedback');
-          const err = new Error('rate_limited');
-          err.rateLimited = true; err.category = info.category || 'ballot_feedback';
-          err.count = info.currentCount ?? fallback.count; err.limit = info.usageLimit ?? fallback.limit;
-          throw err;
-        }
-        if(window.RateLimitUI) window.RateLimitUI.refresh();
-        if(!res.ok) throw new Error('judging_failed:'+res.status+':'+await safeErrText(res));
-        // hackclub-chat streams its response as SSE (see readHackClubStream
-        // above); groq-chat still returns one buffered JSON object, since
+          if(!res.ok) throw new Error('judging_failed:'+res.status+':'+await safeErrText(res));
+          return res;
+        };
+        // hackclub-chat streams its response as SSE and may span several
+        // chained rounds (see runHackClubChatToCompletion); groq-chat
+        // still returns one buffered JSON object in a single round, since
         // Llama via Groq comfortably finishes well inside the wall-clock
-        // limit and never needed the streaming workaround.
+        // limit and never needed any of this.
         const content = choice.fn === 'hackclub-chat'
-          ? await readHackClubStream(res)
-          : extractChatContent(await res.json());
+          ? await runHackClubChatToCompletion(doFetch, baseMessages)
+          : extractChatContent(await (await doFetch(baseMessages)).json());
         // The HTTP call itself succeeded (the model billed real tokens),
         // but if we can't find text in any shape we recognize, treat it
         // the same as a failed call so the caller can fall back to Llama

@@ -73,7 +73,7 @@ Sign up → Generate questions → Write a speech → Record your speech → Rec
 
 -**AI Token Usage** | In order to keep Extemplary free and open sources, every aspect that involes an LLM or API key is rate limited to a certain amount daily (resets midnight UTC). This includes featues such as: Ballot Feedback, Citation Checker, Practice Question Generator, Current Events Summary, Resets daily at midnight UTC. You should be able to comfortably get ~15-40 uses of each depending on the complexity. If you choose to use a more expensive model for Ballot Feedback, it will be more around 5-10 uses.
 
-- **Tournament Briefings** | Extemplary has a built in feature that allows you to generate a comprehensive overview on current events (domestic, international, *and* economic). This overview contains important news in the US, internationally, and in the economy. Every bullet point/piece of current event also contains a link if users need to research/learn more about that spefific topic topic. There is also a section for "What to Expect at Your Tournament" are options to download/save for later viewing.
+- **Tournament Briefings** | Allows the user to generate a comprehensive overview on current events (domestic, international, *and* economic). This overview contains important news in the US, internationally, and in the economy. Every bullet point/piece of current event also contains a link if users need to research/learn more about that spefific topic topic. There is also a section for "What to Expect at Your Tournament" are options to download/save for later viewing.
 
 ![briefingimg](Images/tourneyoverview.png)
 

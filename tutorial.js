@@ -476,6 +476,12 @@
     if(progressFill) progressFill.style.width = Math.round(((state.idx+1) / state.steps.length) * 100) + '%';
     e.hint.classList.add('hidden');
     e.next.style.display = 'inline-block';
+    // Always start each step's Next button from a clean, enabled state.
+    // The speaker-name step disables it while its uniqueness check runs;
+    // without this reset, that disabled/dimmed state was leaking forward
+    // and leaving Next permanently unclickable on every step after it.
+    e.next.removeAttribute('disabled');
+    e.next.style.opacity = '';
     e.choiceRow.style.display = 'none';
     if(e.inputRow) e.inputRow.style.display = 'none';
     e.skip.style.display = step.hideSkip ? 'none' : 'inline-block';

@@ -1359,7 +1359,7 @@ const DATA = window.APP_DATA;
     refreshOverallFeedback(list);
     renderHistoryGoals(list);
     if(!list.length){
-      wrap.innerHTML = '<div class="history-empty">No saved ballots yet — finish a practice round and it will show up here.</div>';
+      wrap.innerHTML = '<div class="history-empty">No saved ballots yet! finish a practice round and it will show up here.</div>';
       return;
     }
     const ascForNumbering = [...list].sort((a,b) => a.ts - b.ts);

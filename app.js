@@ -3982,6 +3982,14 @@ Grading rules:
     aiCompareToggle.classList.add('active');
     viewBeforeAiCompare = [viewRecord, viewReview, viewProcessing, viewResults].find(v => !v.classList.contains('hidden')) || viewRecord;
     showView(viewAiCompare);
+    // Animate the quality/cost bars in on a rAF tick (same pattern as the
+    // "Trends Across N Ballots" summary bars in My History) so the width
+    // transition actually fires instead of snapping straight to full width.
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        viewAiCompare.querySelectorAll('.ai-bar-fill').forEach(bar => { bar.style.width = bar.dataset.w + '%'; });
+      });
+    });
   }
   function closeAiComparePanel(){
     aiCompareOpen = false;
@@ -4122,6 +4130,7 @@ Grading rules:
   const themeIconSun  = document.getElementById('themeIconSun');
   const navThemeIconMoon = document.getElementById('navThemeIconMoon');
   const navThemeIconSun  = document.getElementById('navThemeIconSun');
+  const navThemeLabel = document.getElementById('navThemeLabel');
   function applyTheme(theme){
     const metaTheme = document.querySelector('meta[name="theme-color"]');
     if(theme === 'light'){
@@ -4130,6 +4139,8 @@ Grading rules:
       themeIconSun.classList.remove('hidden');
       navThemeIconMoon?.classList.add('hidden');
       navThemeIconSun?.classList.remove('hidden');
+      // Label names the mode a click will switch TO, not the current one.
+      if(navThemeLabel) navThemeLabel.textContent = 'Dark Mode';
       if(metaTheme) metaTheme.setAttribute('content', '#e9edf1');
     } else {
       document.documentElement.removeAttribute('data-theme');
@@ -4137,6 +4148,7 @@ Grading rules:
       themeIconSun.classList.add('hidden');
       navThemeIconMoon?.classList.remove('hidden');
       navThemeIconSun?.classList.add('hidden');
+      if(navThemeLabel) navThemeLabel.textContent = 'Light Mode';
       if(metaTheme) metaTheme.setAttribute('content', '#0a1c30');
     }
   }

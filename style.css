@@ -101,7 +101,7 @@
     font-family:var(--font-mono);font-size:19px;line-height:1;color:#ffffff;letter-spacing:0.5px;
     display:inline-flex;align-items:center;height:29px;
   }
-  .session-tag .rt-num{color:var(--brass);font-weight:bold;}
+  .session-tag .rt-num{color:#8fb4e0;font-weight:bold;}
 
   main{max-width:880px;margin:0 auto;padding:28px 24px 60px;position:relative;z-index:1;}
 
@@ -2079,7 +2079,7 @@
     display:flex;flex-direction:column;gap:2px;min-width:0;
   }
   .nav-drawer-username{
-    font-family:var(--font-display);font-size:17px;font-weight:700;letter-spacing:0.3px;
+    font-family:var(--font-display);font-size:20px;font-weight:700;letter-spacing:0.3px;
     color:#ffffff;background:none;border:none;padding:0;text-align:left;line-height:1.1;
     cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:170px;
     transition:opacity .15s ease;

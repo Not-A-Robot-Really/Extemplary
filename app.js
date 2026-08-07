@@ -320,13 +320,16 @@ const DATA = window.APP_DATA;
       // "video ballots" goal counts.
       recordSource: (row.delivery_metrics && row.delivery_metrics.recordSource) || 'camera',
       isIntroDrill: !!(row.delivery_metrics && row.delivery_metrics.isIntroDrill),
-      isBodyDrill: !!(row.delivery_metrics && row.delivery_metrics.isBodyDrill)
+      isBodyDrill: !!(row.delivery_metrics && row.delivery_metrics.isBodyDrill),
+      // Tucked into delivery_metrics (see recordBallotToHistory) rather than
+      // a new column, same pattern as recordSource/isIntroDrill above.
+      factCheck: (row.delivery_metrics && row.delivery_metrics.factCheck) || null
     }));
   }
 
   // Records one completed round (called from renderResults once feedback
   // has been parsed) so it shows up later in "My History".
-  async function recordBallotToHistory(parsed, feedback, transcript, question, round, videoBlob, annotations, deliveryMetrics, recordSource, isIntroDrill, isBodyDrill){
+  async function recordBallotToHistory(parsed, feedback, transcript, question, round, videoBlob, annotations, deliveryMetrics, recordSource, isIntroDrill, isBodyDrill, factCheck){
     if(!currentUser || !supabaseClient) return;
     const id = (crypto.randomUUID && crypto.randomUUID()) || ('b_' + Date.now() + '_' + Math.random().toString(36).slice(2,8));
     let videoPath = null;
@@ -345,7 +348,10 @@ const DATA = window.APP_DATA;
     // Also tuck in whether this round was an Intro Drill (introduction-only,
     // trimmed rubric) or a Body Drill (single-body-paragraph-only, trimmed
     // rubric) so History can label it distinctly without a schema change.
-    const deliveryMetricsWithSource = Object.assign({}, deliveryMetrics || {}, { recordSource: recordSource || 'camera', isIntroDrill: !!isIntroDrill, isBodyDrill: !!isBodyDrill });
+    // factCheck (the independent, non-scored evidence fact-check pass) is
+    // tucked in here the same way, rather than adding a new `ballots`
+    // column — keeps this feature deployable without a schema migration.
+    const deliveryMetricsWithSource = Object.assign({}, deliveryMetrics || {}, { recordSource: recordSource || 'camera', isIntroDrill: !!isIntroDrill, isBodyDrill: !!isBodyDrill, factCheck: factCheck || null });
     // Save everything the live results view can show, including the
     // color-coded annotated-transcript data (sections + comments) and the
     // measured vocal delivery metrics, so "My History" can reconstruct the
@@ -1429,7 +1435,7 @@ const DATA = window.APP_DATA;
           if(!t.dataset.built){
             t.dataset.built = '1';
             const parsed = parseBallot(entry.feedback || '');
-            const ballotHtml = buildBallotBodyHtml(parsed, entry.feedback || '(no feedback saved)');
+            const ballotHtml = buildBallotBodyHtml(parsed, entry.feedback || '(no feedback saved)', entry.factCheck);
             const deliveryHtml = buildDeliveryGridHtml(entry.deliveryMetrics);
             const transcriptHtml = buildTranscriptSectionHtml(entry.transcript || '', entry.annotations);
             t.innerHTML = `<div class="hc-full-ballot">${ballotHtml}</div>${deliveryHtml}${transcriptHtml}`;
@@ -1746,6 +1752,7 @@ const DATA = window.APP_DATA;
   let flightHistory = [];
   let lastTranscript = '';
   let lastTranscriptAnnotations = null;
+  let lastFactCheck = null;
   let lastRawFeedback = '';
   let lastQuestion = '';
   let lastDeliveryMetrics = null;
@@ -3593,6 +3600,104 @@ Grading rules:
       sourceUrl,
       sourceTitle: typeof data.sourceTitle === 'string' ? data.sourceTitle.trim() : ''
     };
+  }
+
+  // ===== POST-BALLOT FACT-CHECK PASS =====
+  // The judging model is now explicitly told NOT to verify evidence (see
+  // EVIDENCE_TRUTH_ASSUMPTION_NOTE below) — it assumes every citation is
+  // true and grades citation PRACTICE only. This independent pass covers
+  // the actual truth-checking afterward, via Gemini + Google Search
+  // grounding, the same way the Citation Checker tool does. It never
+  // blocks or changes the ballot's score — it's purely informational and
+  // rendered in its own clearly-labeled section.
+  function buildFactCheckPrompt(transcript){
+    return `You are a rigorous, neutral fact-checker reviewing the evidence used in a competitive speech transcript.
+
+TRANSCRIPT:
+
+${transcript}
+
+TASK: Identify every distinct factual claim, statistic, or piece of evidence in this transcript that is attributed to a specific outside source (a named publication, organization, study, or person's statement) — the kind of claim a listener could actually go check. Skip generic unsourced opinions or arguments with no attribution. For each one you find (up to 8 of the most significant), use Google Search to verify whether it checks out.
+
+Respond with ONLY this exact JSON shape, nothing else — no markdown fences, no text before or after:
+{"claims":[{"claim":"a short paraphrase of the claim as stated (under 25 words)","source":"the source named, or \\"(no source given)\\" if none was cited","verdict":"true","explanation":"1-2 sentence explanation of what you found","sourceUrl":"a real URL you found via search that supports your verdict, or an empty string"}]}
+
+Grading rules per claim:
+- "verdict":"true" only if you found real, matching supporting evidence for the claim's substance.
+- "verdict":"false" if you found reporting that contradicts the claim, or found that the source's actual reporting doesn't match what's attributed to it here.
+- "verdict":"unverified" if you couldn't confirm it either way via search — never guess.
+- Never fabricate a URL — only include sourceUrl if it's a real link you found via search.
+- If the transcript contains no checkable, sourced claims at all, return {"claims":[]}.`;
+  }
+
+  function extractFactCheckClaims(candidate){
+    const raw = (candidate.content?.parts || []).map(p => p.text || '').join('').trim();
+    let cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '').trim();
+    const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+    if(jsonMatch) cleaned = jsonMatch[0];
+    let data;
+    try{
+      data = JSON.parse(cleaned);
+    }catch(e){
+      throw new Error('factcheck_bad_output');
+    }
+    const groundedUrls = (candidate.groundingMetadata?.groundingChunks || [])
+      .map(c => c?.web?.uri).filter(Boolean);
+    const claims = Array.isArray(data.claims) ? data.claims : [];
+    return claims.slice(0, 10).map(c => {
+      const verdict = ['true','false','unverified'].includes(c.verdict) ? c.verdict : 'unverified';
+      let sourceUrl = typeof c.sourceUrl === 'string' ? c.sourceUrl.trim() : '';
+      if(sourceUrl && !groundedUrls.some(u => u === sourceUrl || u.includes(sourceUrl) || sourceUrl.includes(u))){
+        sourceUrl = '';
+      }
+      return {
+        claim: typeof c.claim === 'string' ? c.claim.trim() : '',
+        source: typeof c.source === 'string' ? c.source.trim() : '',
+        verdict,
+        explanation: typeof c.explanation === 'string' ? c.explanation.trim() : '',
+        sourceUrl
+      };
+    }).filter(c => c.claim);
+  }
+
+  // Never blocks or fails the ballot — if the fact-check pass errors out
+  // (rate limit, bad output, etc.) we just skip rendering that section.
+  async function runFactCheckPass(transcript){
+    if(!transcript || !transcript.trim()) return null;
+    try{
+      const candidate = await callGemini(buildFactCheckPrompt(transcript), 2600, 'citation_checker');
+      return extractFactCheckClaims(candidate);
+    }catch(e){
+      console.warn('Post-ballot fact-check pass failed (non-blocking):', e);
+      return null;
+    }
+  }
+
+  function escFactCheckHtml(s){
+    return String(s || '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  }
+
+  function buildFactCheckHtml(claims){
+    if(!claims || !claims.length) return '';
+    const verdictLabel = v => v === 'true' ? 'TRUE' : v === 'false' ? 'FALSE' : 'UNVERIFIED';
+    const rows = claims.map(c => `
+      <div class="cat-row" style="border-left:3px solid var(--rule);padding:10px 12px;margin-bottom:10px;background:rgba(0,0,0,0.02);">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;flex-wrap:wrap;">
+          <span class="cc-verdict-stamp ${c.verdict}" style="padding:4px 12px;display:inline-block;">
+            <span class="num" style="font-size:13px;">${verdictLabel(c.verdict)}</span>
+          </span>
+          <strong style="font-size:13px;">${escFactCheckHtml(c.claim)}</strong>
+        </div>
+        ${c.source ? `<div style="font-size:12px;color:var(--slate);margin-bottom:4px;"><b>Cited source:</b> ${escFactCheckHtml(c.source)}</div>` : ''}
+        ${c.explanation ? `<div style="font-size:13px;line-height:1.5;">${escFactCheckHtml(c.explanation)}</div>` : ''}
+        ${c.sourceUrl ? `<div style="font-size:12px;margin-top:4px;"><a href="${escFactCheckHtml(c.sourceUrl)}" target="_blank" rel="noopener noreferrer">${escFactCheckHtml(c.sourceUrl)}</a></div>` : ''}
+      </div>`).join('');
+    return `
+      <div class="drill" style="margin-top:24px;border-style:solid;">
+        <span class="tag">Evidence Fact-Check — Does Not Count Toward Score</span>
+        <p style="margin:6px 0 14px;font-size:13px;color:var(--slate);">The judge above graded your evidence on how well it was used, not whether it's true — this section independently checks the citations themselves against the live web.</p>
+        ${rows}
+      </div>`;
   }
 
   function setCcBusy(busy){
@@ -6125,9 +6230,16 @@ Grading rules:
       // hackclub-chat edge function isn't deployed yet, rejects the model
       // id, or returns a differently-shaped response — instead of just
       // failing the whole round silently.
+      // Appended to whichever rubric prompt is in play so the judging
+      // model doesn't spend time/tokens trying to verify evidence itself
+      // — that job now belongs entirely to the independent post-ballot
+      // fact-check pass (see runFactCheckPass), which never affects the
+      // score. Applies to all three rubric modes; harmless on the intro
+      // drill rubric, which has no evidence category to begin with.
+      const EVIDENCE_TRUTH_ASSUMPTION_NOTE = '\n\nEVIDENCE ACCURACY ASSUMPTION (this overrides anything above that implies otherwise): Do not attempt to fact-check, verify, or research whether any statistic, quote, or cited source in this transcript is actually true, accurate, or was really said/reported as claimed. Treat every citation exactly as the speaker delivered it and assume it is 100% factually accurate. This is intentional — a separate, independent automated fact-checking pass runs after this ballot and is not part of your job here, so spending any effort verifying claims only wastes time and tokens. Score "Strength of Evidence" (or the equivalent evidence criteria) purely on citation PRACTICE: how well the evidence is logically applied to the claim, how reputable the named source sounds by reputation, how well-dated and diverse the citations are, and whether the speaker explains why it matters — never on whether the underlying fact is real.';
       const runJudging = async (choice, weightKey) => withKeyFallback(async (k) => {
         const baseMessages = [
-          {role:'system', content: introDrillMode ? INTRO_RUBRIC_PROMPT : bodyDrillMode ? BODY_RUBRIC_PROMPT : RUBRIC_PROMPT},
+          {role:'system', content: (introDrillMode ? INTRO_RUBRIC_PROMPT : bodyDrillMode ? BODY_RUBRIC_PROMPT : RUBRIC_PROMPT) + EVIDENCE_TRUTH_ASSUMPTION_NOTE},
           {role:'user', content:'TRANSCRIPT:\n\n'+transcript+'\n\n'+metricsBlock}
         ];
         // Runs one HTTP round against choice.fn for the given message
@@ -6259,6 +6371,11 @@ Grading rules:
       statusSub.textContent = 'Adding inline judge comments and paragraph structure.';
       pipelineProgress.setStage(95, phrases.annotate);
       lastTranscriptAnnotations = await fetchTranscriptAnnotations(transcript, key, key2, key3);
+
+      statusText.textContent = 'Fact-checking your citations…';
+      statusSub.textContent = 'Independently verifying your evidence against the live web — this never affects your score.';
+      pipelineProgress.setStage(98, DATA.CC_PHRASES);
+      lastFactCheck = await runFactCheckPass(transcript);
 
       pipelineProgress.finish();
       renderResults(feedback, transcript);
@@ -6491,7 +6608,7 @@ Grading rules:
   // ballots render exactly like the live results view, scored category
   // cards, stamps, delivery metrics, and the color-coded annotated
   // transcript, instead of a plain text dump) ----
-  function buildBallotBodyHtml(parsed, rawFeedback){
+  function buildBallotBodyHtml(parsed, rawFeedback, factCheck){
     let html = '';
     // Previously this required >=3 categories AND a parsed composite
     // total before showing the styled cards at all — anything short of
@@ -6555,6 +6672,7 @@ Grading rules:
     }else{
       html += `<div class="raw-fallback">${basicMarkdown(rawFeedback)}</div>`;
     }
+    html += buildFactCheckHtml(factCheck);
     return html;
   }
 
@@ -6683,54 +6801,9 @@ Grading rules:
       resultQuestion.classList.add('hidden');
     }
 
-    if(parsed.categories.length >= 1){
-      html += scoreKeyHtml();
-      parsed.categories.forEach(cat => {
-        const band = bandClass(cat.score, cat.max);
-        html += `
-          <div class="category">
-            <div class="badge-wrap" style="--bc:${band}">
-              <svg viewBox="0 0 64 64"><path d="${CIRCLE_PATH}" fill="none" stroke-width="2.5"/></svg>
-              <div class="score">${cat.score}<small>/${cat.max||10}</small></div>
-            </div>
-            <div>
-              <h3 class="cat-name">${escHtml(cat.name)}</h3>
-              ${cat.whatWorked?`<div class="cat-row worked"><span class="tag">What Worked</span>${inlineMd(cat.whatWorked)}</div>`:''}
-              ${cat.criticalFlaws?`<div class="cat-row flaws"><span class="tag">Critical Flaws</span>${inlineMd(cat.criticalFlaws)}</div>`:''}
-              ${cat.evidence?`<div class="cat-row evidence"><span class="tag">What You Could Have Done</span>${inlineMd(cat.evidence)}</div>`:''}
-            </div>
-          </div>`;
-      });
-      if(parsed.total !== null){
-        html += `
-        <div class="stamp-row">
-          <div class="verdict-stamp">
-            <div class="label">Composite Score</div>
-            <div class="num">${parsed.total}<small>/100</small></div>
-          </div>`;
-        if(parsed.rank !== null) html += `
-          <div class="rank-stamp">
-            <div class="label">Judge's Rank</div>
-            <div class="num">${ordinal(parsed.rank)}</div>
-          </div>`;
-        html += `
-        </div>`;
-      }else{
-        html += `
-        <div class="raw-fallback" style="margin-top:12px">
-          <strong>This ballot looks like it was cut off before finishing</strong> — no Composite Score came through, so some categories below may be missing entirely. Try running judging again for the full ballot.
-        </div>`;
-      }
-      if(parsed.rankExplanation) html += `
-        <div class="rank-explanation">${inlineMd(parsed.rankExplanation)}</div>`;
-      if(parsed.drill) html += `
-        <div class="drill">
-          <span class="tag">Feedback</span>
-          <p>${inlineMd(parsed.drill)}</p>
-        </div>`;
-    }else{
-      html += `<div class="raw-fallback">${basicMarkdown(feedback)}</div>`;
-    }
+    // lastFactCheck is populated (or left null on failure) by runFactCheckPass
+    // in the pipeline, right before this function is called.
+    html += buildBallotBodyHtml(parsed, feedback, lastFactCheck);
 
     resultsContent.innerHTML = html;
 
@@ -6746,7 +6819,7 @@ Grading rules:
 
     if(parsed.total !== null) flightHistory.push({round:roundNo, total:parsed.total});
     renderFlightStrips();
-    recordBallotToHistory(parsed, feedback, transcript, lastQuestion, roundNo, recordedBlob, lastTranscriptAnnotations, lastDeliveryMetrics, captureMode, introDrillMode, bodyDrillMode);
+    recordBallotToHistory(parsed, feedback, transcript, lastQuestion, roundNo, recordedBlob, lastTranscriptAnnotations, lastDeliveryMetrics, captureMode, introDrillMode, bodyDrillMode, lastFactCheck);
     showView(viewResults);
   }
 
@@ -6793,11 +6866,27 @@ Grading rules:
     showView(viewRecord);
   });
 
+  // Plain-text rendering of the independent fact-check pass, for the .txt
+  // export (mirrors buildFactCheckHtml, just without markup).
+  function factCheckPlainText(claims){
+    if(!claims || !claims.length) return '';
+    const verdictLabel = v => v === 'true' ? 'TRUE' : v === 'false' ? 'FALSE' : 'UNVERIFIED';
+    const lines = claims.map(c => {
+      let s = `[${verdictLabel(c.verdict)}] ${c.claim}`;
+      if(c.source) s += `\n  Cited source: ${c.source}`;
+      if(c.explanation) s += `\n  ${c.explanation}`;
+      if(c.sourceUrl) s += `\n  ${c.sourceUrl}`;
+      return s;
+    });
+    return '\n\n--- EVIDENCE FACT-CHECK (does not count toward score) ---\n\n' + lines.join('\n\n');
+  }
+
   function downloadBallotTxt(){
     const blob = new Blob([
       'EXTEMPLARY — OFFICIAL PRACTICE BALLOT\nRound '+roundNo+'\n',
       lastQuestion ? 'QUESTION: '+lastQuestion+'\n\n' : '\n',
       lastRawFeedback,
+      factCheckPlainText(lastFactCheck),
       '\n\n--- TRANSCRIPT ---\n\n',
       lastTranscript
     ],{type:'text/plain'});
@@ -7045,7 +7134,7 @@ Grading rules:
     closeAllExportMenus();
     const fileText = 'EXTEMPLARY — OFFICIAL PRACTICE BALLOT\nRound ' + roundNo + '\n' +
       (lastQuestion ? 'QUESTION: ' + lastQuestion + '\n\n' : '\n') +
-      lastRawFeedback + '\n\n--- TRANSCRIPT ---\n\n' + lastTranscript;
+      lastRawFeedback + factCheckPlainText(lastFactCheck) + '\n\n--- TRANSCRIPT ---\n\n' + lastTranscript;
     shareBallot({
       title: 'Extemplary — Round ' + roundNo,
       text: lastQuestion ? 'My extemp practice round: ' + lastQuestion : 'My extemp practice round',

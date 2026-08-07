@@ -4166,6 +4166,55 @@ Grading rules:
   // difference between models is something you can actually read rather
   // than just a quality/cost bar. One shared panel gets moved to sit after
   // whichever row is open (accordion -- opening a new one closes the last).
+  // Renders a raw ballot string with the exact same category-card markup
+  // used by the real Results view and the built-in Example Ballot tab
+  // (score circle, What Worked / Critical Flaws / What You Could Have Done
+  // rows, Composite Score + Rank stamps) rather than plain text, by
+  // reusing the app's own parseBallot() on it.
+  function buildBallotCardsHtml(feedback){
+    const parsed = parseBallot(feedback);
+    let html = scoreKeyHtml();
+    parsed.categories.forEach(cat => {
+      const band = bandClass(cat.score, cat.max);
+      html += `
+        <div class="category">
+          <div class="badge-wrap" style="--bc:${band}">
+            <svg viewBox="0 0 64 64"><path d="${CIRCLE_PATH}" fill="none" stroke-width="2.5"/></svg>
+            <div class="score">${cat.score}<small>/${cat.max||10}</small></div>
+          </div>
+          <div>
+            <h3 class="cat-name">${escHtml(cat.name)}</h3>
+            ${cat.whatWorked?`<div class="cat-row worked"><span class="tag">What Worked</span>${inlineMd(cat.whatWorked)}</div>`:''}
+            ${cat.criticalFlaws?`<div class="cat-row flaws"><span class="tag">Critical Flaws</span>${inlineMd(cat.criticalFlaws)}</div>`:''}
+            ${cat.evidence?`<div class="cat-row evidence"><span class="tag">What You Could Have Done</span>${inlineMd(cat.evidence)}</div>`:''}
+          </div>
+        </div>`;
+    });
+    if(parsed.total !== null){
+      html += `
+      <div class="stamp-row">
+        <div class="verdict-stamp">
+          <div class="label">Composite Score</div>
+          <div class="num">${parsed.total}<small>/100</small></div>
+        </div>`;
+      if(parsed.rank !== null) html += `
+        <div class="rank-stamp">
+          <div class="label">Judge's Rank</div>
+          <div class="num">${ordinal(parsed.rank)}</div>
+        </div>`;
+      html += `
+      </div>`;
+    }
+    if(parsed.rankExplanation) html += `
+      <div class="rank-explanation">${inlineMd(parsed.rankExplanation)}</div>`;
+    if(parsed.drill) html += `
+      <div class="drill">
+        <span class="tag">Feedback</span>
+        <p>${inlineMd(parsed.drill)}</p>
+      </div>`;
+    return html;
+  }
+
   const aiExamplePanel = document.getElementById('aiCompareExamplePanel');
   const aiExampleBody  = document.getElementById('aiCompareExampleBody');
   const aiExampleClose = document.getElementById('aiCompareExampleCloseBtn');
@@ -4186,7 +4235,7 @@ Grading rules:
         if(!text) return;
         if(aiExampleOpenKey === key){ closeAiExamplePanel(); return; }
         aiExampleOpenKey = key;
-        aiExampleBody.innerHTML = basicMarkdown(text);
+        aiExampleBody.innerHTML = buildBallotCardsHtml(text);
         row.insertAdjacentElement('afterend', aiExamplePanel);
         aiExamplePanel.classList.remove('hidden');
         viewAiCompare.querySelectorAll('.ai-compare-row.has-example').forEach(r => r.classList.toggle('example-open', r === row));

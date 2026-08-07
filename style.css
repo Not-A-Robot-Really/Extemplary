@@ -304,6 +304,43 @@
     .ai-compare-row{grid-template-columns:22px 110px 1fr 1fr;gap:8px;font-size:12px;padding:10px 10px 10px 12px;}
     .ai-compare-metric{gap:5px;}
   }
+  /* Rows we have a real sample ballot for (data-example on the row) are
+     clickable — a small right-aligned hint fades in on hover so it doesn't
+     clutter the table at rest, and the row gets a highlighted border while
+     its sample is open. */
+  .ai-compare-row.has-example{cursor:pointer;}
+  .ai-compare-example-hint{
+    grid-column:1 / -1;font-family:var(--font-mono);font-size:11px;color:var(--slate);
+    text-align:right;opacity:0;transition:opacity .15s ease;margin-top:-2px;
+  }
+  .ai-compare-row.has-example:hover .ai-compare-example-hint,
+  .ai-compare-row.has-example.example-open .ai-compare-example-hint{opacity:0.85;}
+  .ai-compare-row.has-example.example-open{border-color:var(--acc);box-shadow:0 5px 14px rgba(10,20,35,0.14);}
+  /* The expand panel itself -- moved by app.js to sit right after whichever
+     row was clicked, filled with that model's real ballot text run through
+     the same basicMarkdown() helper used to render actual round feedback. */
+  .ai-compare-example{
+    margin:-2px 0 8px 0;padding:16px 18px;background:#fff;
+    border:1px solid var(--rule);border-radius:8px;box-shadow:0 1px 3px rgba(10,20,35,0.06);
+  }
+  .ai-compare-example-head{
+    display:flex;justify-content:space-between;align-items:flex-start;gap:12px;
+    font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:0.6px;
+    color:var(--slate);font-weight:700;margin-bottom:10px;padding-bottom:10px;border-bottom:1px dashed var(--rule);
+  }
+  .ai-compare-example-close{
+    background:none;border:none;font-size:20px;line-height:0.8;color:var(--slate);cursor:pointer;padding:0 2px;flex:0 0 auto;
+  }
+  .ai-compare-example-close:hover{color:var(--charcoal);}
+  .ai-compare-example-body{
+    font-size:13px;line-height:1.65;color:var(--charcoal);max-height:480px;overflow-y:auto;
+  }
+  .ai-compare-example-body h2,.ai-compare-example-body h3,.ai-compare-example-body h4{margin:14px 0 6px;color:var(--charcoal);}
+  .ai-compare-example-body h4:first-child,
+  .ai-compare-example-body h3:first-child,
+  .ai-compare-example-body h2:first-child{margin-top:0;}
+  .ai-compare-example-body strong{color:var(--charcoal);}
+  .ai-compare-example-body li{margin-left:18px;}
 
   /* -------- rubric mode bar (label + optional browse dropdown) -------- */
   .rubric-mode-bar{

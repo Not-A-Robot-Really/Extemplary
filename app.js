@@ -3660,16 +3660,23 @@ Grading rules per claim:
     }).filter(c => c.claim);
   }
 
-  // Never blocks or fails the ballot — if the fact-check pass errors out
-  // (rate limit, bad output, etc.) we just skip rendering that section.
+  // Never blocks or fails the ballot's score. Unlike the first version of
+  // this, it does NOT swallow failures silently — it returns a tagged
+  // result so buildFactCheckHtml can always render *something* (success
+  // with claims, success with none found, or a visible "this failed"
+  // note) instead of the section just quietly not appearing, which made
+  // failures indistinguishable from "nothing to check."
   async function runFactCheckPass(transcript){
-    if(!transcript || !transcript.trim()) return null;
+    if(!transcript || !transcript.trim()) return { claims: [], failed: false };
     try{
       const candidate = await callGemini(buildFactCheckPrompt(transcript), 2600, 'citation_checker');
-      return extractFactCheckClaims(candidate);
+      return { claims: extractFactCheckClaims(candidate), failed: false };
     }catch(e){
+      const reason = (e && e.rateLimited) ? 'daily fact-check limit reached'
+        : (e && e.message) ? String(e.message).slice(0, 160)
+        : 'unknown error';
       console.warn('Post-ballot fact-check pass failed (non-blocking):', e);
-      return null;
+      return { claims: [], failed: true, reason };
     }
   }
 
@@ -3677,8 +3684,25 @@ Grading rules per claim:
     return String(s || '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
   }
 
-  function buildFactCheckHtml(claims){
-    if(!claims || !claims.length) return '';
+  // Accepts either the current shape ({claims, failed, reason}) or the
+  // plain array shape used by the very first version of this feature, so
+  // older saved history entries still render correctly.
+  function buildFactCheckHtml(factCheck){
+    if(!factCheck) return '';
+    const normalized = Array.isArray(factCheck) ? { claims: factCheck, failed: false } : factCheck;
+    const claims = normalized.claims || [];
+    const wrap = (bodyHtml) => `
+      <div class="drill" style="margin-top:24px;border-style:solid;">
+        <span class="tag">Evidence Fact-Check — Does Not Count Toward Score</span>
+        <p style="margin:6px 0 14px;font-size:13px;color:var(--slate);">The judge above graded your evidence on how well it was used, not whether it's true — this section independently checks the citations themselves against the live web.</p>
+        ${bodyHtml}
+      </div>`;
+    if(normalized.failed){
+      return wrap(`<p style="font-size:13px;color:var(--slate);margin:0;">This automated check couldn't complete for this round${normalized.reason ? ` (${escFactCheckHtml(normalized.reason)})` : ''} — your score above is unaffected. Try again on your next round.</p>`);
+    }
+    if(!claims.length){
+      return wrap(`<p style="font-size:13px;color:var(--slate);margin:0;">No independently checkable, attributed claims (a specific stat or quote tied to a named source) were detected in this transcript.</p>`);
+    }
     const verdictLabel = v => v === 'true' ? 'TRUE' : v === 'false' ? 'FALSE' : 'UNVERIFIED';
     const rows = claims.map(c => `
       <div class="cat-row" style="border-left:3px solid var(--rule);padding:10px 12px;margin-bottom:10px;background:rgba(0,0,0,0.02);">
@@ -3692,12 +3716,7 @@ Grading rules per claim:
         ${c.explanation ? `<div style="font-size:13px;line-height:1.5;">${escFactCheckHtml(c.explanation)}</div>` : ''}
         ${c.sourceUrl ? `<div style="font-size:12px;margin-top:4px;"><a href="${escFactCheckHtml(c.sourceUrl)}" target="_blank" rel="noopener noreferrer">${escFactCheckHtml(c.sourceUrl)}</a></div>` : ''}
       </div>`).join('');
-    return `
-      <div class="drill" style="margin-top:24px;border-style:solid;">
-        <span class="tag">Evidence Fact-Check — Does Not Count Toward Score</span>
-        <p style="margin:6px 0 14px;font-size:13px;color:var(--slate);">The judge above graded your evidence on how well it was used, not whether it's true — this section independently checks the citations themselves against the live web.</p>
-        ${rows}
-      </div>`;
+    return wrap(rows);
   }
 
   function setCcBusy(busy){
@@ -6868,8 +6887,16 @@ Grading rules per claim:
 
   // Plain-text rendering of the independent fact-check pass, for the .txt
   // export (mirrors buildFactCheckHtml, just without markup).
-  function factCheckPlainText(claims){
-    if(!claims || !claims.length) return '';
+  function factCheckPlainText(factCheck){
+    if(!factCheck) return '';
+    const normalized = Array.isArray(factCheck) ? { claims: factCheck, failed: false } : factCheck;
+    const claims = normalized.claims || [];
+    if(normalized.failed){
+      return `\n\n--- EVIDENCE FACT-CHECK (does not count toward score) ---\n\nThis automated check couldn't complete for this round${normalized.reason ? ` (${normalized.reason})` : ''} — your score above is unaffected.`;
+    }
+    if(!claims.length){
+      return `\n\n--- EVIDENCE FACT-CHECK (does not count toward score) ---\n\nNo independently checkable, attributed claims were detected in this transcript.`;
+    }
     const verdictLabel = v => v === 'true' ? 'TRUE' : v === 'false' ? 'FALSE' : 'UNVERIFIED';
     const lines = claims.map(c => {
       let s = `[${verdictLabel(c.verdict)}] ${c.claim}`;

@@ -3693,29 +3693,39 @@ Grading rules per claim:
     const claims = normalized.claims || [];
     const wrap = (bodyHtml) => `
       <div class="drill" style="margin-top:24px;border-style:solid;">
-        <span class="tag">Evidence Fact-Check — Does Not Count Toward Score</span>
-        <p style="margin:6px 0 14px;font-size:13px;color:var(--slate);">The judge above graded your evidence on how well it was used, not whether it's true — this section independently checks the citations themselves against the live web.</p>
+        <span class="tag" style="font-size:16px;font-weight:800;">Fact Check</span>
         ${bodyHtml}
       </div>`;
     if(normalized.failed){
-      return wrap(`<p style="font-size:13px;color:var(--slate);margin:0;">This automated check couldn't complete for this round${normalized.reason ? ` (${escFactCheckHtml(normalized.reason)})` : ''} — your score above is unaffected. Try again on your next round.</p>`);
+      return wrap(`<p style="font-size:13px;color:var(--slate);margin:12px 0 0;">This automated check couldn't complete for this round${normalized.reason ? ` (${escFactCheckHtml(normalized.reason)})` : ''} — your score above is unaffected. Try again on your next round.</p>`);
     }
     if(!claims.length){
-      return wrap(`<p style="font-size:13px;color:var(--slate);margin:0;">No independently checkable, attributed claims (a specific stat or quote tied to a named source) were detected in this transcript.</p>`);
+      return wrap(`<p style="font-size:13px;color:var(--slate);margin:12px 0 0;">No independently checkable, attributed claims (a specific stat or quote tied to a named source) were detected in this transcript.</p>`);
     }
     const verdictLabel = v => v === 'true' ? 'TRUE' : v === 'false' ? 'FALSE' : 'UNVERIFIED';
-    const rows = claims.map(c => `
-      <div class="cat-row" style="border-left:3px solid var(--rule);padding:10px 12px;margin-bottom:10px;background:rgba(0,0,0,0.02);">
+    const rows = claims.map(c => {
+      // Prefer turning the "Cited source: ..." line itself into the link
+      // when we have a real URL; only fall back to a separate raw-link
+      // line if for some reason there's a URL but no source name to attach it to.
+      const sourceLine = c.source
+        ? (c.sourceUrl
+            ? `<div style="font-size:12px;color:var(--slate);margin-bottom:4px;"><b>Cited source:</b> <a href="${escFactCheckHtml(c.sourceUrl)}" target="_blank" rel="noopener noreferrer">${escFactCheckHtml(c.source)}</a></div>`
+            : `<div style="font-size:12px;color:var(--slate);margin-bottom:4px;"><b>Cited source:</b> ${escFactCheckHtml(c.source)}</div>`)
+        : (c.sourceUrl
+            ? `<div style="font-size:12px;color:var(--slate);margin-bottom:4px;"><b>Source:</b> <a href="${escFactCheckHtml(c.sourceUrl)}" target="_blank" rel="noopener noreferrer">${escFactCheckHtml(c.sourceUrl)}</a></div>`
+            : '');
+      return `
+      <div class="cat-row" style="border-left:3px solid var(--rule);padding:10px 12px;margin-bottom:10px;margin-top:12px;background:rgba(0,0,0,0.02);">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;flex-wrap:wrap;">
           <span class="cc-verdict-stamp ${c.verdict}" style="padding:4px 12px;display:inline-block;">
             <span class="num" style="font-size:13px;">${verdictLabel(c.verdict)}</span>
           </span>
           <strong style="font-size:13px;">${escFactCheckHtml(c.claim)}</strong>
         </div>
-        ${c.source ? `<div style="font-size:12px;color:var(--slate);margin-bottom:4px;"><b>Cited source:</b> ${escFactCheckHtml(c.source)}</div>` : ''}
+        ${sourceLine}
         ${c.explanation ? `<div style="font-size:13px;line-height:1.5;">${escFactCheckHtml(c.explanation)}</div>` : ''}
-        ${c.sourceUrl ? `<div style="font-size:12px;margin-top:4px;"><a href="${escFactCheckHtml(c.sourceUrl)}" target="_blank" rel="noopener noreferrer">${escFactCheckHtml(c.sourceUrl)}</a></div>` : ''}
-      </div>`).join('');
+      </div>`;
+    }).join('');
     return wrap(rows);
   }
 
@@ -4335,7 +4345,7 @@ Grading rules per claim:
       <div class="rank-explanation">${inlineMd(parsed.rankExplanation)}</div>`;
     if(parsed.drill) html += `
       <div class="drill">
-        <span class="tag">Feedback</span>
+        <span class="tag" style="font-size:16px;font-weight:800;">Feedback</span>
         <p>${inlineMd(parsed.drill)}</p>
       </div>`;
     return html;
@@ -6082,7 +6092,7 @@ Grading rules per claim:
       </div>
       <div class="rank-explanation">${inlineMd(EXAMPLE_RANK_EXPLANATION)}</div>
       <div class="drill">
-        <span class="tag">Feedback</span>
+        <span class="tag" style="font-size:16px;font-weight:800;">Feedback</span>
         <p>${inlineMd(EXAMPLE_DRILL)}</p>
       </div>`;
     document.getElementById('exampleResultsContent').innerHTML = html;
@@ -6685,7 +6695,7 @@ Grading rules per claim:
         <div class="rank-explanation">${inlineMd(parsed.rankExplanation)}</div>`;
       if(parsed.drill) html += `
         <div class="drill">
-          <span class="tag">Feedback</span>
+          <span class="tag" style="font-size:16px;font-weight:800;">Feedback</span>
           <p>${inlineMd(parsed.drill)}</p>
         </div>`;
     }else{

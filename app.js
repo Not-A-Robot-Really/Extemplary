@@ -5235,7 +5235,17 @@ Grading rules per claim:
           lastErr = err;
           if(err.rateLimited) throw err; // our own daily cap — retrying only burns more of it
           if(attempt < 2 && isTransientError(err)){
-            await new Promise(r => setTimeout(r, 600 * (attempt+1)));
+            // A 429 specifically usually means a real rate limit (ours or
+            // an upstream shared one) that needs real wall-clock time to
+            // clear — the previous 600ms/1200ms backoff was nowhere near
+            // enough for a per-minute limit, so those retries were just
+            // re-triggering the same 429 immediately. Other transient
+            // errors (momentary 5xx/network blips) still get the original
+            // short backoff, since those usually really do resolve within
+            // a second or two.
+            const isRateLimit429 = /:429:/.test(String(err && err.message || err));
+            const delayMs = isRateLimit429 ? 4000 * (attempt + 1) : 600 * (attempt + 1);
+            await new Promise(r => setTimeout(r, delayMs));
             continue;
           }
           break;
@@ -6461,10 +6471,21 @@ Grading rules per claim:
         let reason = '';
         const msg = String(err && err.message || '');
         const statusMatch = msg.match(/^judging_failed:(\d{3}):(.*)$/s);
+        // Was previously only recognizing "judging_failed:<status>:..." —
+        // missed the separate "platform_rate_limited:<status>:..." shape
+        // thrown above when Hack Club's own upstream 429s us (their shared
+        // server key hitting its own rate limit — NOT our per-user daily
+        // cap, which is handled entirely separately via err.rateLimited).
+        // That meant this whole failure mode silently fell through to the
+        // fully generic "isn't available right now" toast with no detail
+        // at all, which is exactly what was being seen.
+        const platformRateMatch = msg.match(/^platform_rate_limited:(\d{3}):/);
         if(statusMatch){
           const status = statusMatch[1];
           const detail = statusMatch[2].trim().slice(0, 120);
           reason = ` (HTTP ${status}${detail ? ': '+detail : ''})`;
+        } else if(platformRateMatch){
+          reason = ' (Hack Club AI\'s shared server key hit its own rate limit for this model — try again in a minute)';
         } else if(/unrecognized_response_shape/.test(msg)){
           reason = ' (model responded, but in an unexpected format)';
         } else if(/^timeout:/.test(msg)){

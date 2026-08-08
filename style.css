@@ -346,6 +346,7 @@
   /* -------- home page practice mode switch -------- */
   .mode-switch-row{
     display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+    margin-bottom:26px;
   }
   .mode-switch{
     display:inline-flex;gap:4px;padding:4px;background:var(--parchment-deep);
@@ -428,10 +429,10 @@
   #modeIntroDrillBtn.active{background:#a3322a;color:#fff;border-color:#7a231c;}
   #modeBodyDrillBtn.active{background:#a6790c;color:#fff;border-color:#7a5a08;}
   .mode-switch-hint{
-    font-family:var(--font-body);font-size:12px;font-weight:500;line-height:1.5;
+    font-family:var(--font-body);font-size:11.5px;font-weight:500;line-height:1.45;
     color:#ffffff;background:var(--crimson);border:1px solid var(--crimson-deep);
-    border-radius:3px;padding:8px 12px;max-width:230px;
-    box-sizing:border-box;flex-shrink:0;
+    border-radius:3px;padding:7px 10px;max-width:200px;
+    box-sizing:border-box;flex-shrink:1;min-width:0;
   }
   .mode-switch-hint.is-intro{background:#a3322a;border-color:#7a231c;}
   .mode-switch-hint.is-body{background:#a6790c;border-color:#7a5a08;}
@@ -439,12 +440,18 @@
   /* Row hosting the ballot title alongside the practice-mode explainer
      box — sits in the header gap to the left of the Rubric / LLM Model
      Rankings icons (position:absolute, top-right of the paper; see
-     .rubric-toggle-btn / .ai-compare-toggle-btn). The right margin below
-     keeps the box clear of that icon pair (which occupy roughly the
-     right:34px-98px band) at normal widths. */
+     .rubric-toggle-btn / .ai-compare-toggle-btn). Uses padding-right
+     (not margin-right) plus box-sizing:border-box so the icon clearance
+     is carved out of the row's own existing width instead of adding
+     extra width on top of it — margin-right here previously pushed the
+     flex row's border-box past the grid track's boundary, which is what
+     was overflowing and stretching the rest of the page layout.
+     width:100% keeps it pinned to exactly the space this row already
+     had (the title used to sit alone in), same as before anything was
+     added here. */
   .ballot-head-top{
     grid-column:1/-1;display:flex;align-items:flex-start;justify-content:space-between;
-    gap:16px;margin-right:76px;margin-bottom:6px;
+    gap:12px;width:100%;box-sizing:border-box;padding-right:76px;margin-bottom:6px;
   }
   .ballot-head-top .ballot-title{grid-column:auto;margin:0;flex:1;min-width:0;}
 
@@ -2285,7 +2292,7 @@
 
   @media(max-width:600px){
     .ballot-head{grid-template-columns:1fr;}
-    .ballot-head-top{flex-direction:column;align-items:stretch;margin-right:0;}
+    .ballot-head-top{flex-direction:column;align-items:stretch;padding-right:0;}
     .mode-switch-hint{max-width:none;margin-top:36px;}
     .category{grid-template-columns:48px 1fr;}
     .badge-wrap{width:48px;height:48px;}

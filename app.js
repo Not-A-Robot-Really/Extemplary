@@ -2116,6 +2116,13 @@ const DATA = window.APP_DATA;
         if(typeof delta.content === 'string') text += delta.content;
         if(typeof delta.reasoning_content === 'string') reasoning += delta.reasoning_content;
         if(typeof delta.thinking === 'string') reasoning += delta.thinking;
+        // OpenRouter's own streaming format (which is what Hack Club AI
+        // proxies) exposes reasoning under a plain `reasoning` field for
+        // reasoning-heavy models — Kimi K3 in particular defaults to
+        // reasoning effort "max", so without this its entire response
+        // was landing here and being silently dropped, producing an
+        // empty completion that surfaced as "model unavailable."
+        if(typeof delta.reasoning === 'string') reasoning += delta.reasoning;
       }
     };
     while(true){
@@ -3611,20 +3618,22 @@ Grading rules:
   // blocks or changes the ballot's score — it's purely informational and
   // rendered in its own clearly-labeled section.
   function buildFactCheckPrompt(transcript){
-    return `You are a rigorous, neutral fact-checker reviewing the evidence used in a competitive speech transcript.
+    return `You are a rigorous, neutral fact-checker reviewing every piece of evidence used in a competitive speech transcript.
 
 TRANSCRIPT:
 
 ${transcript}
 
-TASK: Identify every distinct factual claim, statistic, or piece of evidence in this transcript that is attributed to a specific outside source (a named publication, organization, study, or person's statement) — the kind of claim a listener could actually go check. Skip generic unsourced opinions or arguments with no attribution. For each one you find (up to 8 of the most significant), use Google Search to verify whether it checks out.
+TASK: Find EVERY SINGLE fact, statistic, quote, or piece of evidence in this transcript that is attributed to a specific outside source — do not skip any, and do not limit yourself to only the "most significant" ones. Competitive extemp speakers cite constantly and formulaically, almost always in a pattern like "According to [source] on [date]..." or "[Source] tells/reports/found us that..." or "an article from [source] from/on [date]...". Scan the ENTIRE transcript from start to finish and pull out every one of these citation instances — each source+date+claim combination is its own separate entry, even if the same publication is cited multiple times at different points for different claims. A transcript with many citations should produce many entries; do not artificially cap yourself. Only skip a claim if it is a generic, unattributed statement of opinion or analysis with no source or date attached at all.
+
+For each citation instance you find, use Google Search to verify whether it checks out: does that source exist, did it actually report/say what's attributed to it, and is the date consistent with reality?
 
 Respond with ONLY this exact JSON shape, nothing else — no markdown fences, no text before or after:
-{"claims":[{"claim":"a short paraphrase of the claim as stated (under 25 words)","source":"the source named, or \\"(no source given)\\" if none was cited","verdict":"true","explanation":"1-2 sentence explanation of what you found","sourceUrl":"a real URL you found via search that supports your verdict, or an empty string"}]}
+{"claims":[{"claim":"a short paraphrase of the claim as stated (under 25 words)","source":"the source AND date named together, e.g. \\"The Washington Post, April 3, 2019\\" — or \\"(no source given)\\" if truly none was cited","verdict":"true","explanation":"1-2 sentence explanation of what you found","sourceUrl":"a real URL you found via search that supports your verdict, or an empty string"}]}
 
 Grading rules per claim:
-- "verdict":"true" only if you found real, matching supporting evidence for the claim's substance.
-- "verdict":"false" if you found reporting that contradicts the claim, or found that the source's actual reporting doesn't match what's attributed to it here.
+- "verdict":"true" only if you found real, matching supporting evidence for the claim's substance (and, where checkable, the date roughly lines up).
+- "verdict":"false" if you found reporting that contradicts the claim, found that the source's actual reporting doesn't match what's attributed to it here, or the cited date is inconsistent with when that event/report actually happened.
 - "verdict":"unverified" if you couldn't confirm it either way via search — never guess.
 - Never fabricate a URL — only include sourceUrl if it's a real link you found via search.
 - If the transcript contains no checkable, sourced claims at all, return {"claims":[]}.`;
@@ -3644,7 +3653,12 @@ Grading rules per claim:
     const groundedUrls = (candidate.groundingMetadata?.groundingChunks || [])
       .map(c => c?.web?.uri).filter(Boolean);
     const claims = Array.isArray(data.claims) ? data.claims : [];
-    return claims.slice(0, 10).map(c => {
+    // Speeches can legitimately cite a couple dozen distinct sources —
+    // this used to cap at 10 (and the prompt itself said "up to 8 most
+    // significant"), which silently dropped citations instead of
+    // covering every one made in the speech. 40 is just a sanity
+    // ceiling against a runaway/malformed response, not a real target.
+    return claims.slice(0, 40).map(c => {
       const verdict = ['true','false','unverified'].includes(c.verdict) ? c.verdict : 'unverified';
       let sourceUrl = typeof c.sourceUrl === 'string' ? c.sourceUrl.trim() : '';
       if(sourceUrl && !groundedUrls.some(u => u === sourceUrl || u.includes(sourceUrl) || sourceUrl.includes(u))){
@@ -3669,7 +3683,11 @@ Grading rules per claim:
   async function runFactCheckPass(transcript){
     if(!transcript || !transcript.trim()) return { claims: [], failed: false };
     try{
-      const candidate = await callGemini(buildFactCheckPrompt(transcript), 2600, 'citation_checker');
+      // Raised from 2600 — a speech with 15-20+ citations (typical for a
+      // dense extemp round) needs real room for that many full
+      // claim/source/explanation entries in the JSON output without
+      // getting truncated mid-response.
+      const candidate = await callGemini(buildFactCheckPrompt(transcript), 6000, 'citation_checker');
       return { claims: extractFactCheckClaims(candidate), failed: false };
     }catch(e){
       const reason = (e && e.rateLimited) ? 'daily fact-check limit reached'
@@ -6295,6 +6313,14 @@ Grading rules per claim:
               // rounds together, so 32000 just needs to be enough for one
               // ~128s round's worth of output, not the whole ballot.
               model: choice.model, temperature:0.4, max_tokens: choice.fn === 'hackclub-chat' ? 32000 : 3000,
+              // Kimi K3 defaults to reasoning effort "max" on Hack Club AI
+              // (deep, slow thinking meant for hard agentic/coding tasks),
+              // which is overkill for writing a rubric-formatted ballot and
+              // was likely contributing to it timing/round-budget out.
+              // Dial it down for this use case; harmless to send for models
+              // that don't support the param, since hackclub-chat/OpenRouter
+              // just ignores unsupported fields.
+              ...(choice.model === 'moonshotai/kimi-k3' ? { reasoning: { effort: 'low' } } : {}),
               messages,
               overrideKey: choice.fn === 'groq-chat' ? (k || undefined) : undefined,
               category: 'ballot_feedback',

@@ -504,7 +504,7 @@ const DATA = window.APP_DATA;
   // Short label suffix reflecting a goal's practice-type scope (blank for "all").
   function goalPracticeTypeSuffix(pt){
     if(pt === 'regular') return ' (Regular Practice)';
-    if(pt === 'introdrill') return ' (Rapid Drill: Introduction)';
+    if(pt === 'introdrill') return ' (Rapid Drill: Intro)';
     if(pt === 'bodydrill') return ' (Rapid Drill: Body)';
     return '';
   }
@@ -661,7 +661,7 @@ const DATA = window.APP_DATA;
         <select id="gmPracticeType">
           <option value="all">All</option>
           <option value="regular">Regular Practice</option>
-          <option value="introdrill">Rapid Drill: Introduction</option>
+          <option value="introdrill">Rapid Drill: Intro</option>
           <option value="bodydrill">Rapid Drill: Body</option>
         </select>
       </div>
@@ -1106,7 +1106,7 @@ const DATA = window.APP_DATA;
   const HISTORY_MODE_OPTIONS = [
     { v:'all', l:'All' },
     { v:'regular', l:'Regular Practice' },
-    { v:'introdrill', l:'Rapid Drill: Introduction' },
+    { v:'introdrill', l:'Rapid Drill: Intro' },
     { v:'bodydrill', l:'Rapid Drill: Body' }
   ];
   function filterByPracticeType(list, mode){
@@ -2608,7 +2608,7 @@ const DATA = window.APP_DATA;
       : '30-minute prep, then record a full 7-minute. Graded on all 8 rubric categories.';
     modeSwitchHint.classList.toggle('is-intro', introDrillMode);
     modeSwitchHint.classList.toggle('is-body', bodyDrillMode);
-    ballotModeLabel.textContent = introDrillMode ? 'Rapid Drill: Introduction' : bodyDrillMode ? 'Rapid Drill: Body' : 'Regular Practice';
+    ballotModeLabel.textContent = introDrillMode ? 'Rapid Drill: Intro' : bodyDrillMode ? 'Rapid Drill: Body' : 'Regular Practice';
     ballotModeLabel.classList.toggle('is-intro', introDrillMode);
     ballotModeLabel.classList.toggle('is-body', bodyDrillMode);
     ballotModeLabel.classList.toggle('is-regular', isRegular);
@@ -4242,7 +4242,7 @@ Grading rules per claim:
     if(fullTable) fullTable.classList.toggle('hidden', isIntro || isBody);
     if(introTable) introTable.classList.toggle('hidden', !isIntro);
     if(bodyTable) bodyTable.classList.toggle('hidden', !isBody);
-    rubricModeLabel.textContent = isIntro ? 'Rapid Drill: Introduction Rubric' : isBody ? 'Rapid Drill: Body Rubric' : 'Regular Practice Rubric';
+    rubricModeLabel.textContent = isIntro ? 'Rapid Drill: Intro Rubric' : isBody ? 'Rapid Drill: Body Rubric' : 'Regular Practice Rubric';
     rubricModeLabel.classList.toggle('is-intro', isIntro);
     rubricModeLabel.classList.toggle('is-body', isBody);
     rubricModeLabel.classList.toggle('is-regular', !isIntro && !isBody);

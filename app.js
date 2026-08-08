@@ -4326,8 +4326,57 @@ Grading rules per claim:
   // (score circle, What Worked / Critical Flaws / What You Could Have Done
   // rows, Composite Score + Rank stamps) rather than plain text, by
   // reusing the app's own parseBallot() on it.
+  // The AI_MODEL_EXAMPLE_BALLOTS strings are raw .txt-export text (see
+  // downloadBallotTxt), which appends the fact-check section as plain
+  // text after "--- EVIDENCE FACT-CHECK ---" and the transcript after
+  // "--- TRANSCRIPT ---". parseBallot only splits on "### " headers, so
+  // without this split first, that whole trailing chunk (including the
+  // full transcript) gets silently swallowed into the "Actionable Drill"
+  // body and rendered as an unstyled wall of text inside the Feedback
+  // box. Strip both off before parsing so Feedback stays just the drill,
+  // and hand the fact-check text to parseFactCheckPlainText below so it
+  // renders with the same styled cards real rounds get.
+  function splitOffFactCheckAndTranscript(feedback){
+    const idx = feedback.indexOf('--- EVIDENCE FACT-CHECK');
+    if(idx === -1) return { ballotText: feedback, factCheckText: null };
+    const ballotText = feedback.slice(0, idx).trim();
+    const rest = feedback.slice(idx);
+    const transcriptIdx = rest.indexOf('--- TRANSCRIPT ---');
+    const factCheckText = (transcriptIdx === -1 ? rest : rest.slice(0, transcriptIdx)).trim();
+    return { ballotText, factCheckText };
+  }
+
+  // Reverses factCheckPlainText's format back into the {claim, source,
+  // verdict, explanation, sourceUrl} shape buildFactCheckHtml expects, so
+  // sample ballots on the LLM Model Rankings page render the fact-check
+  // section as the same styled TRUE/FALSE/UNVERIFIED cards a live round
+  // gets, not as unstyled plain text.
+  function parseFactCheckPlainText(text){
+    const body = text.replace(/^---\s*EVIDENCE FACT-CHECK[^\n]*---\s*/i, '').trim();
+    if(!body) return [];
+    const blocks = body.split(/\n\n(?=\[)/);
+    const claims = [];
+    blocks.forEach(block => {
+      const head = block.match(/^\[(TRUE|FALSE|UNVERIFIED)\]\s*([^\n]+)/i);
+      if(!head) return;
+      const verdict = head[1].toLowerCase();
+      const claim = head[2].trim();
+      const lines = block.split('\n').slice(1).map(l => l.trim()).filter(Boolean);
+      let source = '', sourceUrl = '';
+      const explanationLines = [];
+      lines.forEach(line => {
+        if(/^Cited source:/i.test(line)) source = line.replace(/^Cited source:\s*/i, '').trim();
+        else if(/^https?:\/\//i.test(line)) sourceUrl = line;
+        else explanationLines.push(line);
+      });
+      claims.push({ claim, source, verdict, explanation: explanationLines.join(' '), sourceUrl });
+    });
+    return claims;
+  }
+
   function buildBallotCardsHtml(feedback){
-    const parsed = parseBallot(feedback);
+    const { ballotText, factCheckText } = splitOffFactCheckAndTranscript(feedback);
+    const parsed = parseBallot(ballotText);
     let html = scoreKeyHtml();
     parsed.categories.forEach(cat => {
       const band = bandClass(cat.score, cat.max);
@@ -4367,6 +4416,7 @@ Grading rules per claim:
         <span class="tag" style="font-size:16px;font-weight:800;">Feedback</span>
         <p>${inlineMd(parsed.drill)}</p>
       </div>`;
+    if(factCheckText) html += buildFactCheckHtml(parseFactCheckPlainText(factCheckText));
     return html;
   }
 
@@ -5162,7 +5212,16 @@ Grading rules per claim:
   // resolve on their own within a second or two.
   function isTransientError(err){
     const s = String(err && err.message || err);
-    return /:429:|:500:|:502:|:503:|:504:/.test(s) || /rate.?limit/i.test(s) || s.includes('Failed to fetch');
+    // 529 = Anthropic's own "Overloaded" status (see their API error docs).
+    // Hack Club proxies it straight through for Claude-family models, and
+    // it was missing here — meaning Opus/Sonnet 529s were treated as
+    // permanent failures with zero backoff, so withKeyFallback's 4
+    // "attempts" (key, key2, key3, null — none of which actually change
+    // anything for hackclub-chat; see the overrideKey comment where this
+    // is called) fired back-to-back in under 50ms total, hammering an
+    // already-overloaded endpoint instead of giving it a moment to
+    // recover. That's the real cause of the instant repeated failures.
+    return /:429:|:500:|:502:|:503:|:504:|:529:/.test(s) || /rate.?limit/i.test(s) || /overloaded/i.test(s) || s.includes('Failed to fetch');
   }
   async function withKeyFallback(fn, ...keys){
     const list = [...new Set(keys)];

@@ -215,7 +215,19 @@
       <span class="print-brand-name">xtemplary</span>
     </div>
     <div class="ballot-head">
-      <div class="ballot-title" id="ballotTitle">Practice Ballot</div>
+      <div class="ballot-head-top">
+        <div class="ballot-title" id="ballotTitle">Practice Ballot</div>
+        <!-- Practice-mode explainer box, moved here (from just above the
+             record controls) so it sits in the header row between the
+             ballot title/mode label and the Rubric / LLM Model Rankings
+             icons in the paper's top-right corner. Background color is
+             driven by the same is-regular/is-intro/is-body classes as
+             #ballotModeLabel (kept in sync in setPracticeMode in app.js);
+             typography intentionally matches .history-overall (the
+             "Coach's Overall Notes" card) rather than the mono UI font
+             used elsewhere in the header. -->
+        <div class="mode-switch-hint" id="modeSwitchHint">Full 7-minute round, graded on all 8 rubric categories.</div>
+      </div>
       <div class="field ballot-mode-label is-regular" id="ballotModeLabel">Regular Practice</div>
     </div>
 
@@ -298,7 +310,6 @@
             </svg>
           </button>
         </div>
-        <div class="mode-switch-hint" id="modeSwitchHint">Full 7-minute round, graded on all 8 rubric categories.</div>
 
         <!-- YouTube link popover (toggled by the "Open Video & Capture Tab Audio" button) -->
         <div class="settings-panel hidden" id="youtubePopover">
@@ -649,7 +660,7 @@
           </div>
         </div>
 
-        <div style="text-align:center;margin:26px 0 16px;font-family:var(--font-mono);font-size:11px;letter-spacing:1.5px;color:var(--ink);text-transform:uppercase;">— or —</div>
+        <div style="text-align:center;margin:26px 0 16px;font-family:var(--font-mono);font-size:20px;font-weight:800;letter-spacing:1.5px;color:var(--crimson,#1d5c9e);text-transform:uppercase;">OR</div>
         <div class="av-btn-row">
           <button class="btn ghost" id="uploadVideoBtn" type="button">Upload a Video Instead</button>
           <button class="btn ghost" id="captureYoutubeBtn" type="button">Open Video &amp; Capture Tab Audio</button>

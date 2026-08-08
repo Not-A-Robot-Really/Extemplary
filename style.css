@@ -100,9 +100,9 @@
   .session-tag{
     font-family:var(--font-mono);font-size:12px;line-height:1;letter-spacing:0.6px;
     display:inline-flex;align-items:center;height:29px;
-    background:#1d5c9e;border-radius:4px;padding:0 12px;
+    background:#1d5c9e;border-radius:4px;padding:0 10px;
   }
-  .session-tag .rt-num{color:#ffffff;font-weight:800;text-transform:uppercase;}
+  .session-tag .rt-num{color:#ffffff;font-weight:800;text-transform:uppercase;font-size:15px;letter-spacing:0.3px;}
 
   main{max-width:880px;margin:0 auto;padding:28px 24px 60px;position:relative;z-index:1;}
 
@@ -428,8 +428,25 @@
   #modeIntroDrillBtn.active{background:#a3322a;color:#fff;border-color:#7a231c;}
   #modeBodyDrillBtn.active{background:#a6790c;color:#fff;border-color:#7a5a08;}
   .mode-switch-hint{
-    font-family:var(--font-mono);font-size:11px;color:#000;margin-bottom:26px;
+    font-family:var(--font-body);font-size:12px;font-weight:500;line-height:1.5;
+    color:#ffffff;background:var(--crimson);border:1px solid var(--crimson-deep);
+    border-radius:3px;padding:8px 12px;max-width:230px;
+    box-sizing:border-box;flex-shrink:0;
   }
+  .mode-switch-hint.is-intro{background:#a3322a;border-color:#7a231c;}
+  .mode-switch-hint.is-body{background:#a6790c;border-color:#7a5a08;}
+
+  /* Row hosting the ballot title alongside the practice-mode explainer
+     box — sits in the header gap to the left of the Rubric / LLM Model
+     Rankings icons (position:absolute, top-right of the paper; see
+     .rubric-toggle-btn / .ai-compare-toggle-btn). The right margin below
+     keeps the box clear of that icon pair (which occupy roughly the
+     right:34px-98px band) at normal widths. */
+  .ballot-head-top{
+    grid-column:1/-1;display:flex;align-items:flex-start;justify-content:space-between;
+    gap:16px;margin-right:76px;margin-bottom:6px;
+  }
+  .ballot-head-top .ballot-title{grid-column:auto;margin:0;flex:1;min-width:0;}
 
   /* -------- ballot-head practice mode label -------- */
   .ballot-mode-label{
@@ -2268,6 +2285,8 @@
 
   @media(max-width:600px){
     .ballot-head{grid-template-columns:1fr;}
+    .ballot-head-top{flex-direction:column;align-items:stretch;margin-right:0;}
+    .mode-switch-hint{max-width:none;margin-top:36px;}
     .category{grid-template-columns:48px 1fr;}
     .badge-wrap{width:48px;height:48px;}
     .badge-wrap svg{width:48px;height:48px;}

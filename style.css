@@ -431,7 +431,7 @@
   .mode-switch-hint{
     font-family:var(--font-body);font-size:11.5px;font-weight:500;line-height:1.45;
     color:#ffffff;background:var(--crimson);border:1px solid var(--crimson-deep);
-    border-radius:3px;padding:7px 10px;max-width:200px;
+    border-radius:3px;padding:5px 12px;max-width:320px;
     box-sizing:border-box;flex-shrink:1;min-width:0;
   }
   .mode-switch-hint.is-intro{background:#a3322a;border-color:#7a231c;}

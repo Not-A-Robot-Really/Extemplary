@@ -704,6 +704,39 @@
             <div class="progress-bar-track"><div class="progress-bar-fill" id="procProgressFill"></div></div>
           </div>
           <div class="progress-phrase" id="procProgressPhrase"></div>
+
+          <!-- Step-by-step checklist mirroring the actual pipeline stages
+               in runPipeline (see setProcStep in app.js). Each step's
+               icon/label state (pending/active/done) is driven entirely
+               from there — nothing here is decorative-only, it reflects
+               real progress including live "Wave N" updates during the
+               judging model's continuation rounds. -->
+          <div class="proc-steps" id="procSteps">
+            <div class="proc-step" data-step="audio">
+              <span class="proc-step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="proc-step-check"><polyline points="20 6 9 17 4 12"></polyline></svg><span class="proc-step-dot"></span></span>
+              <span class="proc-step-text"><span class="proc-step-label">Prepping Audio</span><span class="proc-step-extra"></span></span>
+            </div>
+            <div class="proc-step" data-step="transcribe">
+              <span class="proc-step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="proc-step-check"><polyline points="20 6 9 17 4 12"></polyline></svg><span class="proc-step-dot"></span></span>
+              <span class="proc-step-text"><span class="proc-step-label">Transcribing Testimony</span><span class="proc-step-extra"></span></span>
+            </div>
+            <div class="proc-step" data-step="delivery">
+              <span class="proc-step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="proc-step-check"><polyline points="20 6 9 17 4 12"></polyline></svg><span class="proc-step-dot"></span></span>
+              <span class="proc-step-text"><span class="proc-step-label">Analyzing Vocal Delivery</span><span class="proc-step-extra"></span></span>
+            </div>
+            <div class="proc-step" data-step="judging">
+              <span class="proc-step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="proc-step-check"><polyline points="20 6 9 17 4 12"></polyline></svg><span class="proc-step-dot"></span></span>
+              <span class="proc-step-text"><span class="proc-step-label">Panel Deliberating</span><span class="proc-step-extra" id="procStepJudgingExtra"></span></span>
+            </div>
+            <div class="proc-step" data-step="annotate">
+              <span class="proc-step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="proc-step-check"><polyline points="20 6 9 17 4 12"></polyline></svg><span class="proc-step-dot"></span></span>
+              <span class="proc-step-text"><span class="proc-step-label">Annotating Transcript</span><span class="proc-step-extra"></span></span>
+            </div>
+            <div class="proc-step" data-step="factcheck">
+              <span class="proc-step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="proc-step-check"><polyline points="20 6 9 17 4 12"></polyline></svg><span class="proc-step-dot"></span></span>
+              <span class="proc-step-text"><span class="proc-step-label">Verifying Evidence</span><span class="proc-step-extra"></span></span>
+            </div>
+          </div>
         </div>
         <div class="error-box hidden" id="processError"></div>
         <div class="actions hidden" id="processErrorActions">
@@ -1079,7 +1112,7 @@
             <span class="ai-compare-metric"><span class="ai-bar-num">86</span><span class="ai-bar-track"><span class="ai-bar-fill" data-w="86" style="width:0%;background:rgb(34,174,127);"></span></span></span>
             <span class="ai-compare-metric"><span class="ai-bar-num">60</span><span class="ai-bar-track"><span class="ai-bar-fill" data-w="60" style="width:0%;background:rgb(146,176,35);"></span></span></span>
           </div>
-          <div class="ai-compare-row available" data-provider="anthropic">
+          <div class="ai-compare-row available" data-provider="anthropic" data-example="sonnet5">
             <span class="ai-compare-rank">6</span>
             <span class="ai-compare-model">Claude Sonnet 5 <img class="ai-model-logo" src="Images/claude.svg" alt="Claude"></span>
             <span class="ai-compare-metric"><span class="ai-bar-num">83</span><span class="ai-bar-track"><span class="ai-bar-fill" data-w="83" style="width:0%;background:rgb(38,174,114);"></span></span></span>

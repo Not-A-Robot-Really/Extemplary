@@ -1425,14 +1425,14 @@
     width:100%;max-width:300px;margin:16px auto 0;
   }
   .progress-bar-track{
-    height:5px;border-radius:0;
+    height:7px;border-radius:999px;
     background:var(--rule);overflow:hidden;
     border-top:1px solid rgba(0,0,0,0.12);
   }
   .progress-bar-fill{
-    height:100%;width:0%;border-radius:0;
-    background:var(--crimson);
-    transition:width .3s ease-out;
+    height:100%;width:0%;border-radius:999px;
+    background:linear-gradient(90deg,var(--crimson),var(--crimson-bright));
+    transition:width .35s cubic-bezier(.25,.8,.35,1);
   }
   .progress-phrase{
     font-family:var(--font-mono);font-size:11.5px;color:var(--slate);
@@ -1722,18 +1722,73 @@
   .overlay-dismiss:hover{color:#fff;}
 
   /* -------- processing -------- */
-  .processing{display:flex;flex-direction:column;align-items:center;padding:50px 20px;text-align:center;gap:14px;}
+  .processing{display:flex;flex-direction:column;align-items:center;padding:56px 24px 46px;text-align:center;gap:16px;max-width:480px;margin:0 auto;}
   .blot{
-    width:46px;height:46px;border-radius:50% 50% 50% 4px;
-    background:var(--crimson);animation:breathe 1.6s ease-in-out infinite;
+    width:60px;height:60px;border-radius:50% 50% 50% 4px;
+    background:linear-gradient(135deg,var(--crimson-bright),var(--crimson-deep));
+    box-shadow:0 6px 18px rgba(18,58,99,0.35);
+    animation:breathe 1.8s cubic-bezier(.45,0,.55,1) infinite;
   }
-  @keyframes breathe{0%,100%{transform:scale(1) rotate(-2deg);}50%{transform:scale(0.82) rotate(3deg);}}
-  .processing .status{font-family:var(--font-mono);font-size:14px;color:var(--charcoal);}
-  .processing .sub{font-size:12px;color:var(--slate);max-width:360px;}
+  @keyframes breathe{0%,100%{transform:scale(1) rotate(-2deg);}50%{transform:scale(0.86) rotate(3deg);}}
+  .processing .status{font-family:var(--font-display);font-size:21px;font-weight:700;color:var(--charcoal);letter-spacing:0.2px;}
+  .processing .sub{font-size:13.5px;color:var(--slate);max-width:380px;line-height:1.5;}
   .processing .sub:empty{display:none;}
 
-  .processing .progress-bar-wrap{margin-top:0;}
+  .processing .progress-bar-wrap{margin-top:2px;max-width:340px;}
   .processing .progress-phrase{margin-top:0;}
+
+  /* -------- pipeline step checklist (matches ballot-paper theme: parchment
+     card, crimson accents, mono uppercase labels) -------- */
+  .proc-steps{
+    width:100%;max-width:360px;margin-top:22px;text-align:left;
+    background:var(--parchment-deep);border:1px solid var(--rule);
+    border-radius:6px;padding:6px 18px;
+  }
+  .proc-step{
+    display:flex;align-items:center;gap:12px;padding:13px 0;
+    position:relative;
+  }
+  .proc-step + .proc-step{border-top:1px solid rgba(22,40,60,0.09);}
+  .proc-step-icon{
+    position:relative;width:20px;height:20px;flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .proc-step-dot{
+    width:9px;height:9px;border-radius:50%;background:var(--rule);
+    border:1px solid rgba(22,40,60,0.18);
+    transition:background .25s ease, border-color .25s ease, transform .25s ease;
+  }
+  .proc-step-check{
+    position:absolute;inset:0;width:20px;height:20px;color:var(--crimson);
+    opacity:0;transform:scale(0.5);
+    transition:opacity .25s ease, transform .25s cubic-bezier(.34,1.56,.64,1);
+  }
+  .proc-step-text{display:flex;align-items:baseline;gap:7px;flex-wrap:wrap;min-width:0;}
+  .proc-step-label{
+    font-family:var(--font-mono);font-size:12px;letter-spacing:0.5px;text-transform:uppercase;
+    color:var(--slate);transition:color .25s ease, font-weight .25s ease;
+  }
+  .proc-step-extra{
+    font-family:var(--font-body);font-size:12px;color:var(--crimson);font-weight:600;
+    opacity:0;transition:opacity .2s ease;
+  }
+  .proc-step-extra:not(:empty){opacity:1;}
+  /* Pending (not yet started): dim dot, muted label — the default state above. */
+  /* Active (in progress): filled pulsing dot, bold dark label. */
+  .proc-step.active .proc-step-dot{
+    background:var(--crimson);border-color:var(--crimson-deep);
+    animation:procStepPulse 1.3s ease-in-out infinite;
+  }
+  .proc-step.active .proc-step-label{color:var(--charcoal);font-weight:700;}
+  @keyframes procStepPulse{
+    0%,100%{box-shadow:0 0 0 0 rgba(29,92,158,0.35);}
+    50%{box-shadow:0 0 0 5px rgba(29,92,158,0);}
+  }
+  /* Done: checkmark replaces the dot, label settles to a quieter but still
+     legible weight so completed steps read as finished, not grayed-out. */
+  .proc-step.done .proc-step-dot{opacity:0;transform:scale(0.5);}
+  .proc-step.done .proc-step-check{opacity:1;transform:scale(1);}
+  .proc-step.done .proc-step-label{color:var(--crimson-deep);font-weight:600;}
 
   /* -------- results -------- */
   .stamp-row{

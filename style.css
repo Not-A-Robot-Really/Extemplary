@@ -450,10 +450,11 @@
      had (the title used to sit alone in), same as before anything was
      added here. */
   .ballot-head-top{
-    grid-column:1/-1;display:flex;align-items:flex-start;justify-content:space-between;
-    gap:12px;width:100%;box-sizing:border-box;padding-right:76px;margin-bottom:6px;
+    display:flex;align-items:flex-start;justify-content:space-between;
+    gap:12px;width:100%;box-sizing:border-box;padding-right:76px;
   }
-  .ballot-head-top .ballot-title{grid-column:auto;margin:0;flex:0 0 auto;white-space:nowrap;}
+  .ballot-head-left{margin:0;flex:0 0 auto;display:flex;flex-direction:column;gap:4px;}
+  .ballot-head-left .ballot-title{white-space:nowrap;}
 
   /* -------- ballot-head practice mode label -------- */
   .ballot-mode-label{
@@ -484,14 +485,13 @@
     background:var(--parchment-deep);
   }
   .ballot-head{
-    padding:22px 28px 16px;
+    padding:16px 28px 12px;
     border-bottom:2px solid var(--charcoal);
-    display:grid;grid-template-columns:1fr 1fr;gap:8px 24px;
+    display:block;
   }
   .ballot-head .field{font-family:var(--font-mono);font-size:12px;}
   .ballot-head .field b{text-transform:uppercase;letter-spacing:1px;color:var(--slate);font-weight:600;margin-right:6px;}
-  .ballot-title{grid-column:1/-1;font-family:var(--font-display);font-size:22px;font-weight:700;margin:0 0 6px;}
-
+  .ballot-title{grid-column:1/-1;font-family:var(--font-display);font-size:22px;font-weight:700;margin:0;}
   /* Standardized heading used at the top of every secondary page/view
      (My Ballot History, Streak Calendar, Example Ballot, Tournament
      Briefing, Citation Checker) so they all share the same font/size. */
@@ -2291,7 +2291,6 @@
   }
 
   @media(max-width:600px){
-    .ballot-head{grid-template-columns:1fr;}
     .ballot-head-top{flex-direction:column;align-items:stretch;padding-right:0;}
     .mode-switch-hint{width:auto;max-width:none;margin-top:36px;margin-right:0;margin-left:0;}
     .category{grid-template-columns:48px 1fr;}

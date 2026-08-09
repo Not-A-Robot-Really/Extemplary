@@ -2193,7 +2193,23 @@ const DATA = window.APP_DATA;
       const { text, reasoning, needsContinuation } = await readHackClubStream(res);
       fullText += text;
       fullReasoning += reasoning;
-      if(!needsContinuation) return fullText.trim() || fullReasoning.trim();
+      // "Composite Score" is the one line every complete ballot always
+      // reaches (see RUBRIC_PROMPT/INTRO/BODY_RUBRIC_PROMPT — it's the
+      // second-to-last thing the model writes, right before Judge's Rank
+      // and Feedback). Previously, needsContinuation===false (i.e. the
+      // model sent a real stop, not one of our own time-budget cutoffs)
+      // was trusted outright as "done" — but a model can send a genuine
+      // stop well before actually finishing the ballot, especially on a
+      // continuation round handed a truncated tail of its own earlier
+      // output. That's exactly what was happening: round 2 would stop
+      // naturally partway through a category with no Composite Score in
+      // sight, and this loop accepted it as final. Now a natural stop
+      // only ends the loop if the ballot actually looks finished;
+      // otherwise it's treated the same as a forced continuation and
+      // given another round, same as our own time-budget cutoffs get.
+      const looksComplete = /composite score/i.test(fullText);
+      if(!needsContinuation && looksComplete) return fullText.trim() || fullReasoning.trim();
+      if(!needsContinuation && round === MAX_ROUNDS - 1) return fullText.trim() || fullReasoning.trim();
       // Covered-category list is a cheap substitute for re-sending
       // everything already written — the model just needs to know which
       // categories are done so it doesn't redo one it covered several
@@ -2226,7 +2242,7 @@ const DATA = window.APP_DATA;
         messages[0], // system prompt (rubric)
         { role:'user', content:
           messages[1].content
-          + '\n\n---\n\nYou already began writing this ballot below before being cut off by a technical limit partway through generating it. Continue writing IMMEDIATELY after the partial content shown below, in the exact same format. Do NOT repeat, restate, quote, or re-include any of the partial content shown below in your reply — your reply should contain ONLY new content that picks up exactly where the partial content stops (mid-sentence if needed), through to the fully finished ballot (including the Composite Score, Judge\'s Rank, and Feedback section).'
+          + '\n\n---\n\nYou already began writing this ballot below but stopped before it was actually finished. Continue writing IMMEDIATELY after the partial content shown below, in the exact same format. Do NOT repeat, restate, quote, or re-include any of the partial content shown below in your reply — your reply should contain ONLY new content that picks up exactly where the partial content stops (mid-sentence if needed), through to the fully finished ballot (including the Composite Score, Judge\'s Rank, and Feedback section).'
           + (covered.length ? ('\n\nCategories already fully covered in earlier rounds (do not redo these): ' + covered.join(', ') + '.') : '')
           + '\n\n=== PARTIAL BALLOT ALREADY WRITTEN (do not repeat any of this) ===\n' + tail
         }

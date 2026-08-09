@@ -1825,10 +1825,17 @@ const DATA = window.APP_DATA;
 
   // ===== Animated progress bar + rotating-phrase controller, used any time =====
   // ===== an AI call is "thinking" (question generation, judging pipeline). =====
-  function createProgressController(fillEl, phraseEl){
+  function createProgressController(fillEl, phraseEl, colorFn){
     let target = 0, current = 0, raf = null, phraseTimer = null, phrases = [], phraseIdx = 0;
     function paint(){
       fillEl.style.width = current.toFixed(1) + '%';
+      // colorFn (when supplied) recolors the fill live by how far along it
+      // is — reuses the same red-to-green spectrum as ballot scores
+      // (colorFromRatio) rather than a fixed brand color, so the bar
+      // itself communicates "how close to done" the same way a score bar
+      // communicates "how good." Left undefined for qGenProgress, which
+      // keeps its plain CSS color.
+      if(colorFn) fillEl.style.background = colorFn(current / 100);
     }
     function tick(){
       if(current < target){
@@ -1891,38 +1898,47 @@ const DATA = window.APP_DATA;
   const PIPELINE_PHRASES = DATA.PIPELINE_PHRASES;
   const INTRO_PIPELINE_PHRASES = DATA.INTRO_PIPELINE_PHRASES || PIPELINE_PHRASES;
   const BODY_PIPELINE_PHRASES = DATA.BODY_PIPELINE_PHRASES || PIPELINE_PHRASES;
-  const pipelineProgress = createProgressController(procProgressFill, procProgressPhrase);
+  const pipelineProgress = createProgressController(procProgressFill, procProgressPhrase, (ratio) => colorFromRatio(ratio));
 
-  // ===== Pipeline step checklist (mirrors the .proc-steps markup in =====
-  // ===== index.html) — driven from the real stage transitions in     =====
-  // ===== runPipeline below, not a separate decorative timer.         =====
+  // ===== Pipeline timeline (mirrors the .proc-tick markup in index.html,
+  // ===== positioned along the .proc-timeline-track itself) — driven from
+  // ===== the real stage transitions in runPipeline below, not a
+  // ===== separate decorative timer.
   const PROC_STEP_ORDER = ['audio', 'transcribe', 'delivery', 'judging', 'annotate', 'factcheck'];
-  const procSteps = document.getElementById('procSteps');
-  const procStepJudgingExtra = document.getElementById('procStepJudgingExtra');
-  // Marks every step before `id` as done, `id` itself as active (with an
-  // optional small extra label, e.g. a live "Wave 2" during judging), and
-  // leaves everything after `id` untouched (still pending, since it
-  // hasn't been reached yet). Called with no id to reset all steps back
-  // to pending at the start of a fresh pipeline run.
-  function setProcStep(id, extra){
-    if(!procSteps) return;
+  const PROC_STEP_DEFAULT_LABELS = {
+    audio: 'Audio', transcribe: 'Transcript', delivery: 'Delivery',
+    judging: 'Judging', annotate: 'Notes', factcheck: 'Verify'
+  };
+  const procTimeline = document.getElementById('procTimeline');
+  // Marks every tick before `id` as done (checkmark), `id` itself as
+  // active (pulsing dot), and leaves everything after `id` pending.
+  // `label`, when given, replaces that tick's caption with something more
+  // specific in the moment (e.g. "Transcript 42%" or "Judging · Wave 2");
+  // omitted or falsy resets it back to its default caption. Called with
+  // no id to reset the whole timeline (fresh pipeline run).
+  function setProcStep(id, label){
+    if(!procTimeline) return;
     const targetIdx = id ? PROC_STEP_ORDER.indexOf(id) : -1;
     PROC_STEP_ORDER.forEach((stepId, i) => {
-      const el = procSteps.querySelector(`.proc-step[data-step="${stepId}"]`);
+      const el = procTimeline.querySelector(`.proc-tick[data-step="${stepId}"]`);
+      const labelEl = document.getElementById('procTickLabel-' + stepId);
       if(!el) return;
       el.classList.remove('active', 'done');
-      if(targetIdx === -1) return; // full reset — leave pending
-      if(i < targetIdx) el.classList.add('done');
-      else if(i === targetIdx) el.classList.add('active');
-      // i > targetIdx: stays pending (no class), correct default state
+      if(targetIdx !== -1){
+        if(i < targetIdx) el.classList.add('done');
+        else if(i === targetIdx) el.classList.add('active');
+      }
+      if(labelEl && stepId !== id) labelEl.textContent = PROC_STEP_DEFAULT_LABELS[stepId];
     });
-    if(procStepJudgingExtra && id !== 'judging') procStepJudgingExtra.textContent = '';
-    if(procStepJudgingExtra && id === 'judging' && typeof extra === 'string') procStepJudgingExtra.textContent = extra;
+    if(id){
+      const labelEl = document.getElementById('procTickLabel-' + id);
+      if(labelEl) labelEl.textContent = (label && label.trim()) ? label : PROC_STEP_DEFAULT_LABELS[id];
+    }
   }
   function finishProcSteps(){
-    if(!procSteps) return;
+    if(!procTimeline) return;
     PROC_STEP_ORDER.forEach(stepId => {
-      const el = procSteps.querySelector(`.proc-step[data-step="${stepId}"]`);
+      const el = procTimeline.querySelector(`.proc-tick[data-step="${stepId}"]`);
       if(el){ el.classList.remove('active'); el.classList.add('done'); }
     });
   }
@@ -6375,6 +6391,7 @@ Grading rules per claim:
           // transcription, map it onto the 12%-40% band for this stage.
           const pct = (typeof frac === 'number') ? 12 + frac * 28 : 40;
           pipelineProgress.setStage(pct);
+          if(typeof frac === 'number') setProcStep('transcribe', `Transcript ${Math.round(frac * 100)}%`);
         }
       );
       if(!transcript){ pipelineProgress.stop(); showProcessError("Didn't catch any speech — check your mic isn't muted and try again.", true); return; }

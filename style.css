@@ -431,8 +431,8 @@
   .mode-switch-hint{
     font-family:var(--font-body);font-size:11px;font-weight:500;line-height:1.4;
     color:#ffffff;background:var(--crimson);border:1px solid var(--crimson-deep);
-    border-radius:3px;padding:5px 10px;max-width:230px;margin-right:8px;margin-left:auto;
-    box-sizing:border-box;flex:0 1 auto;min-width:0;
+    border-radius:3px;padding:5px 10px;width:250px;margin-right:8px;margin-left:auto;
+    box-sizing:border-box;flex:0 0 auto;min-width:0;
   }
   .mode-switch-hint.is-intro{background:#a3322a;border-color:#7a231c;}
   .mode-switch-hint.is-body{background:#a6790c;border-color:#7a5a08;}

@@ -1945,7 +1945,7 @@ const DATA = window.APP_DATA;
     if(procPhaseLabel){
       procPhaseLabel.textContent = (targetIdx === -1)
         ? ''
-        : `Phase ${targetIdx + 1} of ${PROC_STEP_ORDER.length} — ${PROC_STEP_PHASE_NAMES[id]}${label && label.trim() ? ' (' + label.trim() + ')' : ''}`;
+        : `${PROC_STEP_PHASE_NAMES[id]}${label && label.trim() ? ' (' + label.trim() + ')' : ''}`;
     }
   }
   function finishProcSteps(){

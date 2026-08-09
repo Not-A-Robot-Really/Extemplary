@@ -1751,10 +1751,11 @@
   .proc-timeline-track{
     position:relative;height:26px;border-radius:4px;
     background:var(--rule);overflow:visible;
-    border:2px solid var(--ink);
+    border:3px solid var(--ink);
+    margin-bottom:50px; /* reserves flow-space for the checkmark badges + labels below, since they're absolutely positioned and won't push subsequent siblings (like .progress-phrase) down on their own */
   }
   .proc-timeline-fill{
-    position:absolute;top:0;left:0;height:100%;width:0%;border-radius:3px;
+    position:absolute;top:0;left:0;height:100%;width:0%;border-radius:2px;
     background:var(--crimson);
     transition:width .35s cubic-bezier(.25,.8,.35,1), background .35s linear;
   }
@@ -1762,21 +1763,26 @@
     position:absolute;top:0;transform:translateX(-50%);
     height:100%;display:flex;flex-direction:column;align-items:center;z-index:2;
   }
-  /* The marker itself: a vertical line spanning the full height of the
-     track (plus a little overhang above/below), crossing over the fill
-     rather than a badge sitting on top of it. */
+  /* The marker itself: a vertical line confined strictly to the bar's own
+     height — no overhang above or below it, unlike the previous version. */
   .proc-tick-line{
-    width:2px;height:calc(100% + 10px);margin-top:-5px;
+    width:2px;height:100%;
     background:var(--ink);opacity:0.3;
     transition:background .25s ease, opacity .25s ease;
   }
+  /* Checkmark badge — a small filled circle (matching the original
+     checklist design's "done" badge) now sitting just below the bar,
+     directly under its own tick line, rather than floating above the bar. */
   .proc-tick-check{
-    position:absolute;top:-22px;left:50%;width:16px;height:16px;color:var(--crimson-deep);
-    opacity:0;transform:translateX(-50%) translateY(3px) scale(0.6);
+    position:absolute;top:calc(100% + 6px);left:50%;width:15px;height:15px;
+    border-radius:50%;background:var(--crimson-deep);
+    display:flex;align-items:center;justify-content:center;color:#ffffff;
+    opacity:0;transform:translateX(-50%) translateY(-3px) scale(0.6);
     transition:opacity .2s ease, transform .2s cubic-bezier(.34,1.56,.64,1);
   }
+  .proc-tick-check svg{width:9px;height:9px;}
   .proc-tick-label{
-    position:absolute;top:34px;left:50%;transform:translateX(-50%);
+    position:absolute;top:calc(100% + 26px);left:50%;transform:translateX(-50%);
     font-family:var(--font-mono);font-size:10.5px;letter-spacing:0.3px;text-transform:uppercase;
     color:var(--slate);white-space:nowrap;transition:color .25s ease, font-weight .25s ease;
   }
@@ -1787,15 +1793,16 @@
   .proc-tick.active .proc-tick-line{background:var(--ink);opacity:1;}
   .proc-tick.active .proc-tick-label{color:var(--charcoal);font-weight:700;animation:procLabelPulse 1.6s ease-in-out infinite;}
   @keyframes procLabelPulse{0%,100%{opacity:1;}50%{opacity:0.6;}}
-  /* Done: line goes solid crimson-deep, checkmark badge appears above the
-     bar (never inside it), label settles to a quieter but legible color. */
+  /* Done: line goes solid crimson-deep, filled checkmark badge appears
+     just below the bar, label settles to a quieter but legible color. */
   .proc-tick.done .proc-tick-line{background:var(--crimson-deep);opacity:1;}
   .proc-tick.done .proc-tick-check{opacity:1;transform:translateX(-50%) translateY(0) scale(1);}
   .proc-tick.done .proc-tick-label{color:var(--crimson-deep);font-weight:600;}
 
   /* Rotating extemp-flavored phrase line, sits below the timeline+labels
-     now (needs clearance for the tick captions above it). */
-  .processing .progress-phrase{margin-top:30px;font-style:italic;}
+     now — most of the clearance comes from .proc-timeline-track's own
+     margin-bottom above, this is just a little extra breathing room. */
+  .processing .progress-phrase{margin-top:4px;font-style:italic;}
 
   /* -------- results -------- */
   .stamp-row{

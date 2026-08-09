@@ -1909,11 +1909,19 @@ const DATA = window.APP_DATA;
     audio: 'Audio', transcribe: 'Transcript', delivery: 'Delivery',
     judging: 'Judging', annotate: 'Notes', factcheck: 'Verify'
   };
+  // Fuller names for the explicit "which phase, specifically" indicator —
+  // the tick captions themselves stay short since space on the bar is
+  // tight, but this line has room to spell it out plainly.
+  const PROC_STEP_PHASE_NAMES = {
+    audio: 'Prepping Audio', transcribe: 'Transcribing Testimony', delivery: 'Analyzing Vocal Delivery',
+    judging: 'Panel Deliberating', annotate: 'Annotating Transcript', factcheck: 'Verifying Evidence'
+  };
   const procTimeline = document.getElementById('procTimeline');
+  const procPhaseLabel = document.getElementById('procPhaseLabel');
   // Marks every tick before `id` as done (checkmark), `id` itself as
-  // active (pulsing dot), and leaves everything after `id` pending.
+  // active (pulsing line), and leaves everything after `id` pending.
   // `label`, when given, replaces that tick's caption with something more
-  // specific in the moment (e.g. "Transcript 42%" or "Judging · Wave 2");
+  // specific in the moment (e.g. "Transcript 42%" or "Wave 2");
   // omitted or falsy resets it back to its default caption. Called with
   // no id to reset the whole timeline (fresh pipeline run).
   function setProcStep(id, label){
@@ -1934,6 +1942,11 @@ const DATA = window.APP_DATA;
       const labelEl = document.getElementById('procTickLabel-' + id);
       if(labelEl) labelEl.textContent = (label && label.trim()) ? label : PROC_STEP_DEFAULT_LABELS[id];
     }
+    if(procPhaseLabel){
+      procPhaseLabel.textContent = (targetIdx === -1)
+        ? ''
+        : `Phase ${targetIdx + 1} of ${PROC_STEP_ORDER.length} — ${PROC_STEP_PHASE_NAMES[id]}${label && label.trim() ? ' (' + label.trim() + ')' : ''}`;
+    }
   }
   function finishProcSteps(){
     if(!procTimeline) return;
@@ -1941,6 +1954,7 @@ const DATA = window.APP_DATA;
       const el = procTimeline.querySelector(`.proc-tick[data-step="${stepId}"]`);
       if(el){ el.classList.remove('active'); el.classList.add('done'); }
     });
+    if(procPhaseLabel) procPhaseLabel.textContent = 'Ballot complete';
   }
   const qGenError       = document.getElementById('qGenError');
   const qPickStep       = document.getElementById('qPickStep');

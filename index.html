@@ -701,45 +701,68 @@
           <div class="status" id="statusText" aria-live="polite">Transcribing testimony…</div>
           <div class="sub" id="statusSub"></div>
 
-          <!-- Timeline-on-a-bar: one thick track shared by the progress
-               fill (colored live by % complete, see setProcTimelineFill in
-               app.js) and 6 stage ticks positioned along it at even
-               intervals. Each tick's dot/label state (pending/active/done)
-               and its label text are driven directly from the real stage
-               transitions in runPipeline via setProcStep — the "Judging"
-               tick's label goes further and shows live specifics (e.g.
-               "Wave 2") as the judging model actually enters continuation
-               rounds, and the "Transcript" tick's label shows live % while
-               transcription is in progress. -->
+          <!-- Explicit "which phase, specifically" indicator — separate
+               from statusText/statusSub above (which describe what's
+               happening) and from the tick labels below (which mark
+               position on the timeline). This spells out the phase count
+               and name plainly, e.g. "PHASE 4 OF 6 — PANEL DELIBERATING
+               (WAVE 2)". Driven by setProcStep in app.js. -->
+          <div class="proc-phase-label" id="procPhaseLabel"></div>
+
+          <!-- Timeline-on-a-bar: one thick, black-outlined track shared by
+               the progress fill (colored live by % complete via
+               colorFromRatio) and 6 stage ticks laid along it at even
+               intervals. Ticks are vertical marker lines that cross the
+               top edge of the bar (not dots sitting inside it), each with
+               a small checkmark badge that appears above the line once
+               that stage is done, and a caption below the bar. Tick state
+               (pending/active/done) and captions are driven directly from
+               the real stage transitions in runPipeline via setProcStep —
+               "Judging"'s caption goes further and shows live specifics
+               (e.g. "Wave 2") as the judging model actually enters
+               continuation rounds, and "Transcript"'s caption shows live
+               % while transcription is in progress. -->
           <div class="proc-timeline" id="procTimeline">
             <div class="proc-timeline-track">
               <div class="proc-timeline-fill" id="procProgressFill"></div>
               <div class="proc-tick" data-step="audio" style="left:8.33%;">
-                <span class="proc-tick-dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="proc-tick-check"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
+                <span class="proc-tick-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
+                <span class="proc-tick-line"></span>
                 <span class="proc-tick-label" id="procTickLabel-audio">Audio</span>
               </div>
               <div class="proc-tick" data-step="transcribe" style="left:25%;">
-                <span class="proc-tick-dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="proc-tick-check"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
+                <span class="proc-tick-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
+                <span class="proc-tick-line"></span>
                 <span class="proc-tick-label" id="procTickLabel-transcribe">Transcript</span>
               </div>
               <div class="proc-tick" data-step="delivery" style="left:41.66%;">
-                <span class="proc-tick-dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="proc-tick-check"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
+                <span class="proc-tick-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
+                <span class="proc-tick-line"></span>
                 <span class="proc-tick-label" id="procTickLabel-delivery">Delivery</span>
               </div>
               <div class="proc-tick" data-step="judging" style="left:58.33%;">
-                <span class="proc-tick-dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="proc-tick-check"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
+                <span class="proc-tick-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
+                <span class="proc-tick-line"></span>
                 <span class="proc-tick-label" id="procTickLabel-judging">Judging</span>
               </div>
               <div class="proc-tick" data-step="annotate" style="left:75%;">
-                <span class="proc-tick-dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="proc-tick-check"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
+                <span class="proc-tick-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
+                <span class="proc-tick-line"></span>
                 <span class="proc-tick-label" id="procTickLabel-annotate">Notes</span>
               </div>
               <div class="proc-tick" data-step="factcheck" style="left:91.66%;">
-                <span class="proc-tick-dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="proc-tick-check"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
+                <span class="proc-tick-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
+                <span class="proc-tick-line"></span>
                 <span class="proc-tick-label" id="procTickLabel-factcheck">Verify</span>
               </div>
             </div>
           </div>
+
+          <!-- Restored: the rotating extemp-flavored / "[Model] is ..."
+               phrase line that existed before the timeline redesign.
+               Driven by pipelineProgress (createProgressController),
+               unchanged logic — just needed its DOM element back. -->
+          <div class="progress-phrase" id="procProgressPhrase"></div>
         </div>
         <div class="error-box hidden" id="processError"></div>
         <div class="actions hidden" id="processErrorActions">

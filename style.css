@@ -1722,63 +1722,80 @@
   .overlay-dismiss:hover{color:#fff;}
 
   /* -------- processing -------- */
-  .processing{display:flex;flex-direction:column;align-items:center;padding:56px 24px 46px;text-align:center;gap:16px;max-width:520px;margin:0 auto;}
+  .processing{display:flex;flex-direction:column;align-items:center;padding:56px 32px 46px;text-align:center;gap:14px;max-width:680px;width:100%;margin:0 auto;box-sizing:border-box;}
   .blot{
     width:60px;height:60px;border-radius:50% 50% 50% 4px;
     background:var(--crimson);
     animation:breathe 1.8s cubic-bezier(.45,0,.55,1) infinite;
   }
   @keyframes breathe{0%,100%{transform:scale(1) rotate(-2deg);}50%{transform:scale(0.86) rotate(3deg);}}
-  .processing .status{font-family:var(--font-display);font-size:21px;font-weight:700;color:var(--charcoal);letter-spacing:0.2px;}
-  .processing .sub{font-size:13.5px;color:var(--slate);max-width:380px;line-height:1.5;}
+  .processing .status{font-family:var(--font-display);font-size:22px;font-weight:700;color:var(--charcoal);letter-spacing:0.2px;}
+  .processing .sub{font-size:13.5px;color:var(--slate);max-width:420px;line-height:1.5;}
   .processing .sub:empty{display:none;}
 
-  /* -------- timeline-on-a-bar (matches the thick solid "Trends Across N
-     Ballots" bars — see .trend-row-overall .trend-bar-wrap — just taller
-     and with stage ticks laid directly on top of the track). No
-     gradients or shadows anywhere here; the fill's color itself is the
-     only signal, set live from colorFromRatio (same red-to-green spectrum
-     ballot scores use) as it climbs toward 100%. -------- */
-  .proc-timeline{width:100%;max-width:420px;margin-top:34px;}
+  /* Explicit phase indicator — plain, no icon, reads like a ballot's own
+     "Round 3 of 5" style labeling elsewhere in the app. */
+  .proc-phase-label{
+    font-family:var(--font-mono);font-size:11.5px;font-weight:700;letter-spacing:0.8px;
+    text-transform:uppercase;color:var(--crimson-deep);margin-top:6px;min-height:14px;
+  }
+
+  /* -------- timeline-on-a-bar: thick, flat, black-outlined track (same
+     solid-fill language as the "Trends Across N Ballots" bars, just
+     bigger and bordered like a printed ballot rule) with stage ticks as
+     vertical marker lines crossing its top edge — not dots sitting
+     inside the bar. No gradients, no glows; the fill's color is the only
+     dynamic signal, driven live by colorFromRatio (the same red-to-green
+     spectrum ballot scores use) as it climbs toward 100%. -------- */
+  .proc-timeline{width:100%;max-width:600px;margin-top:20px;}
   .proc-timeline-track{
-    position:relative;height:20px;border-radius:4px;
+    position:relative;height:26px;border-radius:4px;
     background:var(--rule);overflow:visible;
+    border:2px solid var(--ink);
   }
   .proc-timeline-fill{
-    position:absolute;top:0;left:0;height:100%;width:0%;border-radius:4px;
+    position:absolute;top:0;left:0;height:100%;width:0%;border-radius:3px;
     background:var(--crimson);
     transition:width .35s cubic-bezier(.25,.8,.35,1), background .35s linear;
   }
   .proc-tick{
-    position:absolute;top:50%;transform:translate(-50%,-50%);
-    display:flex;flex-direction:column;align-items:center;gap:7px;z-index:2;
+    position:absolute;top:0;transform:translateX(-50%);
+    height:100%;display:flex;flex-direction:column;align-items:center;z-index:2;
   }
-  .proc-tick-dot{
-    position:relative;width:14px;height:14px;border-radius:50%;
-    background:var(--parchment);border:2px solid var(--rule);
-    display:flex;align-items:center;justify-content:center;
-    transition:background .25s ease, border-color .25s ease;
+  /* The marker itself: a vertical line spanning the full height of the
+     track (plus a little overhang above/below), crossing over the fill
+     rather than a badge sitting on top of it. */
+  .proc-tick-line{
+    width:2px;height:calc(100% + 10px);margin-top:-5px;
+    background:var(--ink);opacity:0.3;
+    transition:background .25s ease, opacity .25s ease;
   }
   .proc-tick-check{
-    width:9px;height:9px;color:#ffffff;opacity:0;transform:scale(0.5);
+    position:absolute;top:-22px;left:50%;width:16px;height:16px;color:var(--crimson-deep);
+    opacity:0;transform:translateX(-50%) translateY(3px) scale(0.6);
     transition:opacity .2s ease, transform .2s cubic-bezier(.34,1.56,.64,1);
   }
   .proc-tick-label{
-    position:absolute;top:24px;left:50%;transform:translateX(-50%);
+    position:absolute;top:34px;left:50%;transform:translateX(-50%);
     font-family:var(--font-mono);font-size:10.5px;letter-spacing:0.3px;text-transform:uppercase;
     color:var(--slate);white-space:nowrap;transition:color .25s ease, font-weight .25s ease;
   }
-  /* Pending (not yet reached): hollow dot, muted label — default state above. */
-  /* Active (current stage): filled crimson dot with a plain pulse (opacity
-     only — no box-shadow ring), bold dark label. */
-  .proc-tick.active .proc-tick-dot{background:var(--crimson);border-color:var(--crimson-deep);animation:procTickPulse 1.3s ease-in-out infinite;}
-  .proc-tick.active .proc-tick-label{color:var(--charcoal);font-weight:700;}
-  @keyframes procTickPulse{0%,100%{opacity:1;}50%{opacity:0.55;}}
-  /* Done: dot fills solid with a checkmark, label settles to a quieter
-     but still legible color. */
-  .proc-tick.done .proc-tick-dot{background:var(--crimson-deep);border-color:var(--crimson-deep);}
-  .proc-tick.done .proc-tick-check{opacity:1;transform:scale(1);}
+  /* Pending (not yet reached): faint line, muted label — default state above. */
+  /* Active (current stage): solid dark line, no pulse on the line itself
+     (a pulsing vertical line reads jittery) — the pulse instead lives on
+     the label, which is a steadier, more legible way to say "this one". */
+  .proc-tick.active .proc-tick-line{background:var(--ink);opacity:1;}
+  .proc-tick.active .proc-tick-label{color:var(--charcoal);font-weight:700;animation:procLabelPulse 1.6s ease-in-out infinite;}
+  @keyframes procLabelPulse{0%,100%{opacity:1;}50%{opacity:0.6;}}
+  /* Done: line goes solid crimson-deep, checkmark badge appears above the
+     bar (never inside it), label settles to a quieter but legible color. */
+  .proc-tick.done .proc-tick-line{background:var(--crimson-deep);opacity:1;}
+  .proc-tick.done .proc-tick-check{opacity:1;transform:translateX(-50%) translateY(0) scale(1);}
   .proc-tick.done .proc-tick-label{color:var(--crimson-deep);font-weight:600;}
+
+  /* Rotating extemp-flavored phrase line, sits below the timeline+labels
+     now (needs clearance for the tick captions above it). */
+  .processing .progress-phrase{margin-top:30px;font-style:italic;}
 
   /* -------- results -------- */
   .stamp-row{

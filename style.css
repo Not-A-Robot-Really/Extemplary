@@ -429,9 +429,9 @@
   #modeIntroDrillBtn.active{background:#a3322a;color:#fff;border-color:#7a231c;}
   #modeBodyDrillBtn.active{background:#a6790c;color:#fff;border-color:#7a5a08;}
   .mode-switch-hint{
-    font-family:var(--font-body);font-size:11.5px;font-weight:500;line-height:1.45;
+    font-family:var(--font-body);font-size:11px;font-weight:500;line-height:1.4;
     color:#ffffff;background:var(--crimson);border:1px solid var(--crimson-deep);
-    border-radius:3px;padding:5px 14px;width:380px;margin-right:24px;margin-left:auto;
+    border-radius:3px;padding:5px 10px;width:460px;margin-right:8px;margin-left:auto;
     box-sizing:border-box;flex:0 0 auto;min-width:0;
   }
   .mode-switch-hint.is-intro{background:#a3322a;border-color:#7a231c;}
@@ -451,7 +451,7 @@
      added here. */
   .ballot-head-top{
     display:flex;align-items:flex-start;justify-content:space-between;
-    gap:12px;width:100%;box-sizing:border-box;padding-right:76px;
+    gap:8px;width:100%;box-sizing:border-box;padding-right:76px;
   }
   .ballot-head-left{margin:0;flex:0 0 auto;display:flex;flex-direction:column;gap:4px;}
   .ballot-head-left .ballot-title{white-space:nowrap;}

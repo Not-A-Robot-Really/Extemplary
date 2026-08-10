@@ -1722,40 +1722,49 @@
   .overlay-dismiss:hover{color:#fff;}
 
   /* -------- processing -------- */
-  .processing{display:flex;flex-direction:column;align-items:center;padding:56px 32px 46px;text-align:center;gap:14px;max-width:680px;width:100%;margin:0 auto;box-sizing:border-box;}
+  /* Card treatment matches .ballot/.history-overall elsewhere: flat
+     parchment panel, thin rule border, 3px corners — no shadow, no
+     glow, same document language as the rest of the app rather than a
+     floating modern "loading spinner" look. */
+  .processing{
+    display:flex;flex-direction:column;align-items:center;
+    padding:44px 32px 40px;text-align:center;gap:14px;
+    max-width:640px;width:100%;margin:0 auto;box-sizing:border-box;
+    background:var(--parchment-deep);border:1px solid var(--rule);border-radius:3px;
+  }
   .blot{
-    width:60px;height:60px;border-radius:50% 50% 50% 4px;
+    width:52px;height:52px;border-radius:50% 50% 50% 4px;
     background:var(--crimson);
     animation:breathe 1.8s cubic-bezier(.45,0,.55,1) infinite;
   }
   @keyframes breathe{0%,100%{transform:scale(1) rotate(-2deg);}50%{transform:scale(0.86) rotate(3deg);}}
-  .processing .status{font-family:var(--font-display);font-size:22px;font-weight:700;color:var(--charcoal);letter-spacing:0.2px;}
+  .processing .status{font-family:var(--font-display);font-size:21px;font-weight:700;color:var(--charcoal);letter-spacing:0.2px;}
   .processing .sub{font-size:13.5px;color:var(--slate);max-width:420px;line-height:1.5;}
   .processing .sub:empty{display:none;}
 
-  /* Explicit phase indicator — plain, no icon, reads like a ballot's own
-     "Round 3 of 5" style labeling elsewhere in the app. */
+  /* Explicit phase indicator, styled like every other small-caps "tag"
+     label already used across ballot cards (see .drill .tag) rather than
+     as its own one-off style. */
   .proc-phase-label{
-    font-family:var(--font-mono);font-size:11.5px;font-weight:700;letter-spacing:0.8px;
-    text-transform:uppercase;color:var(--crimson-deep);margin-top:6px;min-height:14px;
+    font-family:var(--font-mono);font-size:11px;font-weight:700;letter-spacing:1.2px;
+    text-transform:uppercase;color:var(--crimson);margin-top:6px;min-height:13px;
   }
 
-  /* -------- timeline-on-a-bar: thick, flat, black-outlined track (same
-     solid-fill language as the "Trends Across N Ballots" bars, just
-     bigger and bordered like a printed ballot rule) with stage ticks as
-     vertical marker lines crossing its top edge — not dots sitting
-     inside the bar. No gradients, no glows; the fill's color is the only
+  /* -------- timeline-on-a-bar: a thin-outlined, rounded track (echoes the
+     "Trends Across N Ballots" solid-fill bars, just larger) with stage
+     ticks as vertical marker lines crossing it — not dots sitting inside
+     the bar. No gradients, no glows; the fill's color is the only
      dynamic signal, driven live by colorFromRatio (the same red-to-green
      spectrum ballot scores use) as it climbs toward 100%. -------- */
-  .proc-timeline{width:100%;max-width:600px;margin-top:20px;}
+  .proc-timeline{width:100%;max-width:560px;margin-top:18px;}
   .proc-timeline-track{
-    position:relative;height:28px;border-radius:14px;
+    position:relative;height:26px;border-radius:13px;
     background:var(--rule);overflow:visible;
-    border:5px solid var(--ink);
-    margin-bottom:50px; /* reserves flow-space for the checkmark badges + labels below, since they're absolutely positioned and won't push subsequent siblings (like .progress-phrase) down on their own */
+    border:3px solid var(--ink);
+    margin-bottom:48px; /* reserves flow-space for the checkmark badges + labels below, since they're absolutely positioned and won't push subsequent siblings (like .progress-phrase) down on their own */
   }
   .proc-timeline-fill{
-    position:absolute;top:0;left:0;height:100%;width:0%;border-radius:11px;
+    position:absolute;top:0;left:0;height:100%;width:0%;border-radius:10px;
     background:var(--crimson);
     transition:width .35s cubic-bezier(.25,.8,.35,1), background .35s linear;
   }
@@ -1764,15 +1773,15 @@
     height:100%;display:flex;flex-direction:column;align-items:center;z-index:2;
   }
   /* The marker itself: a vertical line confined strictly to the bar's own
-     height — no overhang above or below it, unlike the previous version. */
+     height — no overhang above or below it. */
   .proc-tick-line{
-    width:4px;height:100%;
+    width:2.5px;height:100%;
     background:var(--ink);opacity:0.3;
     transition:background .25s ease, opacity .25s ease;
   }
-  /* Checkmark badge — a small filled circle (matching the original
-     checklist design's "done" badge) now sitting just below the bar,
-     directly under its own tick line, rather than floating above the bar. */
+  /* Checkmark badge — a small filled circle (a quiet wax-seal-style "done"
+     mark, in keeping with the app's stamp/badge language elsewhere — see
+     .verdict-stamp) sitting just below the bar, under its own tick line. */
   .proc-tick-check{
     position:absolute;top:calc(100% + 6px);left:50%;width:15px;height:15px;
     border-radius:50%;background:var(--crimson-deep);
@@ -1799,10 +1808,13 @@
   .proc-tick.done .proc-tick-check{opacity:1;transform:translateX(-50%) translateY(0) scale(1);}
   .proc-tick.done .proc-tick-label{color:var(--crimson-deep);font-weight:600;}
 
-  /* Rotating extemp-flavored phrase line, sits below the timeline+labels
-     now — most of the clearance comes from .proc-timeline-track's own
-     margin-bottom above, this is just a little extra breathing room. */
-  .processing .progress-phrase{margin-top:4px;font-style:italic;font-size:15px;font-weight:700;color:var(--crimson);}
+  /* Rotating extemp-flavored phrase line, sits below the timeline+labels —
+     most of the clearance comes from .proc-timeline-track's own
+     margin-bottom above, this is just a little extra breathing room.
+     Bold + blue (not italic — italic read a little too playful for what
+     should feel like a professional status line) sets it apart from the
+     status/sub text above without looking like a banner ad. */
+  .processing .progress-phrase{margin-top:2px;font-size:14px;font-weight:700;color:var(--crimson);}
 
   /* -------- results -------- */
   .stamp-row{

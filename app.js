@@ -1943,9 +1943,15 @@ const DATA = window.APP_DATA;
       if(labelEl) labelEl.textContent = (label && label.trim()) ? label : PROC_STEP_DEFAULT_LABELS[id];
     }
     if(procPhaseLabel){
-      procPhaseLabel.textContent = (targetIdx === -1)
-        ? ''
-        : `${PROC_STEP_PHASE_NAMES[id]}${label && label.trim() ? ' (' + label.trim() + ')' : ''}`;
+      let detail = '';
+      if(label && label.trim()){
+        const t = label.trim();
+        // A bare percentage (the live transcription progress) reads
+        // directly onto the phase name with no parens/prefix — anything
+        // else (e.g. "Wave 2") still gets the parenthetical treatment.
+        detail = /^\d+%$/.test(t) ? ' ' + t : ' (' + t + ')';
+      }
+      procPhaseLabel.textContent = (targetIdx === -1) ? '' : `${PROC_STEP_PHASE_NAMES[id]}${detail}`;
     }
   }
   function finishProcSteps(){
@@ -5444,7 +5450,7 @@ Grading rules per claim:
     if(duration <= FIXED_CHUNK_SECONDS * 1.25){
       // Short enough to send as one piece (transcribeChunkResilient will
       // still self-heal and split it further if it's somehow rejected).
-      onStatus && onStatus('Transcribing testimony…', '', 0.92);
+      onStatus && onStatus('Transcribing testimony', '', 0.92);
       return await transcribeChunkResilient(audioBuffer, 0, duration, keys, 'full', null);
     }
 
@@ -5461,8 +5467,8 @@ Grading rules per claim:
         const myIdx = nextIdx++;
         const [s,e] = chunkRanges[myIdx];
         onStatus && onStatus(
-          'Transcribing testimony… (part '+(completed+1)+' of '+chunkRanges.length+')',
-          'Recording is long, so it\'s being processed in '+chunkRanges.length+' parts'+(keys.length>1?' across '+keys.length+' API keys':'')+'.',
+          'Transcribing testimony',
+          '',
           completed / chunkRanges.length
         );
         // Try this worker's own key first, then fall back through every
@@ -6383,7 +6389,7 @@ Grading rules per claim:
     processErrorActions.classList.add('hidden');
     setProcStep(null); // reset checklist to all-pending before this run's stages fire
     const phrases = introDrillMode ? INTRO_PIPELINE_PHRASES : bodyDrillMode ? BODY_PIPELINE_PHRASES : PIPELINE_PHRASES;
-    statusText.textContent = 'Reading audio track…';
+    statusText.textContent = 'Reading audio track';
     statusSub.textContent = 'Decoding and compressing the recording before upload.';
     pipelineProgress.start(phrases.audio, 8);
     setProcStep('audio');
@@ -6405,14 +6411,14 @@ Grading rules per claim:
           // transcription, map it onto the 12%-40% band for this stage.
           const pct = (typeof frac === 'number') ? 12 + frac * 28 : 40;
           pipelineProgress.setStage(pct);
-          if(typeof frac === 'number') setProcStep('transcribe', `Transcript ${Math.round(frac * 100)}%`);
+          if(typeof frac === 'number') setProcStep('transcribe', `${Math.round(frac * 100)}%`);
         }
       );
       if(!transcript){ pipelineProgress.stop(); showProcessError("Didn't catch any speech — check your mic isn't muted and try again.", true); return; }
       lastTranscript = transcript;
       lastWordTimestamps = Array.isArray(wordTimestamps) ? wordTimestamps : [];
 
-      statusText.textContent = 'Analyzing vocal delivery…';
+      statusText.textContent = 'Analyzing vocal delivery';
       statusSub.textContent = 'Measuring volume, emphasis, tone shifts, and pacing from the waveform.';
       pipelineProgress.setStage(55, phrases.delivery);
       setProcStep('delivery');
@@ -6431,7 +6437,7 @@ Grading rules per claim:
         deepseekv4: 'DeepSeek V4'
       };
       const judgeModelLabel = JUDGE_MODEL_LABELS[judgeModelValue] || 'Llama 3.3 70B Versatile';
-      statusText.textContent = 'The panel is deliberating…';
+      statusText.textContent = 'The panel is deliberating';
       statusSub.textContent = introDrillMode
         ? `${judgeModelLabel} is scoring your introduction against the intro-drill rubric.`
         : bodyDrillMode
@@ -6612,13 +6618,13 @@ Grading rules per claim:
       // actually ended up answering (post-fallback, if any).
       if(window.RateLimitUI) window.RateLimitUI.addBallotFeedbackUsage(judgeWeightKey);
 
-      statusText.textContent = 'Marking up the transcript…';
+      statusText.textContent = 'Marking up the transcript';
       statusSub.textContent = 'Adding inline judge comments and paragraph structure.';
       pipelineProgress.setStage(95, phrases.annotate);
       setProcStep('annotate');
       lastTranscriptAnnotations = await fetchTranscriptAnnotations(transcript, key, key2, key3);
 
-      statusText.textContent = 'Fact-checking your citations…';
+      statusText.textContent = 'Fact-checking your citations';
       statusSub.textContent = 'Independently verifying your evidence against the live web - this never affects your score.';
       pipelineProgress.setStage(98, DATA.CC_PHRASES);
       setProcStep('factcheck');

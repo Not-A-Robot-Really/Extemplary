@@ -1749,13 +1749,13 @@
      spectrum ballot scores use) as it climbs toward 100%. -------- */
   .proc-timeline{width:100%;max-width:600px;margin-top:20px;}
   .proc-timeline-track{
-    position:relative;height:26px;border-radius:4px;
+    position:relative;height:28px;border-radius:14px;
     background:var(--rule);overflow:visible;
-    border:3px solid var(--ink);
+    border:5px solid var(--ink);
     margin-bottom:50px; /* reserves flow-space for the checkmark badges + labels below, since they're absolutely positioned and won't push subsequent siblings (like .progress-phrase) down on their own */
   }
   .proc-timeline-fill{
-    position:absolute;top:0;left:0;height:100%;width:0%;border-radius:2px;
+    position:absolute;top:0;left:0;height:100%;width:0%;border-radius:11px;
     background:var(--crimson);
     transition:width .35s cubic-bezier(.25,.8,.35,1), background .35s linear;
   }
@@ -1766,7 +1766,7 @@
   /* The marker itself: a vertical line confined strictly to the bar's own
      height — no overhang above or below it, unlike the previous version. */
   .proc-tick-line{
-    width:2px;height:100%;
+    width:4px;height:100%;
     background:var(--ink);opacity:0.3;
     transition:background .25s ease, opacity .25s ease;
   }
@@ -1802,7 +1802,7 @@
   /* Rotating extemp-flavored phrase line, sits below the timeline+labels
      now — most of the clearance comes from .proc-timeline-track's own
      margin-bottom above, this is just a little extra breathing room. */
-  .processing .progress-phrase{margin-top:4px;font-style:italic;}
+  .processing .progress-phrase{margin-top:4px;font-style:italic;font-size:15px;font-weight:700;color:var(--crimson);}
 
   /* -------- results -------- */
   .stamp-row{

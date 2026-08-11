@@ -2916,7 +2916,7 @@
 .history-goals.tut-skel .btn[disabled]{pointer-events:none;}
 #trendChartSelectSkel{pointer-events:none;}
 
-/* ---- Tutorial completion confetti ------------------------------------- */
+/* ---- Tutorial completion confetti effec ---- */
 .tut-confetti-root{
   position:fixed;inset:0;z-index:2147483005;pointer-events:none;overflow:hidden;
 }
@@ -2971,7 +2971,7 @@
 .tut-btn-choice{background:#1d5c9e;color:#fff;margin-left:6px;}
 .tut-btn-choice.tut-btn-no{background:#7a7264;}
 
-/* On narrower / shorter viewports a side rail eats too much width, so the
+/* On narrower or shorter viewports a side rail eats too much width, so the
    panel becomes an anchored bottom sheet instead, still never covering
    the spotlighted area, since the app content sits above it. */
 @media (max-width: 780px), (max-height: 560px){

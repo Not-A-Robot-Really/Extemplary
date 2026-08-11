@@ -2092,8 +2092,17 @@ const DATA = window.APP_DATA;
     opus48:   { fn: 'hackclub-chat', model: 'anthropic/claude-opus-4-8', label: 'Claude Opus 4.8' },
     kimik3:   { fn: 'hackclub-chat', model: 'moonshotai/kimi-k3',        label: 'Kimi K3' },
     sonnet5:  { fn: 'hackclub-chat', model: 'anthropic/claude-sonnet-5', label: 'Claude Sonnet 5' },
-    deepseekv4: { fn: 'hackclub-chat', model: 'deepseek/deepseek-v4-pro',label: 'DeepSeek V4' }
+    deepseekv4: { fn: 'nvidia-chat', model: 'deepseek-ai/deepseek-v4-pro',label: 'DeepSeek V4' }
   };
+  // Every edge function here speaks the identical SSE-streaming +
+  // chunked-continuation protocol (TIME_BUDGET_MS server-side cutoff,
+  // the {"extemplary_continue":true} sentinel, chained rounds via
+  // runHackClubChatToCompletion) — groq-chat is the only one-shot
+  // buffered exception. Single source of truth for that distinction so
+  // it isn't repeated as ad-hoc `choice.fn === 'hackclub-chat'` checks
+  // scattered through runJudging (which is what made adding nvidia-chat
+  // require hunting down three separate spots instead of one).
+  const STREAMING_JUDGE_FNS = new Set(['hackclub-chat', 'nvidia-chat']);
   let judgeModelValue = 'llama';
   // Different chat-completion backends shape their JSON response
   // differently. Groq (and most OpenAI-compatible endpoints) use
@@ -6485,15 +6494,16 @@ Grading rules per claim:
             },
             body: JSON.stringify({
               // Groq/Llama writes the rubric feedback directly, so 3000
-              // tokens is plenty. The Hack Club AI models (Claude, Kimi,
-              // DeepSeek) appear to spend part of their budget on internal
-              // reasoning before writing the actual answer, so give those
-              // a much bigger per-round ceiling. Each round is now capped
-              // in time (by hackclub-chat's own TIME_BUDGET_MS), not just
-              // tokens, and runHackClubChatToCompletion below chains
-              // rounds together, so 32000 just needs to be enough for one
-              // ~128s round's worth of output, not the whole ballot.
-              model: choice.model, temperature:0.4, max_tokens: choice.fn === 'hackclub-chat' ? 32000 : 3000,
+              // tokens is plenty. The Hack Club AI models (Claude, Kimi)
+              // and the NVIDIA-hosted DeepSeek appear to spend part of
+              // their budget on internal reasoning before writing the
+              // actual answer, so give those a much bigger per-round
+              // ceiling. Each round is now capped in time (by that
+              // function's own TIME_BUDGET_MS), not just tokens, and
+              // runHackClubChatToCompletion below chains rounds together,
+              // so 32000 just needs to be enough for one ~128s round's
+              // worth of output, not the whole ballot.
+              model: choice.model, temperature:0.4, max_tokens: STREAMING_JUDGE_FNS.has(choice.fn) ? 32000 : 3000,
               // Kimi K3 defaults to reasoning effort "max" on Hack Club AI
               // (deep, slow thinking meant for hard agentic/coding tasks),
               // which is overkill for writing a rubric-formatted ballot and
@@ -6514,12 +6524,13 @@ Grading rules per claim:
             })
           // Groq's LPU inference is genuinely fast — Llama 3.3 70B via
           // groq-chat comfortably finishes well inside 60s. hackclub-chat
-          // now self-limits each round to ~128s server-side (see that
-          // function's TIME_BUDGET_MS) and hands back a "please continue"
-          // sentinel instead of running long, so the client-side timeout
-          // here only needs enough margin above that, not the full
-          // observed generation time (280s+) like before.
-          }, choice.fn === 'hackclub-chat' ? 150000 : 60000);
+          // and nvidia-chat now self-limit each round to ~128s
+          // server-side (see each function's TIME_BUDGET_MS) and hand
+          // back a "please continue" sentinel instead of running long, so
+          // the client-side timeout here only needs enough margin above
+          // that, not the full observed generation time (280s+) like
+          // before.
+          }, STREAMING_JUDGE_FNS.has(choice.fn) ? 150000 : 60000);
           if(res.status === 429){
             const { info, isRealQuotaBlock, fallback } = await readRateLimitInfo(res, 'ballot_feedback');
             if(window.RateLimitUI) window.RateLimitUI.refresh();
@@ -6542,16 +6553,18 @@ Grading rules per claim:
           if(!res.ok) throw new Error('judging_failed:'+res.status+':'+await safeErrText(res));
           return res;
         };
-        // hackclub-chat streams its response as SSE and may span several
-        // chained rounds (see runHackClubChatToCompletion); groq-chat
-        // still returns one buffered JSON object in a single round, since
-        // Llama via Groq comfortably finishes well inside the wall-clock
-        // limit and never needed any of this.
-        const content = choice.fn === 'hackclub-chat'
+        // hackclub-chat and nvidia-chat both stream their response as SSE
+        // and may span several chained rounds (see
+        // runHackClubChatToCompletion); groq-chat still returns one
+        // buffered JSON object in a single round, since Llama via Groq
+        // comfortably finishes well inside the wall-clock limit and never
+        // needed any of this.
+        const content = STREAMING_JUDGE_FNS.has(choice.fn)
           ? await runHackClubChatToCompletion(doFetch, baseMessages, (round) => {
               // Live "Wave N" indicator on the Panel Deliberating step —
-              // only meaningful for hackclub-chat models, since Llama/Groq
-              // finishes in one buffered call and never enters this loop.
+              // only meaningful for the streaming/continuation-capable
+              // functions, since Llama/Groq finishes in one buffered call
+              // and never enters this loop.
               setProcStep('judging', round > 1 ? `Wave ${round}` : '');
             })
           : extractChatContent(await (await doFetch(baseMessages)).json());
@@ -7366,7 +7379,7 @@ Grading rules per claim:
     window.print();
   });
 
-  // ===== Share a round (Web Share API, with real fallback(s) instead of hiding the button) =====
+  // ===== Share a round (Web Share API, with a real fallback instead of hiding the button) =====
   async function shareBallot({ title, text, filename, fileText }){
     let file = null;
     try{ file = new File([fileText], filename, {type:'text/plain'}); }catch(e){}
@@ -7479,7 +7492,7 @@ Grading rules per claim:
     window.print();
   });
 
-  // ===== Export dropdown menus (round results + example!) =====
+  // ===== Export dropdown menus (round results + example) =====
   function setupExportMenu(btnId, panelId){
     const btn = document.getElementById(btnId);
     const panel = document.getElementById(panelId);

@@ -1906,7 +1906,7 @@ const DATA = window.APP_DATA;
   // ===== separate decorative timer.
   const PROC_STEP_ORDER = ['audio', 'transcribe', 'delivery', 'judging', 'annotate', 'factcheck'];
   const PROC_STEP_DEFAULT_LABELS = {
-    audio: 'Audio', transcribe: 'Transcript', delivery: 'Delivery',
+    audio: 'Audio', transcribe: 'Transcription', delivery: 'Delivery',
     judging: 'Judging', annotate: 'Notes', factcheck: 'Verify'
   };
   // Fuller names for the explicit "which phase, specifically" indicator —
@@ -1920,10 +1920,14 @@ const DATA = window.APP_DATA;
   const procPhaseLabel = document.getElementById('procPhaseLabel');
   // Marks every tick before `id` as done (checkmark), `id` itself as
   // active (pulsing line), and leaves everything after `id` pending.
-  // `label`, when given, replaces that tick's caption with something more
-  // specific in the moment (e.g. "Transcript 42%" or "Wave 2");
-  // omitted or falsy resets it back to its default caption. Called with
-  // no id to reset the whole timeline (fresh pipeline run).
+  // `label`, when given, is shown in the phase indicator above the bar
+  // (e.g. "Transcribing Testimony 42%" or "Panel Deliberating (Wave 2)")
+  // for extra specificity. The tick's own caption under the bar always
+  // stays on its plain default word (e.g. "Transcription") — it doesn't
+  // get overridden by live details like the percentage, which stays
+  // reserved for the phase label above so the tick row reads as a clean,
+  // stable set of stage names. Called with no id to reset the whole
+  // timeline (fresh pipeline run).
   function setProcStep(id, label){
     if(!procTimeline) return;
     const targetIdx = id ? PROC_STEP_ORDER.indexOf(id) : -1;
@@ -1936,12 +1940,8 @@ const DATA = window.APP_DATA;
         if(i < targetIdx) el.classList.add('done');
         else if(i === targetIdx) el.classList.add('active');
       }
-      if(labelEl && stepId !== id) labelEl.textContent = PROC_STEP_DEFAULT_LABELS[stepId];
+      if(labelEl) labelEl.textContent = PROC_STEP_DEFAULT_LABELS[stepId];
     });
-    if(id){
-      const labelEl = document.getElementById('procTickLabel-' + id);
-      if(labelEl) labelEl.textContent = (label && label.trim()) ? label : PROC_STEP_DEFAULT_LABELS[id];
-    }
     if(procPhaseLabel){
       let detail = '';
       if(label && label.trim()){

@@ -1722,15 +1722,14 @@
   .overlay-dismiss:hover{color:#fff;}
 
   /* -------- processing -------- */
-  /* Card treatment matches .ballot/.history-overall elsewhere: flat
-     parchment panel, thin rule border, 3px corners — no shadow, no
-     glow, same document language as the rest of the app rather than a
-     floating modern "loading spinner" look. */
+  /* No separate card background here — a distinct parchment-deep panel
+     sitting inside the parchment ballot paper created a visible two-tone
+     seam (two different "paper" colors overlapping). This now sits flush
+     as part of the ballot paper itself, same as the rest of the app. */
   .processing{
     display:flex;flex-direction:column;align-items:center;
     padding:44px 32px 40px;text-align:center;gap:14px;
     max-width:640px;width:100%;margin:0 auto;box-sizing:border-box;
-    background:var(--parchment-deep);border:1px solid var(--rule);border-radius:3px;
   }
   .blot{
     width:52px;height:52px;border-radius:50% 50% 50% 4px;
@@ -2836,7 +2835,7 @@
   opacity:0;transition:opacity .22s ease, transform .28s cubic-bezier(.2,.8,.2,1), right .28s ease, left .28s ease;
 }
 #tutBox.tut-visible{opacity:1;transform:translateY(-50%) translateX(0);pointer-events:auto;}
-/* Docked to the left edge instead, when the spotlighted target sits in
+/* Docked to left edge instead, when the spotlighted target sits in
    the right half of the screen. */
 #tutBox.tut-dock-left{right:auto;left:22px;transform:translateY(-50%) translateX(-16px);}
 #tutBox.tut-dock-left.tut-visible{transform:translateY(-50%) translateX(0);}
@@ -2907,11 +2906,11 @@
 .tut-skel-card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
 .tut-skel-cats{display:flex;flex-direction:column;gap:8px;}
 
-/* Real components reused (not just look-alike classes) for the History
-   skeleton preview, so it's a faithful stand-in for the live layout. Only
+/* Real components reused for the History
+   skeleton preview, so it's a stand in for live layout. Only
    swap the bits that would otherwise carry real numbers/text/dates for
-   plain placeholder blocks; keep everything else (borders, spacing,
-   badge colors) exactly as the real page renders it. */
+   plain placeholder blocks; keep everything else (like borders, spacing,
+   badge colors) as the real page renders it. */
 .history-trends.tut-skel .trend-avg{display:inline-flex;}
 .goal-card.tut-skel .goal-card-seal-ring{background:conic-gradient(var(--brass) calc(var(--goal-pct,0) * 1%), var(--rule) 0);}
 .history-card.tut-skel .history-card-head{cursor:default;}
@@ -2974,7 +2973,7 @@
 .tut-btn-choice{background:#1d5c9e;color:#fff;margin-left:6px;}
 .tut-btn-choice.tut-btn-no{background:#7a7264;}
 
-/* On narrower / shorter viewports a side rail eats too much width, so the
+/* On narrower / shorter viewports, side rail eats too much width. the
    panel becomes an anchored bottom sheet instead, still never covering
    the spotlighted area, since the app content sits above it. */
 @media (max-width: 780px), (max-height: 560px){

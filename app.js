@@ -6249,6 +6249,7 @@ Grading rules per claim:
   const EXAMPLE_RANK = DATA.EXAMPLE_RANK;
   const EXAMPLE_RANK_EXPLANATION = DATA.EXAMPLE_RANK_EXPLANATION;
   const EXAMPLE_DRILL = DATA.EXAMPLE_DRILL;
+  const EXAMPLE_FACT_CHECK = DATA.EXAMPLE_FACT_CHECK || [];
 
   function renderExampleBallot(){
     autoScrollToWordEnabled = true; // fresh view of the example: follow along by default again
@@ -6286,6 +6287,7 @@ Grading rules per claim:
         <span class="tag" style="font-size:16px;font-weight:800;">Feedback</span>
         <p>${inlineMd(EXAMPLE_DRILL)}</p>
       </div>`;
+    html += buildFactCheckHtml(EXAMPLE_FACT_CHECK);
     document.getElementById('exampleResultsContent').innerHTML = html;
 
     document.getElementById('exampleDeliveryGrid').innerHTML = [
@@ -7364,7 +7366,7 @@ Grading rules per claim:
     window.print();
   });
 
-  // ===== Share a round (Web Share API, with a real fallback instead of hiding the button) =====
+  // ===== Share a round (Web Share API, with real fallback(s) instead of hiding the button) =====
   async function shareBallot({ title, text, filename, fileText }){
     let file = null;
     try{ file = new File([fileText], filename, {type:'text/plain'}); }catch(e){}
@@ -7477,7 +7479,7 @@ Grading rules per claim:
     window.print();
   });
 
-  // ===== Export dropdown menus (round results + example) =====
+  // ===== Export dropdown menus (round results + example!) =====
   function setupExportMenu(btnId, panelId){
     const btn = document.getElementById(btnId);
     const panel = document.getElementById(panelId);

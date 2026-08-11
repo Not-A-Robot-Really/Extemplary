@@ -1772,11 +1772,12 @@
     height:100%;display:flex;flex-direction:column;align-items:center;z-index:2;
   }
   /* The marker itself: a vertical line confined strictly to the bar's own
-     height — no overhang above or below it. */
+     height — no overhang above or below it. Uniform thickness and color
+     across pending/active/done — state is communicated by the label and
+     checkmark badge instead, not by the line changing. */
   .proc-tick-line{
     width:2.5px;height:100%;
-    background:var(--ink);opacity:0.3;
-    transition:background .25s ease, opacity .25s ease;
+    background:var(--ink);opacity:0.55;
   }
   /* Checkmark badge — a small filled circle (a quiet wax-seal-style "done"
      mark, in keeping with the app's stamp/badge language elsewhere — see
@@ -1794,16 +1795,13 @@
     font-family:var(--font-mono);font-size:10.5px;letter-spacing:0.3px;text-transform:uppercase;
     color:var(--slate);white-space:nowrap;transition:color .25s ease, font-weight .25s ease;
   }
-  /* Pending (not yet reached): faint line, muted label — default state above. */
-  /* Active (current stage): solid dark line, no pulse on the line itself
-     (a pulsing vertical line reads jittery) — the pulse instead lives on
-     the label, which is a steadier, more legible way to say "this one". */
-  .proc-tick.active .proc-tick-line{background:var(--ink);opacity:1;}
+  /* Pending (not yet reached): muted label — default state above. */
+  /* Active (current stage): bold dark label, pulsing (the line itself no
+     longer changes — see note above). */
   .proc-tick.active .proc-tick-label{color:var(--charcoal);font-weight:700;animation:procLabelPulse 1.6s ease-in-out infinite;}
   @keyframes procLabelPulse{0%,100%{opacity:1;}50%{opacity:0.6;}}
-  /* Done: line goes solid crimson-deep, filled checkmark badge appears
-     just below the bar, label settles to a quieter but legible color. */
-  .proc-tick.done .proc-tick-line{background:var(--crimson-deep);opacity:1;}
+  /* Done: filled checkmark badge appears just below the bar, label settles
+     to a quieter but legible color. */
   .proc-tick.done .proc-tick-check{opacity:1;transform:translateX(-50%) translateY(0) scale(1);}
   .proc-tick.done .proc-tick-label{color:var(--crimson-deep);font-weight:600;}
 
@@ -2835,7 +2833,7 @@
   opacity:0;transition:opacity .22s ease, transform .28s cubic-bezier(.2,.8,.2,1), right .28s ease, left .28s ease;
 }
 #tutBox.tut-visible{opacity:1;transform:translateY(-50%) translateX(0);pointer-events:auto;}
-/* Docked to left edge instead, when the spotlighted target sits in
+/* Docked to the left edge instead, when the spotlighted target sits in
    the right half of the screen. */
 #tutBox.tut-dock-left{right:auto;left:22px;transform:translateY(-50%) translateX(-16px);}
 #tutBox.tut-dock-left.tut-visible{transform:translateY(-50%) translateX(0);}
@@ -2906,11 +2904,11 @@
 .tut-skel-card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
 .tut-skel-cats{display:flex;flex-direction:column;gap:8px;}
 
-/* Real components reused for the History
-   skeleton preview, so it's a stand in for live layout. Only
+/* Real components reused (not just look-alike classes) for the History
+   skeleton preview, so it's a faithful stand-in for the live layout. Only
    swap the bits that would otherwise carry real numbers/text/dates for
-   plain placeholder blocks; keep everything else (like borders, spacing,
-   badge colors) as the real page renders it. */
+   plain placeholder blocks; keep everything else (borders, spacing,
+   badge colors) exactly as the real page renders it. */
 .history-trends.tut-skel .trend-avg{display:inline-flex;}
 .goal-card.tut-skel .goal-card-seal-ring{background:conic-gradient(var(--brass) calc(var(--goal-pct,0) * 1%), var(--rule) 0);}
 .history-card.tut-skel .history-card-head{cursor:default;}
@@ -2973,7 +2971,7 @@
 .tut-btn-choice{background:#1d5c9e;color:#fff;margin-left:6px;}
 .tut-btn-choice.tut-btn-no{background:#7a7264;}
 
-/* On narrower / shorter viewports, side rail eats too much width. the
+/* On narrower / shorter viewports a side rail eats too much width, so the
    panel becomes an anchored bottom sheet instead, still never covering
    the spotlighted area, since the app content sits above it. */
 @media (max-width: 780px), (max-height: 560px){

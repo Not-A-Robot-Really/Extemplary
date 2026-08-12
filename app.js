@@ -2090,7 +2090,7 @@ const DATA = window.APP_DATA;
     llama:    { fn: 'groq-chat',     model: 'llama-3.3-70b-versatile',   label: 'Llama 3.3 70B' },
     opus5:    { fn: 'hackclub-chat', model: 'anthropic/claude-opus-5',   label: 'Claude Opus 5' },
     opus48:   { fn: 'hackclub-chat', model: 'anthropic/claude-opus-4-8', label: 'Claude Opus 4.8' },
-    kimik3:   { fn: 'aihubmix-chat', model: 'coding-kimi-k3-free',        label: 'Kimi K3' },
+    kimik3:   { fn: 'hackclub-chat', model: 'moonshotai/kimi-k3',        label: 'Kimi K3' },
     sonnet5:  { fn: 'hackclub-chat', model: 'anthropic/claude-sonnet-5', label: 'Claude Sonnet 5' },
     deepseekv4: { fn: 'hackclub-chat', model: 'deepseek/deepseek-v4-pro',label: 'DeepSeek V4' }
   };
@@ -2098,11 +2098,8 @@ const DATA = window.APP_DATA;
   // chunked-continuation protocol (TIME_BUDGET_MS server-side cutoff,
   // the {"extemplary_continue":true} sentinel, chained rounds via
   // runHackClubChatToCompletion) — groq-chat is the only one-shot
-  // buffered exception. Single source of truth for that distinction so
-  // it isn't repeated as ad-hoc `choice.fn === 'hackclub-chat'` checks
-  // scattered through runJudging (which is what made adding aihubmix-chat
-  // require hunting down three separate spots instead of one).
-  const STREAMING_JUDGE_FNS = new Set(['hackclub-chat', 'aihubmix-chat']);
+  // buffered exception.
+  const STREAMING_JUDGE_FNS = new Set(['hackclub-chat']);
   let judgeModelValue = 'llama';
   // Different chat-completion backends shape their JSON response
   // differently. Groq (and most OpenAI-compatible endpoints) use
@@ -2256,26 +2253,8 @@ const DATA = window.APP_DATA;
   // repeating itself or breaking mid-sentence) without re-billing
   // everything written several rounds ago.
   const CONTINUATION_TAIL_CHARS = 6000;
-  // AIHubMix's own listing for `coding-kimi-k3-free` caps output at 8K
-  // tokens per request (unlike Hack Club AI's proxy, which comfortably
-  // accepts the 32000 ceiling below) — sending 32000 there gets the
-  // whole request rejected with a 400 before generation even starts.
-  // Chunking via the existing continuation loop keeps ballot quality
-  // identical (it's the same "keep writing" mechanism already used for
-  // Hack Club's own 128s-per-round time-budget cutoffs); this constant
-  // exists so the cap only ever applies to that one provider/model and
-  // never quietly leaks onto Hack Club AI if Kimi K3 is switched back.
-  const AIHUBMIX_MAX_TOKENS = 8000;
-  // AIHubMix's free tier enforces a 5-requests-per-minute limit. Each
-  // continuation round is one request, so the gap between rounds must
-  // keep us under that — 800ms (fine for Hack Club, which isn't
-  // rate-limited this tightly) would blow through 5/min almost
-  // immediately. 13s comfortably keeps us at ~4.6 req/min with margin.
-  const AIHUBMIX_ROUND_DELAY_MS = 13000;
-  const DEFAULT_ROUND_DELAY_MS = 800;
-  async function runHackClubChatToCompletion(doFetch, messages, onRound, roundDelayMs){
+  async function runHackClubChatToCompletion(doFetch, messages, onRound){
     const MAX_ROUNDS = 6; // ~6 * 128s server-side time budget per round ≈ 12.8 minutes of total generation headroom — comfortably above any observed Opus 5 / DeepSeek run
-    const delayMs = typeof roundDelayMs === 'number' ? roundDelayMs : DEFAULT_ROUND_DELAY_MS;
     let fullText = '';
     let fullReasoning = '';
     let currentMessages = messages;
@@ -2285,10 +2264,8 @@ const DATA = window.APP_DATA;
       // burst of requests the continuation loop fires, which is what was
       // tripping Supabase's platform-level rate limit (separate from our
       // own daily-quota system) in the first place — see
-      // readRateLimitInfo above. For aihubmix-chat this also has to stay
-      // under that provider's own 5-requests/min limit (see
-      // AIHUBMIX_ROUND_DELAY_MS above).
-      if(round > 0) await new Promise(r => setTimeout(r, delayMs));
+      // readRateLimitInfo above.
+      if(round > 0) await new Promise(r => setTimeout(r, 800));
       const res = await doFetch(currentMessages);
       const { text, reasoning, needsContinuation } = await readHackClubStream(res);
       fullText += text;
@@ -6522,16 +6499,8 @@ Grading rules per claim:
               // function's own TIME_BUDGET_MS), not just tokens, and
               // runHackClubChatToCompletion below chains rounds together,
               // so 32000 just needs to be enough for one ~128s round's
-              // worth of output, not the whole ballot. aihubmix-chat is
-              // the exception: AIHubMix's `coding-kimi-k3-free` listing
-              // caps output at 8K tokens/request regardless of provider,
-              // so asking for 32000 there gets rejected with a 400
-              // before generation starts — cap it at AIHUBMIX_MAX_TOKENS
-              // instead and let the continuation loop chunk the rest.
-              // This is keyed off choice.fn (the provider), not the
-              // model name, so switching Kimi K3 back to Hack Club AI
-              // automatically goes back to the 32000 ceiling.
-              model: choice.model, temperature:0.4, max_tokens: choice.fn === 'aihubmix-chat' ? AIHUBMIX_MAX_TOKENS : (STREAMING_JUDGE_FNS.has(choice.fn) ? 32000 : 3000),
+              // worth of output, not the whole ballot.
+              model: choice.model, temperature:0.4, max_tokens: STREAMING_JUDGE_FNS.has(choice.fn) ? 32000 : 3000,
               // Kimi K3 defaults to reasoning effort "max" on Hack Club AI
               // (deep, slow thinking meant for hard agentic/coding tasks),
               // which is overkill for writing a rubric-formatted ballot and
@@ -6552,12 +6521,11 @@ Grading rules per claim:
             })
           // Groq's LPU inference is genuinely fast — Llama 3.3 70B via
           // groq-chat comfortably finishes well inside 60s. hackclub-chat
-          // and aihubmix-chat now self-limit each round to ~128s
-          // server-side (see each function's TIME_BUDGET_MS) and hand
-          // back a "please continue" sentinel instead of running long, so
-          // the client-side timeout here only needs enough margin above
-          // that, not the full observed generation time (280s+) like
-          // before.
+          // now self-limits each round to ~128s server-side (see
+          // TIME_BUDGET_MS) and hands back a "please continue" sentinel
+          // instead of running long, so the client-side timeout here only
+          // needs enough margin above that, not the full observed
+          // generation time (280s+) like before.
           }, STREAMING_JUDGE_FNS.has(choice.fn) ? 150000 : 60000);
           if(res.status === 429){
             const { info, isRealQuotaBlock, fallback } = await readRateLimitInfo(res, 'ballot_feedback');
@@ -6581,12 +6549,11 @@ Grading rules per claim:
           if(!res.ok) throw new Error('judging_failed:'+res.status+':'+await safeErrText(res));
           return res;
         };
-        // hackclub-chat and aihubmix-chat both stream their response as SSE
-        // and may span several chained rounds (see
-        // runHackClubChatToCompletion); groq-chat still returns one
-        // buffered JSON object in a single round, since Llama via Groq
-        // comfortably finishes well inside the wall-clock limit and never
-        // needed any of this.
+        // hackclub-chat streams its response as SSE and may span several
+        // chained rounds (see runHackClubChatToCompletion); groq-chat
+        // still returns one buffered JSON object in a single round, since
+        // Llama via Groq comfortably finishes well inside the wall-clock
+        // limit and never needed any of this.
         const content = STREAMING_JUDGE_FNS.has(choice.fn)
           ? await runHackClubChatToCompletion(doFetch, baseMessages, (round) => {
               // Live "Wave N" indicator on the Panel Deliberating step —
@@ -6594,7 +6561,7 @@ Grading rules per claim:
               // functions, since Llama/Groq finishes in one buffered call
               // and never enters this loop.
               setProcStep('judging', round > 1 ? `Wave ${round}` : '');
-            }, choice.fn === 'aihubmix-chat' ? AIHUBMIX_ROUND_DELAY_MS : DEFAULT_ROUND_DELAY_MS)
+            })
           : extractChatContent(await (await doFetch(baseMessages)).json());
         // The HTTP call itself succeeded (the model billed real tokens),
         // but if we can't find text in any shape we recognize, treat it
@@ -6607,11 +6574,24 @@ Grading rules per claim:
         return content;
       }, key, key2, key3);
 
-      // Builds a short, diagnosable reason string from a judging failure —
-      // shared between the AIHubMix->Hack Club Kimi fallback and the
-      // final ->Llama fallback below so both toasts explain themselves
-      // the same way instead of one being generic.
-      const describeJudgeFailure = (err) => {
+      let feedback;
+      try{
+        feedback = await runJudging(judgeChoice, judgeWeightKey);
+      }catch(err){
+        // Only fall back for genuine failures of a *non-default* judge model
+        // (missing/misconfigured Hack Club AI endpoint, unsupported model
+        // id, unrecognized response shape, etc.) — never mask our own rate
+        // limiting, and never loop if Llama itself was already the one that
+        // failed.
+        if(err.rateLimited || judgeChoice.fn === 'groq-chat') throw err;
+        console.error('Judge model failed, falling back to Llama:', judgeChoice.model, err);
+        // Surface the *actual* failure reason instead of a generic message —
+        // err.message is either "judging_failed:<http status>:<error text
+        // from Hack Club>" or "judging_failed:unrecognized_response_shape".
+        // Showing the real status (404 = model id not recognized upstream,
+        // 429/503 = rate-limited or temporarily overloaded, 500 = server
+        // error, etc.) means a failure can be diagnosed from the toast alone
+        // next time, without having to reopen DevTools.
         let reason = '';
         const msg = String(err && err.message || '');
         const statusMatch = msg.match(/^judging_failed:(\d{3}):(.*)$/s);
@@ -6629,67 +6609,17 @@ Grading rules per claim:
           const detail = statusMatch[2].trim().slice(0, 120);
           reason = ` (HTTP ${status}${detail ? ': '+detail : ''})`;
         } else if(platformRateMatch){
-          reason = ' (shared server key hit its own rate limit for this model - try again in a minute)';
+          reason = ' (Hack Club AI\'s shared server key hit its own rate limit for this model - try again in a minute)';
         } else if(/unrecognized_response_shape/.test(msg)){
           reason = ' (model responded, but in an unexpected format)';
         } else if(/^timeout:/.test(msg)){
           reason = ' (timed out — model was still generating)';
         }
-        return reason;
-      };
-
-      let feedback;
-      try{
+        try{ showCopyConfirmToast(`${judgeModelLabel} is unavailable right now${reason} - falling back to Llama 3.3 70B.`); }catch(e){}
+        judgeChoice = JUDGE_MODELS.llama;
+        judgeWeightKey = 'llama';
+        setProcStep('judging'); // clear any stale "Wave N" left from the failed attempt above
         feedback = await runJudging(judgeChoice, judgeWeightKey);
-      }catch(err){
-        // Only fall back for genuine failures of a *non-default* judge model
-        // (missing/misconfigured Hack Club AI endpoint, unsupported model
-        // id, unrecognized response shape, etc.) — never mask our own rate
-        // limiting, and never loop if Llama itself was already the one that
-        // failed.
-        if(err.rateLimited || judgeChoice.fn === 'groq-chat') throw err;
-        console.error('Judge model failed:', judgeChoice.model, err);
-
-        // Kimi K3 specifically has two possible backing providers: AIHubMix
-        // (the default — cheap/free, but a shared free-tier pool that can
-        // hit "no available channel" or rate limits) and Hack Club AI
-        // (moonshotai/kimi-k3 — the same underlying model, already in
-        // hackclub-chat's ALLOWED_MODELS). If the AIHubMix route fails,
-        // retry once via Hack Club AI before giving up on Kimi K3 entirely
-        // and dropping all the way to Llama — this keeps "Kimi K3" actually
-        // meaning Kimi K3 for one extra attempt instead of silently
-        // becoming a different model at the first sign of trouble.
-        const isAihubmixKimi = judgeChoice.fn === 'aihubmix-chat' && judgeChoice.model === 'coding-kimi-k3-free';
-        if(isAihubmixKimi){
-          const reason = describeJudgeFailure(err);
-          try{ showCopyConfirmToast(`${judgeModelLabel} is unavailable right now via AIHubMix${reason} - retrying via Hack Club AI.`); }catch(e){}
-          const hackclubKimi = { fn: 'hackclub-chat', model: 'moonshotai/kimi-k3', label: judgeModelLabel };
-          setProcStep('judging'); // clear any stale "Wave N" left from the failed AIHubMix attempt
-          try{
-            feedback = await runJudging(hackclubKimi, judgeWeightKey);
-            judgeChoice = hackclubKimi; // so anything reading judgeChoice below reflects the backend that actually served this ballot
-          }catch(err2){
-            if(err2.rateLimited) throw err2; // our own daily cap — never mask this, even mid-fallback-chain
-            console.error('Kimi K3 via Hack Club AI also failed, falling back to Llama:', err2);
-            err = err2; // the more recent failure is the relevant one to report below
-          }
-        }
-
-        if(!feedback){
-          // Surface the *actual* failure reason instead of a generic message —
-          // err.message is either "judging_failed:<http status>:<error text
-          // from the provider>" or "judging_failed:unrecognized_response_shape".
-          // Showing the real status (404 = model id not recognized upstream,
-          // 429/503 = rate-limited or temporarily overloaded, 500 = server
-          // error, etc.) means a failure can be diagnosed from the toast alone
-          // next time, without having to reopen DevTools.
-          const reason = describeJudgeFailure(err);
-          try{ showCopyConfirmToast(`${judgeModelLabel} is unavailable right now${reason} - falling back to Llama 3.3 70B.`); }catch(e){}
-          judgeChoice = JUDGE_MODELS.llama;
-          judgeWeightKey = 'llama';
-          setProcStep('judging'); // clear any stale "Wave N" left from the failed attempt above
-          feedback = await runJudging(judgeChoice, judgeWeightKey);
-        }
       }
       if(!feedback) throw new Error('judging_failed:empty:No content returned.');
       lastRawFeedback = feedback;
@@ -6822,8 +6752,8 @@ Grading rules per claim:
         const readable = inner.detail || inner.title || inner.error || inner.reason;
         return readable ? String(readable) : JSON.stringify(inner).slice(0, 200);
       }
-      // Our own edge functions (hackclub-chat, aihubmix-chat, groq-chat)
-      // all return {"error": "<fn>_failed:<status>:<raw upstream body>"}
+      // Our own edge functions (hackclub-chat, groq-chat) all return
+      // {"error": "<fn>_failed:<status>:<raw upstream body>"}
       // — a plain STRING, not an {message} object, so the check above
       // always missed it and fell through to re-stringifying the WHOLE
       // response (double-encoding any JSON the upstream provider had

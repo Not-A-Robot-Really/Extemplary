@@ -2256,8 +2256,26 @@ const DATA = window.APP_DATA;
   // repeating itself or breaking mid-sentence) without re-billing
   // everything written several rounds ago.
   const CONTINUATION_TAIL_CHARS = 6000;
-  async function runHackClubChatToCompletion(doFetch, messages, onRound){
+  // AIHubMix's own listing for `coding-kimi-k3-free` caps output at 8K
+  // tokens per request (unlike Hack Club AI's proxy, which comfortably
+  // accepts the 32000 ceiling below) — sending 32000 there gets the
+  // whole request rejected with a 400 before generation even starts.
+  // Chunking via the existing continuation loop keeps ballot quality
+  // identical (it's the same "keep writing" mechanism already used for
+  // Hack Club's own 128s-per-round time-budget cutoffs); this constant
+  // exists so the cap only ever applies to that one provider/model and
+  // never quietly leaks onto Hack Club AI if Kimi K3 is switched back.
+  const AIHUBMIX_MAX_TOKENS = 8000;
+  // AIHubMix's free tier enforces a 5-requests-per-minute limit. Each
+  // continuation round is one request, so the gap between rounds must
+  // keep us under that — 800ms (fine for Hack Club, which isn't
+  // rate-limited this tightly) would blow through 5/min almost
+  // immediately. 13s comfortably keeps us at ~4.6 req/min with margin.
+  const AIHUBMIX_ROUND_DELAY_MS = 13000;
+  const DEFAULT_ROUND_DELAY_MS = 800;
+  async function runHackClubChatToCompletion(doFetch, messages, onRound, roundDelayMs){
     const MAX_ROUNDS = 6; // ~6 * 128s server-side time budget per round ≈ 12.8 minutes of total generation headroom — comfortably above any observed Opus 5 / DeepSeek run
+    const delayMs = typeof roundDelayMs === 'number' ? roundDelayMs : DEFAULT_ROUND_DELAY_MS;
     let fullText = '';
     let fullReasoning = '';
     let currentMessages = messages;
@@ -2267,8 +2285,10 @@ const DATA = window.APP_DATA;
       // burst of requests the continuation loop fires, which is what was
       // tripping Supabase's platform-level rate limit (separate from our
       // own daily-quota system) in the first place — see
-      // readRateLimitInfo above.
-      if(round > 0) await new Promise(r => setTimeout(r, 800));
+      // readRateLimitInfo above. For aihubmix-chat this also has to stay
+      // under that provider's own 5-requests/min limit (see
+      // AIHUBMIX_ROUND_DELAY_MS above).
+      if(round > 0) await new Promise(r => setTimeout(r, delayMs));
       const res = await doFetch(currentMessages);
       const { text, reasoning, needsContinuation } = await readHackClubStream(res);
       fullText += text;
@@ -6502,8 +6522,16 @@ Grading rules per claim:
               // function's own TIME_BUDGET_MS), not just tokens, and
               // runHackClubChatToCompletion below chains rounds together,
               // so 32000 just needs to be enough for one ~128s round's
-              // worth of output, not the whole ballot.
-              model: choice.model, temperature:0.4, max_tokens: STREAMING_JUDGE_FNS.has(choice.fn) ? 32000 : 3000,
+              // worth of output, not the whole ballot. aihubmix-chat is
+              // the exception: AIHubMix's `coding-kimi-k3-free` listing
+              // caps output at 8K tokens/request regardless of provider,
+              // so asking for 32000 there gets rejected with a 400
+              // before generation starts — cap it at AIHUBMIX_MAX_TOKENS
+              // instead and let the continuation loop chunk the rest.
+              // This is keyed off choice.fn (the provider), not the
+              // model name, so switching Kimi K3 back to Hack Club AI
+              // automatically goes back to the 32000 ceiling.
+              model: choice.model, temperature:0.4, max_tokens: choice.fn === 'aihubmix-chat' ? AIHUBMIX_MAX_TOKENS : (STREAMING_JUDGE_FNS.has(choice.fn) ? 32000 : 3000),
               // Kimi K3 defaults to reasoning effort "max" on Hack Club AI
               // (deep, slow thinking meant for hard agentic/coding tasks),
               // which is overkill for writing a rubric-formatted ballot and
@@ -6566,7 +6594,7 @@ Grading rules per claim:
               // functions, since Llama/Groq finishes in one buffered call
               // and never enters this loop.
               setProcStep('judging', round > 1 ? `Wave ${round}` : '');
-            })
+            }, choice.fn === 'aihubmix-chat' ? AIHUBMIX_ROUND_DELAY_MS : DEFAULT_ROUND_DELAY_MS)
           : extractChatContent(await (await doFetch(baseMessages)).json());
         // The HTTP call itself succeeded (the model billed real tokens),
         // but if we can't find text in any shape we recognize, treat it

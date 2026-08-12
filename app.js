@@ -2090,7 +2090,7 @@ const DATA = window.APP_DATA;
     llama:    { fn: 'groq-chat',     model: 'llama-3.3-70b-versatile',   label: 'Llama 3.3 70B' },
     opus5:    { fn: 'hackclub-chat', model: 'anthropic/claude-opus-5',   label: 'Claude Opus 5' },
     opus48:   { fn: 'hackclub-chat', model: 'anthropic/claude-opus-4-8', label: 'Claude Opus 4.8' },
-    kimik3:   { fn: 'hackclub-chat', model: 'moonshotai/kimi-k3',        label: 'Kimi K3' },
+    kimik3:   { fn: 'aihubmix-chat', model: 'coding-kimi-k3-free',        label: 'Kimi K3' },
     sonnet5:  { fn: 'hackclub-chat', model: 'anthropic/claude-sonnet-5', label: 'Claude Sonnet 5' },
     deepseekv4: { fn: 'hackclub-chat', model: 'deepseek/deepseek-v4-pro',label: 'DeepSeek V4' }
   };
@@ -2100,9 +2100,9 @@ const DATA = window.APP_DATA;
   // runHackClubChatToCompletion) — groq-chat is the only one-shot
   // buffered exception. Single source of truth for that distinction so
   // it isn't repeated as ad-hoc `choice.fn === 'hackclub-chat'` checks
-  // scattered through runJudging (which is what made adding nvidia-chat
+  // scattered through runJudging (which is what made adding aihubmix-chat
   // require hunting down three separate spots instead of one).
-  const STREAMING_JUDGE_FNS = new Set(['hackclub-chat', 'nvidia-chat']);
+  const STREAMING_JUDGE_FNS = new Set(['hackclub-chat', 'aihubmix-chat']);
   let judgeModelValue = 'llama';
   // Different chat-completion backends shape their JSON response
   // differently. Groq (and most OpenAI-compatible endpoints) use
@@ -6524,7 +6524,7 @@ Grading rules per claim:
             })
           // Groq's LPU inference is genuinely fast — Llama 3.3 70B via
           // groq-chat comfortably finishes well inside 60s. hackclub-chat
-          // and nvidia-chat now self-limit each round to ~128s
+          // and aihubmix-chat now self-limit each round to ~128s
           // server-side (see each function's TIME_BUDGET_MS) and hand
           // back a "please continue" sentinel instead of running long, so
           // the client-side timeout here only needs enough margin above
@@ -6553,7 +6553,7 @@ Grading rules per claim:
           if(!res.ok) throw new Error('judging_failed:'+res.status+':'+await safeErrText(res));
           return res;
         };
-        // hackclub-chat and nvidia-chat both stream their response as SSE
+        // hackclub-chat and aihubmix-chat both stream their response as SSE
         // and may span several chained rounds (see
         // runHackClubChatToCompletion); groq-chat still returns one
         // buffered JSON object in a single round, since Llama via Groq
@@ -6742,7 +6742,7 @@ Grading rules per claim:
     try{
       const j = await res.json();
       if(j.error?.message) return j.error.message;
-      // Our own edge functions (hackclub-chat, nvidia-chat, groq-chat)
+      // Our own edge functions (hackclub-chat, aihubmix-chat, groq-chat)
       // all return {"error": "<fn>_failed:<status>:<raw upstream body>"}
       // — a plain STRING, not an {message} object, so the check above
       // always missed it and fell through to re-stringifying the WHOLE

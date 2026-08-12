@@ -2092,7 +2092,7 @@ const DATA = window.APP_DATA;
     opus48:   { fn: 'hackclub-chat', model: 'anthropic/claude-opus-4-8', label: 'Claude Opus 4.8' },
     kimik3:   { fn: 'hackclub-chat', model: 'moonshotai/kimi-k3',        label: 'Kimi K3' },
     sonnet5:  { fn: 'hackclub-chat', model: 'anthropic/claude-sonnet-5', label: 'Claude Sonnet 5' },
-    deepseekv4: { fn: 'nvidia-chat', model: 'deepseek-ai/deepseek-v4-pro',label: 'DeepSeek V4' }
+    deepseekv4: { fn: 'hackclub-chat', model: 'deepseek/deepseek-v4-pro',label: 'DeepSeek V4' }
   };
   // Every edge function here speaks the identical SSE-streaming +
   // chunked-continuation protocol (TIME_BUDGET_MS server-side cutoff,
@@ -6741,7 +6741,27 @@ Grading rules per claim:
   async function safeErrText(res){
     try{
       const j = await res.json();
-      return (j.error?.message) ? j.error.message : JSON.stringify(j).slice(0,200);
+      if(j.error?.message) return j.error.message;
+      // Our own edge functions (hackclub-chat, nvidia-chat, groq-chat)
+      // all return {"error": "<fn>_failed:<status>:<raw upstream body>"}
+      // — a plain STRING, not an {message} object, so the check above
+      // always missed it and fell through to re-stringifying the WHOLE
+      // response (double-encoding any JSON the upstream provider had
+      // already embedded in there, which is what produced the unreadable
+      // {\"type\":\"about:blank\",\"title\":\"Gone\"...} dump). Unwrap it
+      // properly instead: pull any embedded JSON out of the tail and
+      // surface just its human-readable detail/title/message field.
+      if(typeof j.error === 'string'){
+        const tailMatch = j.error.match(/^\w+_failed:\d+:(.*)$/s);
+        const tail = tailMatch ? tailMatch[1] : j.error;
+        try{
+          const inner = JSON.parse(tail);
+          const readable = inner.detail || inner.title || inner.message || inner.error;
+          if(readable) return String(readable);
+        }catch(e){ /* tail wasn't JSON — just a plain error string, use as-is */ }
+        return tail;
+      }
+      return JSON.stringify(j).slice(0,200);
     }catch(e){ return res.statusText || 'Unknown error'; }
   }
 

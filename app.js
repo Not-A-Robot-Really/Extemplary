@@ -6769,7 +6769,22 @@ Grading rules per claim:
   async function safeErrText(res){
     try{
       const j = await res.json();
-      if(j.error?.message) return j.error.message;
+      // j.error.message is usually a plain string (OpenAI-style errors),
+      // but AIHubMix's error responses can nest an object here instead
+      // (e.g. {error:{message:{detail:...}}}). Returning that object
+      // directly used to silently become the literal text "[object
+      // Object]" the moment it landed in a template literal upstream —
+      // which is exactly the unhelpful "HTTP 400: [object Object]" toast
+      // this was producing, hiding the real reason for the 400. Only
+      // return it as-is when it's actually a string; otherwise dig for a
+      // readable field or fall back to a bounded JSON dump so the real
+      // error text is never lost like that again.
+      if(typeof j.error?.message === 'string') return j.error.message;
+      if(j.error?.message && typeof j.error.message === 'object'){
+        const inner = j.error.message;
+        const readable = inner.detail || inner.title || inner.error || inner.reason;
+        return readable ? String(readable) : JSON.stringify(inner).slice(0, 200);
+      }
       // Our own edge functions (hackclub-chat, aihubmix-chat, groq-chat)
       // all return {"error": "<fn>_failed:<status>:<raw upstream body>"}
       // — a plain STRING, not an {message} object, so the check above

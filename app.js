@@ -6607,24 +6607,11 @@ Grading rules per claim:
         return content;
       }, key, key2, key3);
 
-      let feedback;
-      try{
-        feedback = await runJudging(judgeChoice, judgeWeightKey);
-      }catch(err){
-        // Only fall back for genuine failures of a *non-default* judge model
-        // (missing/misconfigured Hack Club AI endpoint, unsupported model
-        // id, unrecognized response shape, etc.) — never mask our own rate
-        // limiting, and never loop if Llama itself was already the one that
-        // failed.
-        if(err.rateLimited || judgeChoice.fn === 'groq-chat') throw err;
-        console.error('Judge model failed, falling back to Llama:', judgeChoice.model, err);
-        // Surface the *actual* failure reason instead of a generic message —
-        // err.message is either "judging_failed:<http status>:<error text
-        // from Hack Club>" or "judging_failed:unrecognized_response_shape".
-        // Showing the real status (404 = model id not recognized upstream,
-        // 429/503 = rate-limited or temporarily overloaded, 500 = server
-        // error, etc.) means a failure can be diagnosed from the toast alone
-        // next time, without having to reopen DevTools.
+      // Builds a short, diagnosable reason string from a judging failure —
+      // shared between the AIHubMix->Hack Club Kimi fallback and the
+      // final ->Llama fallback below so both toasts explain themselves
+      // the same way instead of one being generic.
+      const describeJudgeFailure = (err) => {
         let reason = '';
         const msg = String(err && err.message || '');
         const statusMatch = msg.match(/^judging_failed:(\d{3}):(.*)$/s);
@@ -6642,17 +6629,67 @@ Grading rules per claim:
           const detail = statusMatch[2].trim().slice(0, 120);
           reason = ` (HTTP ${status}${detail ? ': '+detail : ''})`;
         } else if(platformRateMatch){
-          reason = ' (Hack Club AI\'s shared server key hit its own rate limit for this model - try again in a minute)';
+          reason = ' (shared server key hit its own rate limit for this model - try again in a minute)';
         } else if(/unrecognized_response_shape/.test(msg)){
           reason = ' (model responded, but in an unexpected format)';
         } else if(/^timeout:/.test(msg)){
           reason = ' (timed out — model was still generating)';
         }
-        try{ showCopyConfirmToast(`${judgeModelLabel} is unavailable right now${reason} - falling back to Llama 3.3 70B.`); }catch(e){}
-        judgeChoice = JUDGE_MODELS.llama;
-        judgeWeightKey = 'llama';
-        setProcStep('judging'); // clear any stale "Wave N" left from the failed attempt above
+        return reason;
+      };
+
+      let feedback;
+      try{
         feedback = await runJudging(judgeChoice, judgeWeightKey);
+      }catch(err){
+        // Only fall back for genuine failures of a *non-default* judge model
+        // (missing/misconfigured Hack Club AI endpoint, unsupported model
+        // id, unrecognized response shape, etc.) — never mask our own rate
+        // limiting, and never loop if Llama itself was already the one that
+        // failed.
+        if(err.rateLimited || judgeChoice.fn === 'groq-chat') throw err;
+        console.error('Judge model failed:', judgeChoice.model, err);
+
+        // Kimi K3 specifically has two possible backing providers: AIHubMix
+        // (the default — cheap/free, but a shared free-tier pool that can
+        // hit "no available channel" or rate limits) and Hack Club AI
+        // (moonshotai/kimi-k3 — the same underlying model, already in
+        // hackclub-chat's ALLOWED_MODELS). If the AIHubMix route fails,
+        // retry once via Hack Club AI before giving up on Kimi K3 entirely
+        // and dropping all the way to Llama — this keeps "Kimi K3" actually
+        // meaning Kimi K3 for one extra attempt instead of silently
+        // becoming a different model at the first sign of trouble.
+        const isAihubmixKimi = judgeChoice.fn === 'aihubmix-chat' && judgeChoice.model === 'coding-kimi-k3-free';
+        if(isAihubmixKimi){
+          const reason = describeJudgeFailure(err);
+          try{ showCopyConfirmToast(`${judgeModelLabel} is unavailable right now via AIHubMix${reason} - retrying via Hack Club AI.`); }catch(e){}
+          const hackclubKimi = { fn: 'hackclub-chat', model: 'moonshotai/kimi-k3', label: judgeModelLabel };
+          setProcStep('judging'); // clear any stale "Wave N" left from the failed AIHubMix attempt
+          try{
+            feedback = await runJudging(hackclubKimi, judgeWeightKey);
+            judgeChoice = hackclubKimi; // so anything reading judgeChoice below reflects the backend that actually served this ballot
+          }catch(err2){
+            if(err2.rateLimited) throw err2; // our own daily cap — never mask this, even mid-fallback-chain
+            console.error('Kimi K3 via Hack Club AI also failed, falling back to Llama:', err2);
+            err = err2; // the more recent failure is the relevant one to report below
+          }
+        }
+
+        if(!feedback){
+          // Surface the *actual* failure reason instead of a generic message —
+          // err.message is either "judging_failed:<http status>:<error text
+          // from the provider>" or "judging_failed:unrecognized_response_shape".
+          // Showing the real status (404 = model id not recognized upstream,
+          // 429/503 = rate-limited or temporarily overloaded, 500 = server
+          // error, etc.) means a failure can be diagnosed from the toast alone
+          // next time, without having to reopen DevTools.
+          const reason = describeJudgeFailure(err);
+          try{ showCopyConfirmToast(`${judgeModelLabel} is unavailable right now${reason} - falling back to Llama 3.3 70B.`); }catch(e){}
+          judgeChoice = JUDGE_MODELS.llama;
+          judgeWeightKey = 'llama';
+          setProcStep('judging'); // clear any stale "Wave N" left from the failed attempt above
+          feedback = await runJudging(judgeChoice, judgeWeightKey);
+        }
       }
       if(!feedback) throw new Error('judging_failed:empty:No content returned.');
       lastRawFeedback = feedback;

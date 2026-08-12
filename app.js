@@ -76,6 +76,7 @@ const DATA = window.APP_DATA;
   const BALLOT_FEEDBACK_MODEL_WEIGHTS = {
     llama:      1,  // Llama 3.3 70B  — cost score 95 (cheapest)
     deepseekv4: 1,  // DeepSeek V4    — cost score 90
+    glm52:      1,  // GLM 5.2        — cost score 88
     sonnet5:    2,  // Claude Sonnet 5— cost score 75
     kimik3:     3,  // Kimi K3        — cost score 60
     opus5:      5,  // Claude Opus 5  — cost score 35
@@ -2092,14 +2093,21 @@ const DATA = window.APP_DATA;
     opus48:   { fn: 'hackclub-chat', model: 'anthropic/claude-opus-4-8', label: 'Claude Opus 4.8' },
     kimik3:   { fn: 'hackclub-chat', model: 'moonshotai/kimi-k3',        label: 'Kimi K3' },
     sonnet5:  { fn: 'hackclub-chat', model: 'anthropic/claude-sonnet-5', label: 'Claude Sonnet 5' },
-    deepseekv4: { fn: 'hackclub-chat', model: 'deepseek/deepseek-v4-pro',label: 'DeepSeek V4' }
+    deepseekv4: { fn: 'hackclub-chat', model: 'deepseek/deepseek-v4-pro',label: 'DeepSeek V4' },
+    // NVIDIA's own build.nvidia.com/NIM catalog listing for this model
+    // (docs.api.nvidia.com/nim/reference/z-ai-glm-5.2) documents a
+    // 1,000,000-token *output* context, not a small hard cap like
+    // AIHubMix's free Kimi tier — so this uses the same uncapped 32000
+    // (STREAMING_JUDGE_FNS below) as every Hack Club model, no special
+    // per-model max_tokens override needed.
+    glm52:    { fn: 'nvidia-chat',   model: 'z-ai/glm-5.2',              label: 'GLM 5.2' }
   };
   // Every edge function here speaks the identical SSE-streaming +
   // chunked-continuation protocol (TIME_BUDGET_MS server-side cutoff,
   // the {"extemplary_continue":true} sentinel, chained rounds via
   // runHackClubChatToCompletion) — groq-chat is the only one-shot
   // buffered exception.
-  const STREAMING_JUDGE_FNS = new Set(['hackclub-chat']);
+  const STREAMING_JUDGE_FNS = new Set(['hackclub-chat', 'nvidia-chat']);
   let judgeModelValue = 'llama';
   // Different chat-completion backends shape their JSON response
   // differently. Groq (and most OpenAI-compatible endpoints) use

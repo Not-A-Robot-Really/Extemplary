@@ -52,7 +52,15 @@ From `https://www.speechanddebate.org/competition-events/`:
 **How the Extention works (summed up in one flowchart!)**
 Sign up → Generate questions → Write a speech → Record your speech → Receive feedback → Set goals → Practice more → Track your improvement/progress → Correct bad habits & general weaknesses
 
-- **Record a round** | Generate 3 realistic practice questions, run a prep timer, then record on your webcam for your speech. There are actually 3 practice modes to pick from right on the record screen: **Regular Practice** (30 minute prep, 7 minute round, graded on 8 categories), **Rapid Drill: Introduction** (5 minute prep, 1 minute intro, graded on 5 categories), and **Rapid Drill: Body** (10 minute prep, a 2 minute body paragraph, graded on 6 categories). Each mode has its own timer and own rubric.
+- **Record a round** | Generate 3 realistic practice questions, run a prep timer, then record on your webcam for your speech. There are actually 3 practice modes to pick from right on the record screen, with each having its own timer and unique rubric:
+1) **Regular Practice** 🔵: 30 minute prep, 7 minute round, graded on 8 categories.
+- What an Extemp round at a tournament would actually look like. Recommended if you are working on everything in Extemp.
+2) **Rapid Drill: Introduction** 🔴: 5 minute prep, 1 minute intro, graded on 5 categories.
+- Recommended if you are focusing on introductions, creative AGDs, signposting, and vocal delivery
+3) **Rapid Drill: Body** 🟡: 10 minute prep, a 2 minute body paragraph, graded on 6 categories.
+- Recommended if you are focusing on the content, evidence, analysis, and vocal delivery
+5) [IN PROGRESS] **Drafting** 🟢: 10-15 minute prep (you choose!), solely a rough draft of your speech in plaintext, graded only on content (no delivery/speech).
+- Recommended if you are focusing only on quality of information
 
 ![record](Images/recordround.png)
 
@@ -62,11 +70,12 @@ Sign up → Generate questions → Write a speech → Record your speech → Rec
 
 - **AI judged Ballot** | Extemplary Transcribes your speech, analyzes vocal delivery from the extracted audio, and scores you on a custom made **8-category NSDA extemp rubric**. The user can select their perferred AI model from the list below, in order from cheapest & weakest to most expensive & advanced.
 1) Llama 3.3 (default option)
-2) DeepSeek V4 pro
-3) Claude Sonnet 5
-4) Kimi K3
-5) Claude Opus 5
+2) GLM 5.2
+3) DeepSeek V4 pro
+4) Claude Sonnet 5
+5) Kimi K3
 6) Claude Opus 4.8
+7) Claude Opus 5
 
 ![rubric1](Images/rubric1.png)
 

@@ -59,7 +59,7 @@ Sign up → Generate questions → Write a speech → Record your speech → Rec
 - Recommended if you are focusing on introductions, creative AGDs, signposting, and vocal delivery
 3) **Rapid Drill: Body** 🟡: 10 minute prep, a 2 minute body paragraph, graded on 6 categories.
 - Recommended if you are focusing on the content, evidence, analysis, and vocal delivery
-5) [IN PROGRESS] **Drafting** 🟢: 10-15 minute prep (you choose!), solely a rough draft of your speech in plaintext, graded only on content (no delivery/speech).
+4) [IN PROGRESS] **Drafting** 🟢: 10-15 minute prep (you choose!), solely a rough draft of your speech in plaintext, graded only on content (no delivery/speech).
 - Recommended if you are focusing only on quality of information
 
 ![record](Images/recordround.png)

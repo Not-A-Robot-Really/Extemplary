@@ -322,6 +322,7 @@ const DATA = window.APP_DATA;
       recordSource: (row.delivery_metrics && row.delivery_metrics.recordSource) || 'camera',
       isIntroDrill: !!(row.delivery_metrics && row.delivery_metrics.isIntroDrill),
       isBodyDrill: !!(row.delivery_metrics && row.delivery_metrics.isBodyDrill),
+      isRoughDraft: !!(row.delivery_metrics && row.delivery_metrics.isRoughDraft),
       // Tucked into delivery_metrics (see recordBallotToHistory) rather than
       // a new column, same pattern as recordSource/isIntroDrill above.
       factCheck: (row.delivery_metrics && row.delivery_metrics.factCheck) || null
@@ -330,7 +331,7 @@ const DATA = window.APP_DATA;
 
   // Records one completed round (called from renderResults once feedback
   // has been parsed) so it shows up later in "My History".
-  async function recordBallotToHistory(parsed, feedback, transcript, question, round, videoBlob, annotations, deliveryMetrics, recordSource, isIntroDrill, isBodyDrill, factCheck){
+  async function recordBallotToHistory(parsed, feedback, transcript, question, round, videoBlob, annotations, deliveryMetrics, recordSource, isIntroDrill, isBodyDrill, factCheck, isRoughDraft){
     if(!currentUser || !supabaseClient) return;
     const id = (crypto.randomUUID && crypto.randomUUID()) || ('b_' + Date.now() + '_' + Math.random().toString(36).slice(2,8));
     let videoPath = null;
@@ -352,7 +353,7 @@ const DATA = window.APP_DATA;
     // factCheck (the independent, non-scored evidence fact-check pass) is
     // tucked in here the same way, rather than adding a new `ballots`
     // column — keeps this feature deployable without a schema migration.
-    const deliveryMetricsWithSource = Object.assign({}, deliveryMetrics || {}, { recordSource: recordSource || 'camera', isIntroDrill: !!isIntroDrill, isBodyDrill: !!isBodyDrill, factCheck: factCheck || null });
+    const deliveryMetricsWithSource = Object.assign({}, deliveryMetrics || {}, { recordSource: recordSource || 'camera', isIntroDrill: !!isIntroDrill, isBodyDrill: !!isBodyDrill, isRoughDraft: !!isRoughDraft, factCheck: factCheck || null });
     // Save everything the live results view can show, including the
     // color-coded annotated-transcript data (sections + comments) and the
     // measured vocal delivery metrics, so "My History" can reconstruct the
@@ -507,6 +508,7 @@ const DATA = window.APP_DATA;
     if(pt === 'regular') return ' (Regular Practice)';
     if(pt === 'introdrill') return ' (Rapid Drill: Intro)';
     if(pt === 'bodydrill') return ' (Rapid Drill: Body)';
+    if(pt === 'roughdraft') return ' (Rough Draft)';
     return '';
   }
   function goalLabel(g){
@@ -664,6 +666,7 @@ const DATA = window.APP_DATA;
           <option value="regular">Regular Practice</option>
           <option value="introdrill">Rapid Drill: Intro</option>
           <option value="bodydrill">Rapid Drill: Body</option>
+          <option value="roughdraft">Rough Draft</option>
         </select>
       </div>
       <button type="button" class="btn primary" id="gmSaveBtn" style="width:100%;margin-top:6px;">Save Goal</button>
@@ -1118,17 +1121,19 @@ const DATA = window.APP_DATA;
   // the "View trend" line chart. Persists (module-level) for as long as the
   // page is open, so re-renders (e.g. after adding a ballot) keep whatever
   // the user last picked.
-  let historyTrendsMode = 'all'; // 'all' | 'regular' | 'introdrill' | 'bodydrill'
+  let historyTrendsMode = 'all'; // 'all' | 'regular' | 'introdrill' | 'bodydrill' | 'roughdraft'
   const HISTORY_MODE_OPTIONS = [
     { v:'all', l:'All' },
     { v:'regular', l:'Regular Practice' },
     { v:'introdrill', l:'Rapid Drill: Intro' },
-    { v:'bodydrill', l:'Rapid Drill: Body' }
+    { v:'bodydrill', l:'Rapid Drill: Body' },
+    { v:'roughdraft', l:'Rough Draft' }
   ];
   function filterByPracticeType(list, mode){
-    if(mode === 'regular') return list.filter(e => !e.isIntroDrill && !e.isBodyDrill);
+    if(mode === 'regular') return list.filter(e => !e.isIntroDrill && !e.isBodyDrill && !e.isRoughDraft);
     if(mode === 'introdrill') return list.filter(e => !!e.isIntroDrill);
     if(mode === 'bodydrill') return list.filter(e => !!e.isBodyDrill);
+    if(mode === 'roughdraft') return list.filter(e => !!e.isRoughDraft);
     return list;
   }
 
@@ -1402,7 +1407,7 @@ const DATA = window.APP_DATA;
           <div class="hc-top">
             <div class="hc-top-left">
               <span class="hc-round">Round ${roundNum}</span>
-              <span class="hc-mode-badge ${entry.isIntroDrill ? 'is-intro' : entry.isBodyDrill ? 'is-body' : 'is-regular'}">${entry.isIntroDrill ? 'Rapid Drill: Intro' : entry.isBodyDrill ? 'Rapid Drill: Body' : 'Regular Practice'}</span>
+              <span class="hc-mode-badge ${entry.isIntroDrill ? 'is-intro' : entry.isBodyDrill ? 'is-body' : entry.isRoughDraft ? 'is-roughdraft' : 'is-regular'}">${entry.isIntroDrill ? 'Rapid Drill: Intro' : entry.isBodyDrill ? 'Rapid Drill: Body' : entry.isRoughDraft ? 'Rough Draft' : 'Regular Practice'}</span>
               <span class="hc-date">${date}</span>
             </div>
             <div class="hc-score" style="color:${scoreColor}">${entry.total!==null && entry.total!==undefined ? `${entry.total}<span class="hc-score-max">/100</span>` : '—'}</div>
@@ -1743,6 +1748,8 @@ const DATA = window.APP_DATA;
   const RUBRIC_PROMPT = DATA.RUBRIC_PROMPT;
   const INTRO_RUBRIC_PROMPT = DATA.INTRO_RUBRIC_PROMPT;
   const BODY_RUBRIC_PROMPT = DATA.BODY_RUBRIC_PROMPT;
+  const ROUGHDRAFT_RUBRIC_PROMPT = DATA.ROUGHDRAFT_RUBRIC_PROMPT;
+  const ROUGHDRAFT_PIPELINE_PHRASES = DATA.ROUGHDRAFT_PIPELINE_PHRASES || { judging: [] };
 
   const ANNOTATION_PROMPT = DATA.ANNOTATION_PROMPT;
   const INTRO_ANNOTATION_PROMPT = DATA.INTRO_ANNOTATION_PROMPT;
@@ -1772,6 +1779,9 @@ const DATA = window.APP_DATA;
   let lastRawFeedback = '';
   let lastQuestion = '';
   let lastDeliveryMetrics = null;
+  // Assembled plaintext of the Rough Draft form (see rdSubmitBtn handler),
+  // read by runPipeline in place of a transcribed recording.
+  let roughDraftTranscriptText = '';
   let lastWordTimestamps = [];
   let wordTokenSpans = []; // [{s,e,ts,te}] char offsets into lastTranscript <-> seconds into recordedBlob
   let resultsVideoURL = null;
@@ -2652,14 +2662,18 @@ const DATA = window.APP_DATA;
   // modes is active; introDrillMode/bodyDrillMode below are kept as
   // convenience booleans derived from it so existing call sites reading
   // "introDrillMode" keep working unchanged.
-  let practiceMode = 'regular'; // 'regular' | 'introdrill' | 'bodydrill'
+  let practiceMode = 'regular'; // 'regular' | 'introdrill' | 'bodydrill' | 'roughdraft'
   let introDrillMode = false;
   let bodyDrillMode = false;
+  let roughDraftMode = false;
   const INTRO_PREP_SECONDS = 5 * 60;
   const INTRO_RECORD_CAP_SECONDS = 65; // ~1 minute, with a few seconds of grace
   const BODY_PREP_SECONDS = 10 * 60;
   const BODY_RECORD_CAP_SECONDS = 125; // ~2 minutes, with a few seconds of grace
   const REGULAR_PREP_SECONDS = 30 * 60;
+  // Rough Draft's prep length is chosen by the user (10-15 minutes) rather
+  // than fixed, so this is just the default shown before they pick.
+  const ROUGHDRAFT_DEFAULT_PREP_MINUTES = 10;
   let regularPrepSecondsLeft = REGULAR_PREP_SECONDS;
   let regularPrepRunning = false;
   let regularPrepInterval = null;
@@ -2672,12 +2686,24 @@ const DATA = window.APP_DATA;
   let bodyPrepRunning = false;
   let bodyPrepInterval = null;
   let bodyPrepPhraseTimer = null;
+  let roughDraftPrepSeconds = ROUGHDRAFT_DEFAULT_PREP_MINUTES * 60;
+  let roughDraftPrepSecondsLeft = roughDraftPrepSeconds;
+  let roughDraftPrepRunning = false;
+  let roughDraftPrepInterval = null;
+  let roughDraftPrepPhraseTimer = null;
+  let roughDraftPrepStartedForCurrentQuestion = false;
 
   const modeSwitch         = document.getElementById('modeSwitch');
   const modeRegularBtn     = document.getElementById('modeRegularBtn');
   const modeIntroDrillBtn  = document.getElementById('modeIntroDrillBtn');
   const modeBodyDrillBtn   = document.getElementById('modeBodyDrillBtn');
+  const modeRoughDraftBtn  = document.getElementById('modeRoughDraftBtn');
   const modeSwitchHint     = document.getElementById('modeSwitchHint');
+  const roughDraftFormBlock  = document.getElementById('roughDraftFormBlock');
+  const recordStageEl        = document.getElementById('recordStage');
+  const recordControlsRowEl  = document.getElementById('recordControlsRow');
+  const recordOrDividerEl    = document.getElementById('recordOrDivider');
+  const recordAvBtnRowEl     = document.getElementById('recordAvBtnRow');
   const startTimerBtn      = document.getElementById('startTimerBtn');
   const ballotModeLabel    = document.getElementById('ballotModeLabel');
   const ballotTitleEl      = document.getElementById('ballotTitle');
@@ -2705,33 +2731,59 @@ const DATA = window.APP_DATA;
   const bodyPrepSkipBtn   = document.getElementById('bodyPrepSkipBtn');
   const bodyPrepExitBtn   = document.getElementById('bodyPrepExitBtn');
   const BODY_PREP_PHRASES = DATA.BODY_PREP_PHRASES || [];
+  const roughDraftPrepModal     = document.getElementById('roughDraftPrepModal');
+  const roughDraftPrepDisplay   = document.getElementById('roughDraftPrepDisplay');
+  const roughDraftPrepPhrase    = document.getElementById('roughDraftPrepPhrase');
+  const roughDraftPrepPauseBtn  = document.getElementById('roughDraftPrepPauseBtn');
+  const roughDraftPrepResumeBtn = document.getElementById('roughDraftPrepResumeBtn');
+  const roughDraftPrepSkipBtn   = document.getElementById('roughDraftPrepSkipBtn');
+  const roughDraftPrepExitBtn   = document.getElementById('roughDraftPrepExitBtn');
+  const roughDraftPrepChooseRow = document.getElementById('roughDraftPrepChooseRow');
+  const roughDraftPrepMinutesSel = document.getElementById('roughDraftPrepMinutes');
+  const roughDraftPrepBeginBtn  = document.getElementById('roughDraftPrepBeginBtn');
+  const ROUGHDRAFT_PREP_PHRASES = DATA.ROUGHDRAFT_PREP_PHRASES || [];
 
   function setPracticeMode(mode){
     practiceMode = mode;
     introDrillMode = (mode === 'introdrill');
     bodyDrillMode = (mode === 'bodydrill');
+    roughDraftMode = (mode === 'roughdraft');
     const isRegular = mode === 'regular';
     modeRegularBtn.classList.toggle('active', isRegular);
     modeIntroDrillBtn.classList.toggle('active', introDrillMode);
     modeBodyDrillBtn.classList.toggle('active', bodyDrillMode);
+    modeRoughDraftBtn.classList.toggle('active', roughDraftMode);
     modeRegularBtn.setAttribute('aria-selected', String(isRegular));
     modeIntroDrillBtn.setAttribute('aria-selected', String(introDrillMode));
     modeBodyDrillBtn.setAttribute('aria-selected', String(bodyDrillMode));
+    modeRoughDraftBtn.setAttribute('aria-selected', String(roughDraftMode));
     modeSwitchHint.textContent = introDrillMode
       ? '5-minute prep, then record just the introduction up to 1 minute. Graded only on hook, link, thesis, clarity, and delivery.'
       : bodyDrillMode
       ? '10-minute prep, then record just 1 body paragraph up to 2 minutes. Graded on everything the full round is graded on except the intro and conclusion.'
+      : roughDraftMode
+      ? '10-15 minute prep (your choice), then type up a plaintext rough draft — no recording. Graded only on content, not delivery.'
       : '30-minute prep, then record a full 7-minute. Graded on all 8 rubric categories.';
     modeSwitchHint.classList.toggle('is-intro', introDrillMode);
     modeSwitchHint.classList.toggle('is-body', bodyDrillMode);
-    ballotModeLabel.textContent = introDrillMode ? 'Rapid Drill: Intro' : bodyDrillMode ? 'Rapid Drill: Body' : 'Regular Practice';
+    modeSwitchHint.classList.toggle('is-roughdraft', roughDraftMode);
+    ballotModeLabel.textContent = introDrillMode ? 'Rapid Drill: Intro' : bodyDrillMode ? 'Rapid Drill: Body' : roughDraftMode ? 'Rough Draft' : 'Regular Practice';
     ballotModeLabel.classList.toggle('is-intro', introDrillMode);
     ballotModeLabel.classList.toggle('is-body', bodyDrillMode);
+    ballotModeLabel.classList.toggle('is-roughdraft', roughDraftMode);
     ballotModeLabel.classList.toggle('is-regular', isRegular);
-    ballotTitleEl.textContent = introDrillMode ? 'Intro Drill Ballot' : bodyDrillMode ? 'Body Drill Ballot' : 'Practice Ballot';
+    ballotTitleEl.textContent = introDrillMode ? 'Intro Drill Ballot' : bodyDrillMode ? 'Body Drill Ballot' : roughDraftMode ? 'Rough Draft Ballot' : 'Practice Ballot';
     startTimerBtn.classList.toggle('mode-regular', isRegular);
     startTimerBtn.classList.toggle('mode-introdrill', introDrillMode);
     startTimerBtn.classList.toggle('mode-bodydrill', bodyDrillMode);
+    startTimerBtn.classList.toggle('mode-roughdraft', roughDraftMode);
+    // Swap the camera/record stage for the plaintext rough-draft form (and
+    // back) whenever the mode changes.
+    if(roughDraftFormBlock) roughDraftFormBlock.classList.toggle('hidden', !roughDraftMode);
+    if(recordStageEl) recordStageEl.classList.toggle('hidden', roughDraftMode);
+    if(recordControlsRowEl) recordControlsRowEl.classList.toggle('hidden', roughDraftMode);
+    if(recordOrDividerEl) recordOrDividerEl.classList.toggle('hidden', roughDraftMode);
+    if(recordAvBtnRowEl) recordAvBtnRowEl.classList.toggle('hidden', roughDraftMode);
     if(!isRegular){
       stopRegularPrepTimer();
       regularPrepModal.classList.add('hidden');
@@ -2743,6 +2795,10 @@ const DATA = window.APP_DATA;
     if(!bodyDrillMode){
       stopBodyPrepTimer();
       bodyPrepModal.classList.add('hidden');
+    }
+    if(!roughDraftMode){
+      stopRoughDraftPrepTimer();
+      roughDraftPrepModal.classList.add('hidden');
     }
   }
 
@@ -2758,6 +2814,7 @@ const DATA = window.APP_DATA;
   modeRegularBtn.addEventListener('click', () => switchPracticeMode('regular'));
   modeIntroDrillBtn.addEventListener('click', () => switchPracticeMode('introdrill'));
   modeBodyDrillBtn.addEventListener('click', () => switchPracticeMode('bodydrill'));
+  modeRoughDraftBtn.addEventListener('click', () => switchPracticeMode('roughdraft'));
 
   // ---- Regular Practice prep timer (30:00 countdown), mirrors the Intro
   // and Body Drill prep timer functions below, just with its own state/DOM
@@ -2976,6 +3033,97 @@ const DATA = window.APP_DATA;
     startBodyPrepTimer();
   }
 
+  // ---- Rough Draft prep timer (10:00-15:00 countdown, user's choice),
+  // mirrors the Intro/Body Drill prep timer functions above, except the
+  // modal first shows a minute picker (roughDraftPrepChooseRow) before the
+  // countdown itself starts, since the length isn't fixed. ----
+  function fmtRoughDraftPrep(s){
+    const m = Math.floor(s/60), sec = s%60;
+    return m + ':' + String(sec).padStart(2,'0');
+  }
+  function renderRoughDraftPrepTimer(){
+    roughDraftPrepDisplay.textContent = fmtRoughDraftPrep(roughDraftPrepSecondsLeft);
+    roughDraftPrepDisplay.classList.toggle('warn', roughDraftPrepSecondsLeft <= 30 && roughDraftPrepSecondsLeft > 0);
+    roughDraftPrepPauseBtn.classList.toggle('hidden', !roughDraftPrepRunning);
+    roughDraftPrepResumeBtn.classList.toggle('hidden', roughDraftPrepRunning || roughDraftPrepSecondsLeft === 0);
+  }
+  function rotateRoughDraftPrepPhrase(){
+    if(!ROUGHDRAFT_PREP_PHRASES.length) return;
+    const i = Math.floor(Math.random() * ROUGHDRAFT_PREP_PHRASES.length);
+    roughDraftPrepPhrase.textContent = ROUGHDRAFT_PREP_PHRASES[i];
+  }
+  function startRoughDraftPrepTimer(){
+    if(roughDraftPrepRunning || roughDraftPrepSecondsLeft <= 0) return;
+    roughDraftPrepRunning = true;
+    clearInterval(roughDraftPrepInterval);
+    roughDraftPrepInterval = setInterval(() => {
+      roughDraftPrepSecondsLeft = Math.max(0, roughDraftPrepSecondsLeft - 1);
+      renderRoughDraftPrepTimer();
+      if(roughDraftPrepSecondsLeft === 0){
+        clearInterval(roughDraftPrepInterval);
+        roughDraftPrepRunning = false;
+        finishRoughDraftPrep();
+      }
+    }, 1000);
+    clearInterval(roughDraftPrepPhraseTimer);
+    rotateRoughDraftPrepPhrase();
+    roughDraftPrepPhraseTimer = setInterval(rotateRoughDraftPrepPhrase, 12000);
+    renderRoughDraftPrepTimer();
+  }
+  function pauseRoughDraftPrepTimer(){
+    roughDraftPrepRunning = false;
+    clearInterval(roughDraftPrepInterval);
+    clearInterval(roughDraftPrepPhraseTimer);
+    renderRoughDraftPrepTimer();
+  }
+  function stopRoughDraftPrepTimer(){
+    roughDraftPrepRunning = false;
+    clearInterval(roughDraftPrepInterval);
+    clearInterval(roughDraftPrepPhraseTimer);
+    roughDraftPrepSecondsLeft = roughDraftPrepSeconds;
+  }
+  function finishRoughDraftPrep(){
+    roughDraftPrepModal.classList.add('hidden');
+    fireSignalOverlay('⏰ Prep Time\'s Up', '0:00', 'Start writing your rough draft now.', '', '#2f7d3c');
+  }
+  roughDraftPrepPauseBtn.addEventListener('click', pauseRoughDraftPrepTimer);
+  roughDraftPrepResumeBtn.addEventListener('click', startRoughDraftPrepTimer);
+  roughDraftPrepSkipBtn.addEventListener('click', () => {
+    clearInterval(roughDraftPrepInterval);
+    clearInterval(roughDraftPrepPhraseTimer);
+    roughDraftPrepRunning = false;
+    roughDraftPrepSecondsLeft = 0;
+    roughDraftPrepModal.classList.add('hidden');
+  });
+  roughDraftPrepExitBtn.addEventListener('click', () => {
+    stopRoughDraftPrepTimer();
+    roughDraftPrepModal.classList.add('hidden');
+    setPracticeMode('regular');
+  });
+  // The user picks a 10-15 minute prep length before the countdown starts,
+  // since (unlike the other two drills) Rough Draft prep isn't fixed.
+  roughDraftPrepBeginBtn.addEventListener('click', () => {
+    const mins = Math.min(15, Math.max(10, parseInt(roughDraftPrepMinutesSel.value, 10) || ROUGHDRAFT_DEFAULT_PREP_MINUTES));
+    roughDraftPrepSeconds = mins * 60;
+    roughDraftPrepSecondsLeft = roughDraftPrepSeconds;
+    roughDraftPrepChooseRow.classList.add('hidden');
+    roughDraftPrepDisplay.classList.remove('hidden');
+    roughDraftPrepSkipBtn.classList.remove('hidden');
+    renderRoughDraftPrepTimer();
+    startRoughDraftPrepTimer();
+  });
+
+  function openRoughDraftPrepModal(){
+    roughDraftPrepSecondsLeft = roughDraftPrepSeconds;
+    roughDraftPrepChooseRow.classList.remove('hidden');
+    roughDraftPrepDisplay.classList.add('hidden');
+    roughDraftPrepSkipBtn.classList.add('hidden');
+    roughDraftPrepPauseBtn.classList.add('hidden');
+    roughDraftPrepResumeBtn.classList.add('hidden');
+    roughDraftPrepPhrase.textContent = '';
+    roughDraftPrepModal.classList.remove('hidden');
+  }
+
   const QUESTION_EXAMPLES = DATA.QUESTION_EXAMPLES;
   // Difficulty scale for the "Receive a Question" flow. Index 0 = Easy,
   // 1 = Medium, 2 = Hard. Each level carries prompt instructions (fed to
@@ -3112,6 +3260,7 @@ Output ONLY this JSON, nothing else: {"questions":["...","...","..."]}`;
     questionMode = mode;
     introPrepStartedForCurrentQuestion = false;
     bodyPrepStartedForCurrentQuestion = false;
+    roughDraftPrepStartedForCurrentQuestion = false;
     qModeError.style.display = 'none';
     qModeCustomBtn.classList.toggle('active', mode === 'custom');
     qModeReceiveBtn.classList.toggle('active', mode === 'generated');
@@ -4352,16 +4501,20 @@ Grading rules per claim:
   function displayRubricMode(mode){
     const isIntro = mode === 'introdrill';
     const isBody = mode === 'bodydrill';
-    const fullTable = rubricPanel.querySelector('.rubric-table:not(#introRubricTable):not(#bodyRubricTable)');
+    const isRoughDraft = mode === 'roughdraft';
+    const fullTable = rubricPanel.querySelector('.rubric-table:not(#introRubricTable):not(#bodyRubricTable):not(#roughDraftRubricTable)');
     const introTable = document.getElementById('introRubricTable');
     const bodyTable = document.getElementById('bodyRubricTable');
-    if(fullTable) fullTable.classList.toggle('hidden', isIntro || isBody);
+    const roughDraftTable = document.getElementById('roughDraftRubricTable');
+    if(fullTable) fullTable.classList.toggle('hidden', isIntro || isBody || isRoughDraft);
     if(introTable) introTable.classList.toggle('hidden', !isIntro);
     if(bodyTable) bodyTable.classList.toggle('hidden', !isBody);
-    rubricModeLabel.textContent = isIntro ? 'Rapid Drill: Intro Rubric' : isBody ? 'Rapid Drill: Body Rubric' : 'Regular Practice Rubric';
+    if(roughDraftTable) roughDraftTable.classList.toggle('hidden', !isRoughDraft);
+    rubricModeLabel.textContent = isIntro ? 'Rapid Drill: Intro Rubric' : isBody ? 'Rapid Drill: Body Rubric' : isRoughDraft ? 'Rough Draft Rubric' : 'Regular Practice Rubric';
     rubricModeLabel.classList.toggle('is-intro', isIntro);
     rubricModeLabel.classList.toggle('is-body', isBody);
-    rubricModeLabel.classList.toggle('is-regular', !isIntro && !isBody);
+    rubricModeLabel.classList.toggle('is-roughdraft', isRoughDraft);
+    rubricModeLabel.classList.toggle('is-regular', !isIntro && !isBody && !isRoughDraft);
   }
   function openRubricPanel(){
     rubricOpen = true;
@@ -4373,7 +4526,7 @@ Grading rules per claim:
     const onHome = currentViewEl === viewRecord;
     rubricModeSelect.classList.toggle('hidden', onHome);
     rubricModeBar.classList.toggle('browsable', !onHome);
-    const mode = introDrillMode ? 'introdrill' : bodyDrillMode ? 'bodydrill' : 'regular';
+    const mode = introDrillMode ? 'introdrill' : bodyDrillMode ? 'bodydrill' : roughDraftMode ? 'roughdraft' : 'regular';
     rubricModeSelect.value = mode;
     displayRubricMode(mode);
     rubricPanel.classList.remove('hidden');
@@ -4996,6 +5149,8 @@ Grading rules per claim:
       if(introPrepModal.classList.contains('hidden')) openIntroPrepModal();
     }else if(bodyDrillMode){
       if(bodyPrepModal.classList.contains('hidden')) openBodyPrepModal();
+    }else if(roughDraftMode){
+      if(roughDraftPrepModal.classList.contains('hidden')) openRoughDraftPrepModal();
     }else{
       if(regularPrepModal.classList.contains('hidden')) openRegularPrepModal();
     }
@@ -5118,6 +5273,82 @@ Grading rules per claim:
   }
 
   document.getElementById('submitBtn').addEventListener('click', () => {
+    runPipeline(null, null, null);
+  });
+
+  // ===== ROUGH DRAFT SUBMISSION =====
+  // Collects the 11 plaintext fields from the Rough Draft form, validates
+  // none are blank, assembles them into one labeled "transcript" (so the
+  // existing parseBallot/renderResults/history plumbing can treat it just
+  // like a spoken transcript), and kicks off runPipeline the same way the
+  // video submitBtn does above — runPipeline's roughDraftMode branch then
+  // skips straight to judging instead of decoding/transcribing audio.
+  const ROUGHDRAFT_FIELD_IDS = [
+    'rdQuestion','rdAgd','rdContentions',
+    'rdBody1Contention','rdBody1Analysis','rdBody1Link',
+    'rdBody2Contention','rdBody2Analysis','rdBody2Link',
+    'rdBody3Contention','rdBody3Analysis','rdBody3Link',
+    'rdConclusionRestate','rdConclusionSoWhat'
+  ];
+  const rdFormError = document.getElementById('rdFormError');
+  const rdSubmitBtn = document.getElementById('rdSubmitBtn');
+  function collectRoughDraftFields(){
+    const vals = {};
+    let firstEmptyEl = null;
+    ROUGHDRAFT_FIELD_IDS.forEach(id => {
+      const el = document.getElementById(id);
+      const v = el ? el.value.trim() : '';
+      vals[id] = v;
+      if(!v){
+        if(el) el.classList.add('error');
+        if(!firstEmptyEl) firstEmptyEl = el;
+      }else if(el){
+        el.classList.remove('error');
+      }
+    });
+    return { vals, firstEmptyEl };
+  }
+  function buildRoughDraftTranscript(vals){
+    return [
+      'INTRO',
+      `Question: ${vals.rdQuestion}`,
+      `AGD: ${vals.rdAgd}`,
+      `3 Contentions: ${vals.rdContentions}`,
+      '',
+      'BODY 1',
+      `Contention 1: ${vals.rdBody1Contention}`,
+      `Quote Analysis: ${vals.rdBody1Analysis}`,
+      `Link to AGD: ${vals.rdBody1Link}`,
+      '',
+      'BODY 2',
+      `Contention 2: ${vals.rdBody2Contention}`,
+      `Quote Analysis: ${vals.rdBody2Analysis}`,
+      `Link to AGD: ${vals.rdBody2Link}`,
+      '',
+      'BODY 3',
+      `Contention 3: ${vals.rdBody3Contention}`,
+      `Quote Analysis: ${vals.rdBody3Analysis}`,
+      `Link to AGD: ${vals.rdBody3Link}`,
+      '',
+      'CONCLUSION',
+      `Restate 3 Contentions: ${vals.rdConclusionRestate}`,
+      `So What: ${vals.rdConclusionSoWhat}`
+    ].join('\n');
+  }
+  rdSubmitBtn.addEventListener('click', () => {
+    const q = requireQuestion();
+    if(!q){ if(recordQuestionError) recordQuestionError.style.display = 'block'; return; }
+    if(recordQuestionError) recordQuestionError.style.display = 'none';
+    const { vals, firstEmptyEl } = collectRoughDraftFields();
+    if(firstEmptyEl){
+      rdFormError.style.display = 'block';
+      firstEmptyEl.focus();
+      return;
+    }
+    rdFormError.style.display = 'none';
+    lastQuestion = q;
+    recordedBlob = null;
+    roughDraftTranscriptText = buildRoughDraftTranscript(vals);
     runPipeline(null, null, null);
   });
 
@@ -6420,45 +6651,64 @@ Grading rules per claim:
     processError.classList.add('hidden');
     processErrorActions.classList.add('hidden');
     setProcStep(null); // reset checklist to all-pending before this run's stages fire
-    const phrases = introDrillMode ? INTRO_PIPELINE_PHRASES : bodyDrillMode ? BODY_PIPELINE_PHRASES : PIPELINE_PHRASES;
-    statusText.textContent = 'Reading audio track';
-    statusSub.textContent = 'Decoding and compressing the recording before upload.';
-    pipelineProgress.start(phrases.audio, 8);
-    setProcStep('audio');
+    const phrases = introDrillMode ? INTRO_PIPELINE_PHRASES : bodyDrillMode ? BODY_PIPELINE_PHRASES : roughDraftMode ? ROUGHDRAFT_PIPELINE_PHRASES : PIPELINE_PHRASES;
     try{
-      let audioBuffer;
-      try{
-        audioBuffer = await decodeAudioFromBlob(recordedBlob);
-      }catch(e){
-        throw new Error('decode_failed::Could not decode the recording\'s audio track in this browser.');
-      }
-
-      pipelineProgress.setStage(12, phrases.transcribe);
-      setProcStep('transcribe');
-      const { text: transcript, words: wordTimestamps } = await transcribeLongAudio(
-        audioBuffer, [key, key2, key3],
-        (main, sub, frac)=>{
-          statusText.textContent = main; statusSub.textContent = sub;
-          // frac (0-1), when provided, reflects progress through multi-part
-          // transcription, map it onto the 12%-40% band for this stage.
-          const pct = (typeof frac === 'number') ? 12 + frac * 28 : 40;
-          pipelineProgress.setStage(pct);
-          if(typeof frac === 'number') setProcStep('transcribe', `${Math.round(frac * 100)}%`);
+      // ---- Rough Draft: no recording at all, so skip straight past the
+      // audio/transcribe/delivery stages below and go directly to judging
+      // the plaintext draft the user typed in (see roughDraftTranscriptText,
+      // assembled by the "Submit Rough Draft to Judge" handler). ----
+      let transcript;
+      if(roughDraftMode){
+        transcript = roughDraftTranscriptText;
+        if(!transcript){ pipelineProgress.stop(); showProcessError("Your rough draft looks empty — fill in every field and try again.", true); return; }
+        lastTranscript = transcript;
+        lastWordTimestamps = [];
+        lastDeliveryMetrics = { isRoughDraft:true, audioUnavailable:true };
+        statusText.textContent = 'The panel is reading your draft';
+        statusSub.textContent = 'Weighing your ideas and analysis against the content-only rubric.';
+        pipelineProgress.start(phrases.judging, 55);
+        setProcStep('judging');
+      }else{
+        statusText.textContent = 'Reading audio track';
+        statusSub.textContent = 'Decoding and compressing the recording before upload.';
+        pipelineProgress.start(phrases.audio, 8);
+        setProcStep('audio');
+        let audioBuffer;
+        try{
+          audioBuffer = await decodeAudioFromBlob(recordedBlob);
+        }catch(e){
+          throw new Error('decode_failed::Could not decode the recording\'s audio track in this browser.');
         }
-      );
-      if(!transcript){ pipelineProgress.stop(); showProcessError("Didn't catch any speech — check your mic isn't muted and try again.", true); return; }
-      lastTranscript = transcript;
-      lastWordTimestamps = Array.isArray(wordTimestamps) ? wordTimestamps : [];
 
-      statusText.textContent = 'Analyzing vocal delivery';
-      statusSub.textContent = 'Measuring volume, emphasis, tone shifts, and pacing from the waveform.';
-      pipelineProgress.setStage(55, phrases.delivery);
-      setProcStep('delivery');
-      const deliveryMetrics = await analyzeAudioDelivery(audioBuffer, wordTimestamps);
-      const fillerStutterStats = countFillersAndStutters(transcript);
-      lastDeliveryMetrics = deliveryMetrics
-        ? Object.assign(deliveryMetrics, fillerStutterStats)
-        : Object.assign({ audioUnavailable:true }, fillerStutterStats);
+        pipelineProgress.setStage(12, phrases.transcribe);
+        setProcStep('transcribe');
+        const transcribeResult = await transcribeLongAudio(
+          audioBuffer, [key, key2, key3],
+          (main, sub, frac)=>{
+            statusText.textContent = main; statusSub.textContent = sub;
+            // frac (0-1), when provided, reflects progress through multi-part
+            // transcription, map it onto the 12%-40% band for this stage.
+            const pct = (typeof frac === 'number') ? 12 + frac * 28 : 40;
+            pipelineProgress.setStage(pct);
+            if(typeof frac === 'number') setProcStep('transcribe', `${Math.round(frac * 100)}%`);
+          }
+        );
+        transcript = transcribeResult.text;
+        const wordTimestamps = transcribeResult.words;
+        if(!transcript){ pipelineProgress.stop(); showProcessError("Didn't catch any speech — check your mic isn't muted and try again.", true); return; }
+        lastTranscript = transcript;
+        lastWordTimestamps = Array.isArray(wordTimestamps) ? wordTimestamps : [];
+
+        statusText.textContent = 'Analyzing vocal delivery';
+        statusSub.textContent = 'Measuring volume, emphasis, tone shifts, and pacing from the waveform.';
+        pipelineProgress.setStage(55, phrases.delivery);
+        setProcStep('delivery');
+        const deliveryMetrics = await analyzeAudioDelivery(audioBuffer, wordTimestamps);
+        const fillerStutterStats = countFillersAndStutters(transcript);
+        lastDeliveryMetrics = deliveryMetrics
+          ? Object.assign(deliveryMetrics, fillerStutterStats)
+          : Object.assign({ audioUnavailable:true }, fillerStutterStats);
+      }
 
       const JUDGE_MODEL_LABELS = {
         llama: 'Llama 3.3 70B Versatile',
@@ -6474,11 +6724,19 @@ Grading rules per claim:
         ? `${judgeModelLabel} is scoring your introduction against the intro-drill rubric.`
         : bodyDrillMode
         ? `${judgeModelLabel} is scoring your body point against the body-drill rubric.`
+        : roughDraftMode
+        ? `${judgeModelLabel} is scoring your rough draft against the content-only rubric.`
         : `${judgeModelLabel} is scoring your speech against the rubric.`;
       pipelineProgress.setStage(88, phrases.judging);
       setProcStep('judging');
 
-      const metricsBlock = buildDeliveryMetricsBlock(deliveryMetrics, fillerStutterStats);
+      // Rough Draft has no recording, so there's no delivery-metrics block
+      // to append to the judging prompt — the AI is told plainly this is a
+      // written draft with no delivery data (see ROUGHDRAFT_RUBRIC_PROMPT).
+      // lastDeliveryMetrics already merges the raw waveform metrics with the
+      // filler/stutter counts (see the else-branch above), so it can stand
+      // in for both the "m" and "fs" params buildDeliveryMetricsBlock expects.
+      const metricsBlock = roughDraftMode ? '' : buildDeliveryMetricsBlock(lastDeliveryMetrics.audioUnavailable ? null : lastDeliveryMetrics, lastDeliveryMetrics);
       let judgeChoice = getJudgeModelChoice();
       let judgeWeightKey = judgeModelValue;
       // Runs the actual judging request against whichever edge function/model
@@ -6497,7 +6755,7 @@ Grading rules per claim:
       const EVIDENCE_TRUTH_ASSUMPTION_NOTE = '\n\nEVIDENCE ACCURACY ASSUMPTION (this overrides anything above that implies otherwise): Do not attempt to fact-check, verify, or research whether any statistic, quote, or cited source in this transcript is actually true, accurate, or was really said/reported as claimed. Treat every citation exactly as the speaker delivered it and assume it is 100% factually accurate. This is intentional — a separate, independent automated fact-checking pass runs after this ballot and is not part of your job here, so spending any effort verifying claims only wastes time and tokens. Score "Strength of Evidence" (or the equivalent evidence criteria) purely on citation PRACTICE: how well the evidence is logically applied to the claim, how reputable the named source sounds by reputation, how well-dated and diverse the citations are, and whether the speaker explains why it matters — never on whether the underlying fact is real.';
       const runJudging = async (choice, weightKey) => withKeyFallback(async (k) => {
         const baseMessages = [
-          {role:'system', content: (introDrillMode ? INTRO_RUBRIC_PROMPT : bodyDrillMode ? BODY_RUBRIC_PROMPT : RUBRIC_PROMPT) + EVIDENCE_TRUTH_ASSUMPTION_NOTE},
+          {role:'system', content: (introDrillMode ? INTRO_RUBRIC_PROMPT : bodyDrillMode ? BODY_RUBRIC_PROMPT : roughDraftMode ? ROUGHDRAFT_RUBRIC_PROMPT : RUBRIC_PROMPT) + EVIDENCE_TRUTH_ASSUMPTION_NOTE},
           {role:'user', content:'TRANSCRIPT:\n\n'+transcript+'\n\n'+metricsBlock}
         ];
         // Runs one HTTP round against choice.fn for the given message
@@ -6651,6 +6909,20 @@ Grading rules per claim:
       // this is where we log weighted usage against whichever model
       // actually ended up answering (post-fallback, if any).
       if(window.RateLimitUI) window.RateLimitUI.addBallotFeedbackUsage(judgeWeightKey);
+
+      // Rough Draft skips the transcript-annotation pass (built around
+      // spoken-delivery/signposting cues that don't apply to a typed
+      // outline) and the independent evidence fact-check pass (the quote
+      // "evidence" here is rough-draft shorthand, not citable claims worth
+      // an automated web fact-check) — go straight to results.
+      if(roughDraftMode){
+        lastTranscriptAnnotations = null;
+        lastFactCheck = null;
+        pipelineProgress.finish();
+        finishProcSteps();
+        renderResults(feedback, transcript);
+        return;
+      }
 
       statusText.textContent = 'Marking up the transcript';
       statusSub.textContent = 'Adding inline judge comments and paragraph structure.';
@@ -7142,7 +7414,7 @@ Grading rules per claim:
 
     if(parsed.total !== null) flightHistory.push({round:roundNo, total:parsed.total});
     renderFlightStrips();
-    recordBallotToHistory(parsed, feedback, transcript, lastQuestion, roundNo, recordedBlob, lastTranscriptAnnotations, lastDeliveryMetrics, captureMode, introDrillMode, bodyDrillMode, lastFactCheck);
+    recordBallotToHistory(parsed, feedback, transcript, lastQuestion, roundNo, recordedBlob, lastTranscriptAnnotations, lastDeliveryMetrics, captureMode, introDrillMode, bodyDrillMode, lastFactCheck, roughDraftMode);
     showView(viewResults);
   }
 
@@ -7158,10 +7430,15 @@ Grading rules per claim:
     questionMode = null;
     introPrepStartedForCurrentQuestion = false;
     bodyPrepStartedForCurrentQuestion = false;
+    roughDraftPrepStartedForCurrentQuestion = false;
     stopIntroPrepTimer();
     introPrepModal.classList.add('hidden');
     stopBodyPrepTimer();
     bodyPrepModal.classList.add('hidden');
+    stopRoughDraftPrepTimer();
+    roughDraftPrepModal.classList.add('hidden');
+    if(rdFormError) rdFormError.style.display = 'none';
+    ROUGHDRAFT_FIELD_IDS.forEach(id => { const el = document.getElementById(id); if(el){ el.classList.remove('error'); el.value=''; } });
     qModeCustomBtn.classList.remove('active');
     qModeReceiveBtn.classList.remove('active');
     customQuestionBlock.classList.add('hidden');

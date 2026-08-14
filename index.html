@@ -247,6 +247,7 @@
             <button type="button" class="mode-switch-btn active" id="modeRegularBtn" data-mode="regular" role="tab" aria-selected="true">Regular Practice</button>
             <button type="button" class="mode-switch-btn" id="modeIntroDrillBtn" data-mode="introdrill" role="tab" aria-selected="false">Rapid Drill: Intro</button>
             <button type="button" class="mode-switch-btn" id="modeBodyDrillBtn" data-mode="bodydrill" role="tab" aria-selected="false">Rapid Drill: Body</button>
+            <button type="button" class="mode-switch-btn" id="modeRoughDraftBtn" data-mode="roughdraft" role="tab" aria-selected="false">Rough Draft</button>
           </div>
 
           <!-- AI judge model picker, styled like the model switcher on
@@ -369,6 +370,7 @@
                 <option value="regular">Regular Practice</option>
                 <option value="introdrill">Rapid Drill: Intro</option>
                 <option value="bodydrill">Rapid Drill: Body</option>
+                <option value="roughdraft">Rough Draft</option>
               </select>
             </div>
             <table class="rubric-table">
@@ -471,6 +473,40 @@
                 <tr>
                   <td>6. Speech Quality, Vocal Delivery, and Fluency</td><td>24</td>
                   <td>Did the speaker have proper volume, pace, tone, emphasis, and pauses?<br>Did the speaker refrain from filler words (um, uh, ah, er), quantifiers (basically, literally, actually, seriously), qualifiers (like, you know, I mean, I think), and transitionals (so, well, okay, anyway) without a purpose (such as humor)?<br>Did the pitch of the speech vary depending on the placement of the speech (not monotonous)?</td>
+                </tr>
+              </tbody>
+              <tfoot>
+                <tr><td>Total</td><td>100</td><td></td></tr>
+              </tfoot>
+            </table>
+
+            <!-- Trimmed, content-only 5-category rubric shown only while Rough
+                 Draft mode is active. No vocal delivery category, since this
+                 mode grades a typed plaintext draft, not a recording. -->
+            <table class="rubric-table hidden" id="roughDraftRubricTable">
+              <thead>
+                <tr><th>Category</th><th>Pts</th><th>Criteria</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>1. Introduction Content — Question, AGD &amp; Contentions</td><td>20</td>
+                  <td>Is the question clearly restated?<br>Is the AGD a genuinely creative narrative/analogy, or a generic/clichéd quote or statistic?<br>Are exactly 3 distinct, non-overlapping contentions previewed that plausibly answer the question?</td>
+                </tr>
+                <tr>
+                  <td>2. Body Development &amp; Quote Analysis</td><td>35</td>
+                  <td>Is each contention clearly stated up front in its body section?<br>Does the analysis of each quote actually explain WHY it proves the point, rather than just restating it — remember this is rough-draft analysis, so judge whether the seed of a real explanation is present, not full polish.<br>If a combined analysis of both quotes is given instead of two separate ones, does it still connect both pieces of evidence to the contention?</td>
+                </tr>
+                <tr>
+                  <td>3. Strength of Argument &amp; Reasoning</td><td>25</td>
+                  <td>How convincing is each contention on its own logical merits?<br>Are there unproven assumptions, weak causal links, or named logical fallacies anywhere in the reasoning sketched out?<br>Do the 3 contentions meaningfully differ from one another, or do any overlap/restate each other?</td>
+                </tr>
+                <tr>
+                  <td>4. Structural Cohesion &amp; AGD Linkage</td><td>10</td>
+                  <td>Does each body section's 1-2 sentence link back to the AGD reference its specific imagery/framing, or is it a generic, forced callback?<br>Do the 3 contentions in the intro match the 3 contentions actually developed in the body sections, in the same order?</td>
+                </tr>
+                <tr>
+                  <td>5. Conclusion Content</td><td>10</td>
+                  <td>Does the conclusion accurately restate all 3 contentions?<br>Does the "so-what" close deliver an actual final insight/stake, rather than just repeating the contentions a second time?</td>
                 </tr>
               </tbody>
               <tfoot>
@@ -653,7 +689,98 @@
           </div>
         </div>
 
-        <div class="stage">
+        <!-- ====== ROUGH DRAFT text-submission form ======
+             Shown instead of the camera/record stage below while Rough
+             Draft mode is active. Collects the written skeleton of a
+             speech (intro, 3 body sections, conclusion) as plaintext and
+             submits it straight to the judge — no recording involved. -->
+        <div class="rd-form hidden" id="roughDraftFormBlock">
+          <div class="rd-section">
+            <div class="rd-section-head">Intro</div>
+            <div class="rd-field">
+              <label for="rdQuestion">Question</label>
+              <textarea id="rdQuestion" rows="2" placeholder="Restate the exact question you're answering…"></textarea>
+            </div>
+            <div class="rd-field">
+              <label for="rdAgd">AGD (Attention-Getting Device)</label>
+              <textarea id="rdAgd" rows="3" placeholder="Sketch your hook/narrative/analogy…"></textarea>
+            </div>
+            <div class="rd-field">
+              <label for="rdContentions">3 Contentions</label>
+              <textarea id="rdContentions" rows="3" placeholder="1) First contention&#10;2) Second contention&#10;3) Third contention"></textarea>
+            </div>
+          </div>
+
+          <div class="rd-section">
+            <div class="rd-section-head">Body 1</div>
+            <div class="rd-field">
+              <label for="rdBody1Contention">Contention 1</label>
+              <textarea id="rdBody1Contention" rows="2" placeholder="State the first contention…"></textarea>
+            </div>
+            <div class="rd-field">
+              <label for="rdBody1Analysis">Quote 1 &amp; Quote 2 Analysis</label>
+              <textarea id="rdBody1Analysis" rows="4" placeholder="Quote 1 analysis… Quote 2 analysis… (or one larger combined analysis of both)"></textarea>
+              <div class="rd-field-hint">Rough draft notes are fine here — half-formed analysis is expected.</div>
+            </div>
+            <div class="rd-field">
+              <label for="rdBody1Link">Link to AGD (1-2 sentences)</label>
+              <textarea id="rdBody1Link" rows="2" placeholder="Tie this point back to your AGD…"></textarea>
+            </div>
+          </div>
+
+          <div class="rd-section">
+            <div class="rd-section-head">Body 2</div>
+            <div class="rd-field">
+              <label for="rdBody2Contention">Contention 2</label>
+              <textarea id="rdBody2Contention" rows="2" placeholder="State the second contention…"></textarea>
+            </div>
+            <div class="rd-field">
+              <label for="rdBody2Analysis">Quote 1 &amp; Quote 2 Analysis</label>
+              <textarea id="rdBody2Analysis" rows="4" placeholder="Quote 1 analysis… Quote 2 analysis… (or one larger combined analysis of both)"></textarea>
+              <div class="rd-field-hint">Rough draft notes are fine here — half-formed analysis is expected.</div>
+            </div>
+            <div class="rd-field">
+              <label for="rdBody2Link">Link to AGD (1-2 sentences)</label>
+              <textarea id="rdBody2Link" rows="2" placeholder="Tie this point back to your AGD…"></textarea>
+            </div>
+          </div>
+
+          <div class="rd-section">
+            <div class="rd-section-head">Body 3</div>
+            <div class="rd-field">
+              <label for="rdBody3Contention">Contention 3</label>
+              <textarea id="rdBody3Contention" rows="2" placeholder="State the third contention…"></textarea>
+            </div>
+            <div class="rd-field">
+              <label for="rdBody3Analysis">Quote 1 &amp; Quote 2 Analysis</label>
+              <textarea id="rdBody3Analysis" rows="4" placeholder="Quote 1 analysis… Quote 2 analysis… (or one larger combined analysis of both)"></textarea>
+              <div class="rd-field-hint">Rough draft notes are fine here — half-formed analysis is expected.</div>
+            </div>
+            <div class="rd-field">
+              <label for="rdBody3Link">Link to AGD (1-2 sentences)</label>
+              <textarea id="rdBody3Link" rows="2" placeholder="Tie this point back to your AGD…"></textarea>
+            </div>
+          </div>
+
+          <div class="rd-section">
+            <div class="rd-section-head">Conclusion</div>
+            <div class="rd-field">
+              <label for="rdConclusionRestate">Restate 3 Contentions</label>
+              <textarea id="rdConclusionRestate" rows="2" placeholder="Quickly restate all three contentions…"></textarea>
+            </div>
+            <div class="rd-field">
+              <label for="rdConclusionSoWhat">So What? (1-3 sentences)</label>
+              <textarea id="rdConclusionSoWhat" rows="2" placeholder="Land the final insight…"></textarea>
+            </div>
+          </div>
+
+          <div class="rd-error" id="rdFormError">Please fill in every field above before submitting your rough draft.</div>
+          <div class="actions">
+            <button class="btn primary" id="rdSubmitBtn" type="button">Submit Rough Draft to Judge →</button>
+          </div>
+        </div>
+
+        <div class="stage" id="recordStage">
           <div class="frame">
             <video id="liveVideo" autoplay muted playsinline></video>
             <div class="rec-pill hidden" id="recPill"><span class="dot"></span>REC</div>
@@ -661,7 +788,7 @@
           </div>
         </div>
 
-        <div class="controls-row">
+        <div class="controls-row" id="recordControlsRow">
           <div style="display:flex;flex-direction:column;align-items:center;">
             <button class="rec-btn" id="recBtn" aria-label="Start recording"><span class="inner"></span></button>
             <div class="btn-label" id="recBtnLabel">Record</div>
@@ -669,8 +796,8 @@
           </div>
         </div>
 
-        <div style="text-align:center;margin:24px 0;font-family:var(--font-mono);font-size:26px;font-weight:800;letter-spacing:1.5px;color:var(--crimson-deep);text-transform:uppercase;">OR</div>
-        <div class="av-btn-row">
+        <div id="recordOrDivider" style="text-align:center;margin:24px 0;font-family:var(--font-mono);font-size:26px;font-weight:800;letter-spacing:1.5px;color:var(--crimson-deep);text-transform:uppercase;">OR</div>
+        <div class="av-btn-row" id="recordAvBtnRow">
           <button class="btn ghost" id="uploadVideoBtn" type="button">Upload a Video Instead</button>
           <button class="btn ghost" id="captureYoutubeBtn" type="button">Open Video &amp; Capture Tab Audio</button>
           <input type="file" id="uploadVideoInput" accept="video/*" style="display:none;" />
@@ -1277,6 +1404,40 @@
       <button class="btn ghost" id="bodyPrepSkipBtn" type="button">Skip to Recording</button>
     </div>
     <button class="btn ghost dl-modal-btn" id="bodyPrepExitBtn" type="button" style="margin-top:14px;">Exit Body Drill</button>
+  </div>
+</div>
+
+<!-- ====== ROUGH DRAFT: 10-15 minute (user's choice) prep countdown modal ======
+     Shown only when the user presses the "Start Timer" button next
+     to the practice mode switch while Rough Draft mode is active.
+     The user first picks a prep length (10-15 minutes), then the
+     countdown starts; pause/resume, skip straight to writing, or
+     exit back to normal practice mode are all available, mirroring
+     the Intro/Body Drill prep modals above. -->
+<div class="dl-modal hidden prep-modal-roughdraft" id="roughDraftPrepModal">
+  <div class="dl-modal-card prep-card-roughdraft" id="roughDraftPrepCard" style="max-width:380px;text-align:center;">
+    <div class="dl-modal-head">Rough Draft: Prep Time</div>
+    <p class="dl-modal-sub" id="roughDraftPrepSub">Sketch your intro, all 3 body points, and your conclusion in writing — content only, no recording. Choose your prep length below.</p>
+    <div class="rd-prep-row" id="roughDraftPrepChooseRow" style="justify-content:center;">
+      <label for="roughDraftPrepMinutes">Prep length</label>
+      <select id="roughDraftPrepMinutes">
+        <option value="10">10 minutes</option>
+        <option value="11">11 minutes</option>
+        <option value="12">12 minutes</option>
+        <option value="13">13 minutes</option>
+        <option value="14">14 minutes</option>
+        <option value="15">15 minutes</option>
+      </select>
+      <button class="btn primary" id="roughDraftPrepBeginBtn" type="button">Begin Prep</button>
+    </div>
+    <div class="timer-display hidden" id="roughDraftPrepDisplay" style="font-size:44px;margin:6px 0 18px;">10:00</div>
+    <div class="progress-phrase" id="roughDraftPrepPhrase" style="margin-bottom:16px;"></div>
+    <div class="timer-btn-row" style="justify-content:center;">
+      <button class="btn ghost hidden" id="roughDraftPrepPauseBtn" type="button">Pause</button>
+      <button class="btn ghost hidden" id="roughDraftPrepResumeBtn" type="button">Resume</button>
+      <button class="btn ghost hidden" id="roughDraftPrepSkipBtn" type="button">Skip to Writing</button>
+    </div>
+    <button class="btn ghost dl-modal-btn" id="roughDraftPrepExitBtn" type="button" style="margin-top:14px;">Exit Rough Draft</button>
   </div>
 </div>
 

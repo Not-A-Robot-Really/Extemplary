@@ -2074,58 +2074,76 @@
   .dl-modal-btn{display:block;width:100%;margin-bottom:10px;text-align:center;}
   .dl-modal-btn:last-child{margin-bottom:0;}
 
-  /* -------- colorful prep-timer takeover modals (Regular/Intro/Body/Rough Draft) -------- */
+  /* -------- colorful prep-timer takeover modals (Regular/Intro/Body/Rough Draft) --------
+     All four share one card shape, spacing, and header color; only the
+     accent color (border-top glow, action button, ghost-button outline)
+     differs per mode, applied via a single --prep-accent custom property
+     instead of four repeated near-duplicate rule blocks. */
   .prep-card-regular, .prep-card-intro, .prep-card-body, .prep-card-roughdraft{
-    border-width:2px;border-top-width:8px;border-radius:10px;
-    box-shadow:0 12px 34px rgba(22,40,60,0.28);
-    background:linear-gradient(180deg, rgba(255,255,255,0.97), #ffffff 70px);
-    max-width:380px;width:100%;text-align:center;
+    --prep-ink:#16283c;
+    border-width:2px;border-top-width:6px;border-radius:10px;
+    box-shadow:0 10px 28px rgba(22,40,60,0.22);
+    background:#ffffff;
+    max-width:360px;width:100%;text-align:center;
+    padding:22px 24px 20px;
+    border-color:var(--prep-ink);
   }
-  .prep-card-regular{ border-color:#16283c; }
-  .prep-card-intro{ border-color:#16283c; }
-  .prep-card-body{ border-color:#16283c; }
-  .prep-card-roughdraft{ border-color:#16283c; }
-  .prep-card-regular .dl-modal-head{ color:#16283c; }
-  .prep-card-intro .dl-modal-head{ color:#16283c; }
-  .prep-card-body .dl-modal-head{ color:#16283c; }
-  .prep-card-roughdraft .dl-modal-head{ color:#16283c;margin-bottom:16px; }
-  .prep-card-regular #regularPrepDisplay{ color:#16283c; }
-  .prep-card-intro #introPrepDisplay{ color:#16283c; }
-  .prep-card-body #bodyPrepDisplay{ color:#16283c; }
-  .prep-card-roughdraft #roughDraftPrepDisplay{ color:#16283c;font-size:44px;margin:6px 0 18px; }
-  .prep-card-regular #regularPrepDisplay.warn,
-  .prep-card-intro #introPrepDisplay.warn,
-  .prep-card-body #bodyPrepDisplay.warn,
-  .prep-card-roughdraft #roughDraftPrepDisplay.warn{ color:var(--crimson); }
-  .prep-card-regular .progress-phrase{ color:#16283c; }
-  .prep-card-intro .progress-phrase{ color:#16283c; }
-  .prep-card-body .progress-phrase{ color:#16283c; }
-  .prep-card-roughdraft .progress-phrase{ color:#16283c;margin-bottom:16px; }
-  .prep-card-regular .timer-btn-row .btn.ghost{ border-color:#16283c;color:#16283c; }
-  .prep-card-regular .timer-btn-row .btn.ghost:hover{ background:rgba(22,40,60,0.1); }
-  .prep-card-intro .timer-btn-row .btn.ghost{ border-color:#16283c;color:#16283c; }
-  .prep-card-intro .timer-btn-row .btn.ghost:hover{ background:rgba(22,40,60,0.1); }
-  .prep-card-body .timer-btn-row .btn.ghost{ border-color:#16283c;color:#16283c; }
-  .prep-card-body .timer-btn-row .btn.ghost:hover{ background:rgba(22,40,60,0.1); }
-  .prep-card-roughdraft .timer-btn-row{ justify-content:center; }
-  .prep-card-roughdraft .timer-btn-row .btn.ghost{ border-color:#16283c;color:#16283c; }
-  .prep-card-roughdraft .timer-btn-row .btn.ghost:hover{ background:rgba(22,40,60,0.1); }
-  .prep-card-regular .dl-modal-btn.btn.ghost{ background:#1d5c9e;border-color:#123a63;color:#fff; }
-  .prep-card-regular .dl-modal-btn.btn.ghost:hover{ background:#164a80; }
-  .prep-card-intro .dl-modal-btn.btn.ghost{ background:#a3322a;border-color:#7a231c;color:#fff; }
-  .prep-card-intro .dl-modal-btn.btn.ghost:hover{ background:#872720; }
-  .prep-card-body .dl-modal-btn.btn.ghost{ background:#a6790c;border-color:#7a5a08;color:#fff; }
-  .prep-card-body .dl-modal-btn.btn.ghost:hover{ background:#8a6409; }
-  /* Rough Draft's prep-time takeover is deliberately blue (distinct from
-     the mode's own green identity used on its tab/badge elsewhere) to
-     match the same blue the extension already uses for its primary/
-     "Begin"-style actions (see .prep-card-regular above) rather than
-     inventing a new accent. */
-  .prep-card-roughdraft .dl-modal-btn.btn.ghost{ background:#1d5c9e;border-color:#123a63;color:#fff; }
-  .prep-card-roughdraft .dl-modal-btn.btn.ghost:hover{ background:#164a80; }
-  .prep-card-roughdraft #roughDraftPrepBeginBtn.btn.primary{ background:#1d5c9e;border-color:#123a63; }
-  .prep-card-roughdraft #roughDraftPrepBeginBtn.btn.primary:hover{ background:#164a80; }
-  .rd-prep-row{ justify-content:center;align-items:center;gap:10px;margin-bottom:6px; }
+  .prep-card-regular{ --prep-accent:#1d5c9e;--prep-accent-dark:#123a63;--prep-accent-hover:#164a80; }
+  .prep-card-intro{ --prep-accent:#a3322a;--prep-accent-dark:#7a231c;--prep-accent-hover:#872720; }
+  .prep-card-body{ --prep-accent:#a6790c;--prep-accent-dark:#7a5a08;--prep-accent-hover:#8a6409; }
+  /* Rough Draft's takeover is deliberately blue, same as Regular Practice,
+     rather than its own green tab color — that green is reserved for
+     identifying the mode elsewhere in the UI (tab, badges); reusing the
+     extension's existing primary blue here keeps this modal consistent
+     with the "Begin"-style action color used throughout, instead of
+     introducing a third accent. */
+  .prep-card-roughdraft{ --prep-accent:#1d5c9e;--prep-accent-dark:#123a63;--prep-accent-hover:#164a80; }
+
+  .prep-card-regular .dl-modal-head, .prep-card-intro .dl-modal-head,
+  .prep-card-body .dl-modal-head, .prep-card-roughdraft .dl-modal-head{
+    color:var(--prep-ink);margin-bottom:14px;
+  }
+  .prep-card-regular .timer-display, .prep-card-intro .timer-display,
+  .prep-card-body .timer-display, .prep-card-roughdraft .timer-display{
+    color:var(--prep-ink);font-size:42px;font-weight:800;margin:4px 0 12px;
+  }
+  .prep-card-regular .timer-display.warn, .prep-card-intro .timer-display.warn,
+  .prep-card-body .timer-display.warn, .prep-card-roughdraft .timer-display.warn{
+    color:var(--crimson);
+  }
+  .prep-card-regular .progress-phrase, .prep-card-intro .progress-phrase,
+  .prep-card-body .progress-phrase, .prep-card-roughdraft .progress-phrase{
+    color:var(--prep-ink);margin:0 0 12px;
+  }
+  .prep-card-regular .timer-btn-row, .prep-card-intro .timer-btn-row,
+  .prep-card-body .timer-btn-row, .prep-card-roughdraft .timer-btn-row{
+    justify-content:center;margin-bottom:10px;
+  }
+  .prep-card-regular .timer-btn-row .btn.ghost, .prep-card-intro .timer-btn-row .btn.ghost,
+  .prep-card-body .timer-btn-row .btn.ghost, .prep-card-roughdraft .timer-btn-row .btn.ghost{
+    border-color:var(--prep-ink);color:var(--prep-ink);
+  }
+  .prep-card-regular .timer-btn-row .btn.ghost:hover, .prep-card-intro .timer-btn-row .btn.ghost:hover,
+  .prep-card-body .timer-btn-row .btn.ghost:hover, .prep-card-roughdraft .timer-btn-row .btn.ghost:hover{
+    background:rgba(22,40,60,0.08);
+  }
+  .prep-card-regular .dl-modal-btn, .prep-card-intro .dl-modal-btn,
+  .prep-card-body .dl-modal-btn, .prep-card-roughdraft .dl-modal-btn,
+  .prep-card-roughdraft #roughDraftPrepBeginBtn{
+    background:var(--prep-accent);border-color:var(--prep-accent-dark);color:#fff;
+    margin-top:4px;transition:background .15s ease,transform .1s ease;
+  }
+  .prep-card-regular .dl-modal-btn:hover, .prep-card-intro .dl-modal-btn:hover,
+  .prep-card-body .dl-modal-btn:hover, .prep-card-roughdraft .dl-modal-btn:hover,
+  .prep-card-roughdraft #roughDraftPrepBeginBtn:hover{
+    background:var(--prep-accent-hover);
+  }
+  .prep-card-regular .dl-modal-btn:active, .prep-card-intro .dl-modal-btn:active,
+  .prep-card-body .dl-modal-btn:active, .prep-card-roughdraft .dl-modal-btn:active,
+  .prep-card-roughdraft #roughDraftPrepBeginBtn:active{
+    transform:scale(0.97);
+  }
+  .rd-prep-row{ justify-content:center;align-items:center;gap:10px;margin-bottom:12px; }
   .prep-modal-regular, .prep-modal-intro, .prep-modal-body, .prep-modal-roughdraft{
     z-index:1600;background:rgba(10,14,20,0.65);
   }

@@ -1283,6 +1283,20 @@
   }
   .rd-field textarea:focus{outline:none;border-color:#2f7d3c;}
   .rd-field textarea.error{border-color:var(--crimson);}
+  .rd-field textarea[readonly]{background:#f1f1ec;color:var(--slate);cursor:default;}
+  /* Card date/source inputs sit in a two-column row beneath each card's
+     text, styled to match the textareas above them (same border, radius,
+     background) rather than the browser's default input chrome. */
+  .rd-card-meta-row{display:flex;gap:10px;margin-top:8px;}
+  .rd-card-meta-row .rd-field{flex:1;margin-bottom:0;}
+  .rd-field input[type="text"]{
+    width:100%;font-family:var(--font-body);font-size:13px;
+    padding:7px 10px;border:2px solid var(--rule);border-radius:3px;
+    background:#fbfbf9;color:var(--charcoal);box-sizing:border-box;
+    transition:border-color .15s;
+  }
+  .rd-field input[type="text"]:focus{outline:none;border-color:#2f7d3c;}
+  .rd-field input[type="text"].error{border-color:var(--crimson);}
   .rd-field-hint{font-family:var(--font-body);font-size:11px;color:var(--slate);margin-top:4px;}
   .rd-error{display:none;margin-top:6px;color:var(--score-red);font-size:12.5px;}
   .rd-prep-row{
@@ -2060,40 +2074,59 @@
   .dl-modal-btn{display:block;width:100%;margin-bottom:10px;text-align:center;}
   .dl-modal-btn:last-child{margin-bottom:0;}
 
-  /* -------- colorful prep-timer takeover modals (Regular/Intro/Body) -------- */
-  .prep-card-regular, .prep-card-intro, .prep-card-body{
+  /* -------- colorful prep-timer takeover modals (Regular/Intro/Body/Rough Draft) -------- */
+  .prep-card-regular, .prep-card-intro, .prep-card-body, .prep-card-roughdraft{
     border-width:2px;border-top-width:8px;border-radius:10px;
     box-shadow:0 12px 34px rgba(22,40,60,0.28);
     background:linear-gradient(180deg, rgba(255,255,255,0.97), #ffffff 70px);
+    max-width:380px;width:100%;text-align:center;
   }
   .prep-card-regular{ border-color:#16283c; }
   .prep-card-intro{ border-color:#16283c; }
   .prep-card-body{ border-color:#16283c; }
+  .prep-card-roughdraft{ border-color:#16283c; }
   .prep-card-regular .dl-modal-head{ color:#16283c; }
   .prep-card-intro .dl-modal-head{ color:#16283c; }
   .prep-card-body .dl-modal-head{ color:#16283c; }
+  .prep-card-roughdraft .dl-modal-head{ color:#16283c;margin-bottom:16px; }
   .prep-card-regular #regularPrepDisplay{ color:#16283c; }
   .prep-card-intro #introPrepDisplay{ color:#16283c; }
   .prep-card-body #bodyPrepDisplay{ color:#16283c; }
+  .prep-card-roughdraft #roughDraftPrepDisplay{ color:#16283c;font-size:44px;margin:6px 0 18px; }
   .prep-card-regular #regularPrepDisplay.warn,
   .prep-card-intro #introPrepDisplay.warn,
-  .prep-card-body #bodyPrepDisplay.warn{ color:var(--crimson); }
+  .prep-card-body #bodyPrepDisplay.warn,
+  .prep-card-roughdraft #roughDraftPrepDisplay.warn{ color:var(--crimson); }
   .prep-card-regular .progress-phrase{ color:#16283c; }
   .prep-card-intro .progress-phrase{ color:#16283c; }
   .prep-card-body .progress-phrase{ color:#16283c; }
+  .prep-card-roughdraft .progress-phrase{ color:#16283c;margin-bottom:16px; }
   .prep-card-regular .timer-btn-row .btn.ghost{ border-color:#16283c;color:#16283c; }
   .prep-card-regular .timer-btn-row .btn.ghost:hover{ background:rgba(22,40,60,0.1); }
   .prep-card-intro .timer-btn-row .btn.ghost{ border-color:#16283c;color:#16283c; }
   .prep-card-intro .timer-btn-row .btn.ghost:hover{ background:rgba(22,40,60,0.1); }
   .prep-card-body .timer-btn-row .btn.ghost{ border-color:#16283c;color:#16283c; }
   .prep-card-body .timer-btn-row .btn.ghost:hover{ background:rgba(22,40,60,0.1); }
+  .prep-card-roughdraft .timer-btn-row{ justify-content:center; }
+  .prep-card-roughdraft .timer-btn-row .btn.ghost{ border-color:#16283c;color:#16283c; }
+  .prep-card-roughdraft .timer-btn-row .btn.ghost:hover{ background:rgba(22,40,60,0.1); }
   .prep-card-regular .dl-modal-btn.btn.ghost{ background:#1d5c9e;border-color:#123a63;color:#fff; }
   .prep-card-regular .dl-modal-btn.btn.ghost:hover{ background:#164a80; }
   .prep-card-intro .dl-modal-btn.btn.ghost{ background:#a3322a;border-color:#7a231c;color:#fff; }
   .prep-card-intro .dl-modal-btn.btn.ghost:hover{ background:#872720; }
   .prep-card-body .dl-modal-btn.btn.ghost{ background:#a6790c;border-color:#7a5a08;color:#fff; }
   .prep-card-body .dl-modal-btn.btn.ghost:hover{ background:#8a6409; }
-  .prep-modal-regular, .prep-modal-intro, .prep-modal-body{
+  /* Rough Draft's prep-time takeover is deliberately blue (distinct from
+     the mode's own green identity used on its tab/badge elsewhere) to
+     match the same blue the extension already uses for its primary/
+     "Begin"-style actions (see .prep-card-regular above) rather than
+     inventing a new accent. */
+  .prep-card-roughdraft .dl-modal-btn.btn.ghost{ background:#1d5c9e;border-color:#123a63;color:#fff; }
+  .prep-card-roughdraft .dl-modal-btn.btn.ghost:hover{ background:#164a80; }
+  .prep-card-roughdraft #roughDraftPrepBeginBtn.btn.primary{ background:#1d5c9e;border-color:#123a63; }
+  .prep-card-roughdraft #roughDraftPrepBeginBtn.btn.primary:hover{ background:#164a80; }
+  .rd-prep-row{ justify-content:center;align-items:center;gap:10px;margin-bottom:6px; }
+  .prep-modal-regular, .prep-modal-intro, .prep-modal-body, .prep-modal-roughdraft{
     z-index:1600;background:rgba(10,14,20,0.65);
   }
 

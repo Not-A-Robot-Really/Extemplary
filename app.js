@@ -2748,6 +2748,7 @@ const DATA = window.APP_DATA;
     introDrillMode = (mode === 'introdrill');
     bodyDrillMode = (mode === 'bodydrill');
     roughDraftMode = (mode === 'roughdraft');
+    if(roughDraftMode) syncRoughDraftQuestion();
     const isRegular = mode === 'regular';
     modeRegularBtn.classList.toggle('active', isRegular);
     modeIntroDrillBtn.classList.toggle('active', introDrillMode);
@@ -2762,7 +2763,7 @@ const DATA = window.APP_DATA;
       : bodyDrillMode
       ? '10-minute prep, then record just 1 body paragraph up to 2 minutes. Graded on everything the full round is graded on except the intro and conclusion.'
       : roughDraftMode
-      ? '10-15 minute prep (your choice), then type up a plaintext rough draft — no recording. Graded only on content, not delivery.'
+      ? '10-15 minute prep, then type up a plaintext rough draft of your speech (no recording). Graded only on content, not delivery.'
       : '30-minute prep, then record a full 7-minute. Graded on all 8 rubric categories.';
     modeSwitchHint.classList.toggle('is-intro', introDrillMode);
     modeSwitchHint.classList.toggle('is-body', bodyDrillMode);
@@ -3108,6 +3109,7 @@ const DATA = window.APP_DATA;
     roughDraftPrepSecondsLeft = roughDraftPrepSeconds;
     roughDraftPrepChooseRow.classList.add('hidden');
     roughDraftPrepDisplay.classList.remove('hidden');
+    roughDraftPrepPhrase.classList.remove('hidden');
     roughDraftPrepSkipBtn.classList.remove('hidden');
     renderRoughDraftPrepTimer();
     startRoughDraftPrepTimer();
@@ -3121,6 +3123,12 @@ const DATA = window.APP_DATA;
     roughDraftPrepPauseBtn.classList.add('hidden');
     roughDraftPrepResumeBtn.classList.add('hidden');
     roughDraftPrepPhrase.textContent = '';
+    // Hidden (rather than just empty) during the "choose your prep
+    // length" step, since an empty-but-still-laid-out phrase line plus
+    // an all-buttons-hidden timer-btn-row underneath it was exactly the
+    // "too much empty space" the modal used to show before a length was
+    // picked and the countdown actually started.
+    roughDraftPrepPhrase.classList.add('hidden');
     roughDraftPrepModal.classList.remove('hidden');
   }
 
@@ -3503,6 +3511,7 @@ Output ONLY this JSON, nothing else: {"questions":["...","...","..."]}`;
 
   function confirmGeneratedQuestion(q){
     questionInput.value = q;
+    syncRoughDraftQuestion();
     qConfirmedText.textContent = q;
     qPickStep.classList.add('hidden');
     qConfirmedStep.classList.remove('hidden');
@@ -5285,13 +5294,23 @@ Grading rules per claim:
   // skips straight to judging instead of decoding/transcribing audio.
   const ROUGHDRAFT_FIELD_IDS = [
     'rdQuestion','rdAgd','rdContentions',
-    'rdBody1Contention','rdBody1Analysis','rdBody1Link',
-    'rdBody2Contention','rdBody2Analysis','rdBody2Link',
-    'rdBody3Contention','rdBody3Analysis','rdBody3Link',
+    'rdBody1Contention','rdBody1Card1','rdBody1Card1Date','rdBody1Card1Source','rdBody1Card2','rdBody1Card2Date','rdBody1Card2Source','rdBody1Analysis','rdBody1Link',
+    'rdBody2Contention','rdBody2Card1','rdBody2Card1Date','rdBody2Card1Source','rdBody2Card2','rdBody2Card2Date','rdBody2Card2Source','rdBody2Analysis','rdBody2Link',
+    'rdBody3Contention','rdBody3Card1','rdBody3Card1Date','rdBody3Card1Source','rdBody3Card2','rdBody3Card2Date','rdBody3Card2Source','rdBody3Analysis','rdBody3Link',
     'rdConclusionRestate','rdConclusionSoWhat'
   ];
   const rdFormError = document.getElementById('rdFormError');
   const rdSubmitBtn = document.getElementById('rdSubmitBtn');
+  const rdQuestion = document.getElementById('rdQuestion');
+  // The Rough Draft form's own Question box is never typed into directly;
+  // it mirrors whatever's currently in the shared question box above
+  // (extempQuestion) — whether the user typed a custom question or
+  // confirmed a generated one — so the speaker never has to retype the
+  // question they already entered/selected elsewhere in the app.
+  function syncRoughDraftQuestion(){
+    if(rdQuestion) rdQuestion.value = questionInput.value;
+  }
+  questionInput.addEventListener('input', syncRoughDraftQuestion);
   function collectRoughDraftFields(){
     const vals = {};
     let firstEmptyEl = null;
@@ -5317,17 +5336,23 @@ Grading rules per claim:
       '',
       'BODY 1',
       `Contention 1: ${vals.rdBody1Contention}`,
-      `Quote Analysis: ${vals.rdBody1Analysis}`,
+      `Card 1 (${vals.rdBody1Card1Source}, ${vals.rdBody1Card1Date}): ${vals.rdBody1Card1}`,
+      `Card 2 (${vals.rdBody1Card2Source}, ${vals.rdBody1Card2Date}): ${vals.rdBody1Card2}`,
+      `Card Analysis: ${vals.rdBody1Analysis}`,
       `Link to AGD: ${vals.rdBody1Link}`,
       '',
       'BODY 2',
       `Contention 2: ${vals.rdBody2Contention}`,
-      `Quote Analysis: ${vals.rdBody2Analysis}`,
+      `Card 1 (${vals.rdBody2Card1Source}, ${vals.rdBody2Card1Date}): ${vals.rdBody2Card1}`,
+      `Card 2 (${vals.rdBody2Card2Source}, ${vals.rdBody2Card2Date}): ${vals.rdBody2Card2}`,
+      `Card Analysis: ${vals.rdBody2Analysis}`,
       `Link to AGD: ${vals.rdBody2Link}`,
       '',
       'BODY 3',
       `Contention 3: ${vals.rdBody3Contention}`,
-      `Quote Analysis: ${vals.rdBody3Analysis}`,
+      `Card 1 (${vals.rdBody3Card1Source}, ${vals.rdBody3Card1Date}): ${vals.rdBody3Card1}`,
+      `Card 2 (${vals.rdBody3Card2Source}, ${vals.rdBody3Card2Date}): ${vals.rdBody3Card2}`,
+      `Card Analysis: ${vals.rdBody3Analysis}`,
       `Link to AGD: ${vals.rdBody3Link}`,
       '',
       'CONCLUSION',
@@ -6660,7 +6685,7 @@ Grading rules per claim:
       let transcript;
       if(roughDraftMode){
         transcript = roughDraftTranscriptText;
-        if(!transcript){ pipelineProgress.stop(); showProcessError("Your rough draft looks empty — fill in every field and try again.", true); return; }
+        if(!transcript){ pipelineProgress.stop(); showProcessError("Your rough draft looks empty. Fill in every field and try again.", true); return; }
         lastTranscript = transcript;
         lastWordTimestamps = [];
         lastDeliveryMetrics = { isRoughDraft:true, audioUnavailable:true };

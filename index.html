@@ -494,7 +494,7 @@
                 </tr>
                 <tr>
                   <td>2. Body Development &amp; Quote Analysis</td><td>35</td>
-                  <td>Is each contention clearly stated up front in its body section?<br>Does the analysis of each quote actually explain WHY it proves the point, rather than just restating it — remember this is rough-draft analysis, so judge whether the seed of a real explanation is present, not full polish.<br>If a combined analysis of both quotes is given instead of two separate ones, does it still connect both pieces of evidence to the contention?</td>
+                  <td>Is each contention clearly stated up front in its body section?<br>Does the analysis of each quote actually explain WHY it proves the point, rather than just restating it? Remember this is rough-draft analysis, so judge whether the seed of a real explanation is present, not full polish.<br>If a combined analysis of both quotes is given instead of two separate ones, does it still connect both pieces of evidence to the contention?</td>
                 </tr>
                 <tr>
                   <td>3. Strength of Argument &amp; Reasoning</td><td>25</td>
@@ -693,13 +693,14 @@
              Shown instead of the camera/record stage below while Rough
              Draft mode is active. Collects the written skeleton of a
              speech (intro, 3 body sections, conclusion) as plaintext and
-             submits it straight to the judge — no recording involved. -->
+             submits it straight to the judge, no recording involved. -->
         <div class="rd-form hidden" id="roughDraftFormBlock">
           <div class="rd-section">
             <div class="rd-section-head">Intro</div>
             <div class="rd-field">
               <label for="rdQuestion">Question</label>
-              <textarea id="rdQuestion" rows="2" placeholder="Restate the exact question you're answering…"></textarea>
+              <textarea id="rdQuestion" rows="2" placeholder="Restate the exact question you're answering…" readonly></textarea>
+              <div class="rd-field-hint">Auto-filled from the question you entered or received above.</div>
             </div>
             <div class="rd-field">
               <label for="rdAgd">AGD (Attention-Getting Device)</label>
@@ -718,9 +719,37 @@
               <textarea id="rdBody1Contention" rows="2" placeholder="State the first contention…"></textarea>
             </div>
             <div class="rd-field">
-              <label for="rdBody1Analysis">Quote 1 &amp; Quote 2 Analysis</label>
-              <textarea id="rdBody1Analysis" rows="4" placeholder="Quote 1 analysis… Quote 2 analysis… (or one larger combined analysis of both)"></textarea>
-              <div class="rd-field-hint">Rough draft notes are fine here — half-formed analysis is expected.</div>
+              <label for="rdBody1Card1">Card 1</label>
+              <textarea id="rdBody1Card1" rows="3" placeholder="Paste or write out the actual card/quote here…"></textarea>
+              <div class="rd-card-meta-row">
+                <div class="rd-field">
+                  <label for="rdBody1Card1Date">Date</label>
+                  <input type="text" id="rdBody1Card1Date" placeholder="e.g. March 2025">
+                </div>
+                <div class="rd-field">
+                  <label for="rdBody1Card1Source">Source</label>
+                  <input type="text" id="rdBody1Card1Source" placeholder="e.g. The Economist">
+                </div>
+              </div>
+            </div>
+            <div class="rd-field">
+              <label for="rdBody1Card2">Card 2</label>
+              <textarea id="rdBody1Card2" rows="3" placeholder="Paste or write out the actual card/quote here…"></textarea>
+              <div class="rd-card-meta-row">
+                <div class="rd-field">
+                  <label for="rdBody1Card2Date">Date</label>
+                  <input type="text" id="rdBody1Card2Date" placeholder="e.g. March 2025">
+                </div>
+                <div class="rd-field">
+                  <label for="rdBody1Card2Source">Source</label>
+                  <input type="text" id="rdBody1Card2Source" placeholder="e.g. The Economist">
+                </div>
+              </div>
+            </div>
+            <div class="rd-field">
+              <label for="rdBody1Analysis">Card 1 &amp; Card 2 Analysis</label>
+              <textarea id="rdBody1Analysis" rows="4" placeholder="Card 1 analysis… Card 2 analysis… (or one larger combined analysis of both)"></textarea>
+              <div class="rd-field-hint">Rough draft notes are fine here, half-formed analysis is expected.</div>
             </div>
             <div class="rd-field">
               <label for="rdBody1Link">Link to AGD (1-2 sentences)</label>
@@ -735,9 +764,37 @@
               <textarea id="rdBody2Contention" rows="2" placeholder="State the second contention…"></textarea>
             </div>
             <div class="rd-field">
-              <label for="rdBody2Analysis">Quote 1 &amp; Quote 2 Analysis</label>
-              <textarea id="rdBody2Analysis" rows="4" placeholder="Quote 1 analysis… Quote 2 analysis… (or one larger combined analysis of both)"></textarea>
-              <div class="rd-field-hint">Rough draft notes are fine here — half-formed analysis is expected.</div>
+              <label for="rdBody2Card1">Card 1</label>
+              <textarea id="rdBody2Card1" rows="3" placeholder="Paste or write out the actual card/quote here…"></textarea>
+              <div class="rd-card-meta-row">
+                <div class="rd-field">
+                  <label for="rdBody2Card1Date">Date</label>
+                  <input type="text" id="rdBody2Card1Date" placeholder="e.g. March 2025">
+                </div>
+                <div class="rd-field">
+                  <label for="rdBody2Card1Source">Source</label>
+                  <input type="text" id="rdBody2Card1Source" placeholder="e.g. The Economist">
+                </div>
+              </div>
+            </div>
+            <div class="rd-field">
+              <label for="rdBody2Card2">Card 2</label>
+              <textarea id="rdBody2Card2" rows="3" placeholder="Paste or write out the actual card/quote here…"></textarea>
+              <div class="rd-card-meta-row">
+                <div class="rd-field">
+                  <label for="rdBody2Card2Date">Date</label>
+                  <input type="text" id="rdBody2Card2Date" placeholder="e.g. March 2025">
+                </div>
+                <div class="rd-field">
+                  <label for="rdBody2Card2Source">Source</label>
+                  <input type="text" id="rdBody2Card2Source" placeholder="e.g. The Economist">
+                </div>
+              </div>
+            </div>
+            <div class="rd-field">
+              <label for="rdBody2Analysis">Card 1 &amp; Card 2 Analysis</label>
+              <textarea id="rdBody2Analysis" rows="4" placeholder="Card 1 analysis… Card 2 analysis… (or one larger combined analysis of both)"></textarea>
+              <div class="rd-field-hint">Rough draft notes are fine here, half-formed analysis is expected.</div>
             </div>
             <div class="rd-field">
               <label for="rdBody2Link">Link to AGD (1-2 sentences)</label>
@@ -752,9 +809,37 @@
               <textarea id="rdBody3Contention" rows="2" placeholder="State the third contention…"></textarea>
             </div>
             <div class="rd-field">
-              <label for="rdBody3Analysis">Quote 1 &amp; Quote 2 Analysis</label>
-              <textarea id="rdBody3Analysis" rows="4" placeholder="Quote 1 analysis… Quote 2 analysis… (or one larger combined analysis of both)"></textarea>
-              <div class="rd-field-hint">Rough draft notes are fine here — half-formed analysis is expected.</div>
+              <label for="rdBody3Card1">Card 1</label>
+              <textarea id="rdBody3Card1" rows="3" placeholder="Paste or write out the actual card/quote here…"></textarea>
+              <div class="rd-card-meta-row">
+                <div class="rd-field">
+                  <label for="rdBody3Card1Date">Date</label>
+                  <input type="text" id="rdBody3Card1Date" placeholder="e.g. March 2025">
+                </div>
+                <div class="rd-field">
+                  <label for="rdBody3Card1Source">Source</label>
+                  <input type="text" id="rdBody3Card1Source" placeholder="e.g. The Economist">
+                </div>
+              </div>
+            </div>
+            <div class="rd-field">
+              <label for="rdBody3Card2">Card 2</label>
+              <textarea id="rdBody3Card2" rows="3" placeholder="Paste or write out the actual card/quote here…"></textarea>
+              <div class="rd-card-meta-row">
+                <div class="rd-field">
+                  <label for="rdBody3Card2Date">Date</label>
+                  <input type="text" id="rdBody3Card2Date" placeholder="e.g. March 2025">
+                </div>
+                <div class="rd-field">
+                  <label for="rdBody3Card2Source">Source</label>
+                  <input type="text" id="rdBody3Card2Source" placeholder="e.g. The Economist">
+                </div>
+              </div>
+            </div>
+            <div class="rd-field">
+              <label for="rdBody3Analysis">Card 1 &amp; Card 2 Analysis</label>
+              <textarea id="rdBody3Analysis" rows="4" placeholder="Card 1 analysis… Card 2 analysis… (or one larger combined analysis of both)"></textarea>
+              <div class="rd-field-hint">Rough draft notes are fine here, half-formed analysis is expected.</div>
             </div>
             <div class="rd-field">
               <label for="rdBody3Link">Link to AGD (1-2 sentences)</label>
@@ -1415,10 +1500,9 @@
      exit back to normal practice mode are all available, mirroring
      the Intro/Body Drill prep modals above. -->
 <div class="dl-modal hidden prep-modal-roughdraft" id="roughDraftPrepModal">
-  <div class="dl-modal-card prep-card-roughdraft" id="roughDraftPrepCard" style="max-width:380px;text-align:center;">
+  <div class="dl-modal-card prep-card-roughdraft" id="roughDraftPrepCard">
     <div class="dl-modal-head">Rough Draft: Prep Time</div>
-    <p class="dl-modal-sub" id="roughDraftPrepSub">Sketch your intro, all 3 body points, and your conclusion in writing — content only, no recording. Choose your prep length below.</p>
-    <div class="rd-prep-row" id="roughDraftPrepChooseRow" style="justify-content:center;">
+    <div class="rd-prep-row" id="roughDraftPrepChooseRow">
       <label for="roughDraftPrepMinutes">Prep length</label>
       <select id="roughDraftPrepMinutes">
         <option value="10">10 minutes</option>
@@ -1430,14 +1514,14 @@
       </select>
       <button class="btn primary" id="roughDraftPrepBeginBtn" type="button">Begin Prep</button>
     </div>
-    <div class="timer-display hidden" id="roughDraftPrepDisplay" style="font-size:44px;margin:6px 0 18px;">10:00</div>
-    <div class="progress-phrase" id="roughDraftPrepPhrase" style="margin-bottom:16px;"></div>
-    <div class="timer-btn-row" style="justify-content:center;">
+    <div class="timer-display hidden" id="roughDraftPrepDisplay">10:00</div>
+    <div class="progress-phrase" id="roughDraftPrepPhrase"></div>
+    <div class="timer-btn-row">
       <button class="btn ghost hidden" id="roughDraftPrepPauseBtn" type="button">Pause</button>
       <button class="btn ghost hidden" id="roughDraftPrepResumeBtn" type="button">Resume</button>
       <button class="btn ghost hidden" id="roughDraftPrepSkipBtn" type="button">Skip to Writing</button>
     </div>
-    <button class="btn ghost dl-modal-btn" id="roughDraftPrepExitBtn" type="button" style="margin-top:14px;">Exit Rough Draft</button>
+    <button class="btn ghost dl-modal-btn" id="roughDraftPrepExitBtn" type="button">Exit Rough Draft</button>
   </div>
 </div>
 

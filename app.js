@@ -74,7 +74,7 @@ const DATA = window.APP_DATA;
   // cost score (expensive) burns more units per call, a high cost score
   // (cheap) burns fewer. Keep the keys in sync with JUDGE_MODELS below.
   const BALLOT_FEEDBACK_MODEL_WEIGHTS = {
-    llama:      1,  // Llama 3.3 70B  — cost score 95 (cheapest)
+    llama:      1,  // GPT-OSS 120B  — cost score 97 (cheapest)
     deepseekv4: 1,  // DeepSeek V4    — cost score 90
     glm52:      1,  // GLM 5.2        — cost score 88
     sonnet5:    2,  // Claude Sonnet 5— cost score 75
@@ -2113,7 +2113,7 @@ const DATA = window.APP_DATA;
   // id to send. Keep this in sync with ALLOWED_MODELS in the hackclub-chat
   // edge function. `label` drives the picker button text.
   const JUDGE_MODELS = {
-    llama:    { fn: 'groq-chat',     model: 'llama-3.3-70b-versatile',   label: 'Llama 3.3 70B' },
+    llama:    { fn: 'groq-chat',     model: 'openai/gpt-oss-120b',       label: 'GPT-OSS 120B' },
     opus5:    { fn: 'hackclub-chat', model: 'anthropic/claude-opus-5',   label: 'Claude Opus 5' },
     opus48:   { fn: 'hackclub-chat', model: 'anthropic/claude-opus-4-8', label: 'Claude Opus 4.8' },
     kimik3:   { fn: 'hackclub-chat', model: 'moonshotai/kimi-k3',        label: 'Kimi K3' },
@@ -6736,14 +6736,15 @@ Grading rules per claim:
       }
 
       const JUDGE_MODEL_LABELS = {
-        llama: 'Llama 3.3 70B Versatile',
+        llama: 'GPT-OSS 120B',
         opus5: 'Claude Opus 5',
         opus48: 'Claude Opus 4.8',
         kimik3: 'Kimi K3',
         sonnet5: 'Claude Sonnet 5',
-        deepseekv4: 'DeepSeek V4'
+        deepseekv4: 'DeepSeek V4',
+        glm52: 'GLM 5.2'
       };
-      const judgeModelLabel = JUDGE_MODEL_LABELS[judgeModelValue] || 'Llama 3.3 70B Versatile';
+      const judgeModelLabel = JUDGE_MODEL_LABELS[judgeModelValue] || 'GPT-OSS 120B';
       statusText.textContent = 'The panel is deliberating';
       statusSub.textContent = introDrillMode
         ? `${judgeModelLabel} is scoring your introduction against the intro-drill rubric.`
@@ -6797,16 +6798,16 @@ Grading rules per claim:
               'Content-Type':'application/json'
             },
             body: JSON.stringify({
-              // Groq/Llama writes the rubric feedback directly, so 3000
-              // tokens is plenty. The Hack Club AI models (Claude, Kimi)
-              // and the NVIDIA-hosted DeepSeek appear to spend part of
-              // their budget on internal reasoning before writing the
-              // actual answer, so give those a much bigger per-round
-              // ceiling. Each round is now capped in time (by that
-              // function's own TIME_BUDGET_MS), not just tokens, and
-              // runHackClubChatToCompletion below chains rounds together,
-              // so 32000 just needs to be enough for one ~128s round's
-              // worth of output, not the whole ballot.
+              // Groq/GPT-OSS writes the rubric feedback directly (once
+              // reasoning_effort is dialed down below), so 3000 tokens is
+              // plenty. The Hack Club AI models (Claude, Kimi) and the
+              // NVIDIA-hosted DeepSeek appear to spend part of their budget
+              // on internal reasoning before writing the actual answer, so
+              // give those a much bigger per-round ceiling. Each round is
+              // now capped in time (by that function's own TIME_BUDGET_MS),
+              // not just tokens, and runHackClubChatToCompletion below
+              // chains rounds together, so 32000 just needs to be enough
+              // for one ~128s round's worth of output, not the whole ballot.
               model: choice.model, temperature:0.4, max_tokens: STREAMING_JUDGE_FNS.has(choice.fn) ? 32000 : 3000,
               // Kimi K3 defaults to reasoning effort "max" on Hack Club AI
               // (deep, slow thinking meant for hard agentic/coding tasks),
@@ -6816,6 +6817,18 @@ Grading rules per claim:
               // that don't support the param, since hackclub-chat/OpenRouter
               // just ignores unsupported fields.
               ...(choice.model === 'moonshotai/kimi-k3' ? { reasoning: { effort: 'low' } } : {}),
+              // GPT-OSS 120B defaults to reasoning_effort "medium" on Groq,
+              // which writes hidden chain-of-thought into a separate
+              // `reasoning` field before the actual answer — but that
+              // reasoning still consumes real generation budget out of the
+              // same 3000 max_tokens above. Unlike the Hack Club models,
+              // groq-chat isn't in STREAMING_JUDGE_FNS and never chains
+              // continuation rounds, so a truncated single shot here means
+              // a truncated ballot, full stop. Force 'low' explicitly
+              // rather than relying on Groq's default, so this model
+              // spends its whole budget on the visible ballot the same way
+              // plain Llama 3.3 used to.
+              ...(choice.model === 'openai/gpt-oss-120b' ? { reasoning_effort: 'low' } : {}),
               messages,
               overrideKey: choice.fn === 'groq-chat' ? (k || undefined) : undefined,
               category: 'ballot_feedback',
@@ -6826,7 +6839,7 @@ Grading rules per claim:
               // hackclub-chat; see those files for the p_amount plumbing.
               weight: BALLOT_FEEDBACK_MODEL_WEIGHTS[weightKey] || 1
             })
-          // Groq's LPU inference is genuinely fast — Llama 3.3 70B via
+          // Groq's LPU inference is genuinely fast — GPT-OSS 120B via
           // groq-chat comfortably finishes well inside 60s. hackclub-chat
           // now self-limits each round to ~128s server-side (see
           // TIME_BUDGET_MS) and hands back a "please continue" sentinel
@@ -6922,7 +6935,7 @@ Grading rules per claim:
         } else if(/^timeout:/.test(msg)){
           reason = ' (timed out — model was still generating)';
         }
-        try{ showCopyConfirmToast(`${judgeModelLabel} is unavailable right now${reason} - falling back to Llama 3.3 70B.`); }catch(e){}
+        try{ showCopyConfirmToast(`${judgeModelLabel} is unavailable right now${reason} - falling back to GPT-OSS 120B.`); }catch(e){}
         judgeChoice = JUDGE_MODELS.llama;
         judgeWeightKey = 'llama';
         setProcStep('judging'); // clear any stale "Wave N" left from the failed attempt above
@@ -6981,7 +6994,16 @@ Grading rules per claim:
             'Content-Type':'application/json'
           },
           body: JSON.stringify({
-            model:'llama-3.3-70b-versatile', temperature:0.3, max_tokens:3800,
+            model:'openai/gpt-oss-120b', temperature:0.3, max_tokens:3800,
+            // Same reasoning-budget issue as the main judging call above:
+            // GPT-OSS 120B defaults to reasoning_effort "medium" on Groq,
+            // and this call has no continuation chaining either, so
+            // uncontrolled reasoning tokens eating into max_tokens here
+            // risks truncating the JSON before it's valid, silently
+            // losing the annotation pass (this function already catches
+            // that and falls back to a plain transcript, but forcing
+            // 'low' avoids throwing away the budget in the first place).
+            reasoning_effort: 'low',
             response_format:{ type:'json_object' },
             messages:[
               {role:'system', content: introDrillMode ? INTRO_ANNOTATION_PROMPT : bodyDrillMode ? BODY_ANNOTATION_PROMPT : ANNOTATION_PROMPT},

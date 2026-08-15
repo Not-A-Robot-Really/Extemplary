@@ -69,7 +69,7 @@ Sign up → Generate questions → Write a speech → Record your speech → Rec
 ![qdiff](Images/questiondiff.png)
 
 - **AI judged Ballot** | Extemplary Transcribes your speech, analyzes vocal delivery from the extracted audio, and scores you on a custom made **8-category NSDA extemp rubric**. The user can select their perferred AI model from the list below, in order from cheapest & weakest to most expensive & advanced.
-1) Llama 3.3 (default option)
+1) GPT-OSS 120B (default option)
 2) GLM 5.2
 3) DeepSeek V4 pro
 4) Claude Sonnet 5
@@ -79,7 +79,7 @@ Sign up → Generate questions → Write a speech → Record your speech → Rec
 
 ![rubric1](Images/rubric1.png)
 
--**Ballot Feedback Model Selection** | As previously stated, the user can select which perferred LLM they would like to use to provide them feedback on their speeches. The 5 options are Llama 3.3, DeepSeek V4, Claude Sonnet 5, Kimi K3, and Claude Opus 5. To help users choose which model suits their Extemp needs, Extemplary provides a visual graphic illustrating the overall "score" of said model based in 2 categories: their intellectual ability & deep reasoning skills and their cost. These values reached via holistic approach. I based the scores off **openrouter rankings** `https://openrouter.ai/rankings`, tests on the Extemplary platform, and other misc. LLM rankings. For experienced Extempers & more difficult questions, use Opus 5 or Opus 4.8. For more prolithic uses of the Ballot Feedback feature (if you intend to use it multiple times daily), use Deepseek V4 Pro. If you are a beginner or doing an easy question, use the default Llama 3.3 70B.
+-**Ballot Feedback Model Selection** | As previously stated, the user can select which perferred LLM they would like to use to provide them feedback on their speeches. The 7 options are GPT-OSS 120B, GLM 5.2, DeepSeek V4, Claude Sonnet 5, Kimi K3, Claude Opus 4.8, and Claude Opus 5. To help users choose which model suits their Extemp needs, Extemplary provides a visual graphic illustrating the overall "score" of said model based in 2 categories: their intellectual ability & deep reasoning skills and their cost. These values reached via holistic approach. I based the scores off **openrouter rankings** `https://openrouter.ai/rankings`, tests on the Extemplary platform, and other misc. LLM rankings. For experienced Extempers & more difficult questions, use Opus 5 or Opus 4.8. For more prolithic uses of the Ballot Feedback feature (if you intend to use it multiple times daily), use Deepseek V4 Pro. If you are a beginner or doing an easy question, use the default GPT-OSS 120B.
 
 -**AI Token Usage** | In order to keep Extemplary free and open sources, every aspect that involes an LLM or API key is rate limited to a certain amount daily (resets midnight UTC). This includes featues such as: Ballot Feedback, Citation Checker, Practice Question Generator, Current Events Summary, Resets daily at midnight UTC. You should be able to comfortably get ~15-40 uses of each depending on the complexity. If you choose to use a more expensive model for Ballot Feedback, it will be more around 5-10 uses.
 
@@ -202,7 +202,7 @@ The sign-in screen is also a landing page. Scroll down past the log in info to s
 Supabase: provides authentication and cloud storage
 
 - **Transcription:** Groq's Whisper (`whisper-large-v3`)
-- **Judging:** Groq's Llama 3.3 70B, Opus 5, Kimi K3, Sonnet 5, **OR** DeepSeek V4
+- **Judging:** Groq's GPT-OSS 120B, Opus 5, Opus 4.8, Kimi K3, Sonnet 5, GLM 5.2, **OR** DeepSeek V4
 - **Question drafting, briefings & citation checking:** Google's Gemini (using live web searches)
 - **Audio analysis:** Web Audio API (client-side FFT/pitch/volume analysis)
 - **Video:** `MediaRecorder` for capture and`<video>` for review/playback. The example ballot utilizes the YouTube IFrame API for its sample speech.

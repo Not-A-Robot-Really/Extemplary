@@ -5523,8 +5523,24 @@ Grading rules per claim:
   // If a single speech is still too long even after compression, we split
   // the audio into multiple chunks and transcribe them one at a time,
   // stitching the text and word timestamps back together.
-  const GROQ_UPLOAD_SAFE_BYTES = 8 * 1024 * 1024;  // conservative per-chunk budget, well under Groq's ~25MB cap and any proxy/edge-function body-size limit in front of it
-  const GROQ_UPLOAD_MIN_BYTES  = 512 * 1024;        // floor so we don't recurse forever on a genuinely broken upload path
+  // GROQ_UPLOAD_SAFE_BYTES was 8MB, but a normal FIXED_CHUNK_SECONDS chunk
+  // (60s of 16kHz/16-bit mono WAV) is only ~1.9MB — nowhere near that
+  // budget — so the pre-emptive split check below almost never actually
+  // fired, and every chunk went straight to a real upload attempt first.
+  // Lowered to 2MB so a chunk that's likely to hit a real proxy/edge-
+  // function body-size limit gets split proactively instead of only
+  // reactively, after already eating a failed round-trip.
+  const GROQ_UPLOAD_SAFE_BYTES = 2 * 1024 * 1024;
+  // GROQ_UPLOAD_MIN_BYTES was 512KB, which combined with the halving step
+  // meant the *reactive* 413 self-heal in transcribeChunkResilient below
+  // gave up after a single halving (60s -> 30s, ~938KB) — nowhere near a
+  // size any real API or gateway should plausibly reject as "too large".
+  // That's what was producing "still too large even after compression and
+  // splitting" well before the audio was actually anywhere near large.
+  // Lowered by 8x so a genuinely stricter-than-expected limit still has
+  // real room to be found by halving further, down to a few seconds of
+  // audio, before giving up for real.
+  const GROQ_UPLOAD_MIN_BYTES  = 64 * 1024;
 
   async function decodeAudioFromBlob(blob){
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();

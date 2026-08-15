@@ -7143,14 +7143,32 @@ Grading rules per claim:
       msg = "Couldn't reach Groq's API — open this file directly in your browser (not an embedded preview) and check your internet connection.";
     else if(s.includes(':401:')||s.toLowerCase().includes('invalid api key'))
       msg = 'Groq rejected the API key (401). Double-check you pasted the correct key.';
-    else if(s.includes(':413:')||s.toLowerCase().includes('request entity too large'))
-      msg = 'The recording was still too large to upload even after automatic compression and splitting. Try recording a shorter speech, or check your internet connection and try again.';
-    else if(s.startsWith('transcription_failed'))
-      msg = 'Transcription failed: '+s.split(':').slice(2).join(':');
+    // The stage-specific prefixes (transcription_failed / judging_failed /
+    // decode_failed) are checked BEFORE the generic :413: text match below,
+    // not after — a 413 can come from either the transcription upload
+    // (groq-transcribe, an actually-large audio payload) or the judging
+    // call (groq-chat, a small JSON payload where "too large" almost
+    // certainly means something else, like a token/context limit rather
+    // than literal byte size). Checking :413: first collapsed both into
+    // the same "recording was too large" message even when the failing
+    // request was groq-chat with a 1KB body — actively misleading, since
+    // recording a shorter speech does nothing for a judging-stage failure.
+    else if(s.startsWith('transcription_failed')){
+      const detail = s.split(':').slice(2).join(':');
+      msg = (s.includes(':413:') || detail.toLowerCase().includes('request entity too large'))
+        ? 'The recording was still too large to upload even after automatic compression and splitting. Try recording a shorter speech, or check your internet connection and try again.'
+        : 'Transcription failed: '+detail;
+    }
     else if(s.startsWith('decode_failed'))
       msg = s.split(':').slice(2).join(':') || "Couldn't read the recording's audio track.";
-    else if(s.startsWith('judging_failed'))
-      msg = 'Judging failed: '+s.split(':').slice(2).join(':');
+    else if(s.startsWith('judging_failed')){
+      const detail = s.split(':').slice(2).join(':');
+      msg = (s.includes(':413:') || detail.toLowerCase().includes('request entity too large'))
+        ? `The judge model rejected the request as too large (413): ${detail || 'no further detail from Groq'}. This is very unlikely to be about your recording's length — it's more likely the transcript plus rubric prompt exceeded a limit on Groq's side. Try a different judge model, or try again.`
+        : 'Judging failed: '+detail;
+    }
+    else if(s.includes(':413:')||s.toLowerCase().includes('request entity too large'))
+      msg = 'The recording was still too large to upload even after automatic compression and splitting. Try recording a shorter speech, or check your internet connection and try again.';
     showProcessError(msg, true);
   }
 

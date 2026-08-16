@@ -74,7 +74,17 @@ const DATA = window.APP_DATA;
   // cost score (expensive) burns more units per call, a high cost score
   // (cheap) burns fewer. Keep the keys in sync with JUDGE_MODELS below.
   const BALLOT_FEEDBACK_MODEL_WEIGHTS = {
-    llama:      1,  // GPT-OSS 120B  — cost score 97 (cheapest)
+    llama:      3,  // GPT-OSS 120B — cost score 97 (cheapest per-token on
+                    // Groq), but Regular Practice now runs it as 3 separate
+                    // calls (see runGptOssSplitJudging) to stay under its
+                    // 8,000 TPM free-tier ceiling, and groq-chat floors
+                    // every call's daily-cap charge to a minimum of 1
+                    // regardless of the weight sent — so the honest total
+                    // is 3, not 1. (Intro/Body Drill and Rough Draft still
+                    // use the old single-call path and really do cost 1;
+                    // this weight is a slight over-charge there, accepted
+                    // for simplicity rather than tracking a mode-dependent
+                    // weight just for this one model.)
     deepseekv4: 1,  // DeepSeek V4    — cost score 90
     glm52:      1,  // GLM 5.2        — cost score 88
     sonnet5:    2,  // Claude Sonnet 5— cost score 75
@@ -1749,6 +1759,13 @@ const DATA = window.APP_DATA;
   const INTRO_RUBRIC_PROMPT = DATA.INTRO_RUBRIC_PROMPT;
   const BODY_RUBRIC_PROMPT = DATA.BODY_RUBRIC_PROMPT;
   const ROUGHDRAFT_RUBRIC_PROMPT = DATA.ROUGHDRAFT_RUBRIC_PROMPT;
+  // Split-judging prompts used ONLY for GPT-OSS 120B on the Regular
+  // Practice (8-category) rubric — see runGptOssSplitJudging below for
+  // why. Not used for Intro Drill / Body Drill / Rough Draft, whose
+  // rubrics are already small enough to fit one call's token budget.
+  const GPT_OSS_RUBRIC_PART_A = DATA.GPT_OSS_RUBRIC_PART_A;
+  const GPT_OSS_RUBRIC_PART_B = DATA.GPT_OSS_RUBRIC_PART_B;
+  const GPT_OSS_RUBRIC_SYNTHESIS = DATA.GPT_OSS_RUBRIC_SYNTHESIS;
   const ROUGHDRAFT_PIPELINE_PHRASES = DATA.ROUGHDRAFT_PIPELINE_PHRASES || { judging: [] };
 
   const ANNOTATION_PROMPT = DATA.ANNOTATION_PROMPT;
@@ -6805,7 +6822,7 @@ Grading rules per claim:
         // single round's error handling (429 / non-ok) stays identical
         // to how every other call in this file works — throw, and let
         // withKeyFallback's existing retry logic take over.
-        const doFetch = async (messages) => {
+        const doFetch = async (messages, maxTokensOverride) => {
           const res = await fetchWithTimeout(`${SUPABASE_FUNCTIONS_URL}/${choice.fn}`,{
             method:'POST',
             headers:{
@@ -6824,7 +6841,9 @@ Grading rules per claim:
               // not just tokens, and runHackClubChatToCompletion below
               // chains rounds together, so 32000 just needs to be enough
               // for one ~128s round's worth of output, not the whole ballot.
-              model: choice.model, temperature:0.4, max_tokens: STREAMING_JUDGE_FNS.has(choice.fn) ? 32000 : 3000,
+              // maxTokensOverride lets runGptOssSplitJudging below request a
+              // smaller budget per split call than the flat 3000 default.
+              model: choice.model, temperature:0.4, max_tokens: maxTokensOverride || (STREAMING_JUDGE_FNS.has(choice.fn) ? 32000 : 3000),
               // Kimi K3 defaults to reasoning effort "max" on Hack Club AI
               // (deep, slow thinking meant for hard agentic/coding tasks),
               // which is overkill for writing a rubric-formatted ballot and
@@ -6885,12 +6904,72 @@ Grading rules per claim:
           if(!res.ok) throw new Error('judging_failed:'+res.status+':'+await safeErrText(res));
           return res;
         };
+        // GPT-OSS 120B's free/on-demand Groq tier enforces only 8,000
+        // tokens-per-minute (TPM) — the lowest of any model in this app,
+        // and lower than a single Regular Practice ballot request needs
+        // even before Groq generates a single output token (the 8-category
+        // rubric prompt alone is ~6,300 tokens; add a real transcript and
+        // a normal single-shot request routinely needs 11,000+ TPM, which
+        // is exactly the 413 this was hitting). Splitting the *rubric*
+        // doesn't reduce per-request cost below the cap on its own — it
+        // has to be paired with real wall-clock pacing between calls,
+        // since TPM is a rolling 60-second window: two ~6,500-token calls
+        // sent back-to-back still sum to ~13,000 in that same window.
+        // Only used for the Regular Practice (8-category) rubric — Intro
+        // Drill/Body Drill/Rough Draft's rubrics are already small enough
+        // (3-6 categories) to fit one call comfortably under 8,000 TPM.
+        async function runGptOssSplitJudging(){
+          setProcStep('judging', 'Step 1 of 3');
+          const msgsA = [
+            {role:'system', content: GPT_OSS_RUBRIC_PART_A + EVIDENCE_TRUTH_ASSUMPTION_NOTE},
+            {role:'user', content:'TRANSCRIPT:\n\n'+transcript+'\n\n'+metricsBlock}
+          ];
+          const partA = extractChatContent(await (await doFetch(msgsA, 1800)).json());
+          if(!partA) throw new Error('judging_failed:unrecognized_response_shape');
+
+          // Real pacing, not just a UI nicety: waiting less than a full
+          // rolling window risks call B's tokens stacking on top of call
+          // A's still-counted tokens and tripping the same 413 again.
+          setProcStep('judging', 'Pacing for rate limit (~1 min)…');
+          await new Promise(r => setTimeout(r, 65000));
+
+          setProcStep('judging', 'Step 2 of 3');
+          const msgsB = [
+            {role:'system', content: GPT_OSS_RUBRIC_PART_B + EVIDENCE_TRUTH_ASSUMPTION_NOTE},
+            {role:'user', content:'TRANSCRIPT:\n\n'+transcript+'\n\n'+metricsBlock}
+          ];
+          const partB = extractChatContent(await (await doFetch(msgsB, 1800)).json());
+          if(!partB) throw new Error('judging_failed:unrecognized_response_shape');
+
+          setProcStep('judging', 'Pacing for rate limit (~1 min)…');
+          await new Promise(r => setTimeout(r, 65000));
+
+          // The synthesis pass gets partA+partB's own findings, not the
+          // transcript again — a full third transcript read would risk
+          // blowing the TPM budget a third time for no real benefit, since
+          // composite score/rank/drill only need to reason over what the
+          // first two passes already found, not re-derive it from scratch.
+          setProcStep('judging', 'Step 3 of 3');
+          const msgsC = [
+            {role:'system', content: GPT_OSS_RUBRIC_SYNTHESIS},
+            {role:'user', content:'CATEGORY RESULTS:\n\n'+partA+'\n\n'+partB}
+          ];
+          const partC = extractChatContent(await (await doFetch(msgsC, 700)).json());
+          if(!partC) throw new Error('judging_failed:unrecognized_response_shape');
+
+          return (partA+'\n\n'+partB+'\n\n'+partC).trim();
+        }
+        const isGptOssSplitEligible = choice.model === 'openai/gpt-oss-120b'
+          && !introDrillMode && !bodyDrillMode && !roughDraftMode;
         // hackclub-chat streams its response as SSE and may span several
         // chained rounds (see runHackClubChatToCompletion); groq-chat
         // still returns one buffered JSON object in a single round, since
         // Llama via Groq comfortably finishes well inside the wall-clock
-        // limit and never needed any of this.
-        const content = STREAMING_JUDGE_FNS.has(choice.fn)
+        // limit and never needed any of this — GPT-OSS 120B on the
+        // Regular Practice rubric is the one exception, handled above.
+        const content = isGptOssSplitEligible
+          ? await runGptOssSplitJudging()
+          : STREAMING_JUDGE_FNS.has(choice.fn)
           ? await runHackClubChatToCompletion(doFetch, baseMessages, (round) => {
               // Live "Wave N" indicator on the Panel Deliberating step —
               // only meaningful for the streaming/continuation-capable

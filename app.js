@@ -7030,15 +7030,51 @@ Grading rules per claim:
           // since composite score/rank/drill only need to reason over what
           // the category passes already found, not re-derive it from
           // scratch.
+          //
+          // Two further trims, added after synthesis itself started
+          // getting cut off ("...got cut off before finishing the
+          // composite score and rank"): concatenating all 8 category
+          // passes' FULL text (including each one's verbose "What You
+          // Could Have Done" rewrite) routinely put synthesis's own input
+          // well past 8,000 tokens before it had written a single word of
+          // output — chunking the category calls more finely never
+          // shrank the total volume of text synthesis has to ingest, only
+          // how it was produced. So:
+          //   1. The composite score is summed here in code from each
+          //      category's own "- [Score]/[cap]" header, not asked of
+          //      the model at all — arithmetic over 8 known integers
+          //      needs no LLM call and can't be the thing that gets cut
+          //      off.
+          //   2. Each category's "What You Could Have Done" section is
+          //      stripped before building synthesis's input — synthesis
+          //      only needs the scores and the What Worked/Critical Flaws
+          //      bullets to justify a rank, not the full rewritten
+          //      paragraphs (those stay in the final ballot; they're just
+          //      not sent to this call).
           setProcStep('judging', `Step ${GPT_OSS_GROUPS.length+1} of ${GPT_OSS_GROUPS.length+1}`);
-          const userC = 'CATEGORY RESULTS:\n\n'+parts.join('\n\n');
+          const SCORE_HEADER_RE = /^### .+ - (\d+)\/(\d+)/m;
+          let compositeScore = 0, compositeCap = 0;
+          for(const p of parts){
+            const m = SCORE_HEADER_RE.exec(p);
+            if(!m) throw new Error('judging_failed:unrecognized_response_shape');
+            compositeScore += parseInt(m[1], 10);
+            compositeCap += parseInt(m[2], 10);
+          }
+          const stripRewrite = (p) =>
+            p.replace(/\n- \*\*What You Could Have Done:\*\*[\s\S]*$/, '').trim();
+          const userC = 'TOTAL COMPOSITE SCORE: '+compositeScore+'/'+compositeCap+
+            '\n\nCATEGORY RESULTS:\n\n'+parts.map(stripRewrite).join('\n\n');
           const msgsC = [{role:'system', content: GPT_OSS_RUBRIC_SYNTHESIS}, {role:'user', content: userC}];
           const partC = extractChatContent(await (await doFetch(msgsC, budgetOutputTokens(GPT_OSS_RUBRIC_SYNTHESIS, userC, GPT_OSS_SYNTHESIS_CEILING))).json());
           if(!partC) throw new Error('judging_failed:unrecognized_response_shape');
-          if(!/### Total Composite Score:/.test(partC) || !/### Judge's Rank:/.test(partC))
-            throw new Error('judging_failed:truncated:GPT-OSS 120B\'s synthesis pass got cut off before finishing the composite score and rank.');
+          // The composite score line is now assembled in code (see above)
+          // rather than trusted from the model's own output, so only the
+          // rank needs to be verified as actually present.
+          if(!/### Judge's Rank:/.test(partC))
+            throw new Error('judging_failed:truncated:GPT-OSS 120B\'s synthesis pass got cut off before finishing the rank.');
+          const scoreLine = '### Total Composite Score: '+compositeScore+'/'+compositeCap;
 
-          return (parts.join('\n\n')+'\n\n'+partC).trim();
+          return (parts.join('\n\n')+'\n\n'+scoreLine+'\n'+partC).trim();
         }
         const isGptOssSplitEligible = choice.model === 'openai/gpt-oss-120b'
           && !introDrillMode && !bodyDrillMode && !roughDraftMode;

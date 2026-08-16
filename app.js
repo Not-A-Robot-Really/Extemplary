@@ -7052,11 +7052,18 @@ Grading rules per claim:
           //      paragraphs (those stay in the final ballot; they're just
           //      not sent to this call).
           setProcStep('judging', `Step ${GPT_OSS_GROUPS.length+1} of ${GPT_OSS_GROUPS.length+1}`);
-          const SCORE_HEADER_RE = /^### .+ - (\d+)\/(\d+)/m;
+          // Loosely matched on purpose: model output header formatting
+          // can drift slightly (em dash vs hyphen, extra bolding around
+          // the category name, double spaces) even when it still
+          // satisfies hasAllCategoryHeaders' plainer "### CategoryName"
+          // check above. An earlier stricter version of this regex threw
+          // an opaque "Judging failed:" with no detail whenever real
+          // output didn't match its exact assumed spacing/dash.
+          const SCORE_HEADER_RE = /^###\s*.+?[-–—]\s*(\d+)\s*\/\s*(\d+)/m;
           let compositeScore = 0, compositeCap = 0;
           for(const p of parts){
             const m = SCORE_HEADER_RE.exec(p);
-            if(!m) throw new Error('judging_failed:unrecognized_response_shape');
+            if(!m) throw new Error('judging_failed:Could not find a "- score/cap" header in one of GPT-OSS 120B\'s category passes to compute the composite score from. That pass\'s output may not have followed the expected format — try again.');
             compositeScore += parseInt(m[1], 10);
             compositeCap += parseInt(m[2], 10);
           }
@@ -7066,7 +7073,7 @@ Grading rules per claim:
             '\n\nCATEGORY RESULTS:\n\n'+parts.map(stripRewrite).join('\n\n');
           const msgsC = [{role:'system', content: GPT_OSS_RUBRIC_SYNTHESIS}, {role:'user', content: userC}];
           const partC = extractChatContent(await (await doFetch(msgsC, budgetOutputTokens(GPT_OSS_RUBRIC_SYNTHESIS, userC, GPT_OSS_SYNTHESIS_CEILING))).json());
-          if(!partC) throw new Error('judging_failed:unrecognized_response_shape');
+          if(!partC) throw new Error('judging_failed:GPT-OSS 120B\'s synthesis pass returned an unrecognized response shape.');
           // The composite score line is now assembled in code (see above)
           // rather than trusted from the model's own output, so only the
           // rank needs to be verified as actually present.

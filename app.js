@@ -6953,11 +6953,30 @@ Grading rules per claim:
         // flat guess — clamped to a floor (so a pathological case doesn't
         // request an unusably tiny budget) and a ceiling (no need to ask
         // for more than a genuinely long response would use anyway).
-        const budgetOutputTokens = (systemContent, userContent) => {
+        const budgetOutputTokens = (systemContent, userContent, ceiling) => {
           const promptTokens = estimateTokens(systemContent) + estimateTokens(userContent);
           const SAFETY_MARGIN = 300; // slack for estimation error + response_format overhead
-          return Math.max(900, Math.min(3200, GPT_OSS_TPM_LIMIT - promptTokens - SAFETY_MARGIN));
+          return Math.max(900, Math.min(ceiling, GPT_OSS_TPM_LIMIT - promptTokens - SAFETY_MARGIN));
         };
+        // Ceiling for each single-category pass. This is deliberately
+        // LOWER than a single call's true available headroom (which can
+        // run up toward ~3700 once the transcript is subtracted out) —
+        // capping it here is what keeps the *synthesis* pass solvent.
+        // Each category pass's own output becomes part of the synthesis
+        // pass's input, so if every one of the 8 passes were allowed to
+        // use the full per-call ceiling, synthesis could receive up to
+        // ~8x that much text, leaving too little of its own 8,000 TPM
+        // budget for its output (exactly what caused "GPT-OSS 120B's
+        // synthesis pass got cut off before finishing the composite score
+        // and rank"). 1700 keeps 8 passes' combined output in the same
+        // ballpark the old 2-per-call version produced across its 4
+        // passes, so synthesis's input size — and therefore its own
+        // output headroom — doesn't regress.
+        const GPT_OSS_CATEGORY_CEILING = 1700;
+        // Ceiling for the synthesis pass. Its input is now kept in check
+        // by GPT_OSS_CATEGORY_CEILING above, so it can safely use most of
+        // whatever headroom budgetOutputTokens computes for it.
+        const GPT_OSS_SYNTHESIS_CEILING = 3200;
         // A part's response is only usable if it actually contains all of
         // the category headers it was asked for — a response that's
         // merely non-empty but cut off mid-category (exactly what was
@@ -6985,7 +7004,7 @@ Grading rules per claim:
             setProcStep('judging', `Step ${i+1} of ${GPT_OSS_GROUPS.length+1}`);
             const sysContent = group.prompt + EVIDENCE_TRUTH_ASSUMPTION_NOTE;
             const msgs = [{role:'system', content: sysContent}, {role:'user', content: userMsg}];
-            const part = extractChatContent(await (await doFetch(msgs, budgetOutputTokens(sysContent, userMsg))).json());
+            const part = extractChatContent(await (await doFetch(msgs, budgetOutputTokens(sysContent, userMsg, GPT_OSS_CATEGORY_CEILING))).json());
             if(!part) throw new Error('judging_failed:unrecognized_response_shape');
             if(!hasAllCategoryHeaders(part, group.categories))
               throw new Error(`judging_failed:truncated:GPT-OSS 120B's pass covering "${group.categories.join(' and ')}" got cut off before finishing, even after budgeting the maximum safe output size under its 8,000 TPM limit — the transcript itself may just be unusually long for this model.`);
@@ -7014,7 +7033,7 @@ Grading rules per claim:
           setProcStep('judging', `Step ${GPT_OSS_GROUPS.length+1} of ${GPT_OSS_GROUPS.length+1}`);
           const userC = 'CATEGORY RESULTS:\n\n'+parts.join('\n\n');
           const msgsC = [{role:'system', content: GPT_OSS_RUBRIC_SYNTHESIS}, {role:'user', content: userC}];
-          const partC = extractChatContent(await (await doFetch(msgsC, budgetOutputTokens(GPT_OSS_RUBRIC_SYNTHESIS, userC))).json());
+          const partC = extractChatContent(await (await doFetch(msgsC, budgetOutputTokens(GPT_OSS_RUBRIC_SYNTHESIS, userC, GPT_OSS_SYNTHESIS_CEILING))).json());
           if(!partC) throw new Error('judging_failed:unrecognized_response_shape');
           if(!/### Total Composite Score:/.test(partC) || !/### Judge's Rank:/.test(partC))
             throw new Error('judging_failed:truncated:GPT-OSS 120B\'s synthesis pass got cut off before finishing the composite score and rank.');

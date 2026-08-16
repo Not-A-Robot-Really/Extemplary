@@ -74,13 +74,13 @@ const DATA = window.APP_DATA;
   // cost score (expensive) burns more units per call, a high cost score
   // (cheap) burns fewer. Keep the keys in sync with JUDGE_MODELS below.
   const BALLOT_FEEDBACK_MODEL_WEIGHTS = {
-    llama:      5,  // GPT-OSS 120B — cost score 97 (cheapest per-token on
-                    // Groq), but Regular Practice now runs it as 5 separate
-                    // calls (see runGptOssSplitJudging: 4 category-group
+    llama:      9,  // GPT-OSS 120B — cost score 97 (cheapest per-token on
+                    // Groq), but Regular Practice now runs it as 9 separate
+                    // calls (see runGptOssSplitJudging: 8 single-category
                     // passes + 1 synthesis pass) to stay under its 8,000
                     // TPM free-tier ceiling, and groq-chat floors every
                     // call's daily-cap charge to a minimum of 1 regardless
-                    // of the weight sent — so the honest total is 5, not 1.
+                    // of the weight sent — so the honest total is 9, not 1.
                     // (Intro/Body Drill and Rough Draft still use the old
                     // single-call path and really do cost 1; this weight
                     // is an over-charge there, accepted for simplicity
@@ -1764,17 +1764,25 @@ const DATA = window.APP_DATA;
   // Practice (8-category) rubric — see runGptOssSplitJudging below for
   // why. Not used for Intro Drill / Body Drill / Rough Draft, whose
   // rubrics are already small enough to fit one call's token budget.
-  // 2 categories per call (4 calls total) rather than 4-per-call: an
-  // earlier 4-per-call version still truncated mid-category on a normal
-  // ~1250-word speech, because the fixed preamble+format overhead alone
-  // ate most of the 8,000 TPM budget before output even started, leaving
-  // only ~450 tokens/category — nowhere near enough for this rubric's
-  // depth requirements. Halving categories-per-call roughly triples the
-  // real per-category output headroom.
-  const GPT_OSS_RUBRIC_GROUP1 = DATA.GPT_OSS_RUBRIC_GROUP1; // Creative Hook & Intro, Structure
-  const GPT_OSS_RUBRIC_GROUP2 = DATA.GPT_OSS_RUBRIC_GROUP2; // Strength of Argument & Analysis, Flaws in Reasoning
-  const GPT_OSS_RUBRIC_GROUP3 = DATA.GPT_OSS_RUBRIC_GROUP3; // Strength of Evidence, Clarity
-  const GPT_OSS_RUBRIC_GROUP4 = DATA.GPT_OSS_RUBRIC_GROUP4; // Conclusion Strength, Speech Quality
+  // 1 category per call (8 calls total) rather than 2-per-call: the
+  // 2-per-call version still truncated mid-category ("Judging failed:
+  // GPT-OSS 120B's pass covering 'Strength of Evidence and Clarity' got
+  // cut off...") on a transcript that was evidently long/dense enough to
+  // eat further into the 8,000 TPM budget than a flat 2-per-call
+  // estimate assumed. Rather than keep guessing at a granularity that
+  // can still fail on the next unusually long speech, going all the way
+  // to 1 category per call scales safely regardless of transcript
+  // length — the fixed preamble+format overhead is now spread across
+  // twice as many calls, so every single call has far more real output
+  // headroom than even the 2-per-call version did.
+  const GPT_OSS_RUBRIC_CAT1 = DATA.GPT_OSS_RUBRIC_CAT1; // Creative Hook & Intro
+  const GPT_OSS_RUBRIC_CAT2 = DATA.GPT_OSS_RUBRIC_CAT2; // Structure
+  const GPT_OSS_RUBRIC_CAT3 = DATA.GPT_OSS_RUBRIC_CAT3; // Strength of Argument & Analysis
+  const GPT_OSS_RUBRIC_CAT4 = DATA.GPT_OSS_RUBRIC_CAT4; // Flaws in Reasoning
+  const GPT_OSS_RUBRIC_CAT5 = DATA.GPT_OSS_RUBRIC_CAT5; // Strength of Evidence
+  const GPT_OSS_RUBRIC_CAT6 = DATA.GPT_OSS_RUBRIC_CAT6; // Clarity
+  const GPT_OSS_RUBRIC_CAT7 = DATA.GPT_OSS_RUBRIC_CAT7; // Conclusion Strength
+  const GPT_OSS_RUBRIC_CAT8 = DATA.GPT_OSS_RUBRIC_CAT8; // Speech Quality
   const GPT_OSS_RUBRIC_SYNTHESIS = DATA.GPT_OSS_RUBRIC_SYNTHESIS;
   const ROUGHDRAFT_PIPELINE_PHRASES = DATA.ROUGHDRAFT_PIPELINE_PHRASES || { judging: [] };
 
@@ -6928,6 +6936,10 @@ Grading rules per claim:
         // Only used for the Regular Practice (8-category) rubric — Intro
         // Drill/Body Drill/Rough Draft's rubrics are already small enough
         // (3-6 categories) to fit one call comfortably under 8,000 TPM.
+        // (Previously this was split 2 categories per call; that still
+        // truncated on an unusually long/dense transcript, so it's now
+        // split 1 category per call — see the GPT_OSS_RUBRIC_CAT* comment
+        // above for why.)
         const GPT_OSS_TPM_LIMIT = 8000;
         // len/3.5 rather than the more common len/4 — deliberately
         // conservative, since underestimating here is what produced a
@@ -6956,10 +6968,14 @@ Grading rules per claim:
         const hasAllCategoryHeaders = (text, categoryNames) =>
           categoryNames.every(name => text.includes('### '+name));
         const GPT_OSS_GROUPS = [
-          { prompt: GPT_OSS_RUBRIC_GROUP1, categories: ['Creative Hook & Intro','Structure'] },
-          { prompt: GPT_OSS_RUBRIC_GROUP2, categories: ['Strength of Argument & Analysis','Flaws in Reasoning'] },
-          { prompt: GPT_OSS_RUBRIC_GROUP3, categories: ['Strength of Evidence','Clarity'] },
-          { prompt: GPT_OSS_RUBRIC_GROUP4, categories: ['Conclusion Strength','Speech Quality'] }
+          { prompt: GPT_OSS_RUBRIC_CAT1, categories: ['Creative Hook & Intro'] },
+          { prompt: GPT_OSS_RUBRIC_CAT2, categories: ['Structure'] },
+          { prompt: GPT_OSS_RUBRIC_CAT3, categories: ['Strength of Argument & Analysis'] },
+          { prompt: GPT_OSS_RUBRIC_CAT4, categories: ['Flaws in Reasoning'] },
+          { prompt: GPT_OSS_RUBRIC_CAT5, categories: ['Strength of Evidence'] },
+          { prompt: GPT_OSS_RUBRIC_CAT6, categories: ['Clarity'] },
+          { prompt: GPT_OSS_RUBRIC_CAT7, categories: ['Conclusion Strength'] },
+          { prompt: GPT_OSS_RUBRIC_CAT8, categories: ['Speech Quality'] }
         ];
         async function runGptOssSplitJudging(){
           const userMsg = 'TRANSCRIPT:\n\n'+transcript+'\n\n'+metricsBlock;
@@ -6990,7 +7006,7 @@ Grading rules per claim:
           await new Promise(r => setTimeout(r, 65000));
 
           // The synthesis pass gets every category pass's own findings,
-          // not the transcript again — a fifth full transcript read would
+          // not the transcript again — a ninth full transcript read would
           // risk blowing the TPM budget yet again for no real benefit,
           // since composite score/rank/drill only need to reason over what
           // the category passes already found, not re-derive it from

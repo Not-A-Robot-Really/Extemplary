@@ -74,17 +74,18 @@ const DATA = window.APP_DATA;
   // cost score (expensive) burns more units per call, a high cost score
   // (cheap) burns fewer. Keep the keys in sync with JUDGE_MODELS below.
   const BALLOT_FEEDBACK_MODEL_WEIGHTS = {
-    llama:      3,  // GPT-OSS 120B — cost score 97 (cheapest per-token on
-                    // Groq), but Regular Practice now runs it as 3 separate
-                    // calls (see runGptOssSplitJudging) to stay under its
-                    // 8,000 TPM free-tier ceiling, and groq-chat floors
-                    // every call's daily-cap charge to a minimum of 1
-                    // regardless of the weight sent — so the honest total
-                    // is 3, not 1. (Intro/Body Drill and Rough Draft still
-                    // use the old single-call path and really do cost 1;
-                    // this weight is a slight over-charge there, accepted
-                    // for simplicity rather than tracking a mode-dependent
-                    // weight just for this one model.)
+    llama:      5,  // GPT-OSS 120B — cost score 97 (cheapest per-token on
+                    // Groq), but Regular Practice now runs it as 5 separate
+                    // calls (see runGptOssSplitJudging: 4 category-group
+                    // passes + 1 synthesis pass) to stay under its 8,000
+                    // TPM free-tier ceiling, and groq-chat floors every
+                    // call's daily-cap charge to a minimum of 1 regardless
+                    // of the weight sent — so the honest total is 5, not 1.
+                    // (Intro/Body Drill and Rough Draft still use the old
+                    // single-call path and really do cost 1; this weight
+                    // is an over-charge there, accepted for simplicity
+                    // rather than tracking a mode-dependent weight just
+                    // for this one model.)
     deepseekv4: 1,  // DeepSeek V4    — cost score 90
     glm52:      1,  // GLM 5.2        — cost score 88
     sonnet5:    2,  // Claude Sonnet 5— cost score 75
@@ -1763,8 +1764,17 @@ const DATA = window.APP_DATA;
   // Practice (8-category) rubric — see runGptOssSplitJudging below for
   // why. Not used for Intro Drill / Body Drill / Rough Draft, whose
   // rubrics are already small enough to fit one call's token budget.
-  const GPT_OSS_RUBRIC_PART_A = DATA.GPT_OSS_RUBRIC_PART_A;
-  const GPT_OSS_RUBRIC_PART_B = DATA.GPT_OSS_RUBRIC_PART_B;
+  // 2 categories per call (4 calls total) rather than 4-per-call: an
+  // earlier 4-per-call version still truncated mid-category on a normal
+  // ~1250-word speech, because the fixed preamble+format overhead alone
+  // ate most of the 8,000 TPM budget before output even started, leaving
+  // only ~450 tokens/category — nowhere near enough for this rubric's
+  // depth requirements. Halving categories-per-call roughly triples the
+  // real per-category output headroom.
+  const GPT_OSS_RUBRIC_GROUP1 = DATA.GPT_OSS_RUBRIC_GROUP1; // Creative Hook & Intro, Structure
+  const GPT_OSS_RUBRIC_GROUP2 = DATA.GPT_OSS_RUBRIC_GROUP2; // Strength of Argument & Analysis, Flaws in Reasoning
+  const GPT_OSS_RUBRIC_GROUP3 = DATA.GPT_OSS_RUBRIC_GROUP3; // Strength of Evidence, Clarity
+  const GPT_OSS_RUBRIC_GROUP4 = DATA.GPT_OSS_RUBRIC_GROUP4; // Conclusion Strength, Speech Quality
   const GPT_OSS_RUBRIC_SYNTHESIS = DATA.GPT_OSS_RUBRIC_SYNTHESIS;
   const ROUGHDRAFT_PIPELINE_PHRASES = DATA.ROUGHDRAFT_PIPELINE_PHRASES || { judging: [] };
 
@@ -6918,46 +6928,82 @@ Grading rules per claim:
         // Only used for the Regular Practice (8-category) rubric — Intro
         // Drill/Body Drill/Rough Draft's rubrics are already small enough
         // (3-6 categories) to fit one call comfortably under 8,000 TPM.
+        const GPT_OSS_TPM_LIMIT = 8000;
+        // len/3.5 rather than the more common len/4 — deliberately
+        // conservative, since underestimating here is what produced a
+        // max_tokens budget too small to finish 4 categories (a flat 1800
+        // regardless of actual prompt size silently truncated mid-category
+        // on a perfectly normal ~1250-word speech). Overestimating by a
+        // bit just means a slightly smaller output budget, not a 413.
+        const estimateTokens = (str) => Math.ceil((str||'').length / 3.5);
+        // Picks max_tokens as "whatever's actually left in the 8,000 TPM
+        // budget after this call's real system+user prompt", instead of a
+        // flat guess — clamped to a floor (so a pathological case doesn't
+        // request an unusably tiny budget) and a ceiling (no need to ask
+        // for more than a genuinely long response would use anyway).
+        const budgetOutputTokens = (systemContent, userContent) => {
+          const promptTokens = estimateTokens(systemContent) + estimateTokens(userContent);
+          const SAFETY_MARGIN = 300; // slack for estimation error + response_format overhead
+          return Math.max(900, Math.min(3200, GPT_OSS_TPM_LIMIT - promptTokens - SAFETY_MARGIN));
+        };
+        // A part's response is only usable if it actually contains all of
+        // the category headers it was asked for — a response that's
+        // merely non-empty but cut off mid-category (exactly what was
+        // happening at earlier, too-small token budgets) is not "done",
+        // and shipping it as though it were produces a ballot silently
+        // missing whole categories with no clear signal to the speaker
+        // why.
+        const hasAllCategoryHeaders = (text, categoryNames) =>
+          categoryNames.every(name => text.includes('### '+name));
+        const GPT_OSS_GROUPS = [
+          { prompt: GPT_OSS_RUBRIC_GROUP1, categories: ['Creative Hook & Intro','Structure'] },
+          { prompt: GPT_OSS_RUBRIC_GROUP2, categories: ['Strength of Argument & Analysis','Flaws in Reasoning'] },
+          { prompt: GPT_OSS_RUBRIC_GROUP3, categories: ['Strength of Evidence','Clarity'] },
+          { prompt: GPT_OSS_RUBRIC_GROUP4, categories: ['Conclusion Strength','Speech Quality'] }
+        ];
         async function runGptOssSplitJudging(){
-          setProcStep('judging', 'Step 1 of 3');
-          const msgsA = [
-            {role:'system', content: GPT_OSS_RUBRIC_PART_A + EVIDENCE_TRUTH_ASSUMPTION_NOTE},
-            {role:'user', content:'TRANSCRIPT:\n\n'+transcript+'\n\n'+metricsBlock}
-          ];
-          const partA = extractChatContent(await (await doFetch(msgsA, 1800)).json());
-          if(!partA) throw new Error('judging_failed:unrecognized_response_shape');
+          const userMsg = 'TRANSCRIPT:\n\n'+transcript+'\n\n'+metricsBlock;
+          const parts = [];
+          for(let i = 0; i < GPT_OSS_GROUPS.length; i++){
+            const group = GPT_OSS_GROUPS[i];
+            setProcStep('judging', `Step ${i+1} of ${GPT_OSS_GROUPS.length+1}`);
+            const sysContent = group.prompt + EVIDENCE_TRUTH_ASSUMPTION_NOTE;
+            const msgs = [{role:'system', content: sysContent}, {role:'user', content: userMsg}];
+            const part = extractChatContent(await (await doFetch(msgs, budgetOutputTokens(sysContent, userMsg))).json());
+            if(!part) throw new Error('judging_failed:unrecognized_response_shape');
+            if(!hasAllCategoryHeaders(part, group.categories))
+              throw new Error(`judging_failed:truncated:GPT-OSS 120B's pass covering "${group.categories.join(' and ')}" got cut off before finishing, even after budgeting the maximum safe output size under its 8,000 TPM limit — the transcript itself may just be unusually long for this model.`);
+            parts.push(part);
+            // Real pacing, not just a UI nicety: TPM is a rolling 60-second
+            // window, so firing the next call before this one's tokens have
+            // aged out risks stacking on top of it and tripping the same
+            // 413 again. Skipped after the very last category pass, since
+            // the synthesis call right after needs the same gap too — that
+            // wait happens below instead.
+            if(i < GPT_OSS_GROUPS.length - 1){
+              setProcStep('judging', 'Pacing for rate limit (~1 min)…');
+              await new Promise(r => setTimeout(r, 65000));
+            }
+          }
 
-          // Real pacing, not just a UI nicety: waiting less than a full
-          // rolling window risks call B's tokens stacking on top of call
-          // A's still-counted tokens and tripping the same 413 again.
           setProcStep('judging', 'Pacing for rate limit (~1 min)…');
           await new Promise(r => setTimeout(r, 65000));
 
-          setProcStep('judging', 'Step 2 of 3');
-          const msgsB = [
-            {role:'system', content: GPT_OSS_RUBRIC_PART_B + EVIDENCE_TRUTH_ASSUMPTION_NOTE},
-            {role:'user', content:'TRANSCRIPT:\n\n'+transcript+'\n\n'+metricsBlock}
-          ];
-          const partB = extractChatContent(await (await doFetch(msgsB, 1800)).json());
-          if(!partB) throw new Error('judging_failed:unrecognized_response_shape');
-
-          setProcStep('judging', 'Pacing for rate limit (~1 min)…');
-          await new Promise(r => setTimeout(r, 65000));
-
-          // The synthesis pass gets partA+partB's own findings, not the
-          // transcript again — a full third transcript read would risk
-          // blowing the TPM budget a third time for no real benefit, since
-          // composite score/rank/drill only need to reason over what the
-          // first two passes already found, not re-derive it from scratch.
-          setProcStep('judging', 'Step 3 of 3');
-          const msgsC = [
-            {role:'system', content: GPT_OSS_RUBRIC_SYNTHESIS},
-            {role:'user', content:'CATEGORY RESULTS:\n\n'+partA+'\n\n'+partB}
-          ];
-          const partC = extractChatContent(await (await doFetch(msgsC, 700)).json());
+          // The synthesis pass gets every category pass's own findings,
+          // not the transcript again — a fifth full transcript read would
+          // risk blowing the TPM budget yet again for no real benefit,
+          // since composite score/rank/drill only need to reason over what
+          // the category passes already found, not re-derive it from
+          // scratch.
+          setProcStep('judging', `Step ${GPT_OSS_GROUPS.length+1} of ${GPT_OSS_GROUPS.length+1}`);
+          const userC = 'CATEGORY RESULTS:\n\n'+parts.join('\n\n');
+          const msgsC = [{role:'system', content: GPT_OSS_RUBRIC_SYNTHESIS}, {role:'user', content: userC}];
+          const partC = extractChatContent(await (await doFetch(msgsC, budgetOutputTokens(GPT_OSS_RUBRIC_SYNTHESIS, userC))).json());
           if(!partC) throw new Error('judging_failed:unrecognized_response_shape');
+          if(!/### Total Composite Score:/.test(partC) || !/### Judge's Rank:/.test(partC))
+            throw new Error('judging_failed:truncated:GPT-OSS 120B\'s synthesis pass got cut off before finishing the composite score and rank.');
 
-          return (partA+'\n\n'+partB+'\n\n'+partC).trim();
+          return (parts.join('\n\n')+'\n\n'+partC).trim();
         }
         const isGptOssSplitEligible = choice.model === 'openai/gpt-oss-120b'
           && !introDrillMode && !bodyDrillMode && !roughDraftMode;

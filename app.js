@@ -74,18 +74,16 @@ const DATA = window.APP_DATA;
   // cost score (expensive) burns more units per call, a high cost score
   // (cheap) burns fewer. Keep the keys in sync with JUDGE_MODELS below.
   const BALLOT_FEEDBACK_MODEL_WEIGHTS = {
-    llama:      9,  // GPT-OSS 120B — cost score 97 (cheapest per-token on
-                    // Groq), but Regular Practice now runs it as 9 separate
-                    // calls (see runGptOssSplitJudging: 8 single-category
-                    // passes + 1 synthesis pass) to stay under its 8,000
-                    // TPM free-tier ceiling, and groq-chat floors every
-                    // call's daily-cap charge to a minimum of 1 regardless
-                    // of the weight sent — so the honest total is 9, not 1.
-                    // (Intro/Body Drill and Rough Draft still use the old
-                    // single-call path and really do cost 1; this weight
-                    // is an over-charge there, accepted for simplicity
-                    // rather than tracking a mode-dependent weight just
-                    // for this one model.)
+    llama:      1,  // GPT-OSS 120B — cost score 97 (cheapest per-token on
+                    // Groq). This is the correct weight for the single-call
+                    // path (Intro/Body Drill, Body Drill, Rough Draft).
+                    // Regular Practice does NOT use this value at all —
+                    // runGptOssSplitJudging below passes its own explicit
+                    // weightOverride per call (see doFetch), since that
+                    // path fires 9 real HTTP calls (8 category passes + 1
+                    // synthesis pass) and needs the daily-cap charge
+                    // spread across them by hand rather than multiplied by
+                    // this single flat number 9 times.
     deepseekv4: 1,  // DeepSeek V4    — cost score 90
     glm52:      1,  // GLM 5.2        — cost score 88
     sonnet5:    2,  // Claude Sonnet 5— cost score 75
@@ -6840,7 +6838,7 @@ Grading rules per claim:
         // single round's error handling (429 / non-ok) stays identical
         // to how every other call in this file works — throw, and let
         // withKeyFallback's existing retry logic take over.
-        const doFetch = async (messages, maxTokensOverride) => {
+        const doFetch = async (messages, maxTokensOverride, weightOverride) => {
           const res = await fetchWithTimeout(`${SUPABASE_FUNCTIONS_URL}/${choice.fn}`,{
             method:'POST',
             headers:{
@@ -6890,7 +6888,11 @@ Grading rules per claim:
               // models (Opus 5) drain the cap faster than cheaper ones
               // (Llama/DeepSeek). Enforced server-side in groq-chat /
               // hackclub-chat; see those files for the p_amount plumbing.
-              weight: BALLOT_FEEDBACK_MODEL_WEIGHTS[weightKey] || 1
+              // weightOverride lets runGptOssSplitJudging below charge a
+              // small explicit amount per call instead of the flat
+              // per-model weight above — see the note on the llama entry
+              // for why that path can't just reuse this lookup directly.
+              weight: weightOverride != null ? weightOverride : (BALLOT_FEEDBACK_MODEL_WEIGHTS[weightKey] || 1)
             })
           // Groq's LPU inference is genuinely fast — GPT-OSS 120B via
           // groq-chat comfortably finishes well inside 60s. hackclub-chat
@@ -6996,6 +6998,17 @@ Grading rules per claim:
           { prompt: GPT_OSS_RUBRIC_CAT7, categories: ['Conclusion Strength'] },
           { prompt: GPT_OSS_RUBRIC_CAT8, categories: ['Speech Quality'] }
         ];
+        // Daily-cap cost for a full Regular Practice round on GPT-OSS
+        // 120B: 8 category calls at weight 1 each + 1 synthesis call at
+        // weight 2 (it does more work — combining 8 passes' findings into
+        // a rank — so it's weighted slightly higher) = 10 total. Each
+        // weight is passed explicitly as doFetch's third argument rather
+        // than falling back to BALLOT_FEEDBACK_MODEL_WEIGHTS.llama, which
+        // is scoped to the single-call path used by Intro/Body Drill and
+        // Rough Draft. Passing the per-model weight (llama: 1) through 9
+        // real HTTP calls would have summed to 9, not 10 — close, but
+        // this makes the total an explicit, intentional number instead of
+        // an accident of how many calls the split happens to need.
         async function runGptOssSplitJudging(){
           const userMsg = 'TRANSCRIPT:\n\n'+transcript+'\n\n'+metricsBlock;
           const parts = [];
@@ -7004,7 +7017,7 @@ Grading rules per claim:
             setProcStep('judging', `Step ${i+1} of ${GPT_OSS_GROUPS.length+1}`);
             const sysContent = group.prompt + EVIDENCE_TRUTH_ASSUMPTION_NOTE;
             const msgs = [{role:'system', content: sysContent}, {role:'user', content: userMsg}];
-            const part = extractChatContent(await (await doFetch(msgs, budgetOutputTokens(sysContent, userMsg, GPT_OSS_CATEGORY_CEILING))).json());
+            const part = extractChatContent(await (await doFetch(msgs, budgetOutputTokens(sysContent, userMsg, GPT_OSS_CATEGORY_CEILING), 1)).json());
             if(!part) throw new Error('judging_failed:unrecognized_response_shape');
             if(!hasAllCategoryHeaders(part, group.categories))
               throw new Error(`judging_failed:truncated:GPT-OSS 120B's pass covering "${group.categories.join(' and ')}" got cut off before finishing, even after budgeting the maximum safe output size under its 8,000 TPM limit — the transcript itself may just be unusually long for this model.`);
@@ -7093,7 +7106,7 @@ Grading rules per claim:
           const userC = 'TOTAL COMPOSITE SCORE: '+compositeScore+'/'+compositeCap+
             '\n\nCATEGORY RESULTS:\n\n'+parts.map(stripAndCapForSynthesis).join('\n\n');
           const msgsC = [{role:'system', content: GPT_OSS_RUBRIC_SYNTHESIS}, {role:'user', content: userC}];
-          const partC = extractChatContent(await (await doFetch(msgsC, budgetOutputTokens(GPT_OSS_RUBRIC_SYNTHESIS, userC, GPT_OSS_SYNTHESIS_CEILING))).json());
+          const partC = extractChatContent(await (await doFetch(msgsC, budgetOutputTokens(GPT_OSS_RUBRIC_SYNTHESIS, userC, GPT_OSS_SYNTHESIS_CEILING), 2)).json());
           if(!partC) throw new Error('judging_failed:GPT-OSS 120B\'s synthesis pass returned an unrecognized response shape.');
           // The composite score line is now assembled in code (see above)
           // rather than trusted from the model's own output, so only the

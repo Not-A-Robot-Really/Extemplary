@@ -7111,7 +7111,14 @@ Grading rules per claim:
           // The composite score line is now assembled in code (see above)
           // rather than trusted from the model's own output, so only the
           // rank needs to be verified as actually present.
-          if(!/### Judge's Rank:/.test(partC))
+          // Matched loosely on purpose: the log confirmed a real,
+          // successful completion (finish_reason: "stop", well under its
+          // token budget) was still being flagged as "cut off" — the
+          // model wrote a typographic/curly apostrophe (Judge’s) rather
+          // than the straight one (Judge's) this regex required, so a
+          // perfectly good ballot failed a literal string match having
+          // nothing to do with truncation at all.
+          if(!/###\s*Judge.?s Rank\s*:/.test(partC))
             throw new Error('judging_failed:truncated:GPT-OSS 120B\'s synthesis pass got cut off before finishing the rank.');
           const scoreLine = '### Total Composite Score: '+compositeScore+'/'+compositeCap;
 

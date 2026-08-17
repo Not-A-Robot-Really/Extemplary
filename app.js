@@ -7067,10 +7067,31 @@ Grading rules per claim:
             compositeScore += parseInt(m[1], 10);
             compositeCap += parseInt(m[2], 10);
           }
-          const stripRewrite = (p) =>
-            p.replace(/\n- \*\*What You Could Have Done:\*\*[\s\S]*$/, '').trim();
+          // stripRewrite alone wasn't enough: it bounds input size only
+          // as tightly as GPT_OSS_CATEGORY_CEILING bounds each category
+          // pass's OWN output, and that ceiling is a max_tokens cap the
+          // model can legitimately use most of when it has 2-5 What
+          // Worked bullets and 2-5 Critical Flaws bullets to write with
+          // quotes — 8 categories doing that simultaneously kept landing
+          // synthesis's prompt close enough to 8,000 tokens that Groq's
+          // TPM window left too little real completion room, cutting
+          // synthesis off before it even finished the rank line. Trusting
+          // an upstream max_tokens ceiling to indirectly bound a
+          // downstream call's input is exactly the fragile pattern that
+          // produced this bug twice already (2-per-call → 1-per-call →
+          // per-category ceiling), so this now hard-caps the actual
+          // character count sent per category, deterministically, no
+          // matter how verbose any individual pass's real output was.
+          const CATEGORY_SYNTHESIS_CHAR_CAP = 700; // ~200 tokens/category
+          const stripAndCapForSynthesis = (p) => {
+            const stripped = p.replace(/\n- \*\*What You Could Have Done:\*\*[\s\S]*$/, '').trim();
+            if(stripped.length <= CATEGORY_SYNTHESIS_CHAR_CAP) return stripped;
+            const cut = stripped.slice(0, CATEGORY_SYNTHESIS_CHAR_CAP);
+            const lastBreak = Math.max(cut.lastIndexOf('\n- '), cut.lastIndexOf('. '));
+            return (lastBreak > 100 ? cut.slice(0, lastBreak+1) : cut) + '\n*(truncated for length)*';
+          };
           const userC = 'TOTAL COMPOSITE SCORE: '+compositeScore+'/'+compositeCap+
-            '\n\nCATEGORY RESULTS:\n\n'+parts.map(stripRewrite).join('\n\n');
+            '\n\nCATEGORY RESULTS:\n\n'+parts.map(stripAndCapForSynthesis).join('\n\n');
           const msgsC = [{role:'system', content: GPT_OSS_RUBRIC_SYNTHESIS}, {role:'user', content: userC}];
           const partC = extractChatContent(await (await doFetch(msgsC, budgetOutputTokens(GPT_OSS_RUBRIC_SYNTHESIS, userC, GPT_OSS_SYNTHESIS_CEILING))).json());
           if(!partC) throw new Error('judging_failed:GPT-OSS 120B\'s synthesis pass returned an unrecognized response shape.');

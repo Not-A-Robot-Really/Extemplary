@@ -7361,6 +7361,24 @@ Grading rules per claim:
   function handlePipelineError(err){
     let msg = 'Something went wrong talking to Groq.';
     const s = String(err.message || err);
+    // detailAfterPrefix() replaces the old `s.split(':').slice(2).join(':')`
+    // pattern, which silently assumed EVERY failure used the 3-part
+    // "stage_failed:tag:detail" shape (e.g. "judging_failed:429:rate
+    // limited") and threw away everything past the first colon otherwise.
+    // Several judging_failed throws only ever had a 2-part shape —
+    // "judging_failed:unrecognized_response_shape", or the newer
+    // descriptive messages like "judging_failed:Could not find a
+    // \"- score/cap\" header..." — so slice(2) silently returned an empty
+    // string for all of them, producing the bare "Judging failed:" with
+    // no detail the user kept seeing, no matter how much more specific
+    // the underlying thrown message actually was. This instead strips
+    // ONLY a recognized tag (a 3-digit HTTP status, "truncated", or
+    // "empty") if one is actually present right after the stage prefix,
+    // and otherwise keeps everything after the prefix intact.
+    const detailAfterPrefix = (str, prefix) => {
+      const raw = str.slice(prefix.length);
+      return raw.replace(/^(?:\d{3}|truncated|empty):/, '');
+    };
     if(err.rateLimited)
       msg = `You've hit today's Ballot Feedback limit (${err.count||'?'}/${err.limit||'?'}). It resets tomorrow - check the usage button in the bottom-left corner.`;
     else if(s.includes('Failed to fetch')||err instanceof TypeError)
@@ -7378,15 +7396,15 @@ Grading rules per claim:
     // request was groq-chat with a 1KB body — actively misleading, since
     // recording a shorter speech does nothing for a judging-stage failure.
     else if(s.startsWith('transcription_failed')){
-      const detail = s.split(':').slice(2).join(':');
+      const detail = detailAfterPrefix(s, 'transcription_failed:');
       msg = (s.includes(':413:') || detail.toLowerCase().includes('request entity too large'))
         ? 'The recording was still too large to upload even after automatic compression and splitting. Try recording a shorter speech, or check your internet connection and try again.'
         : 'Transcription failed: '+detail;
     }
     else if(s.startsWith('decode_failed'))
-      msg = s.split(':').slice(2).join(':') || "Couldn't read the recording's audio track.";
+      msg = detailAfterPrefix(s, 'decode_failed:') || "Couldn't read the recording's audio track.";
     else if(s.startsWith('judging_failed')){
-      const detail = s.split(':').slice(2).join(':');
+      const detail = detailAfterPrefix(s, 'judging_failed:');
       msg = (s.includes(':413:') || detail.toLowerCase().includes('request entity too large'))
         ? `The judge model rejected the request as too large (413): ${detail || 'no further detail from Groq'}. This is very unlikely to be about your recording's length — it's more likely the transcript plus rubric prompt exceeded a limit on Groq's side. Try a different judge model, or try again.`
         : 'Judging failed: '+detail;

@@ -302,10 +302,31 @@
                 </span>
                 <svg class="model-picker-check" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
               </button>
+              <button type="button" class="model-picker-option" data-model="deepseekv4pro" role="option" aria-selected="false">
+                <span class="model-picker-option-text">
+                  <span class="model-picker-option-name-row"><span class="model-picker-option-name">DeepSeek V4 Pro</span></span>
+                  <span class="model-picker-option-sub">DeepSeek</span>
+                </span>
+                <svg class="model-picker-check" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              </button>
               <button type="button" class="model-picker-option" data-model="glm52" role="option" aria-selected="false">
                 <span class="model-picker-option-text">
                   <span class="model-picker-option-name-row"><span class="model-picker-option-name">GLM 5.2</span></span>
                   <span class="model-picker-option-sub">Z.ai</span>
+                </span>
+                <svg class="model-picker-check" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              </button>
+              <button type="button" class="model-picker-option" data-model="qwen38" role="option" aria-selected="false">
+                <span class="model-picker-option-text">
+                  <span class="model-picker-option-name-row"><span class="model-picker-option-name">Qwen3.8 2.4T A95B</span></span>
+                  <span class="model-picker-option-sub">Hack Club AI</span>
+                </span>
+                <svg class="model-picker-check" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              </button>
+              <button type="button" class="model-picker-option" data-model="gemini37flash" role="option" aria-selected="false">
+                <span class="model-picker-option-text">
+                  <span class="model-picker-option-name-row"><span class="model-picker-option-name">Gemini 3.7 Flash</span></span>
+                  <span class="model-picker-option-sub">Google</span>
                 </span>
                 <svg class="model-picker-check" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
               </button>
@@ -1330,61 +1351,73 @@
             <span class="ai-compare-rank">1</span>
             <span class="ai-compare-model">Claude Opus 5 <img class="ai-model-logo" src="Images/claude.svg" alt="Claude"></span>
             <span class="ai-compare-metric"><span class="ai-bar-num">96</span><span class="ai-bar-track"><span class="ai-bar-fill" data-w="96" style="width:0%;background:rgb(23,174,171);"></span></span></span>
-            <span class="ai-compare-metric"><span class="ai-bar-num">35</span><span class="ai-bar-track"><span class="ai-bar-fill" data-w="35" style="width:0%;background:rgb(215,149,28);"></span></span></span>
+            <span class="ai-compare-metric"><span class="ai-bar-num">57</span><span class="ai-bar-track"><span class="ai-bar-fill" data-w="57" style="width:0%;background:rgb(166,176,26);"></span></span></span>
           </div>
-          <div class="ai-compare-row" data-rank="2" data-provider="anthropic" data-example="opus48">
+          <div class="ai-compare-row" data-rank="2" data-provider="anthropic">
             <span class="ai-compare-rank">2</span>
-            <span class="ai-compare-model"><strong>Claude Opus 4.8</strong> <img class="ai-model-logo" src="Images/claude.svg" alt="Claude"></span>
-            <span class="ai-compare-metric"><span class="ai-bar-num">91</span><span class="ai-bar-track"><span class="ai-bar-fill" data-w="91" style="width:0%;background:rgb(26,174,164);"></span></span></span>
-            <span class="ai-compare-metric"><span class="ai-bar-num">28</span><span class="ai-bar-track"><span class="ai-bar-fill" data-w="28" style="width:0%;background:rgb(219,159,25);"></span></span></span>
-          </div>
-          <div class="ai-compare-row" data-rank="3" data-provider="anthropic">
-            <span class="ai-compare-rank">3</span>
             <span class="ai-compare-model">Claude Fable 5 <img class="ai-model-logo" src="Images/claude.svg" alt="Anthropic"></span>
-            <span class="ai-compare-metric"><span class="ai-bar-num">90</span><span class="ai-bar-track"><span class="ai-bar-fill" data-w="90" style="width:0%;background:rgb(30,174,145);"></span></span></span>
+            <span class="ai-compare-metric"><span class="ai-bar-num">95</span><span class="ai-bar-track"><span class="ai-bar-fill" data-w="95" style="width:0%;background:rgb(24,174,167);"></span></span></span>
             <span class="ai-compare-metric"><span class="ai-bar-num">15</span><span class="ai-bar-track"><span class="ai-bar-fill" data-w="15" style="width:0%;background:rgb(207,101,43);"></span></span></span>
           </div>
-          <div class="ai-compare-row" data-rank="4" data-provider="openai">
-            <span class="ai-compare-rank">4</span>
+          <div class="ai-compare-row" data-rank="3" data-provider="openai">
+            <span class="ai-compare-rank">3</span>
             <span class="ai-compare-model">GPT-5.6 Sol <img class="ai-model-logo" src="Images/openai.svg" alt="OpenAI"></span>
-            <span class="ai-compare-metric"><span class="ai-bar-num">90</span><span class="ai-bar-track"><span class="ai-bar-fill" data-w="90" style="width:0%;background:rgb(30,174,145);"></span></span></span>
-            <span class="ai-compare-metric"><span class="ai-bar-num">30</span><span class="ai-bar-track"><span class="ai-bar-fill" data-w="30" style="width:0%;background:rgb(216,139,36);"></span></span></span>
+            <span class="ai-compare-metric"><span class="ai-bar-num">94</span><span class="ai-bar-track"><span class="ai-bar-fill" data-w="94" style="width:0%;background:rgb(25,174,162);"></span></span></span>
+            <span class="ai-compare-metric"><span class="ai-bar-num">50</span><span class="ai-bar-track"><span class="ai-bar-fill" data-w="50" style="width:0%;background:rgb(212,177,6);"></span></span></span>
           </div>
-          <div class="ai-compare-row available" data-provider="moonshot" data-example="kimik3">
-            <span class="ai-compare-rank">5</span>
+          <div class="ai-compare-row available" data-rank="4" data-provider="moonshot" data-example="kimik3">
+            <span class="ai-compare-rank">4</span>
             <span class="ai-compare-model">Kimi K3 <img class="ai-model-logo" src="Images/kimi.svg" alt="Kimi"></span>
-            <span class="ai-compare-metric"><span class="ai-bar-num">86</span><span class="ai-bar-track"><span class="ai-bar-fill" data-w="86" style="width:0%;background:rgb(34,174,127);"></span></span></span>
-            <span class="ai-compare-metric"><span class="ai-bar-num">60</span><span class="ai-bar-track"><span class="ai-bar-fill" data-w="60" style="width:0%;background:rgb(146,176,35);"></span></span></span>
+            <span class="ai-compare-metric"><span class="ai-bar-num">93</span><span class="ai-bar-track"><span class="ai-bar-fill" data-w="93" style="width:0%;background:rgb(26,174,158);"></span></span></span>
+            <span class="ai-compare-metric"><span class="ai-bar-num">74</span><span class="ai-bar-track"><span class="ai-bar-fill" data-w="74" style="width:0%;background:rgb(54,174,75);"></span></span></span>
+          </div>
+          <div class="ai-compare-row available" data-provider="qwen" data-example="qwen38">
+            <span class="ai-compare-rank">5</span>
+            <span class="ai-compare-model">Qwen3.8 2.4T A95B</span>
+            <span class="ai-compare-metric"><span class="ai-bar-num">91</span><span class="ai-bar-track"><span class="ai-bar-fill" data-w="91" style="width:0%;background:rgb(28,174,149);"></span></span></span>
+            <span class="ai-compare-metric"><span class="ai-bar-num">88</span><span class="ai-bar-track"><span class="ai-bar-fill" data-w="88" style="width:0%;background:rgb(32,174,136);"></span></span></span>
+          </div>
+          <div class="ai-compare-row available" data-provider="google" data-example="gemini37flash">
+            <span class="ai-compare-rank">6</span>
+            <span class="ai-compare-model">Gemini 3.7 Flash <img class="ai-model-logo" src="Images/google.svg" alt="Google"></span>
+            <span class="ai-compare-metric"><span class="ai-bar-num">89</span><span class="ai-bar-track"><span class="ai-bar-fill" data-w="89" style="width:0%;background:rgb(31,174,140);"></span></span></span>
+            <span class="ai-compare-metric"><span class="ai-bar-num">93</span><span class="ai-bar-track"><span class="ai-bar-fill" data-w="93" style="width:0%;background:rgb(26,174,158);"></span></span></span>
           </div>
           <div class="ai-compare-row available" data-provider="anthropic" data-example="sonnet5">
-            <span class="ai-compare-rank">6</span>
-            <span class="ai-compare-model">Claude Sonnet 5 <img class="ai-model-logo" src="Images/claude.svg" alt="Claude"></span>
-            <span class="ai-compare-metric"><span class="ai-bar-num">83</span><span class="ai-bar-track"><span class="ai-bar-fill" data-w="83" style="width:0%;background:rgb(38,174,114);"></span></span></span>
-            <span class="ai-compare-metric"><span class="ai-bar-num">75</span><span class="ai-bar-track"><span class="ai-bar-fill" data-w="75" style="width:0%;background:rgb(47,174,78);"></span></span></span>
-          </div>
-          <div class="ai-compare-row" data-provider="xai">
             <span class="ai-compare-rank">7</span>
-            <span class="ai-compare-model">Grok 4.5 <img class="ai-model-logo" src="Images/xai.svg" alt="xAI"></span>
-            <span class="ai-compare-metric"><span class="ai-bar-num">80</span><span class="ai-bar-track"><span class="ai-bar-fill" data-w="80" style="width:0%;background:rgb(41,174,100);"></span></span></span>
-            <span class="ai-compare-metric"><span class="ai-bar-num">72</span><span class="ai-bar-track"><span class="ai-bar-fill" data-w="72" style="width:0%;background:rgb(67,174,69);"></span></span></span>
+            <span class="ai-compare-model">Claude Sonnet 5 <img class="ai-model-logo" src="Images/claude.svg" alt="Claude"></span>
+            <span class="ai-compare-metric"><span class="ai-bar-num">88</span><span class="ai-bar-track"><span class="ai-bar-fill" data-w="88" style="width:0%;background:rgb(32,174,136);"></span></span></span>
+            <span class="ai-compare-metric"><span class="ai-bar-num">82</span><span class="ai-bar-track"><span class="ai-bar-fill" data-w="82" style="width:0%;background:rgb(39,174,109);"></span></span></span>
           </div>
-          <div class="ai-compare-row available" data-provider="deepseek" data-example="deepseek">
+          <div class="ai-compare-row" data-rank="8" data-provider="xai">
             <span class="ai-compare-rank">8</span>
-            <span class="ai-compare-model">DeepSeek V4 <img class="ai-model-logo" src="Images/deepseek.svg" alt="DeepSeek"></span>
-            <span class="ai-compare-metric"><span class="ai-bar-num">80</span><span class="ai-bar-track"><span class="ai-bar-fill" data-w="80" style="width:0%;background:rgb(41,174,100);"></span></span></span>
-            <span class="ai-compare-metric"><span class="ai-bar-num">90</span><span class="ai-bar-track"><span class="ai-bar-fill" data-w="90" style="width:0%;background:rgb(30,174,145);"></span></span></span>
+            <span class="ai-compare-model">Grok 4.5 <img class="ai-model-logo" src="Images/xai.svg" alt="xAI"></span>
+            <span class="ai-compare-metric"><span class="ai-bar-num">87</span><span class="ai-bar-track"><span class="ai-bar-fill" data-w="87" style="width:0%;background:rgb(33,174,131);"></span></span></span>
+            <span class="ai-compare-metric"><span class="ai-bar-num">88</span><span class="ai-bar-track"><span class="ai-bar-fill" data-w="88" style="width:0%;background:rgb(32,174,136);"></span></span></span>
           </div>
           <div class="ai-compare-row available" data-provider="zhipu" data-example="glm52">
             <span class="ai-compare-rank">9</span>
             <span class="ai-compare-model">GLM-5.2 <img class="ai-model-logo" src="Images/zhipu.svg" alt="Zhipu"></span>
-            <span class="ai-compare-metric"><span class="ai-bar-num">79</span><span class="ai-bar-track"><span class="ai-bar-fill" data-w="79" style="width:0%;background:rgb(42,174,96);"></span></span></span>
-            <span class="ai-compare-metric"><span class="ai-bar-num">88</span><span class="ai-bar-track"><span class="ai-bar-fill" data-w="88" style="width:0%;background:rgb(32,174,136);"></span></span></span>
+            <span class="ai-compare-metric"><span class="ai-bar-num">86</span><span class="ai-bar-track"><span class="ai-bar-fill" data-w="86" style="width:0%;background:rgb(34,174,127);"></span></span></span>
+            <span class="ai-compare-metric"><span class="ai-bar-num">91</span><span class="ai-bar-track"><span class="ai-bar-fill" data-w="91" style="width:0%;background:rgb(28,174,149);"></span></span></span>
           </div>
-          <div class="ai-compare-row" data-provider="google">
+          <div class="ai-compare-row available" data-provider="deepseek" data-example="deepseekv4pro">
             <span class="ai-compare-rank">10</span>
+            <span class="ai-compare-model">DeepSeek V4 Pro <img class="ai-model-logo" src="Images/deepseek.svg" alt="DeepSeek"></span>
+            <span class="ai-compare-metric"><span class="ai-bar-num">86</span><span class="ai-bar-track"><span class="ai-bar-fill" data-w="86" style="width:0%;background:rgb(34,174,127);"></span></span></span>
+            <span class="ai-compare-metric"><span class="ai-bar-num">97</span><span class="ai-bar-track"><span class="ai-bar-fill" data-w="97" style="width:0%;background:rgb(21,174,176);"></span></span></span>
+          </div>
+          <div class="ai-compare-row" data-rank="11" data-provider="google">
+            <span class="ai-compare-rank">11</span>
             <span class="ai-compare-model">Gemini 3.1 Pro <img class="ai-model-logo" src="Images/google.svg" alt="Google"></span>
-            <span class="ai-compare-metric"><span class="ai-bar-num">68</span><span class="ai-bar-track"><span class="ai-bar-fill" data-w="68" style="width:0%;background:rgb(93,175,58);"></span></span></span>
-            <span class="ai-compare-metric"><span class="ai-bar-num">65</span><span class="ai-bar-track"><span class="ai-bar-fill" data-w="65" style="width:0%;background:rgb(113,175,49);"></span></span></span>
+            <span class="ai-compare-metric"><span class="ai-bar-num">80</span><span class="ai-bar-track"><span class="ai-bar-fill" data-w="80" style="width:0%;background:rgb(41,174,100);"></span></span></span>
+            <span class="ai-compare-metric"><span class="ai-bar-num">79</span><span class="ai-bar-track"><span class="ai-bar-fill" data-w="79" style="width:0%;background:rgb(42,174,96);"></span></span></span>
+          </div>
+          <div class="ai-compare-row available" data-provider="deepseek" data-example="deepseek">
+            <span class="ai-compare-rank">12</span>
+            <span class="ai-compare-model">DeepSeek V4 <img class="ai-model-logo" src="Images/deepseek.svg" alt="DeepSeek"></span>
+            <span class="ai-compare-metric"><span class="ai-bar-num">77</span><span class="ai-bar-track"><span class="ai-bar-fill" data-w="77" style="width:0%;background:rgb(45,174,87);"></span></span></span>
+            <span class="ai-compare-metric"><span class="ai-bar-num">95</span><span class="ai-bar-track"><span class="ai-bar-fill" data-w="95" style="width:0%;background:rgb(24,174,167);"></span></span></span>
           </div>
           <div class="ai-compare-row available" data-provider="openai" data-example="llama">
             <span class="ai-compare-rank">—</span>

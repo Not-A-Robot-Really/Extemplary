@@ -84,11 +84,14 @@ const DATA = window.APP_DATA;
                     // synthesis pass) and needs the daily-cap charge
                     // spread across them by hand rather than multiplied by
                     // this single flat number 9 times.
-    deepseekv4: 1,  // DeepSeek V4    — cost score 90
-    glm52:      1,  // GLM 5.2        — cost score 88
-    sonnet5:    2,  // Claude Sonnet 5— cost score 75
-    kimik3:     3,  // Kimi K3        — cost score 60
-    opus5:      5,  // Claude Opus 5  — cost score 35
+    deepseekv4: 1,  // DeepSeek V4    — cost score 95
+    deepseekv4pro: 1, // DeepSeek V4 Pro — cost score 97
+    qwen38:     1,  // Qwen3.8 2.4T A95B — cost score 88
+    gemini37flash: 1, // Gemini 3.7 Flash — cost score 93
+    glm52:      1,  // GLM 5.2        — cost score 91
+    sonnet5:    2,  // Claude Sonnet 5— cost score 82
+    kimik3:     3,  // Kimi K3        — cost score 74
+    opus5:      5,  // Claude Opus 5  — cost score 57
     opus48:     6   // Claude Opus 4.8— cost score 28 (priciest)
   };
   const BALLOT_FEEDBACK_USAGE_KEY = 'extemplary_bf_weighted_usage';
@@ -2152,6 +2155,9 @@ const DATA = window.APP_DATA;
     kimik3:   { fn: 'hackclub-chat', model: 'moonshotai/kimi-k3',        label: 'Kimi K3' },
     sonnet5:  { fn: 'hackclub-chat', model: 'anthropic/claude-sonnet-5', label: 'Claude Sonnet 5' },
     deepseekv4: { fn: 'hackclub-chat', model: 'deepseek/deepseek-v4-pro',label: 'DeepSeek V4' },
+    deepseekv4pro: { fn: 'hackclub-chat', model: 'deepseek/deepseek-v4-pro-0813', label: 'DeepSeek V4 Pro' },
+    qwen38:   { fn: 'hackclub-chat', model: 'qwen/qwen3.8-2.4t-a95b',     label: 'Qwen3.8 2.4T A95B' },
+    gemini37flash: { fn: 'gemini-generate', model: 'gemini-3.7-flash',   label: 'Gemini 3.7 Flash' },
     // NVIDIA's own build.nvidia.com/NIM catalog listing for this model
     // (docs.api.nvidia.com/nim/reference/z-ai-glm-5.2) documents a
     // 1,000,000-token *output* context, not a small hard cap like
@@ -3380,7 +3386,7 @@ Output ONLY this JSON, nothing else: {"questions":["...","...","..."]}`;
   // Google Search grounding tool. The real Gemini key never lives in this
   // file, it's a Supabase secret, and this call goes through the
   // `gemini-generate` edge function proxy (see SUPABASE_URL below).
-  const GEMINI_MODEL = 'gemini-2.5-flash';
+  const GEMINI_MODEL = 'gemini-3.7-flash';
 
   // Gemini calls go through the edge function's own server-side keys, 
   // there's no user-supplied override key anymore.
@@ -6812,6 +6818,9 @@ Grading rules per claim:
         kimik3: 'Kimi K3',
         sonnet5: 'Claude Sonnet 5',
         deepseekv4: 'DeepSeek V4',
+        deepseekv4pro: 'DeepSeek V4 Pro',
+        qwen38: 'Qwen3.8 2.4T A95B',
+        gemini37flash: 'Gemini 3.7 Flash',
         glm52: 'GLM 5.2'
       };
       const judgeModelLabel = JUDGE_MODEL_LABELS[judgeModelValue] || 'GPT-OSS 120B';

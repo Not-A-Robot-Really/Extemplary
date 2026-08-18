@@ -7009,16 +7009,57 @@ Grading rules per claim:
         // real HTTP calls would have summed to 9, not 10 — close, but
         // this makes the total an explicit, intentional number instead of
         // an accident of how many calls the split happens to need.
+        //
+        // Honest caveat: 10 is the cost of the COMMON case, not a hard
+        // guarantee. The retry logic below (added after confirming via
+        // server-side logs that GPT-OSS 120B's hidden reasoning can
+        // stochastically consume an entire call's token budget and leave
+        // zero visible content) means an unlucky call that needs a retry
+        // bills that call's weight again — e.g. one retried category call
+        // makes the round cost 11, not 10. This is intentional: silently
+        // eating a real, separately-billed API call's cost to preserve a
+        // clean round number would be less honest than a total that can
+        // occasionally run a little over on bad luck.
         async function runGptOssSplitJudging(){
           const userMsg = 'TRANSCRIPT:\n\n'+transcript+'\n\n'+metricsBlock;
           const parts = [];
           for(let i = 0; i < GPT_OSS_GROUPS.length; i++){
             const group = GPT_OSS_GROUPS[i];
-            setProcStep('judging', `Step ${i+1} of ${GPT_OSS_GROUPS.length+1}`);
             const sysContent = group.prompt + EVIDENCE_TRUTH_ASSUMPTION_NOTE;
             const msgs = [{role:'system', content: sysContent}, {role:'user', content: userMsg}];
-            const part = extractChatContent(await (await doFetch(msgs, budgetOutputTokens(sysContent, userMsg, GPT_OSS_CATEGORY_CEILING), 1)).json());
-            if(!part) throw new Error('judging_failed:unrecognized_response_shape');
+            // Retries here address a real, confirmed failure mode, not a
+            // guess: server-side diagnostic logging on groq-chat caught a
+            // live case where GPT-OSS 120B's hidden reasoning (Groq
+            // returns this as a separate completion_tokens_details.
+            // reasoning_tokens count) consumed 1311 of a 1313-token
+            // budget on a single category pass, leaving 0 characters of
+            // actual visible content — finish_reason: "length" with an
+            // entirely empty message.content. reasoning_effort: 'low'
+            // (set above) reduces the ODDS of this but doesn't cap
+            // reasoning length outright — it's stochastic per call, so
+            // raising the ceiling only shrinks the chance without ever
+            // eliminating it, and this exact category succeeded fine on
+            // other runs with far fewer reasoning tokens. A retry gets an
+            // entirely fresh, independent roll of that same stochastic
+            // process, so it's the correct fix for a transient/unlucky
+            // generation rather than a fixed budget problem.
+            const MAX_ATTEMPTS = 3;
+            let part = null, lastFailureWasEmpty = false;
+            for(let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++){
+              setProcStep('judging', `Step ${i+1} of ${GPT_OSS_GROUPS.length+1}`+(attempt>1 ? ` (retry ${attempt-1})` : ''));
+              const p = extractChatContent(await (await doFetch(msgs, budgetOutputTokens(sysContent, userMsg, GPT_OSS_CATEGORY_CEILING), 1)).json());
+              if(p){ part = p; lastFailureWasEmpty = false; break; }
+              lastFailureWasEmpty = true;
+              if(attempt < MAX_ATTEMPTS){
+                setProcStep('judging', `Step ${i+1} of ${GPT_OSS_GROUPS.length+1} — retrying after empty response…`);
+                await new Promise(r => setTimeout(r, 5000));
+              }
+            }
+            if(!part){
+              if(lastFailureWasEmpty)
+                throw new Error(`judging_failed:GPT-OSS 120B's pass covering "${group.categories.join(' and ')}" spent its entire token budget on hidden reasoning ${MAX_ATTEMPTS} times in a row and never wrote any visible ballot text. This is a real (if rare) failure mode on Groq's end, not a bug on ours — try again.`);
+              throw new Error('judging_failed:unrecognized_response_shape');
+            }
             if(!hasAllCategoryHeaders(part, group.categories))
               throw new Error(`judging_failed:truncated:GPT-OSS 120B's pass covering "${group.categories.join(' and ')}" got cut off before finishing, even after budgeting the maximum safe output size under its 8,000 TPM limit — the transcript itself may just be unusually long for this model.`);
             parts.push(part);
@@ -7106,7 +7147,19 @@ Grading rules per claim:
           const userC = 'TOTAL COMPOSITE SCORE: '+compositeScore+'/'+compositeCap+
             '\n\nCATEGORY RESULTS:\n\n'+parts.map(stripAndCapForSynthesis).join('\n\n');
           const msgsC = [{role:'system', content: GPT_OSS_RUBRIC_SYNTHESIS}, {role:'user', content: userC}];
-          const rawPartC = extractChatContent(await (await doFetch(msgsC, budgetOutputTokens(GPT_OSS_RUBRIC_SYNTHESIS, userC, GPT_OSS_SYNTHESIS_CEILING), 2)).json());
+          // Same retry protection as the category loop above, and for the
+          // same confirmed reason: hidden reasoning can stochastically eat
+          // an entire call's token budget and leave zero visible content,
+          // independent of how well-bounded the input is.
+          let rawPartC = null;
+          for(let attempt = 1; attempt <= 3; attempt++){
+            if(attempt > 1){
+              setProcStep('judging', `Step ${GPT_OSS_GROUPS.length+1} of ${GPT_OSS_GROUPS.length+1} — retrying after empty response…`);
+              await new Promise(r => setTimeout(r, 5000));
+            }
+            rawPartC = extractChatContent(await (await doFetch(msgsC, budgetOutputTokens(GPT_OSS_RUBRIC_SYNTHESIS, userC, GPT_OSS_SYNTHESIS_CEILING), 2)).json());
+            if(rawPartC) break;
+          }
           if(!rawPartC) throw new Error('judging_failed:GPT-OSS 120B\'s synthesis pass returned an unrecognized response shape.');
           // Server-side diagnostic logging (see groq-chat's diag output)
           // proved this was NEVER a truncation bug: every synthesis call

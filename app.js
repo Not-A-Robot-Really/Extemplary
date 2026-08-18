@@ -7106,19 +7106,35 @@ Grading rules per claim:
           const userC = 'TOTAL COMPOSITE SCORE: '+compositeScore+'/'+compositeCap+
             '\n\nCATEGORY RESULTS:\n\n'+parts.map(stripAndCapForSynthesis).join('\n\n');
           const msgsC = [{role:'system', content: GPT_OSS_RUBRIC_SYNTHESIS}, {role:'user', content: userC}];
-          const partC = extractChatContent(await (await doFetch(msgsC, budgetOutputTokens(GPT_OSS_RUBRIC_SYNTHESIS, userC, GPT_OSS_SYNTHESIS_CEILING), 2)).json());
-          if(!partC) throw new Error('judging_failed:GPT-OSS 120B\'s synthesis pass returned an unrecognized response shape.');
-          // The composite score line is now assembled in code (see above)
-          // rather than trusted from the model's own output, so only the
-          // rank needs to be verified as actually present.
-          // Matched loosely on purpose: the log confirmed a real,
-          // successful completion (finish_reason: "stop", well under its
-          // token budget) was still being flagged as "cut off" — the
-          // model wrote a typographic/curly apostrophe (Judge’s) rather
-          // than the straight one (Judge's) this regex required, so a
-          // perfectly good ballot failed a literal string match having
-          // nothing to do with truncation at all.
-          if(!/###\s*Judge.?s Rank\s*:/.test(partC))
+          const rawPartC = extractChatContent(await (await doFetch(msgsC, budgetOutputTokens(GPT_OSS_RUBRIC_SYNTHESIS, userC, GPT_OSS_SYNTHESIS_CEILING), 2)).json());
+          if(!rawPartC) throw new Error('judging_failed:GPT-OSS 120B\'s synthesis pass returned an unrecognized response shape.');
+          // Server-side diagnostic logging (see groq-chat's diag output)
+          // proved this was NEVER a truncation bug: every synthesis call
+          // logged was finish_reason: "stop", using a fraction of its
+          // token budget, with full valid content. The real mismatch was
+          // formatting decoration — the model wrote **Judge's Rank:**
+          // (bold) instead of the requested ### Judge's Rank: (a markdown
+          // heading). That's not just cosmetic: parseBallot() below
+          // identifies every section of the final ballot (rank, rank
+          // explanation, drill, each category) by scanning for lines that
+          // start with "### " — a bolded-but-not-headinged line is
+          // invisible to it and gets silently swallowed into whatever
+          // "### " section came before it. So even once the truncation
+          // check below is fixed to stop rejecting valid bolded output,
+          // the rank/explanation/drill would still never appear in the
+          // actual displayed ballot without this: normalize the model's
+          // bold labels into real ### headings before using this text for
+          // anything downstream, rather than just loosening what the
+          // check accepts.
+          const partC = rawPartC.replace(
+            /^\*{0,2}\s*(Judge.?s Rank|Rank Explanation|Actionable Drill(?: for Next Round)?)\s*:?\s*\*{0,2}\s*:?\s*/gim,
+            (_m, label) => '### '+label+': '
+          );
+          // The check below now works on the normalized text and just
+          // needs to confirm the rank is present at all — the ### form is
+          // guaranteed by the normalization above regardless of what
+          // decoration the model originally chose.
+          if(!/Judge.?s\s*Rank/i.test(partC))
             throw new Error('judging_failed:truncated:GPT-OSS 120B\'s synthesis pass got cut off before finishing the rank.');
           const scoreLine = '### Total Composite Score: '+compositeScore+'/'+compositeCap;
 

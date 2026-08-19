@@ -2151,25 +2151,52 @@ const DATA = window.APP_DATA;
   const modelPickerLabel = document.getElementById('modelPickerLabel');
   const modelPickerMenu  = document.getElementById('modelPickerMenu');
   const JUDGE_MODEL_KEY = 'extemplary_judge_model';
+  // Judging models fall into a small number of "speed tiers" with very
+  // different real-world behavior: cheap/fast models (Kimi K3, DeepSeek
+  // V4 Pro, Qwen3.8, GLM 5.2, GPT-OSS 120B) finish quickly and don't
+  // benefit from spending much of their budget on hidden reasoning before
+  // writing the ballot, while the premium/slow models (Opus 5, Sonnet 5)
+  // are meaningfully better *because* they think longer, so they get more
+  // rounds and full token headroom instead of a dialed-down reasoning
+  // effort. Each tier's settings (below, TIER_PROFILES) drive the
+  // reasoning-effort override, per-round token budget, round pacing
+  // delay, and max continuation rounds used in doFetch /
+  // runHackClubChatToCompletion — see those for how `tier` gets applied.
+  const TIER_PROFILES = {
+    // Fast & cheap: Kimi K3, DeepSeek V4 Pro 0813, Qwen3.8 2.4T A95B,
+    // GLM 5.2. These finish in one or two rounds once reasoning is dialed
+    // down, so a small round cap and shorter inter-round pause are both
+    // fine and keep a bad case from dragging on.
+    fast:    { reasoningEffort: 'low', maxRounds: 4,  maxTokensPerRound: 24000, roundDelayMs: 500 },
+    // Premium & slow: Opus 5, Sonnet 5. Left to reason at their own
+    // default depth (no forced 'low' effort) since that's part of why
+    // they score higher — but that means they need much more round
+    // headroom and full per-round token budget to actually finish.
+    premium: { reasoningEffort: null,  maxRounds: 12, maxTokensPerRound: 32000, roundDelayMs: 1000 },
+    // Groq-hosted GPT-OSS 120B is its own case: single buffered call (not
+    // part of the wave/continuation system at all — see STREAMING_JUDGE_FNS
+    // below), already forced to reasoning_effort 'low' where it's built.
+    // No tier needed for it; kept out of TIER_PROFILES intentionally.
+  };
   // Maps the picker's stored value to what the judging call actually
-  // needs: which edge function to hit, and (for Hack Club AI) which model
-  // id to send. Keep this in sync with ALLOWED_MODELS in the hackclub-chat
-  // edge function. `label` drives the picker button text.
+  // needs: which edge function to hit, which model id to send, and which
+  // speed tier's settings (reasoning/rounds/tokens/pacing) apply. Keep
+  // this in sync with ALLOWED_MODELS in the hackclub-chat edge function.
+  // `label` drives the picker button text.
   const JUDGE_MODELS = {
     llama:    { fn: 'groq-chat',     model: 'openai/gpt-oss-120b',       label: 'GPT-OSS 120B' },
-    opus5:    { fn: 'hackclub-chat', model: 'anthropic/claude-opus-5',   label: 'Claude Opus 5' },
-    kimik3:   { fn: 'hackclub-chat', model: 'moonshotai/kimi-k3',        label: 'Kimi K3' },
-    sonnet5:  { fn: 'hackclub-chat', model: 'anthropic/claude-sonnet-5', label: 'Claude Sonnet 5' },
-    deepseekv4pro: { fn: 'hackclub-chat', model: 'deepseek/deepseek-v4-pro-0813', label: 'DeepSeek V4 Pro' },
-    qwen38:   { fn: 'hackclub-chat', model: 'qwen/qwen3.8-2.4t-a95b',     label: 'Qwen3.8 2.4T A95B' },
-    gemini37flash: { fn: 'gemini-generate', model: 'gemini-3.7-flash',   label: 'Gemini 3.7 Flash' },
+    opus5:    { fn: 'hackclub-chat', model: 'anthropic/claude-opus-5',   label: 'Claude Opus 5', tier: 'premium' },
+    kimik3:   { fn: 'hackclub-chat', model: 'moonshotai/kimi-k3',        label: 'Kimi K3', tier: 'fast' },
+    sonnet5:  { fn: 'hackclub-chat', model: 'anthropic/claude-sonnet-5', label: 'Claude Sonnet 5', tier: 'premium' },
+    deepseekv4pro: { fn: 'hackclub-chat', model: 'deepseek/deepseek-v4-pro-0813', label: 'DeepSeek V4 Pro', tier: 'fast' },
+    qwen38:   { fn: 'hackclub-chat', model: 'qwen/qwen3.8-2.4t-a95b',     label: 'Qwen3.8 2.4T A95B', tier: 'fast' },
+    gemini37flash: { fn: 'gemini-generate', model: 'gemini-3.7-flash',   label: 'Gemini 3.7 Flash', tier: 'fast' },
     // NVIDIA's own build.nvidia.com/NIM catalog listing for this model
     // (docs.api.nvidia.com/nim/reference/z-ai-glm-5.2) documents a
-    // 1,000,000-token *output* context, not a small hard cap like
-    // AIHubMix's free Kimi tier — so this uses the same uncapped 32000
-    // (STREAMING_JUDGE_FNS below) as every Hack Club model, no special
-    // per-model max_tokens override needed.
-    glm52:    { fn: 'nvidia-chat',   model: 'z-ai/glm-5.2',              label: 'GLM 5.2' }
+    // 1,000,000-token *output* context — plenty of headroom regardless of
+    // tier — but it's still a cheap/fast model in practice, so it gets
+    // the 'fast' tier's reasoning/round/pacing settings.
+    glm52:    { fn: 'nvidia-chat',   model: 'z-ai/glm-5.2',              label: 'GLM 5.2', tier: 'fast' }
   };
   // Every edge function here speaks the identical SSE-streaming +
   // chunked-continuation protocol (TIME_BUDGET_MS server-side cutoff,
@@ -2330,8 +2357,12 @@ const DATA = window.APP_DATA;
   // repeating itself or breaking mid-sentence) without re-billing
   // everything written several rounds ago.
   const CONTINUATION_TAIL_CHARS = 6000;
-  async function runHackClubChatToCompletion(doFetch, messages, onRound){
-    const MAX_ROUNDS = 6; // ~6 * 128s server-side time budget per round ≈ 12.8 minutes of total generation headroom — comfortably above any observed Opus 5 / DeepSeek run
+  async function runHackClubChatToCompletion(doFetch, messages, onRound, tierProfile){
+    // Falls back to the old flat defaults if no tier profile is given
+    // (shouldn't happen now that every streaming-capable model has a
+    // tier, but keeps this function safe to call standalone).
+    const MAX_ROUNDS = (tierProfile && tierProfile.maxRounds) || 6;
+    const ROUND_DELAY_MS = (tierProfile && tierProfile.roundDelayMs) != null ? tierProfile.roundDelayMs : 800;
     let fullText = '';
     let fullReasoning = '';
     let currentMessages = messages;
@@ -2342,7 +2373,7 @@ const DATA = window.APP_DATA;
       // tripping Supabase's platform-level rate limit (separate from our
       // own daily-quota system) in the first place — see
       // readRateLimitInfo above.
-      if(round > 0) await new Promise(r => setTimeout(r, 800));
+      if(round > 0) await new Promise(r => setTimeout(r, ROUND_DELAY_MS));
       const res = await doFetch(currentMessages);
       const { text, reasoning, needsContinuation } = await readHackClubStream(res);
       fullText += text;
@@ -6924,6 +6955,12 @@ Grading rules per claim:
       // drill rubric, which has no evidence category to begin with.
       const EVIDENCE_TRUTH_ASSUMPTION_NOTE = '\n\nEVIDENCE ACCURACY ASSUMPTION (this overrides anything above that implies otherwise): Do not attempt to fact-check, verify, or research whether any statistic, quote, or cited source in this transcript is actually true, accurate, or was really said/reported as claimed. Treat every citation exactly as the speaker delivered it and assume it is 100% factually accurate. This is intentional — a separate, independent automated fact-checking pass runs after this ballot and is not part of your job here, so spending any effort verifying claims only wastes time and tokens. Score "Strength of Evidence" (or the equivalent evidence criteria) purely on citation PRACTICE: how well the evidence is logically applied to the claim, how reputable the named source sounds by reputation, how well-dated and diverse the citations are, and whether the speaker explains why it matters — never on whether the underlying fact is real.';
       const runJudging = async (choice, weightKey) => withKeyFallback(async (k) => {
+        // The tier profile (see TIER_PROFILES above) driving this
+        // model's reasoning effort, per-round token budget, round cap,
+        // and inter-round pacing. Falls back to the 'fast' profile for
+        // any streaming-capable model that somehow has no tier set,
+        // rather than silently reverting to old flat defaults.
+        const tierProfile = choice.tier ? TIER_PROFILES[choice.tier] : null;
         const baseMessages = [
           {role:'system', content: (introDrillMode ? INTRO_RUBRIC_PROMPT : bodyDrillMode ? BODY_RUBRIC_PROMPT : roughDraftMode ? ROUGHDRAFT_RUBRIC_PROMPT : RUBRIC_PROMPT) + EVIDENCE_TRUTH_ASSUMPTION_NOTE},
           {role:'user', content:'TRANSCRIPT:\n\n'+transcript+'\n\n'+metricsBlock}
@@ -6944,25 +6981,28 @@ Grading rules per claim:
             body: JSON.stringify({
               // Groq/GPT-OSS writes the rubric feedback directly (once
               // reasoning_effort is dialed down below), so 3000 tokens is
-              // plenty. The Hack Club AI models (Claude, Kimi) and the
-              // NVIDIA-hosted DeepSeek appear to spend part of their budget
-              // on internal reasoning before writing the actual answer, so
-              // give those a much bigger per-round ceiling. Each round is
-              // now capped in time (by that function's own TIME_BUDGET_MS),
-              // not just tokens, and runHackClubChatToCompletion below
-              // chains rounds together, so 32000 just needs to be enough
-              // for one ~128s round's worth of output, not the whole ballot.
-              // maxTokensOverride lets runGptOssSplitJudging below request a
-              // smaller budget per split call than the flat 3000 default.
-              model: choice.model, temperature:0.4, max_tokens: maxTokensOverride || (STREAMING_JUDGE_FNS.has(choice.fn) ? 32000 : 3000),
-              // Kimi K3 defaults to reasoning effort "max" on Hack Club AI
-              // (deep, slow thinking meant for hard agentic/coding tasks),
-              // which is overkill for writing a rubric-formatted ballot and
-              // was likely contributing to it timing/round-budget out.
-              // Dial it down for this use case; harmless to send for models
-              // that don't support the param, since hackclub-chat/OpenRouter
-              // just ignores unsupported fields.
-              ...(choice.model === 'moonshotai/kimi-k3' ? { reasoning: { effort: 'low' } } : {}),
+              // plenty. Every streaming-capable model (Hack Club AI,
+              // NVIDIA-hosted GLM, Gemini) now gets its tier's own
+              // per-round token budget instead of one flat 32000 — 'fast'
+              // models get a smaller, faster-to-fill ceiling; 'premium'
+              // models (Opus 5, Sonnet 5) keep the full 32000 since they
+              // genuinely use it. maxTokensOverride still lets
+              // runGptOssSplitJudging below request a smaller budget per
+              // split call than the flat 3000 default.
+              model: choice.model, temperature:0.4, max_tokens: maxTokensOverride || (tierProfile ? tierProfile.maxTokensPerRound : (STREAMING_JUDGE_FNS.has(choice.fn) ? 32000 : 3000)),
+              // Reasoning-capable models (Claude, Kimi, DeepSeek, GLM,
+              // Qwen) can default to spending a large chunk of their
+              // budget on hidden chain-of-thought before ever writing
+              // visible ballot text. 'fast'-tier models dial that down to
+              // 'low' so more of each round goes to the actual ballot,
+              // finishing in fewer rounds; 'premium'-tier models (Opus 5,
+              // Sonnet 5) are left at their own default depth, since
+              // deeper reasoning is part of why they score higher and
+              // they're given the round/token headroom to afford it.
+              // Harmless to send for models that don't support the
+              // field — hackclub-chat/nvidia-chat/OpenRouter just ignore
+              // unsupported params.
+              ...(tierProfile && tierProfile.reasoningEffort ? { reasoning: { effort: tierProfile.reasoningEffort } } : {}),
               // GPT-OSS 120B defaults to reasoning_effort "medium" on Groq,
               // which writes hidden chain-of-thought into a separate
               // `reasoning` field before the actual answer — but that
@@ -7305,7 +7345,7 @@ Grading rules per claim:
               // functions, since Llama/Groq finishes in one buffered call
               // and never enters this loop.
               setProcStep('judging', round > 1 ? `Wave ${round}` : '');
-            })
+            }, tierProfile)
           : extractChatContent(await (await doFetch(baseMessages)).json());
         // The HTTP call itself succeeded (the model billed real tokens),
         // but if we can't find text in any shape we recognize, treat it
@@ -7393,7 +7433,7 @@ Grading rules per claim:
       lastTranscriptAnnotations = await fetchTranscriptAnnotations(transcript, key, key2, key3);
 
       statusText.textContent = 'Fact-checking your citations';
-      statusSub.textContent = 'Independently verifying your evidence against the live web - this never affects your score.';
+      statusSub.textContent = 'Independently verifying your evidence against the live web...';
       pipelineProgress.setStage(98, DATA.CC_PHRASES);
       setProcStep('factcheck');
       lastFactCheck = await runFactCheckPass(transcript);

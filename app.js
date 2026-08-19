@@ -2168,6 +2168,14 @@ const DATA = window.APP_DATA;
     // down, so a small round cap and shorter inter-round pause are both
     // fine and keep a bad case from dragging on.
     fast:    { reasoningEffort: 'low', maxRounds: 4,  maxTokensPerRound: 24000, roundDelayMs: 500 },
+    // DeepSeek V4 Pro 0813 specifically: low reasoning effort still
+    // helps (keeps it from burning budget on hidden chain-of-thought),
+    // but in practice its ballots run far longer/more verbose per
+    // category than Kimi/Qwen/GLM's — the 'fast' tier's 4-round cap was
+    // observed hitting MAX_ROUNDS and returning a cut-off ballot with no
+    // Composite Score even with reasoning already dialed down. Gets
+    // 'fast' reasoning behavior with 'premium' round/token headroom.
+    verbose: { reasoningEffort: 'low', maxRounds: 10, maxTokensPerRound: 32000, roundDelayMs: 600 },
     // Premium & slow: Opus 5, Sonnet 5. Left to reason at their own
     // default depth (no forced 'low' effort) since that's part of why
     // they score higher — but that means they need much more round
@@ -2188,7 +2196,7 @@ const DATA = window.APP_DATA;
     opus5:    { fn: 'hackclub-chat', model: 'anthropic/claude-opus-5',   label: 'Claude Opus 5', tier: 'premium' },
     kimik3:   { fn: 'hackclub-chat', model: 'moonshotai/kimi-k3',        label: 'Kimi K3', tier: 'fast' },
     sonnet5:  { fn: 'hackclub-chat', model: 'anthropic/claude-sonnet-5', label: 'Claude Sonnet 5', tier: 'premium' },
-    deepseekv4pro: { fn: 'hackclub-chat', model: 'deepseek/deepseek-v4-pro-0813', label: 'DeepSeek V4 Pro', tier: 'fast' },
+    deepseekv4pro: { fn: 'hackclub-chat', model: 'deepseek/deepseek-v4-pro-0813', label: 'DeepSeek V4 Pro', tier: 'verbose' },
     qwen38:   { fn: 'hackclub-chat', model: 'qwen/qwen3.8-2.4t-a95b',     label: 'Qwen3.8 2.4T A95B', tier: 'fast' },
     gemini37flash: { fn: 'gemini-generate', model: 'gemini-3.7-flash',   label: 'Gemini 3.7 Flash', tier: 'fast' },
     // NVIDIA's own build.nvidia.com/NIM catalog listing for this model
@@ -2376,7 +2384,19 @@ const DATA = window.APP_DATA;
       if(round > 0) await new Promise(r => setTimeout(r, ROUND_DELAY_MS));
       const res = await doFetch(currentMessages);
       const { text, reasoning, needsContinuation } = await readHackClubStream(res);
-      fullText += text;
+      // Safety net for a formatting bug observed across multiple models:
+      // a continuation round sometimes glues a new "### Header" (or
+      // "**Bold**" section start) directly onto the previous round's
+      // trailing text with no line break in between — e.g. "...you don't
+      // cut *reductions*### Clarity - 6/10" — which breaks markdown
+      // header/bold parsing downstream and renders as raw plaintext
+      // symbols. The continuation prompt below explicitly tells the
+      // model not to do this, but that's not reliably followed, so this
+      // inserts the missing blank line whenever it's detected, regardless
+      // of which model produced it.
+      const prevEndsWithBlankLine = /\n\s*\n\s*$/.test(fullText) || fullText === '';
+      const nextLooksLikeHeaderStart = /^\s*(#{1,6}\s|\*\*[A-Z0-9])/.test(text);
+      fullText += (fullText && !prevEndsWithBlankLine && nextLooksLikeHeaderStart) ? ('\n\n' + text) : text;
       fullReasoning += reasoning;
       // "Composite Score" is the one line every complete ballot always
       // reaches (see RUBRIC_PROMPT/INTRO/BODY_RUBRIC_PROMPT — it's the
@@ -2427,7 +2447,7 @@ const DATA = window.APP_DATA;
         messages[0], // system prompt (rubric)
         { role:'user', content:
           messages[1].content
-          + '\n\n---\n\nYou already began writing this ballot below but stopped before it was actually finished. Continue writing IMMEDIATELY after the partial content shown below, in the exact same format. Do NOT repeat, restate, quote, or re-include any of the partial content shown below in your reply — your reply should contain ONLY new content that picks up exactly where the partial content stops (mid-sentence if needed), through to the fully finished ballot (including the Composite Score, Judge\'s Rank, and Feedback section).'
+          + '\n\n---\n\nYou already began writing this ballot below but stopped before it was actually finished. Continue writing IMMEDIATELY after the partial content shown below, in the exact same format. Do NOT repeat, restate, quote, or re-include any of the partial content shown below in your reply — your reply should contain ONLY new content that picks up exactly where the partial content stops (mid-sentence if needed), through to the fully finished ballot (including the Composite Score, Judge\'s Rank, and Feedback section). If the partial content cuts off mid-sentence or mid-word, your reply must begin with the rest of that exact sentence/word — plain continuation text, NOT a new "### Header" or "**Bold Label:**" line. Only start a new "### Category Name" header if the partial content already ended cleanly at the close of a full category (i.e. right after that category\'s "What You Could Have Done" section) — never place a header directly against trailing text with no blank line before it.'
           + (covered.length ? ('\n\nCategories already fully covered in earlier rounds (do not redo these): ' + covered.join(', ') + '.') : '')
           + '\n\n=== PARTIAL BALLOT ALREADY WRITTEN (do not repeat any of this) ===\n' + tail
         }

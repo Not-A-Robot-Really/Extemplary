@@ -90,8 +90,7 @@ const DATA = window.APP_DATA;
     glm52:      1,  // GLM 5.2        — cost score 91
     sonnet5:    2,  // Claude Sonnet 5— cost score 82
     kimik3:     3,  // Kimi K3        — cost score 74
-    opus5:      5,  // Claude Opus 5  — cost score 57
-    opus48:     6   // Claude Opus 4.8— cost score 28 (priciest)
+    opus5:      5   // Claude Opus 5  — cost score 57
   };
   const BALLOT_FEEDBACK_USAGE_KEY = 'extemplary_bf_weighted_usage';
   function todayISO(){ return new Date().toISOString().slice(0,10); }
@@ -2150,7 +2149,6 @@ const DATA = window.APP_DATA;
   const JUDGE_MODELS = {
     llama:    { fn: 'groq-chat',     model: 'openai/gpt-oss-120b',       label: 'GPT-OSS 120B' },
     opus5:    { fn: 'hackclub-chat', model: 'anthropic/claude-opus-5',   label: 'Claude Opus 5' },
-    opus48:   { fn: 'hackclub-chat', model: 'anthropic/claude-opus-4-8', label: 'Claude Opus 4.8' },
     kimik3:   { fn: 'hackclub-chat', model: 'moonshotai/kimi-k3',        label: 'Kimi K3' },
     sonnet5:  { fn: 'hackclub-chat', model: 'anthropic/claude-sonnet-5', label: 'Claude Sonnet 5' },
     deepseekv4pro: { fn: 'hackclub-chat', model: 'deepseek/deepseek-v4-pro-0813', label: 'DeepSeek V4 Pro' },
@@ -6812,7 +6810,6 @@ Grading rules per claim:
       const JUDGE_MODEL_LABELS = {
         llama: 'GPT-OSS 120B',
         opus5: 'Claude Opus 5',
-        opus48: 'Claude Opus 4.8',
         kimik3: 'Kimi K3',
         sonnet5: 'Claude Sonnet 5',
         deepseekv4pro: 'DeepSeek V4 Pro',

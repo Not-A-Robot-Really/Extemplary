@@ -84,7 +84,6 @@ const DATA = window.APP_DATA;
                     // synthesis pass) and needs the daily-cap charge
                     // spread across them by hand rather than multiplied by
                     // this single flat number 9 times.
-    deepseekv4: 1,  // DeepSeek V4    — cost score 95
     deepseekv4pro: 1, // DeepSeek V4 Pro — cost score 97
     qwen38:     1,  // Qwen3.8 2.4T A95B — cost score 88
     gemini37flash: 1, // Gemini 3.7 Flash — cost score 93
@@ -2154,7 +2153,6 @@ const DATA = window.APP_DATA;
     opus48:   { fn: 'hackclub-chat', model: 'anthropic/claude-opus-4-8', label: 'Claude Opus 4.8' },
     kimik3:   { fn: 'hackclub-chat', model: 'moonshotai/kimi-k3',        label: 'Kimi K3' },
     sonnet5:  { fn: 'hackclub-chat', model: 'anthropic/claude-sonnet-5', label: 'Claude Sonnet 5' },
-    deepseekv4: { fn: 'hackclub-chat', model: 'deepseek/deepseek-v4-pro',label: 'DeepSeek V4' },
     deepseekv4pro: { fn: 'hackclub-chat', model: 'deepseek/deepseek-v4-pro-0813', label: 'DeepSeek V4 Pro' },
     qwen38:   { fn: 'hackclub-chat', model: 'qwen/qwen3.8-2.4t-a95b',     label: 'Qwen3.8 2.4T A95B' },
     gemini37flash: { fn: 'gemini-generate', model: 'gemini-3.7-flash',   label: 'Gemini 3.7 Flash' },
@@ -6817,7 +6815,6 @@ Grading rules per claim:
         opus48: 'Claude Opus 4.8',
         kimik3: 'Kimi K3',
         sonnet5: 'Claude Sonnet 5',
-        deepseekv4: 'DeepSeek V4',
         deepseekv4pro: 'DeepSeek V4 Pro',
         qwen38: 'Qwen3.8 2.4T A95B',
         gemini37flash: 'Gemini 3.7 Flash',

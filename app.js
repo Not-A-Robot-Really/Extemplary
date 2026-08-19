@@ -1808,6 +1808,14 @@ const DATA = window.APP_DATA;
   let roundNo = 1;
   let flightHistory = [];
   let lastTranscript = '';
+  // Lets the user cancel an in-progress ballot-feedback pipeline run (see
+  // the "X" cancel button in the processing view, wired up near
+  // runPipeline below). Created fresh at the top of every runPipeline
+  // call; fetchWithTimeout and withKeyFallback both check/listen to it so
+  // aborting mid-transcription, mid-judging, etc. actually cuts the
+  // in-flight network request rather than just hiding the loading screen
+  // while work keeps running in the background.
+  let pipelineAbortController = null;
   let lastTranscriptAnnotations = null;
   let lastFactCheck = null;
   let lastRawFeedback = '';
@@ -2030,6 +2038,7 @@ const DATA = window.APP_DATA;
   const viewRecord     = document.getElementById('view-record');
   const viewReview     = document.getElementById('view-review');
   const viewProcessing = document.getElementById('view-processing');
+  const cancelBallotBtn = document.getElementById('cancelBallotBtn');
   const viewResults    = document.getElementById('view-results');
   const viewExample    = document.getElementById('view-example');
   const viewBriefing   = document.getElementById('view-briefing');
@@ -3391,15 +3400,34 @@ Output ONLY this JSON, nothing else: {"questions":["...","...","..."]}`;
   }
 
   async function callGeminiWithKey(prompt, apiKey, maxOutputTokens, category){
-    const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/gemini-generate`, {
-      method:'POST',
-      headers:{
-        'Content-Type':'application/json',
-        'Authorization':'Bearer '+(await getAuthToken()),
-        'apikey': SUPABASE_ANON_KEY
-      },
-      body: JSON.stringify({ prompt, maxOutputTokens: maxOutputTokens||1024, overrideKey: apiKey || undefined, category })
-    });
+    const extSignal = pipelineAbortController && pipelineAbortController.signal;
+    if(extSignal && extSignal.aborted){
+      const cancelErr = new Error('pipeline_cancelled');
+      cancelErr.name = 'AbortError';
+      cancelErr.pipelineCancelled = true;
+      throw cancelErr;
+    }
+    let res;
+    try{
+      res = await fetch(`${SUPABASE_FUNCTIONS_URL}/gemini-generate`, {
+        method:'POST',
+        headers:{
+          'Content-Type':'application/json',
+          'Authorization':'Bearer '+(await getAuthToken()),
+          'apikey': SUPABASE_ANON_KEY
+        },
+        body: JSON.stringify({ prompt, maxOutputTokens: maxOutputTokens||1024, overrideKey: apiKey || undefined, category }),
+        signal: extSignal || undefined
+      });
+    }catch(err){
+      if(err.name === 'AbortError'){
+        const cancelErr = new Error('pipeline_cancelled');
+        cancelErr.name = 'AbortError';
+        cancelErr.pipelineCancelled = true;
+        throw cancelErr;
+      }
+      throw err;
+    }
     if(res.status === 429){
       const { info, isRealQuotaBlock, fallback } = await readRateLimitInfo(res, category);
       if(window.RateLimitUI) window.RateLimitUI.refresh();
@@ -4032,6 +4060,7 @@ Grading rules per claim:
         return { claims: extractFactCheckClaims(candidate), failed: false };
       }catch(e){
         lastErr = e;
+        if(e && e.pipelineCancelled) throw e; // user cancelled — stop immediately, no retries
         if(e && e.rateLimited) break; // real daily-cap block — retrying can't help, and would just burn more of the user's quota
         if(attempt < MAX_ATTEMPTS) await new Promise(r => setTimeout(r, 2000 * attempt));
       }
@@ -5324,16 +5353,38 @@ Grading rules per claim:
   // Wraps fetch() with a hard timeout so a hung/unresponsive request (bad
   // network, stalled connection, etc.) fails with a clear error instead of
   // leaving the pipeline waiting forever with no feedback to the user.
+  // Also aborts immediately if the user cancels the in-progress pipeline
+  // run (see pipelineAbortController) — merges that signal in alongside
+  // the timeout's own, so hitting the "X" on the loading screen cuts the
+  // actual in-flight request rather than just hiding the UI around it.
   async function fetchWithTimeout(url, options, timeoutMs){
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
+    let onExternalAbort = null;
+    const extSignal = pipelineAbortController && pipelineAbortController.signal;
+    if(extSignal){
+      if(extSignal.aborted) controller.abort();
+      else{
+        onExternalAbort = () => controller.abort();
+        extSignal.addEventListener('abort', onExternalAbort);
+      }
+    }
     try{
       return await fetch(url, { ...options, signal: controller.signal });
     }catch(err){
-      if(err.name === 'AbortError') throw new Error('timeout:The model took too long to respond ('+Math.round(timeoutMs/1000)+'s) — it may be overloaded. Try again.');
+      if(err.name === 'AbortError'){
+        if(extSignal && extSignal.aborted){
+          const cancelErr = new Error('pipeline_cancelled');
+          cancelErr.name = 'AbortError';
+          cancelErr.pipelineCancelled = true;
+          throw cancelErr;
+        }
+        throw new Error('timeout:The model took too long to respond ('+Math.round(timeoutMs/1000)+'s) — it may be overloaded. Try again.');
+      }
       throw err;
     }finally{
       clearTimeout(timer);
+      if(onExternalAbort) extSignal.removeEventListener('abort', onExternalAbort);
     }
   }
 
@@ -5434,6 +5485,17 @@ Grading rules per claim:
   });
 
   document.getElementById('backToReviewBtn').addEventListener('click', () => showView(viewReview));
+
+  // Cancel ("X") button on the processing/loading view — lets the user
+  // bail out of an in-progress ballot-feedback run instead of being stuck
+  // watching it. Aborting the shared controller here is what actually
+  // cuts any in-flight transcription/judging/annotation/fact-check
+  // request (see fetchWithTimeout, withKeyFallback, callGeminiWithKey);
+  // the catch block in runPipeline recognizes the resulting AbortError
+  // and quietly returns to the review screen with no error toast.
+  cancelBallotBtn && cancelBallotBtn.addEventListener('click', () => {
+    if(pipelineAbortController) pipelineAbortController.abort();
+  });
 
   function extFromMime(mime){ return mime.includes('mp4') ? 'mp4' : 'webm'; }
 
@@ -5690,10 +5752,17 @@ Grading rules per claim:
     let lastErr = null;
     for(const k of list){
       for(let attempt = 0; attempt < 3; attempt++){
+        if(pipelineAbortController && pipelineAbortController.signal.aborted){
+          const cancelErr = new Error('pipeline_cancelled');
+          cancelErr.name = 'AbortError';
+          cancelErr.pipelineCancelled = true;
+          throw cancelErr;
+        }
         try{
           return await fn(k);
         }catch(err){
           lastErr = err;
+          if(err.pipelineCancelled || err.name === 'AbortError') throw err; // user cancelled — stop immediately, no retries
           if(err.rateLimited) throw err; // our own daily cap — retrying only burns more of it
           if(attempt < 2 && isTransientError(err)){
             // A 429 specifically usually means a real rate limit (ours or
@@ -6745,6 +6814,8 @@ Grading rules per claim:
 
   async function runPipeline(key, key2, key3){
     showView(viewProcessing);
+    pipelineAbortController = new AbortController();
+    cancelBallotBtn && cancelBallotBtn.classList.remove('hidden');
     processError.classList.add('hidden');
     processErrorActions.classList.add('hidden');
     setProcStep(null); // reset checklist to all-pending before this run's stages fire
@@ -7330,7 +7401,22 @@ Grading rules per claim:
       pipelineProgress.finish();
       finishProcSteps();
       renderResults(feedback, transcript);
-    }catch(err){ pipelineProgress.stop(); handlePipelineError(err); }
+    }catch(err){
+      pipelineProgress.stop();
+      if(err && (err.pipelineCancelled || err.name === 'AbortError')){
+        // User hit the cancel ("X") button — quietly return to the review
+        // screen with no error toast; this is an intentional stop, not a
+        // failure.
+        processError.classList.add('hidden');
+        processErrorActions.classList.add('hidden');
+        showView(viewReview);
+      }else{
+        handlePipelineError(err);
+      }
+    }finally{
+      pipelineAbortController = null;
+      cancelBallotBtn && cancelBallotBtn.classList.add('hidden');
+    }
   }
 
   // Makes a second, best-effort Groq call to get structural section labels and

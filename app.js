@@ -2259,6 +2259,18 @@ const DATA = window.APP_DATA;
       ''
     );
   }
+  // gemini-generate proxies Google's native Generative Language API, whose
+  // response shape is { candidates: [ { content: { parts: [ {text}, ... ] },
+  // finishReason, ... } ] } — nothing like the choices[0].message.content
+  // shape extractChatContent above handles. Mirrors the candidate.content
+  // .parts parsing callGeminiWithKey/extractQuestions already use
+  // elsewhere in this file for question generation and the fact-check pass.
+  function extractGeminiContent(json){
+    if(!json) return '';
+    const candidate = json.candidates?.[0];
+    if(!candidate) return '';
+    return (candidate.content?.parts || []).map(p => p.text || '').join('').trim();
+  }
   // hackclub-chat now always streams its response back as Server-Sent
   // Events instead of one buffered JSON blob — see the comment in
   // supabase/functions/hackclub-chat/index.ts for why (Supabase kills
@@ -7000,17 +7012,43 @@ Grading rules per claim:
               'apikey': SUPABASE_ANON_KEY,
               'Content-Type':'application/json'
             },
-            body: JSON.stringify({
+            // gemini-generate is NOT one of the OpenAI-compatible
+            // chat-completions proxies (groq-chat/hackclub-chat/nvidia-chat)
+            // — it's the same prompt-in/candidate-out edge function used by
+            // question generation, the tournament briefing, and the
+            // fact-check pass (see callGeminiWithKey above). Sending it a
+            // {model, messages, max_tokens} chat-completions body (what
+            // every other judge fn wants) doesn't match what it actually
+            // reads server-side, so those calls were failing and silently
+            // falling back to GPT-OSS 120B. Build its real
+            // {prompt, maxOutputTokens} shape instead, folding the system
+            // rubric + user transcript messages into one prompt string the
+            // same way every other gemini-generate caller in this file
+            // already does.
+            body: choice.fn === 'gemini-generate' ? JSON.stringify({
+              prompt: messages.map(m => m.content).join('\n\n'),
+              // No continuation/streaming protocol exists for this edge
+              // function (see STREAMING_JUDGE_FNS below — it's deliberately
+              // left out), so unlike the chat-completions models above,
+              // Gemini gets exactly one shot to produce the whole ballot.
+              // Give it real headroom rather than the 'fast' tier's
+              // 24000-per-round budget (that number assumes up to 4
+              // chained rounds are available to make up the difference).
+              maxOutputTokens: maxTokensOverride || 32768,
+              overrideKey: undefined,
+              category: 'ballot_feedback',
+              weight: weightOverride != null ? weightOverride : (BALLOT_FEEDBACK_MODEL_WEIGHTS[weightKey] || 1)
+            }) : JSON.stringify({
               // Groq/GPT-OSS writes the rubric feedback directly (once
               // reasoning_effort is dialed down below), so 3000 tokens is
               // plenty. Every streaming-capable model (Hack Club AI,
-              // NVIDIA-hosted GLM, Gemini) now gets its tier's own
-              // per-round token budget instead of one flat 32000 — 'fast'
-              // models get a smaller, faster-to-fill ceiling; 'premium'
-              // models (Opus 5, Sonnet 5) keep the full 32000 since they
-              // genuinely use it. maxTokensOverride still lets
-              // runGptOssSplitJudging below request a smaller budget per
-              // split call than the flat 3000 default.
+              // NVIDIA-hosted GLM) now gets its tier's own per-round token
+              // budget instead of one flat 32000 — 'fast' models get a
+              // smaller, faster-to-fill ceiling; 'premium' models (Opus 5,
+              // Sonnet 5) keep the full 32000 since they genuinely use it.
+              // maxTokensOverride still lets runGptOssSplitJudging below
+              // request a smaller budget per split call than the flat
+              // 3000 default.
               model: choice.model, temperature:0.4, max_tokens: maxTokensOverride || (tierProfile ? tierProfile.maxTokensPerRound : (STREAMING_JUDGE_FNS.has(choice.fn) ? 32000 : 3000)),
               // Reasoning-capable models (Claude, Kimi, DeepSeek, GLM,
               // Qwen) can default to spending a large chunk of their
@@ -7368,6 +7406,8 @@ Grading rules per claim:
               // and never enters this loop.
               setProcStep('judging', round > 1 ? `Wave ${round}` : '');
             }, tierProfile)
+          : choice.fn === 'gemini-generate'
+          ? extractGeminiContent(await (await doFetch(baseMessages)).json())
           : extractChatContent(await (await doFetch(baseMessages)).json());
         // The HTTP call itself succeeded (the model billed real tokens),
         // but if we can't find text in any shape we recognize, treat it

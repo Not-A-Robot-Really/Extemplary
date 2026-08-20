@@ -409,6 +409,22 @@ const DATA = window.APP_DATA;
   // `ballots`/`user_goals` rows already loaded for My History, no extra
   // table needed for the streak itself.
   const GOAL_CATEGORIES = DATA.GOAL_CATEGORIES;
+  // Ballot category names come straight from whatever the grading AI wrote
+  // as its own section header (e.g. "3. STRENGTH OF ARGUMENT & ANALYSIS" or
+  // "Speech Quality - Vocal Delivery & Fluency"), so they can carry a
+  // leading number, different casing, or different punctuation than the
+  // canonical GOAL_CATEGORIES list the "+ New Goal" category dropdown is
+  // built from. Map a raw ballot category name back to the exact canonical
+  // string so anything built from it (goal creation, and later matching
+  // against it in goalProgress) lines up with a real selectable option.
+  // Returns null if nothing canonical corresponds to it.
+  function canonicalGoalCategory(rawName){
+    if(!rawName) return null;
+    const norm = s => s.toLowerCase().replace(/^\s*\d+[\.\)]\s*/, '').replace(/[—–-]/g,'-').replace(/\s+/g,' ').trim();
+    const target = norm(rawName);
+    const match = GOAL_CATEGORIES.find(c => norm(c) === target);
+    return match || null;
+  }
   const STREAK_MILESTONES = DATA.STREAK_MILESTONES;
 
   function dateKey(d){
@@ -582,22 +598,32 @@ const DATA = window.APP_DATA;
     if(!list.length) return [];
     const rows = computeTrends(list);
     if(!rows.length) return [];
-    const weakest = rows[rows.length-1];
-    const secondWeakest = rows.length > 1 ? rows[rows.length-2] : null;
     const totals = list.map(e=>e.total).filter(t=>t!==null&&t!==undefined);
     const avgTotal = totals.length ? totals.reduce((a,b)=>a+b,0)/totals.length : 0;
     const bestTotal = totals.length ? Math.max(...totals) : 0;
     const streakInfo = computeStreak(list, goals, events);
     const suggestions = [];
+    // Only ever suggest categories that actually exist as a selectable
+    // option in the "+ New Goal" modal's Category dropdown — a raw ballot
+    // header name (numbered, oddly cased, etc.) that can't be mapped back
+    // to one of GOAL_CATEGORIES would silently create a goal the user could
+    // never have made themselves, so those rows are skipped entirely.
+    const canonicalRows = rows
+      .map(r => ({ ...r, canonicalName: canonicalGoalCategory(r.name) }))
+      .filter(r => r.canonicalName);
+    const weakest = canonicalRows[canonicalRows.length-1];
+    const secondWeakest = canonicalRows.length > 1 ? canonicalRows[canonicalRows.length-2] : null;
     // 1) Category goal targeting the single weakest graded category.
-    suggestions.push({
-      type:'category', params:{ category: weakest.name, threshold: Math.min(95, Math.round(weakest.avgPct + 15)) },
-      why: `Your weakest area across your ballots is ${weakest.name} (avg ${weakest.avgPct.toFixed(0)}%).`
-    });
+    if(weakest){
+      suggestions.push({
+        type:'category', params:{ category: weakest.canonicalName, threshold: Math.min(95, Math.round(weakest.avgPct + 15)) },
+        why: `Your weakest area across your ballots is ${weakest.canonicalName} (avg ${weakest.avgPct.toFixed(0)}%).`
+      });
+    }
     if(secondWeakest){
       suggestions.push({
-        type:'category', params:{ category: secondWeakest.name, threshold: Math.min(95, Math.round(secondWeakest.avgPct + 15)) },
-        why: `${secondWeakest.name} is also trending as a recurring weak spot (avg ${secondWeakest.avgPct.toFixed(0)}%).`
+        type:'category', params:{ category: secondWeakest.canonicalName, threshold: Math.min(95, Math.round(secondWeakest.avgPct + 15)) },
+        why: `${secondWeakest.canonicalName} is also trending as a recurring weak spot (avg ${secondWeakest.avgPct.toFixed(0)}%).`
       });
     }
     // 2) Overall-score goal, a stretch above their current average.

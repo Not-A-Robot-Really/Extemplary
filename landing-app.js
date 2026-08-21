@@ -1783,12 +1783,27 @@ Grading rules:
   (async function initAuth(){
     if(!supabaseClient) return; // no client lib available, let them try the form, it'll surface a clear error
     const { data } = await supabaseClient.auth.getSession();
-    if(data && data.session){
+    // Ignore an anonymous session here too — getAuthToken() may have
+    // already silently signed one in (e.g. from a free-try demo used
+    // before the person ever opens the sign-up form), and that should
+    // never count as "already logged in, skip the landing page."
+    if(data?.session && !data.session.user?.is_anonymous){
       window.location.href = 'index.html';
       return;
     }
     supabaseClient.auth.onAuthStateChange((event, session) => {
-      if(event === 'SIGNED_IN' && session) window.location.href = 'index.html';
+      // getAuthToken() calls signInAnonymously() to authorize edge-function
+      // calls (the free-try demos, and the account-verification call
+      // during sign-up itself), and that ALSO fires a SIGNED_IN event.
+      // Without this check, the moment sign-up called the edge function
+      // mid-verification, this listener would redirect to index.html
+      // immediately, before the real account was even created and before
+      // the real signInWithPassword ever ran — silently breaking sign-up
+      // (and the tutorial, since it never got armed). Only a real,
+      // non-anonymous session should ever trigger this redirect.
+      if(event === 'SIGNED_IN' && session && !session.user?.is_anonymous){
+        window.location.href = 'index.html';
+      }
     });
   })();
 

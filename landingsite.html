@@ -48,11 +48,11 @@
         <span class="auth-tab-indicator" id="authTabIndicator"></span>
       </div>
       <form id="authForm" autocomplete="on">
-        <div class="auth-field">
+        <div class="auth-field" id="authEmailWrap">
           <label for="authEmail">Email</label>
           <input type="email" id="authEmail" name="email" required autocomplete="username" />
         </div>
-        <div class="auth-field">
+        <div class="auth-field" id="authPasswordWrap">
           <label for="authPassword">Password</label>
           <input type="password" id="authPassword" name="password" required autocomplete="current-password" minlength="6" />
         </div>
@@ -62,7 +62,8 @@
         </div>
         <!-- Shown only mid-signup, after Clerk has sent a code to the email
              above and before the Supabase account has actually been
-             created. Hidden the rest of the time. -->
+             created. Replaces the email/password/confirm fields above
+             rather than stacking below them, so the card doesn't grow. -->
         <div class="auth-info hidden" id="authInfo"></div>
         <div class="auth-field hidden" id="authCodeWrap">
           <label for="authCode">Verification code</label>

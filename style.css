@@ -606,6 +606,16 @@
   .landing-hero-headline{
     max-width:440px;position:relative;z-index:2;
     animation:heroSlideIn 0.8s cubic-bezier(.2,.8,.3,1) both;
+    /* Pinned to a fixed offset from the top of the row instead of
+       align-items:center (the default on .landing-hero). With centering,
+       this box was recentering every time the auth-card next to it
+       changed height (confirm-password field, verification-code step,
+       etc appearing/disappearing) since align-items:center centers each
+       item within the shared row height, and that row height is driven
+       by whichever child is tallest. align-self:flex-start anchors it to
+       the row's top instead, so it no longer moves when the card resizes. */
+    align-self:flex-start;
+    margin-top:14vh;
   }
   @keyframes heroSlideIn{
     from{opacity:0;transform:translateX(-18px);}
@@ -626,7 +636,7 @@
   }
   @media (max-width:860px){
     .landing-hero{flex-direction:column-reverse;gap:32px;text-align:center;}
-    .landing-hero-headline{max-width:480px;text-align:center;}
+    .landing-hero-headline{max-width:480px;text-align:center;align-self:center;margin-top:0;}
   }
 
   .auth-card{
@@ -711,8 +721,8 @@
     display:block !important;max-height:0;opacity:0;margin-bottom:0;pointer-events:none;
   }
   .auth-info{
-    font-family:var(--font-mono);font-size:12px;color:var(--charcoal);
-    background:var(--parchment-deep);border:1px solid var(--ink-line);border-left:3px solid var(--crimson);
+    font-family:var(--font-body);font-size:12.5px;color:var(--charcoal);
+    background:var(--parchment-deep);border:1px solid var(--ink-line);
     border-radius:3px;padding:10px 12px;margin:-2px 0 14px;line-height:1.5;
   }
   .auth-info strong{color:var(--crimson-deep);}

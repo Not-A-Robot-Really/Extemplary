@@ -418,6 +418,8 @@ Grading rules:
     authCodeWrap.classList.add('hidden');
     hideAuthInfo();
     document.getElementById('authCode').value = '';
+    document.getElementById('authEmailWrap').classList.remove('hidden');
+    document.getElementById('authPasswordWrap').classList.remove('hidden');
     document.getElementById('authEmail').disabled = false;
     document.getElementById('authPassword').disabled = false;
   }
@@ -503,6 +505,12 @@ Grading rules:
     const clerkSignUp = await clerk.client.signUp.create({ emailAddress: email });
     await clerkSignUp.prepareEmailAddressVerification({ strategy: 'email_code' });
     pendingSignUp = { clerkSignUp, email, password };
+    // Swap the email/password/confirm fields OUT for the code field rather
+    // than stacking the code field below them, so the card doesn't grow
+    // taller than it needs to.
+    document.getElementById('authEmailWrap').classList.add('hidden');
+    document.getElementById('authPasswordWrap').classList.add('hidden');
+    authConfirmWrap.classList.add('hidden');
     authCodeWrap.classList.remove('hidden');
     document.getElementById('authEmail').disabled = true;
     document.getElementById('authPassword').disabled = true;

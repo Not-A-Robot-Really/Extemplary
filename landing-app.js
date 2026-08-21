@@ -5,6 +5,12 @@
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlpZWhobWVsZm90d2tkcXhwbHVnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzNDYxMzEsImV4cCI6MjA5ODkyMjEzMX0.8QzN1LJmr70Sidxp2RsOq-z3S_NX5lN9QWTr45CSaHo';
   const SUPABASE_FUNCTIONS_URL = SUPABASE_URL + '/functions/v1';
 
+  // Clerk publishable key — safe to expose client-side, this is NOT the
+  // secret key. Must match the data-clerk-publishable-key attribute on the
+  // <script> tag in landingsite.html's <head>. Get it from
+  // https://dashboard.clerk.com/ -> your app -> API Keys -> Publishable key.
+  const CLERK_PUBLISHABLE_KEY = 'pk_test_aW1tdW5lLWtvYWxhLTU4Mi5jbGVyay5hY2NvdW50cy5kZXYk';
+
   // ===== AUTH + SAVED PROGRESS =====
   // Real accounts via Supabase Auth (email + password). Session tokens are
   // persisted by supabase-js itself (localStorage), which is what makes
@@ -368,8 +374,38 @@ Grading rules:
   const authTabLogin = document.getElementById('authTabLogin');
   const authTabSignup = document.getElementById('authTabSignup');
   const authConfirmWrap = document.getElementById('authConfirmWrap');
+  const authCodeWrap = document.getElementById('authCodeWrap');
+  const authResendCodeBtn = document.getElementById('authResendCodeBtn');
   const authError = document.getElementById('authError');
   const authSubmitBtn = document.getElementById('authSubmitBtn');
+
+  // ===== CLERK (email verification only) =====
+  // Clerk never becomes the account system here — Supabase Auth still owns
+  // the account/session. Clerk's ONLY job is proving the person actually
+  // controls the email address before we let a Supabase account be created
+  // for it. Flow: Clerk sends+checks the code client-side (needs the public
+  // publishable key only) -> once verified, we call a Supabase Edge
+  // Function that re-checks that verification server-side against Clerk's
+  // Backend API (using a secret key that never reaches the browser) before
+  // creating the Supabase user with email_confirm already set to true.
+  let clerkLoadPromise = null;
+  async function getClerk(){
+    if(!window.Clerk) throw new Error('clerk_not_loaded:Verification service failed to load. Check your connection and reload.');
+    if(!clerkLoadPromise) clerkLoadPromise = window.Clerk.load();
+    await clerkLoadPromise;
+    return window.Clerk;
+  }
+  // Holds the in-progress Clerk sign-up between "send code" and "verify
+  // code" submits. Cleared on success, failure, or switching auth tabs.
+  let pendingSignUp = null; // { clerkSignUp, email, password }
+
+  function resetPendingSignUp(){
+    pendingSignUp = null;
+    authCodeWrap.classList.add('hidden');
+    document.getElementById('authCode').value = '';
+    document.getElementById('authEmail').disabled = false;
+    document.getElementById('authPassword').disabled = false;
+  }
   const authCardEl = document.querySelector('.auth-card');
   let authMode = 'login'; // 'login' | 'signup'
 
@@ -411,6 +447,7 @@ Grading rules:
 
   function setAuthMode(mode){
     authMode = mode;
+    resetPendingSignUp();
     authTabLogin.classList.toggle('active', mode === 'login');
     authTabSignup.classList.toggle('active', mode === 'signup');
     authConfirmWrap.classList.toggle('hidden', mode !== 'signup');
@@ -444,6 +481,76 @@ Grading rules:
     try{ return JSON.stringify(err); }catch(e){ return String(err); }
   }
 
+  // Step 1 of sign-up: collect email+password, ask Clerk to send a code to
+  // that email. Nothing is created in Supabase yet.
+  async function startSignupVerification(email, password){
+    const clerk = await getClerk();
+    const clerkSignUp = await clerk.client.signUp.create({ emailAddress: email });
+    await clerkSignUp.prepareEmailAddressVerification({ strategy: 'email_code' });
+    pendingSignUp = { clerkSignUp, email, password };
+    authCodeWrap.classList.remove('hidden');
+    document.getElementById('authEmail').disabled = true;
+    document.getElementById('authPassword').disabled = true;
+    authSubmitBtn.textContent = 'Verify & Create Account';
+    showAuthError('We sent a verification code to ' + email + '. Enter it below.');
+  }
+
+  // Step 2 of sign-up: check the code with Clerk, and only once Clerk
+  // confirms it, ask our Edge Function to create the actual Supabase
+  // account (the Edge Function re-checks with Clerk server-side too, so a
+  // tampered client request alone can never create an unverified account).
+  async function completeSignupVerification(code){
+    if(!pendingSignUp) throw new Error('No verification in progress, start sign-up again.');
+    const { clerkSignUp, email, password } = pendingSignUp;
+    const attempt = await clerkSignUp.attemptEmailAddressVerification({ code });
+    if(attempt.status !== 'complete' && attempt.verifications?.emailAddress?.status !== 'verified'){
+      throw new Error('That code is incorrect or expired, request a new one and try again.');
+    }
+    const clerkUserId = attempt.createdUserId || attempt.id;
+    await createVerifiedAccount(email, password, clerkUserId);
+    resetPendingSignUp();
+    const { error: signInError } = await supabaseClient.auth.signInWithPassword({ email, password });
+    if(signInError) throw signInError;
+    window.location.href = 'index.html';
+  }
+
+  // Calls the `create-verified-account` Supabase Edge Function, which:
+  //   1) uses CLERK_SECRET_KEY (server-side secret) to re-confirm with
+  //      Clerk's Backend API that clerkUserId's email really is verified
+  //      and matches `email`,
+  //   2) uses SUPABASE_SERVICE_ROLE_KEY to create the Supabase user with
+  //      email_confirm: true (so Supabase's own confirmation email never
+  //      fires — Clerk already proved ownership).
+  // See the deployment instructions for this function's source.
+  async function createVerifiedAccount(email, password, clerkUserId){
+    const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/create-verified-account`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + (await getAuthToken()),
+        'apikey': SUPABASE_ANON_KEY
+      },
+      body: JSON.stringify({ email, password, clerkUserId })
+    });
+    if(!res.ok){
+      const info = await res.json().catch(() => ({}));
+      throw new Error(info.error || ('account_creation_failed:' + res.status));
+    }
+  }
+
+  authResendCodeBtn.addEventListener('click', async () => {
+    if(!pendingSignUp) return;
+    authResendCodeBtn.disabled = true;
+    try{
+      await pendingSignUp.clerkSignUp.prepareEmailAddressVerification({ strategy: 'email_code' });
+      showAuthError('Sent a new code to ' + pendingSignUp.email + '.');
+    }catch(err){
+      showAuthError('Could not resend code: ' + describeAuthError(err));
+    }finally{
+      authResendCodeBtn.disabled = false;
+    }
+  });
+
   authForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     authError.classList.remove('visible');
@@ -456,39 +563,26 @@ Grading rules:
     authSubmitBtn.disabled = true;
     try{
       if(authMode === 'signup'){
+        // Already sent a code — this submit is the "enter code" step.
+        if(pendingSignUp){
+          const code = document.getElementById('authCode').value.trim();
+          if(!code){ showAuthError('Enter the verification code.'); return; }
+          await completeSignupVerification(code);
+          return;
+        }
         const confirm = document.getElementById('authPasswordConfirm').value;
         if(password !== confirm){ showAuthError("Passwords don't match."); return; }
         if(password.length < 6){ showAuthError('Password must be at least 6 characters.'); return; }
-        const { data, error } = await supabaseClient.auth.signUp({
-          email, password,
-          options: { emailRedirectTo: window.location.origin + window.location.pathname }
-        });
-        if(error){
-          console.error('Sign-up error:', error);
-          if(error.status === 500 && (error.code === 'unexpected_failure' || /confirmation email/i.test(error.message||''))){
-            // Usually means this email already has an account and Supabase's
-            // attempt to resend the confirmation email failed/hit a cooldown.
-            // Retrying signUp again for the same address tends to fail the
-            // same way, so point the person at login/reset instead of
-            // inviting another retry loop.
-            showAuthError('This email may already be registered, or a confirmation email was already sent recently. Try logging in, or wait a few minutes before signing up again.');
+        try{
+          await startSignupVerification(email, password);
+        }catch(err){
+          console.error('Sign-up verification start error:', err);
+          if(/already.*(sign.?up|exist)/i.test(err.message||'') || err.code === 'form_identifier_exists'){
+            showAuthError('That email may already have an account, try logging in instead.');
             setAuthMode('login');
           }else{
-            showAuthError(describeAuthError(error));
+            showAuthError(describeAuthError(err));
           }
-          return;
-        }
-        if(data.session){
-          window.location.href = 'index.html';
-        }else if(data.user && (!data.user.identities || data.user.identities.length === 0)){
-          // Supabase's signature for "this email already has an account":
-          // it returns a user-shaped object with no identities instead of
-          // an error, to avoid leaking which emails are registered.
-          showAuthError('That email may already have an account, try logging in instead.');
-          setAuthMode('login');
-        }else{
-          showAuthError('Account created, check your email to confirm it, then log in.');
-          setAuthMode('login');
         }
       }else{
         const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });

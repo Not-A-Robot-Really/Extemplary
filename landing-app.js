@@ -499,10 +499,15 @@ Grading rules:
   }
 
   // Step 1 of sign-up: collect email+password, ask Clerk to send a code to
-  // that email. Nothing is created in Supabase yet.
+  // that email. Nothing is created in Supabase yet. Password is included
+  // in the Clerk sign-up (not just the email) because Clerk only finalizes
+  // a sign-up (and only then hands back a real user id we can look up
+  // server-side) once every field it requires is present — without it,
+  // verifying the code alone leaves the sign-up "incomplete" and there is
+  // no user id for the Edge Function to check.
   async function startSignupVerification(email, password){
     const clerk = await getClerk();
-    const clerkSignUp = await clerk.client.signUp.create({ emailAddress: email });
+    const clerkSignUp = await clerk.client.signUp.create({ emailAddress: email, password });
     await clerkSignUp.prepareEmailAddressVerification({ strategy: 'email_code' });
     pendingSignUp = { clerkSignUp, email, password };
     // Swap the email/password/confirm fields OUT for the code field rather
@@ -525,11 +530,29 @@ Grading rules:
   async function completeSignupVerification(code){
     if(!pendingSignUp) throw new Error('No verification in progress, start sign-up again.');
     const { clerkSignUp, email, password } = pendingSignUp;
-    const attempt = await clerkSignUp.attemptEmailAddressVerification({ code });
-    if(attempt.status !== 'complete' && attempt.verifications?.emailAddress?.status !== 'verified'){
+    // Only actually submit the code if this sign-up isn't already verified.
+    // Retrying this step (e.g. because account creation failed on a
+    // previous attempt, after the code itself had already gone through)
+    // would otherwise resubmit the same code against an already-verified
+    // sign-up, which Clerk correctly rejects with "already verified" —
+    // and previously that left the user stuck with no way to continue.
+    if(clerkSignUp.verifications?.emailAddress?.status !== 'verified'){
+      try{
+        await clerkSignUp.attemptEmailAddressVerification({ code });
+      }catch(err){
+        const msg = err?.errors?.[0]?.message || err?.message || '';
+        if(!/already.*verif/i.test(msg)) throw err;
+        // else: Clerk already accepted an earlier attempt with this code,
+        // fall through and treat it as verified.
+      }
+    }
+    if(clerkSignUp.verifications?.emailAddress?.status !== 'verified'){
       throw new Error('That code is incorrect or expired, request a new one and try again.');
     }
-    const clerkUserId = attempt.createdUserId || attempt.id;
+    const clerkUserId = clerkSignUp.createdUserId;
+    if(!clerkUserId){
+      throw new Error('clerk_setup:Verification succeeded but Clerk did not finish creating a user record, double check the sign-up is configured to require only email and password.');
+    }
     await createVerifiedAccount(email, password, clerkUserId);
     // Arm the first-run tutorial right here, at the one moment we know for
     // certain the account was actually just created — not on every form
@@ -562,6 +585,7 @@ Grading rules:
       },
       body: JSON.stringify({ email, password, clerkUserId })
     });
+    if(res.status === 409) return; // account_already_exists: an earlier attempt already created it, that's fine, treat as success
     if(!res.ok){
       const info = await res.json().catch(() => ({}));
       throw new Error(info.error || ('account_creation_failed:' + res.status));

@@ -603,6 +603,17 @@ const DATA = window.APP_DATA;
     const bestTotal = totals.length ? Math.max(...totals) : 0;
     const streakInfo = computeStreak(list, goals, events);
     const suggestions = [];
+    // Never re-suggest something the user already has as a real goal — this
+    // is what makes a suggestion disappear the moment "+ Add" creates it
+    // (the newly-created goal excludes it on the very next render), and
+    // what lets a fresh suggestion take its place: once the top weak
+    // category / current score target / current streak target is taken,
+    // the next-weakest category or the next milestone up surfaces instead,
+    // so the list keeps replenishing as the user acts on it rather than
+    // going stale or looping the same three suggestions forever.
+    const existingCategoryGoals = new Set(
+      goals.filter(g => g.type === 'category' && g.params).map(g => g.params.category)
+    );
     // Only ever suggest categories that actually exist as a selectable
     // option in the "+ New Goal" modal's Category dropdown — a raw ballot
     // header name (numbered, oddly cased, etc.) that can't be mapped back
@@ -610,10 +621,11 @@ const DATA = window.APP_DATA;
     // never have made themselves, so those rows are skipped entirely.
     const canonicalRows = rows
       .map(r => ({ ...r, canonicalName: canonicalGoalCategory(r.name) }))
-      .filter(r => r.canonicalName);
+      .filter(r => r.canonicalName && !existingCategoryGoals.has(r.canonicalName));
     const weakest = canonicalRows[canonicalRows.length-1];
     const secondWeakest = canonicalRows.length > 1 ? canonicalRows[canonicalRows.length-2] : null;
-    // 1) Category goal targeting the single weakest graded category.
+    // 1) Category goal targeting the single weakest graded category the
+    // user doesn't already have a goal for.
     if(weakest){
       suggestions.push({
         type:'category', params:{ category: weakest.canonicalName, threshold: Math.min(95, Math.round(weakest.avgPct + 15)) },
@@ -626,19 +638,31 @@ const DATA = window.APP_DATA;
         why: `${secondWeakest.canonicalName} is also trending as a recurring weak spot (avg ${secondWeakest.avgPct.toFixed(0)}%).`
       });
     }
-    // 2) Overall-score goal, a stretch above their current average.
-    suggestions.push({
-      type:'score', params:{ threshold: Math.min(100, Math.round(avgTotal/5)*5 + 10) },
-      why: `Your average overall score is ${avgTotal.toFixed(0)}/100 — this pushes just past your recent best of ${bestTotal.toFixed(0)}.`
-    });
-    // 3) A streak goal calibrated to where they already are.
-    const nextMilestone = STREAK_MILESTONES.find(m => m > streakInfo.current) || STREAK_MILESTONES[STREAK_MILESTONES.length-1];
-    suggestions.push({
-      type:'streak', params:{ days: nextMilestone },
-      why: streakInfo.current > 0
-        ? `You're on a ${streakInfo.current}-day streak already — keep it going.`
-        : `Building a short streak — recording a ballot, setting a goal, or hitting one — is the fastest way to build the habit.`
-    });
+    // 2) Overall-score goal, a stretch above their current average — and
+    // above any score goal they already have, so accepting one bumps the
+    // next suggestion to the next stretch target instead of repeating.
+    const existingScoreThresholds = goals.filter(g => g.type === 'score' && g.params).map(g => g.params.threshold);
+    const maxExistingScoreThreshold = existingScoreThresholds.length ? Math.max(...existingScoreThresholds) : 0;
+    const scoreThreshold = Math.max(Math.min(100, Math.round(avgTotal/5)*5 + 10), maxExistingScoreThreshold + 5);
+    if(scoreThreshold <= 100){
+      suggestions.push({
+        type:'score', params:{ threshold: scoreThreshold },
+        why: `Your average overall score is ${avgTotal.toFixed(0)}/100 — this pushes just past your recent best of ${bestTotal.toFixed(0)}.`
+      });
+    }
+    // 3) A streak goal calibrated to where they already are, and above any
+    // streak goal they already have for the same replenishing reason.
+    const existingStreakDays = goals.filter(g => g.type === 'streak' && g.params).map(g => g.params.days);
+    const maxExistingStreakDays = existingStreakDays.length ? Math.max(...existingStreakDays) : 0;
+    const nextMilestone = STREAK_MILESTONES.find(m => m > Math.max(streakInfo.current, maxExistingStreakDays));
+    if(nextMilestone){
+      suggestions.push({
+        type:'streak', params:{ days: nextMilestone },
+        why: streakInfo.current > 0
+          ? `You're on a ${streakInfo.current}-day streak already — keep it going.`
+          : `Building a short streak — recording a ballot, setting a goal, or hitting one — is the fastest way to build the habit.`
+      });
+    }
     return suggestions.slice(0,3);
   }
 

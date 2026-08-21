@@ -594,6 +594,17 @@ const DATA = window.APP_DATA;
   // ---- suggested goals (My Ballot History), derived from the user's own
   // weaknesses and Coach's Overall Notes, no extra AI call needed since
   // the weakness ranking is already computed from their ballot data. ----
+  //
+  // Two rules every suggestion here must satisfy:
+  //   1) It must be a genuine stretch — its target must sit strictly above
+  //      the best the user has ALREADY done (best-ever category %, best-ever
+  //      overall score, best-ever practice-rounds-in-a-month), never just
+  //      above their average. A goal calibrated off the average alone can
+  //      already be beaten by a past personal best, which "suggests" a goal
+  //      the user has technically already completed.
+  //   2) The three slots returned should span different goal TYPES (category
+  //      / score / streak / rounds) rather than three category goals, so
+  //      "Suggested for you" isn't just the same kind of goal three times.
   function computeSuggestedGoals(list, goals, events){
     if(!list.length) return [];
     const rows = computeTrends(list);
@@ -602,7 +613,17 @@ const DATA = window.APP_DATA;
     const avgTotal = totals.length ? totals.reduce((a,b)=>a+b,0)/totals.length : 0;
     const bestTotal = totals.length ? Math.max(...totals) : 0;
     const streakInfo = computeStreak(list, goals, events);
-    const suggestions = [];
+
+    // Best-ever % achieved per category, so a category goal can be checked
+    // against the user's actual ceiling, not just their average.
+    const bestPctByCategory = {};
+    list.forEach(e => (e.categories||[]).forEach(c => {
+      const pct = (c.score/(c.max||10))*100;
+      const canon = canonicalGoalCategory(c.name);
+      if(!canon) return;
+      if(!(canon in bestPctByCategory) || pct > bestPctByCategory[canon]) bestPctByCategory[canon] = pct;
+    }));
+
     // Never re-suggest something the user already has as a real goal — this
     // is what makes a suggestion disappear the moment "+ Add" creates it
     // (the newly-created goal excludes it on the very next render), and
@@ -624,46 +645,90 @@ const DATA = window.APP_DATA;
       .filter(r => r.canonicalName && !existingCategoryGoals.has(r.canonicalName));
     const weakest = canonicalRows[canonicalRows.length-1];
     const secondWeakest = canonicalRows.length > 1 ? canonicalRows[canonicalRows.length-2] : null;
+
+    // Builds a category-goal suggestion whose threshold is a real stretch
+    // above BOTH the recurring average and the user's own best-ever showing
+    // in that category, so accepting it can't already be done.
+    function categorySuggestion(row){
+      const bestPct = bestPctByCategory[row.canonicalName] || row.avgPct;
+      const threshold = Math.min(95, Math.max(Math.round(row.avgPct + 15), Math.round(bestPct) + 5));
+      return {
+        type:'category', params:{ category: row.canonicalName, threshold },
+        why: `Your weakest area across your ballots is ${row.canonicalName} (avg ${row.avgPct.toFixed(0)}%, best ${bestPct.toFixed(0)}%). This target is above your personal best there.`
+      };
+    }
+
+    const candidates = [];
+
     // 1) Category goal targeting the single weakest graded category the
     // user doesn't already have a goal for.
-    if(weakest){
-      suggestions.push({
-        type:'category', params:{ category: weakest.canonicalName, threshold: Math.min(95, Math.round(weakest.avgPct + 15)) },
-        why: `Your weakest area across your ballots is ${weakest.canonicalName} (avg ${weakest.avgPct.toFixed(0)}%).`
-      });
-    }
-    if(secondWeakest){
-      suggestions.push({
-        type:'category', params:{ category: secondWeakest.canonicalName, threshold: Math.min(95, Math.round(secondWeakest.avgPct + 15)) },
-        why: `${secondWeakest.canonicalName} is also trending as a recurring weak spot (avg ${secondWeakest.avgPct.toFixed(0)}%).`
-      });
-    }
-    // 2) Overall-score goal, a stretch above their current average — and
-    // above any score goal they already have, so accepting one bumps the
-    // next suggestion to the next stretch target instead of repeating.
+    if(weakest) candidates.push(categorySuggestion(weakest));
+
+    // 2) Overall-score goal, a stretch above BOTH their current average and
+    // their best-ever recorded total — and above any score goal they
+    // already have, so accepting one bumps the next suggestion up instead
+    // of repeating.
     const existingScoreThresholds = goals.filter(g => g.type === 'score' && g.params).map(g => g.params.threshold);
     const maxExistingScoreThreshold = existingScoreThresholds.length ? Math.max(...existingScoreThresholds) : 0;
-    const scoreThreshold = Math.max(Math.min(100, Math.round(avgTotal/5)*5 + 10), maxExistingScoreThreshold + 5);
-    if(scoreThreshold <= 100){
-      suggestions.push({
+    const scoreThreshold = Math.min(100, Math.max(Math.round(avgTotal/5)*5 + 10, Math.round(bestTotal) + 5, maxExistingScoreThreshold + 5));
+    if(scoreThreshold <= 100 && scoreThreshold > bestTotal){
+      candidates.push({
         type:'score', params:{ threshold: scoreThreshold },
-        why: `Your average overall score is ${avgTotal.toFixed(0)}/100 — this pushes just past your recent best of ${bestTotal.toFixed(0)}.`
+        why: `Your average overall score is ${avgTotal.toFixed(0)}/100 and your best is ${bestTotal.toFixed(0)}/100. This pushes past your personal best.`
       });
     }
+
     // 3) A streak goal calibrated to where they already are, and above any
     // streak goal they already have for the same replenishing reason.
     const existingStreakDays = goals.filter(g => g.type === 'streak' && g.params).map(g => g.params.days);
     const maxExistingStreakDays = existingStreakDays.length ? Math.max(...existingStreakDays) : 0;
     const nextMilestone = STREAK_MILESTONES.find(m => m > Math.max(streakInfo.current, maxExistingStreakDays));
     if(nextMilestone){
-      suggestions.push({
+      candidates.push({
         type:'streak', params:{ days: nextMilestone },
         why: streakInfo.current > 0
-          ? `You're on a ${streakInfo.current}-day streak already — keep it going.`
-          : `Building a short streak — recording a ballot, setting a goal, or hitting one — is the fastest way to build the habit.`
+          ? `You're on a ${streakInfo.current}-day streak already, keep it going.`
+          : `Building a short streak, recording a ballot, setting a goal, or hitting one, is the fastest way to build the habit.`
       });
     }
-    return suggestions.slice(0,3);
+
+    // 4) A practice-frequency goal for this calendar month, above whatever
+    // count the user has already hit or already set as a goal, so it
+    // diversifies the suggestion list beyond scoring-based goals entirely.
+    const now = new Date();
+    const roundsThisMonth = list.filter(e => {
+      const d = new Date(e.ts);
+      return d.getFullYear()===now.getFullYear() && d.getMonth()===now.getMonth();
+    }).length;
+    const existingRoundsCounts = goals.filter(g => g.type === 'rounds' && g.params).map(g => g.params.count);
+    const maxExistingRoundsCount = existingRoundsCounts.length ? Math.max(...existingRoundsCounts) : 0;
+    const roundsTarget = Math.max(roundsThisMonth + 3, maxExistingRoundsCount + 3, 5);
+    candidates.push({
+      type:'rounds', params:{ count: roundsTarget },
+      why: `You've completed ${roundsThisMonth} practice round${roundsThisMonth===1?'':'s'} this month. This builds a more consistent habit.`
+    });
+
+    // 5) The second-weakest category, kept as a lower-priority fallback so
+    // it only fills a slot if a different-typed suggestion above wasn't
+    // available, rather than crowding out type diversity.
+    if(secondWeakest){
+      const s = categorySuggestion(secondWeakest);
+      s.why = `${secondWeakest.canonicalName} is also trending as a recurring weak spot (avg ${secondWeakest.avgPct.toFixed(0)}%).`;
+      candidates.push(s);
+    }
+
+    // Prefer one suggestion per type first (so the 3 shown span different
+    // kinds of goals), then fall back to filling any remaining slots from
+    // whatever's left over.
+    const chosen = [];
+    const usedTypes = new Set();
+    candidates.forEach(c => {
+      if(chosen.length < 3 && !usedTypes.has(c.type)){ chosen.push(c); usedTypes.add(c.type); }
+    });
+    if(chosen.length < 3){
+      candidates.forEach(c => { if(chosen.length < 3 && !chosen.includes(c)) chosen.push(c); });
+    }
+    return chosen;
   }
 
   // ---- goal creation modal (shared by Streak Calendar + My History) ----

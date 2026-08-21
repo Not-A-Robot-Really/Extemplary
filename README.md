@@ -234,7 +234,7 @@ If you fork this project and want your *own* Supabase backend rather than the on
 
 ## Email delivery 🌐
 ---
-Supabase's built in email sender only allows 2 emails/hour. Other email verification services like Resend, Brevo, or SendGrid all are free, but all require a valid domain. Therefore, there is **currently no built in email verification system for sign ups**. However, we are trying to resolve the issue soon.
+**Account Creation**: In order to sign up for Extemplary, you must provide a valid registration email and generate a 8+ letter long password. You will then receive a verification email in your inbox from Clerk. Enter the 6 digit number, and you will be automatically enter the extension!
 
 ## Browser support
 ---

@@ -632,7 +632,7 @@
   .auth-card{
     width:100%;max-width:432px;background:var(--parchment);color:var(--charcoal);
     border-radius:3px;padding:34px 40px 34px;
-    border:1px solid var(--ink-line);margin-top:18px;position:relative;z-index:2;
+    border:1px solid var(--ink-line);margin-top:-56px;position:relative;z-index:2;
     animation:authCardIn 0.7s cubic-bezier(.2,.8,.3,1) both;
     overflow:hidden;
   }
@@ -698,6 +698,36 @@
   .auth-field input:hover{border-color:var(--ink-line);}
   .auth-field input:focus{outline:none;border-color:var(--crimson-deep);}
   .auth-field input:focus-visible{outline:none;border-color:var(--crimson-deep);}
+  /* Fields that only appear conditionally (confirm-password, the info
+     banner, the code step) are toggled by adding/removing .hidden via JS,
+     same mechanism as the rest of the site, but they also get a smooth
+     grow/fade-in instead of snapping into place, and a slight collapse on
+     the way out instead of vanishing instantly. */
+  .auth-field, .auth-info{
+    max-height:120px;opacity:1;overflow:hidden;
+    transition:max-height 0.35s cubic-bezier(.2,.8,.3,1), opacity 0.28s ease, margin 0.35s ease;
+  }
+  .auth-field.hidden, .auth-info.hidden{
+    display:block !important;max-height:0;opacity:0;margin-bottom:0;pointer-events:none;
+  }
+  .auth-info{
+    font-family:var(--font-mono);font-size:12px;color:var(--charcoal);
+    background:var(--parchment-deep);border:1px solid var(--ink-line);border-left:3px solid var(--crimson);
+    border-radius:3px;padding:10px 12px;margin:-2px 0 14px;line-height:1.5;
+  }
+  .auth-info strong{color:var(--crimson-deep);}
+  .auth-code-input{
+    text-align:center;font-family:var(--font-mono);font-size:22px;font-weight:700;
+    letter-spacing:8px;padding-left:8px !important;
+  }
+  .auth-code-input::placeholder{letter-spacing:normal;font-size:13px;font-weight:400;color:var(--slate);}
+  .auth-resend{
+    display:block;margin-top:8px;background:none;border:none;padding:0;cursor:pointer;
+    font-family:var(--font-mono);font-size:11.5px;letter-spacing:0.3px;color:var(--crimson-deep);
+    text-decoration:underline;text-underline-offset:2px;transition:opacity 0.2s ease;
+  }
+  .auth-resend:hover{opacity:0.75;}
+  .auth-resend:disabled{opacity:0.5;cursor:default;text-decoration:none;}
   .auth-error{
     font-family:var(--font-mono);font-size:12px;color:#a3322a;margin:-4px 0 12px;display:none;
     padding-left:9px;border-left:2px solid #a3322a;line-height:1.4;

@@ -63,9 +63,10 @@
         <!-- Shown only mid-signup, after Clerk has sent a code to the email
              above and before the Supabase account has actually been
              created. Hidden the rest of the time. -->
+        <div class="auth-info hidden" id="authInfo"></div>
         <div class="auth-field hidden" id="authCodeWrap">
           <label for="authCode">Verification code</label>
-          <input type="text" id="authCode" name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="8" placeholder="6-digit code" />
+          <input type="text" id="authCode" name="code" class="auth-code-input" inputmode="numeric" autocomplete="one-time-code" maxlength="8" placeholder="000000" />
           <button type="button" class="auth-resend" id="authResendCodeBtn">Resend code</button>
         </div>
         <div class="auth-error" id="authError"></div>

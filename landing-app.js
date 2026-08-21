@@ -375,9 +375,18 @@ Grading rules:
   const authTabSignup = document.getElementById('authTabSignup');
   const authConfirmWrap = document.getElementById('authConfirmWrap');
   const authCodeWrap = document.getElementById('authCodeWrap');
+  const authInfo = document.getElementById('authInfo');
   const authResendCodeBtn = document.getElementById('authResendCodeBtn');
   const authError = document.getElementById('authError');
   const authSubmitBtn = document.getElementById('authSubmitBtn');
+
+  function showAuthInfo(msg){
+    authInfo.textContent = msg;
+    authInfo.classList.remove('hidden');
+  }
+  function hideAuthInfo(){
+    authInfo.classList.add('hidden');
+  }
 
   // ===== CLERK (email verification only) =====
   // Clerk never becomes the account system here — Supabase Auth still owns
@@ -395,6 +404,11 @@ Grading rules:
     await clerkLoadPromise;
     return window.Clerk;
   }
+  // Kick off Clerk's SDK load as soon as this script runs, well before
+  // anyone has finished filling out the sign-up form, so the "send code"
+  // step doesn't have to wait on the SDK itself, only the actual network
+  // call to send the email.
+  getClerk().catch(() => {}); // swallow here, real errors surface on submit
   // Holds the in-progress Clerk sign-up between "send code" and "verify
   // code" submits. Cleared on success, failure, or switching auth tabs.
   let pendingSignUp = null; // { clerkSignUp, email, password }
@@ -402,6 +416,7 @@ Grading rules:
   function resetPendingSignUp(){
     pendingSignUp = null;
     authCodeWrap.classList.add('hidden');
+    hideAuthInfo();
     document.getElementById('authCode').value = '';
     document.getElementById('authEmail').disabled = false;
     document.getElementById('authPassword').disabled = false;
@@ -492,7 +507,7 @@ Grading rules:
     document.getElementById('authEmail').disabled = true;
     document.getElementById('authPassword').disabled = true;
     authSubmitBtn.textContent = 'Verify & Create Account';
-    showAuthError('We sent a verification code to ' + email + '. Enter it below.');
+    showAuthInfo('A message has been sent to your email. Please enter the 6 digit code from that email below.');
   }
 
   // Step 2 of sign-up: check the code with Clerk, and only once Clerk
@@ -508,6 +523,13 @@ Grading rules:
     }
     const clerkUserId = attempt.createdUserId || attempt.id;
     await createVerifiedAccount(email, password, clerkUserId);
+    // Arm the first-run tutorial right here, at the one moment we know for
+    // certain the account was actually just created — not on every form
+    // submit while the Sign Up tab happens to be active (that used to also
+    // fire on the "send code" step, before an account existed, so if
+    // someone abandoned mid-verification the tutorial could misfire later
+    // on an unrelated sign-in). tutorial.js just watches for this key.
+    try{ localStorage.setItem('extemplary_tutorial_pending_email', email); }catch(e){}
     resetPendingSignUp();
     const { error: signInError } = await supabaseClient.auth.signInWithPassword({ email, password });
     if(signInError) throw signInError;
@@ -541,13 +563,16 @@ Grading rules:
   authResendCodeBtn.addEventListener('click', async () => {
     if(!pendingSignUp) return;
     authResendCodeBtn.disabled = true;
+    const original = authResendCodeBtn.textContent;
+    authResendCodeBtn.textContent = 'Sending...';
     try{
       await pendingSignUp.clerkSignUp.prepareEmailAddressVerification({ strategy: 'email_code' });
-      showAuthError('Sent a new code to ' + pendingSignUp.email + '.');
+      showAuthInfo('A new code has been sent to ' + pendingSignUp.email + '. Please enter it below.');
     }catch(err){
       showAuthError('Could not resend code: ' + describeAuthError(err));
     }finally{
       authResendCodeBtn.disabled = false;
+      authResendCodeBtn.textContent = original;
     }
   });
 
@@ -561,12 +586,14 @@ Grading rules:
     const email = document.getElementById('authEmail').value.trim();
     const password = document.getElementById('authPassword').value;
     authSubmitBtn.disabled = true;
+    const originalBtnText = authSubmitBtn.textContent;
     try{
       if(authMode === 'signup'){
         // Already sent a code — this submit is the "enter code" step.
         if(pendingSignUp){
           const code = document.getElementById('authCode').value.trim();
           if(!code){ showAuthError('Enter the verification code.'); return; }
+          authSubmitBtn.textContent = 'Verifying...';
           await completeSignupVerification(code);
           return;
         }
@@ -574,9 +601,11 @@ Grading rules:
         if(password !== confirm){ showAuthError("Passwords don't match."); return; }
         if(password.length < 6){ showAuthError('Password must be at least 6 characters.'); return; }
         try{
+          authSubmitBtn.textContent = 'Sending code...';
           await startSignupVerification(email, password);
         }catch(err){
           console.error('Sign-up verification start error:', err);
+          authSubmitBtn.textContent = originalBtnText;
           if(/already.*(sign.?up|exist)/i.test(err.message||'') || err.code === 'form_identifier_exists'){
             showAuthError('That email may already have an account, try logging in instead.');
             setAuthMode('login');
@@ -592,6 +621,7 @@ Grading rules:
     }catch(err){
       console.error('Auth exception:', err);
       showAuthError('Something went wrong: ' + describeAuthError(err));
+      if(pendingSignUp) authSubmitBtn.textContent = 'Verify & Create Account';
     }finally{
       authSubmitBtn.disabled = false;
     }

@@ -26,22 +26,16 @@
   var PENDING_KEY = 'extemplary_tutorial_pending_email';
   var doneKeyFor = function(email){ return 'extemplary_tutorial_done:' + (email||'').toLowerCase(); };
 
-  var authForm = byId('authForm');
-  var authTabSignup = byId('authTabSignup');
-  var authGate = byId('authGate');
   var accountEmail = byId('accountEmail');
 
-  if(authForm && authTabSignup){
-    // Capture phase so we record intent before the app's own async signup
-    // handler runs; if it succeeds, we'll know to launch the tutorial the
-    // moment authGate disappears.
-    authForm.addEventListener('submit', function(){
-      if(authTabSignup.classList.contains('active')){
-        var email = (byId('authEmail') && byId('authEmail').value || '').trim();
-        if(email) localStorage.setItem(PENDING_KEY, email);
-      }
-    }, true);
-  }
+  // NOTE: PENDING_KEY is armed by landing-app.js itself, right after a new
+  // Supabase account is actually created (post email verification) — not
+  // from this file watching form submits. That used to arm the tutorial
+  // the moment the Sign Up form was submitted, which with two-step
+  // (verify-then-create) sign-up meant it fired on the "send code" step,
+  // before any account existed. If someone abandoned mid-verification, the
+  // stale pending key could wrongly launch the tutorial on a later,
+  // unrelated sign-in.
 
   function maybeLaunchAfterSignIn(){
     var pendingEmail = localStorage.getItem(PENDING_KEY);

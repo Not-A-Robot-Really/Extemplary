@@ -507,6 +507,13 @@ Grading rules:
   // no user id for the Edge Function to check.
   async function startSignupVerification(email, password){
     const clerk = await getClerk();
+    // Clerk activates a client-side session the moment a sign-up completes,
+    // separate from (and unrelated to) the Supabase session we actually
+    // care about. If a previous sign-up on this browser left one active,
+    // Clerk refuses to start a new sign-up attempt ("You're already signed
+    // in") — clear it first so this always works, including for a second,
+    // different account on the same browser.
+    if(clerk.session){ try{ await clerk.signOut(); }catch(e){} }
     const clerkSignUp = await clerk.client.signUp.create({ emailAddress: email, password });
     await clerkSignUp.prepareEmailAddressVerification({ strategy: 'email_code' });
     pendingSignUp = { clerkSignUp, email, password };
@@ -554,6 +561,11 @@ Grading rules:
       throw new Error('clerk_setup:Verification succeeded but Clerk did not finish creating a user record, double check the sign-up is configured to require only email and password.');
     }
     await createVerifiedAccount(email, password, clerkUserId);
+    // Clerk's job is done — its client session isn't needed anymore and
+    // would otherwise block a future sign-up on this browser (see the
+    // comment in startSignupVerification), so clear it right away rather
+    // than waiting for the next sign-up to clean it up.
+    try{ const clerk = await getClerk(); if(clerk.session) await clerk.signOut(); }catch(e){}
     // Arm the first-run tutorial right here, at the one moment we know for
     // certain the account was actually just created — not on every form
     // submit while the Sign Up tab happens to be active (that used to also

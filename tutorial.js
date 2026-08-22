@@ -1,41 +1,13 @@
-/* ==========================================================================
-   Extemplary: first-run tutorial (cutscene) walkthrough
-
-   Runs ONLY the first time a brand-new account is created. Never runs for
-   people logging in to an existing account, and never runs again once
-   finished or skipped (tracked per-account in localStorage).
-
-   Design: this file does NOT reach into the main app's closures (the whole
-   app lives inside one big IIFE). Instead it drives the real UI the same
-   way a person would: highlighting real buttons, requiring real clicks on
-   them, and watching the app's own hidden/shown classes to know when a
-   real action (a goal was saved, a briefing came back, a question was
-   picked, etc.) actually happened.
-
-   Remember: KEEP skelPct AT (55, 90), it'll look wonky if it isn't
-   ========================================================================== */
 (function(){
   "use strict";
 
   var $ = function(sel, root){ return (root||document).querySelector(sel); };
   var byId = function(id){ return document.getElementById(id); };
 
-  /* ---------------------------------------------------------------------
-     1. DECIDE WHETHER TO EVEN ARM THE TUTORIAL
-     --------------------------------------------------------------------- */
   var PENDING_KEY = 'extemplary_tutorial_pending_email';
   var doneKeyFor = function(email){ return 'extemplary_tutorial_done:' + (email||'').toLowerCase(); };
 
   var accountEmail = byId('accountEmail');
-
-  // NOTE: PENDING_KEY is armed by landing-app.js itself, right after a new
-  // Supabase account is actually created (post email verification) — not
-  // from this file watching form submits. That used to arm the tutorial
-  // the moment the Sign Up form was submitted, which with two-step
-  // (verify-then-create) sign-up meant it fired on the "send code" step,
-  // before any account existed. If someone abandoned mid-verification, the
-  // stale pending key could wrongly launch the tutorial on a later,
-  // unrelated sign-in.
 
   function maybeLaunchAfterSignIn(){
     var pendingEmail = localStorage.getItem(PENDING_KEY);
@@ -47,23 +19,16 @@
     setTimeout(function(){ Tutorial.start(liveEmail); }, 700);
   }
 
-  // NOTE: index.html (the app) no longer has an #authGate on the page. Signing
-  // in there just fills in #accountEmail via the app's own onSignedIn().
-  // PAY ATTENTION to that element instead. Also check once immediately in case
-  // it was already populated before this script finished loading.
   if(accountEmail){
     new MutationObserver(maybeLaunchAfterSignIn)
       .observe(accountEmail, { childList:true, characterData:true, subtree:true });
     maybeLaunchAfterSignIn();
   }
 
-  /* ---------------------------------------------------------------------
-     2. THE ENGINE
-     --------------------------------------------------------------------- */
   var Tutorial = { start: start };
-  window.ExtemplaryTutorial = Tutorial; // exposed for manual testing/QA
+  window.ExtemplaryTutorial = Tutorial;
 
-  var state = null; // { steps, idx, email, cleanup }
+  var state = null;
 
   function q(sel){ return document.querySelector(sel); }
 
@@ -72,20 +37,6 @@
     if(panel) panel.classList.remove('nav-drawer-collapsed');
   }
 
-  /* ---------------------------------------------------------------------
-     Fake "skeleton" preview of My Ballot History for brand-new accounts.
-     A new user has zero recorded rounds, so the real page would show
-     nothing for Coach's Notes / Trends / Goals / round list, but the
-     tour still wants to point at those sections and describe what they
-     become once you've recorded ~7 speeches. Rather than invent fake
-     copy (which reads as real and can be confusing/wrong), this paints
-     plain placeholder blocks in the exact real layout: same headings,
-     same card/bar counts, but every line of actual text or data is just
-     a colored rectangle. Widths/colors are randomized per render so it
-     reads as clearly-a-placeholder rather than a specific data point.
-     Purely cosmetic; real renderHistoryList() overwrites all of this
-     the moment History is opened for real after the tour.
-     --------------------------------------------------------------------- */
   function skelPct(min, max){ return Math.round(min + Math.random() * (max - min)); }
   function skelColor(){
     var palette = ['#8a9bb5', '#b58a9b', '#9bb58a', '#c9a86a', '#7a8ca8', '#a87a8c'];
@@ -95,10 +46,6 @@
     return '<div class="tut-skel-block tut-skel-bar" style="width:' + skelPct(40, 92) + '%;height:14px;background:' + skelColor() + ';opacity:0.55;"></div>';
   }
 
-  // Real rubric category names (just labels, no invented scores) so the
-  // skeleton preview reads as "this app, before you have data" rather than
-  // a generic loading spinner. Widths/values next to them are still random
-  // placeholders, never anything that looks like a specific real result.
   var SKEL_CATEGORIES = [
     'Creative Hook & Intro', 'Structure', 'Strength of Argument & Analysis',
     'Flaws in Reasoning', 'Strength of Evidence', 'Speech Quality, Vocal Delivery, and Fluency'
@@ -115,7 +62,6 @@
     { v:'bodydrill', l:'Rapid Drill: Body' }
   ];
 
-  /* -------- Coach's Overall Notes -------- */
   function paintOverallSkeleton(){
     var overallEl = byId('historyOverallFeedback');
     if(!overallEl) return;
@@ -131,9 +77,6 @@
       '</div>';
   }
 
-  /* -------- Trends Across Your Ballots (real layout: head row + practice-
-     type filter select + overall/category trend rows + strengths/
-     weaknesses + trend-chart panel with its own select) -------- */
   function paintTrendsSkeleton(){
     var trendsEl = byId('historyTrends');
     if(!trendsEl) return;
@@ -195,14 +138,10 @@
         '</div>' +
       '</div>';
 
-    // Cosmetic only: a brand-new account has no ballots to actually
-    // filter, so picking an option just repaints a fresh random preview
-    // rather than wiring up real filtering logic.
     var modeSel = byId('historyModeFilter');
     if(modeSel) modeSel.addEventListener('change', paintTrendsSkeleton);
   }
 
-  /* -------- Your Goals (real goal-card / seal / suggested-goals shapes) -------- */
   function paintGoalsSkeleton(){
     var goalsEl = byId('historyGoals');
     if(!goalsEl) return;
@@ -244,9 +183,6 @@
       '</div>';
   }
 
-  /* -------- Full round list (real .history-card shape, including the
-     mode badge for Regular / Rapid Drill: Intro / Rapid Drill: Body so
-     the tour can show off the new practice types right in context) -------- */
   function paintListSkeleton(){
     var listWrapEl = byId('historyListWrap');
     if(!listWrapEl) return;
@@ -284,8 +220,7 @@
     paintGoalsSkeleton();
     paintListSkeleton();
   }
-  // Don't use 'tutInputRow' for 39e
-  function el(){ // dom refs, grabbed lazily since app builds some content late
+  function el(){
     return {
       dim: byId('tutDim'), box: byId('tutBox'), ring: byId('tutRing'), hlbox: byId('tutHighlightBox'),
       title: byId('tutTitle'), text: byId('tutText'), avatar: byId('tutAvatar'),
@@ -296,33 +231,14 @@
     };
   }
 
-  var NAME_MAX_LEN = 20; // secretly capped (the person is never told this number)
+  var NAME_MAX_LEN = 20;
 
   function nameKeyFor(email){ return 'extemplary_speaker_name:' + (email||'').toLowerCase(); }
 
-  /* ---------------------------------------------------------------------
-     Speaker name uniqueness, checked against Supabase. Reuses the SAME
-     client instance app.js already created (via window.ExtemplarySupabase)
-     rather than creating a second one -- two separate GoTrueClient
-     instances in the same tab can deadlock on the session-refresh lock,
-     which is what was hanging "Next" on this step before.
-
-     Requires a "usernames" table in Supabase (see setup_usernames.sql):
-       user_id uuid primary key references auth.users(id)
-       name text
-       name_lower text  (unique index on this, case-insensitive uniqueness)
-
-     If that table doesn't exist yet, or the request fails for any other
-     reason (offline, RLS misconfigured, etc.), this fails OPEN -- it lets
-     the name through rather than getting a brand-new user stuck on step 2
-     of the tutorial forever.
-     --------------------------------------------------------------------- */
   function tutSupabase(){
     return window.ExtemplarySupabase || null;
   }
 
-  // Resolves { ok:true } if the name is free (and claims it for this
-  // account) or { ok:false, message } if someone else already has it.
   function claimSpeakerName(name){
     var sb = tutSupabase();
     if(!sb) return Promise.resolve({ ok:true });
@@ -331,12 +247,12 @@
     var attempt = sb.auth.getSession().then(function(res){
       var session = res && res.data && res.data.session;
       var uid = session && session.user && session.user.id;
-      if(!uid) return { ok:true }; // no session yet -- can't enforce, don't block
+      if(!uid) return { ok:true };
 
       return sb.from('usernames').select('user_id').eq('name_lower', lower).maybeSingle()
         .then(function(sel){
           if(sel.error && sel.error.code && sel.error.code !== 'PGRST116'){
-            return { ok:true }; // table missing / RLS issue -- fail open
+            return { ok:true };
           }
           var takenByOther = sel.data && sel.data.user_id && sel.data.user_id !== uid;
           if(takenByOther){
@@ -346,7 +262,6 @@
             .upsert({ user_id: uid, name: name }, { onConflict: 'user_id' })
             .then(function(up){
               if(up.error && up.error.code === '23505'){
-                // Unique-index race: someone else claimed it a moment ago.
                 return { ok:false, message: "That name is already taken. Try a different one." };
               }
               return { ok:true };
@@ -354,9 +269,6 @@
         });
     }).catch(function(){ return { ok:true }; });
 
-    // Safety net: never let a slow/stuck network request leave the person
-    // stranded on this step. If nothing comes back in 8s, let them through
-    // (same fail-open policy as every other error path above).
     var timeout = new Promise(function(resolve){
       setTimeout(function(){ resolve({ ok:true }); }, 8000);
     });
@@ -370,9 +282,6 @@
     e.dim.classList.add('tut-visible');
   }
 
-  // Returns a fresh, up-to-date target for the current step (never a
-  // cached reference), and treats zero-size/hidden elements as "no
-  // target" so the spotlight never gets stuck on something invisible.
   function liveTarget(sel){
     if(!sel) return null;
     var t = q(sel);
@@ -382,21 +291,6 @@
     return t;
   }
 
-  // Draws the highlight ring + glow box around a target purely as
-  // separate, always-on-top overlay elements; the target itself is
-  // never given a new position/z-index/class, so it's never at risk of
-  // being covered by (or blocking clicks through) anything else, and it
-  // stays 100% clickable exactly where the app already put it.
-  //
-  // The highlight box itself does the dimming: a huge, rounded-corner
-  // box-shadow spread (see .tut-highlight-box in style.css) darkens the
-  // whole viewport EXCEPT the rectangle it's drawn around, so whatever is
-  // inside the outline reads at full brightness and everything else stays
-  // dim, instead of the old flat overlay dimming the target too. The
-  // "pulsing ring" is only drawn when the current step actually needs a
-  // real click on the target: for pure "look at this" steps it's just
-  // visual FLUFF that can block the very thing being shown off, so it's
-  // left out.
   function paintHighlight(target, showRing){
     var e = el();
     if(!target){ e.ring.style.display = 'none'; e.hlbox.style.display = 'none'; e.dim.classList.add('tut-visible'); return; }
@@ -416,13 +310,6 @@
     }
   }
 
-  // Docks the instructions panel to whichever side of the screen the
-  // current target is furthest from (or the right side by default, when
-  // there's no target). Because the panel always lives on a fixed edge
-  // rail instead of floating next to the target, it can never end up on
-  // top of the very thing the step is highlighting, the two things it
-  // needs to avoid overlapping (target rect, panel rect) are pinned to
-  // opposite sides of the viewport by construction.
   function positionBox(target, showRing){
     var e = el();
     e.box.classList.remove('tut-center', 'tut-dock-left');
@@ -434,7 +321,7 @@
     } else {
       var r = target.getBoundingClientRect();
       var targetCenter = r.left + r.width/2;
-      dockLeft = targetCenter > vw/2; // target's on the right → dock panel left
+      dockLeft = targetCenter > vw/2;
       if(dockLeft) e.box.classList.add('tut-dock-left');
     }
   }
@@ -448,10 +335,6 @@
   var repositionHandler = null;
   var repositionTimer = null;
 
-  // Whether the current step actually requires clicking the spotlighted
-  // element. That's the only time the pulsing orange ring earns its keep
-  // as a "click here" cue: for plain look-at-this steps it just sits on
-  // top of the very thing being shown off, so we leave it off.
   function stepNeedsRing(step){
     return !!step.waitForClick;
   }
@@ -470,10 +353,6 @@
     if(progressFill) progressFill.style.width = Math.round(((state.idx+1) / state.steps.length) * 100) + '%';
     e.hint.classList.add('hidden');
     e.next.style.display = 'inline-block';
-    // Always start each step's Next button from a clean, enabled state.
-    // The speaker-name step disables it while its uniqueness check runs;
-    // without this reset, that disabled/dimmed state was leaking forward
-    // and leaving Next permanently unclickable on every step after it.
     e.next.removeAttribute('disabled');
     e.next.style.opacity = '';
     e.choiceRow.style.display = 'none';
@@ -487,14 +366,6 @@
     var target = applySpotlight(step.spotlight);
     positionBox(target, showRing);
 
-    // Keep tracking the target continuously (not just once), since
-    // several steps spotlight things that resize or shift mid-step, a
-    // goal-builder box growing as fields fill in, a question box that
-    // disappears once a new question is generated, etc. Re-querying the
-    // DOM fresh every tick (via liveTarget) instead of reusing a cached
-    // element reference means the outline stays accurate to whatever's
-    // really on screen right now, and gracefully clears itself if the
-    // target vanishes.
     if(repositionHandler){ window.removeEventListener('resize', repositionHandler); window.removeEventListener('scroll', repositionHandler, true); }
     if(repositionTimer){ clearInterval(repositionTimer); repositionTimer = null; }
     repositionHandler = function(){ positionBox(liveTarget(step.spotlight), stepNeedsRing(step)); };
@@ -504,7 +375,6 @@
       repositionTimer = setInterval(repositionHandler, 200);
     }
 
-    // advance modes
     if(step.input){
       e.next.onclick = advance;
       e.next.textContent = step.nextLabel || 'Next →';
@@ -595,12 +465,6 @@
     } else {
       e.next.onclick = advance;
       e.next.textContent = step.nextLabel || 'Next →';
-      // Plain informational steps still often invite a click on the
-      // spotlighted icon/button ("click this any time…"). If the user
-      // actually clicks it, treat that as their way of saying "got it"
-      // and move on automatically instead of leaving them stuck looking
-      // for a Next button, without taking Next away from anyone who'd
-      // rather just read and move on themselves.
       if(step.spotlight){
         var autoHandler = function(ev){
           var t = liveTarget(step.spotlight);
@@ -642,10 +506,6 @@
 
   function skip(){ finish(false); }
 
-  // Small celebratory confetti burst, shown once, only when someone
-  // actually finishes every step (not when they skip out early). Plain
-  // CSS-animated divs (no canvas/deps) that clean themselves up after
-  // the animation ends so nothing lingers in the DOM.
   function fireConfetti(){
     var colors = ['#123a63', '#a3322a', '#2f8f5b', '#c9932f', '#6a4c93', '#1e88a8'];
     var root = document.createElement('div');
@@ -680,15 +540,12 @@
   function start(email){
     if(!email) return;
     if(localStorage.getItem(doneKeyFor(email))) return;
-    if(state) return; // already running
+    if(state) return;
     state = { steps: buildSteps(), idx: 0, email: email };
     byId('tutSkipBtn').onclick = skip;
     render();
   }
 
-  /* ---------------------------------------------------------------------
-     3. THE STEPS
-     --------------------------------------------------------------------- */
   function buildSteps(){
     var steps = [];
 
@@ -698,7 +555,6 @@
       html: "Your account is all set up! I'm going to walk you through every function of the site: the sidebar, calendar, Ballot History, the recording tools, and how to run a full practice round. It only takes a few minutes, and you can exit out any time with <b>Skip tutorial</b>."
     });
 
-    // ---- Capture the speaker's name -----------------------------------------
     steps.push({
       title: "Official Speaker Name",
       avatar: '🖋️',
@@ -706,17 +562,8 @@
       formal: true,
       html: "Before we go any further, let's set this properly. Every ballot you ever submit carries a <b>Speaker</b> field, and this is what fills it in. It's how your feedback, your history, and your judge's comments all refer to you from here on out.<br><br>Take a second and enter the name you actually want to see on your ballots. It needs to be unique, so if someone else already has it, you'll need to pick a different one.",
       onSubmit: function(name){
-        // Persist under the per-account key (used for future logins) AND a
-        // single global "latest name entered" key. The global key is the
-        // real source of truth for what shows on screen right now -- it
-        // sidesteps any mismatch between the email this session thinks
-        // it's on and whatever app.js re-reads later (case differences,
-        // a delayed/duplicate SIGNED_IN re-fire, etc). Whatever the person
-        // just typed here always wins.
         try{ localStorage.setItem(nameKeyFor(state && state.email), name); }catch(e){}
         try{ localStorage.setItem('extemplary_speaker_name_latest', name); }catch(e){}
-        // Write the DOM directly, right now -- don't only rely on the
-        // custom event being caught by a listener that may not exist yet.
         var el2 = byId('speakerName');
         if(el2){
           var clean = (name || '').trim().slice(0, 20).toLowerCase().replace(/\s+/g, '');
@@ -728,7 +575,6 @@
       }
     });
 
-    // ---- Sidebar orientation -------------------------------------------------
     steps.push({
       title: 'Your navigation sidebar',
       avatar: '🧭',
@@ -747,7 +593,6 @@
       html: "First stop: your Calendar. Click the highlighted <b>Calendar</b> item in the sidebar to open it."
     });
 
-    // ---- Calendar / streak tab ------------------------------------------------
     steps.push({
       title: 'Your Streak Calendar',
       avatar: '🔥',
@@ -787,7 +632,6 @@
       html: "Your goal now tracks a live progress bar computed straight from your ballot history. My History also surfaces auto-suggested goals based on your own weakest categories."
     });
 
-    // ---- History ----------------------------------------------------------
     steps.push({
       title: 'Now, My Ballot History',
       avatar: '🧭',
@@ -840,7 +684,6 @@
       html: "Let's head back to the main recording page. Open the sidebar and click <b>Home</b>."
     });
 
-    // ---- Quick cutscenes: timer / theme / shortcuts -----------------------
     steps.push({
       title: 'The 30-minute prep timer',
       avatar: '⏱️',
@@ -864,7 +707,6 @@
       html: "There's a full set of keyboard shortcuts for convenience sakes. Click here any time to see the full list."
     });
 
-    // ---- Time signal settings ------------------------------------------------
     steps.push({
       title: 'Time Signal settings',
       avatar: '🔔',
@@ -873,7 +715,6 @@
       html: "This is where you customize <b>time signals</b>, little on-screen alerts that pop up at specific points while you're recording (e.g. \"1 minute left\"). Add, relabel, recolor, or remove signals here, or reset to the defaults. This is also where you can paste your own Groq/Gemini API keys if you ever hit rate limits.<br><br>Your signals fire for real while you're actually recording: the on-screen clock turns amber at 6:00 and red with a hard stop warning at 7:00, so you always know exactly how much time is left, even without opening this panel."
     });
 
-    // ---- AI Token Usage widget ------------------------------------------------
     steps.push({
       title: 'Keeping an eye on AI usage',
       avatar: '🤖',
@@ -881,7 +722,6 @@
       html: "Every AI feature on Extemplary — ballot feedback, the citation checker, the practice question generator, and current-events summaries — shares a fair daily usage budget per account. Click this robot icon any time to see exactly how much of each you've used today, as a set of progress bars. It resets every day at midnight UTC, and if you ever run up against a limit, this is the first place to check."
     });
 
-    // ---- Tournament Briefing (forced use) ---------------------------------
     steps.push({
       title: 'Tournament Briefing',
       avatar: '🗞️',
@@ -917,7 +757,6 @@
       html: "That's a real, updated briefing. You can regenerate it, copy the transcript, or download it as a PDF. Use this the morning of a tournament to walk in already caught up on the news."
     });
 
-    // ---- Example ballot -----------------------------------------------------
     steps.push({
       title: 'The Example Ballot',
       avatar: '📄',
@@ -945,7 +784,6 @@
       html: "Open the sidebar and click <b>Home</b> to head back to the main recording page."
     });
 
-    // ---- Grading rubric icon on the paper -----------------------------------
     steps.push({
       title: 'The Grading Rubric',
       avatar: '📐',
@@ -962,7 +800,6 @@
       html: "This is the full rubric: Creative Hook &amp; Intro, Structure, Strength of Argument &amp; Analysis, Flaws in Reasoning, Strength of Evidence, and more. Each category has its own point value and the exact criteria the AI judge checks for. It's the same rubric used to score every round you record, so it's worth a skim before your first one. You can reopen this any time from the same icon on the paper."
     });
 
-    // ---- LLM Model Rankings icon on the paper -------------------------------
     steps.push({
       title: 'The LLM Model Rankings',
       avatar: '📊',
@@ -978,7 +815,6 @@
       spotlight: '#view-aiCompare',
       html: "Each row is a model you could pick as your judge, with its quality and cost scores side by side. The ones marked \"Available Here\" are the ones you can actually select in the model picker. You can reopen this page any time from the same icon on the paper."
     });
-
 
     steps.push({
       title: 'The Citation Checker',
@@ -1025,7 +861,6 @@
       html: "Open the sidebar and click <b>Home</b>."
     });
 
-    // ---- Recording a round --------------------------------------------------
     steps.push({
       title: 'Recording a practice round',
       avatar: '🎬',
@@ -1040,7 +875,6 @@
       html: "Before you record, pick a mode here. <b>Regular Practice</b> is a full 7-minute round graded on all 8 rubric categories, the standard tournament format. <b>Rapid Drill: Introduction</b> is a short-form drill focused only on your opening (hook, link, thesis) so you can rep intros fast without recording a whole speech. <b>Rapid Drill: Body</b> does the same for your body paragraphs: structure, argument strength, evidence, and reasoning, without needing a full intro or conclusion. Each drill grades against its own separate, focused rubric, different from Regular Practice's full 8-category rubric, and shows up tagged in your Ballot History, so you can track all three separately."
     });
 
-    // ---- AI judge model picker dropdown, sits right next to the mode switch -
     steps.push({
       title: 'Choose your AI judge',
       avatar: '🤖',

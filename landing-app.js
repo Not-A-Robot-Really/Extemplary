@@ -1,35 +1,15 @@
 (function(){
 
-  // functions below and never ship in this file.
   const SUPABASE_URL = 'https://iiehhmelfotwkdqxplug.supabase.co';
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlpZWhobWVsZm90d2tkcXhwbHVnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzNDYxMzEsImV4cCI6MjA5ODkyMjEzMX0.8QzN1LJmr70Sidxp2RsOq-z3S_NX5lN9QWTr45CSaHo';
   const SUPABASE_FUNCTIONS_URL = SUPABASE_URL + '/functions/v1';
 
-  // Clerk publishable key — safe to expose client-side, this is NOT the
-  // secret key. Must match the data-clerk-publishable-key attribute on the
-  // <script> tag in landingsite.html's <head>. Get it from
-  // https://dashboard.clerk.com/ -> your app -> API Keys -> Publishable key.
   const CLERK_PUBLISHABLE_KEY = 'pk_test_aW1tdW5lLWtvYWxhLTU4Mi5jbGVyay5hY2NvdW50cy5kZXYk';
 
-  // ===== AUTH + SAVED PROGRESS =====
-  // Real accounts via Supabase Auth (email + password). Session tokens are
-  // persisted by supabase-js itself (localStorage), which is what makes
-  // "stay signed in across tabs/reopens" work with zero extra code.
-  // Ballot history (video/transcript/feedback) lives in the cloud: a
-  // Postgres table ("ballots") plus a Storage bucket ("ballot-videos") in
-  // this same Supabase project, both protected by Row Level Security so
-  // each signed-in user can only ever read/write their own rows and files.
-  // One-time setup required in the Supabase SQL editor, see setup.sql.
   const supabaseClient = (window.supabase && window.supabase.createClient)
     ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
     : null;
 
-  // ===== EDGE FUNCTION AUTH =====
-  // The edge functions require verify_jwt now, so the bare anon key is no
-  // longer enough to call them. The free-try demos on this landing page run
-  // before anyone signs up, so they get a lightweight anonymous-auth session
-  // instead — this still passes verify_jwt and keeps the "no account
-  // required" free try working exactly as before.
   let anonSignInPromise = null;
   async function getAuthToken(){
     if(!supabaseClient) return SUPABASE_ANON_KEY;
@@ -68,12 +48,6 @@
     return colorFromRatio(ratio);
   }
 
-  // ---- Shared helpers for the landing-page free-trial demos (Generate
-  // Questions / Tournament Briefing / Citation Checker), mirrored from the
-  // same-named functions in index.html's script. The demo panels below
-  // call these directly, but this file never actually defined them, 
-  // that's what made every one of those demos throw immediately (and so
-  // look completely broken) as soon as they were used. -----
   const QGEN_PHRASES = DATA.QGEN_PHRASES;
   const BF_PHRASES = DATA.BF_PHRASES;
   const CC_PHRASES = DATA.CC_PHRASES;
@@ -133,8 +107,6 @@
     };
   }
 
-  // Gemini calls go through the `gemini-generate` edge function, same as
-  // the signed-in app, the real Gemini key never lives in this file.
   async function callGeminiWithKey(prompt, apiKey, maxOutputTokens, category){
     const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/gemini-generate`, {
       method:'POST',
@@ -289,7 +261,6 @@ Grading rules:
     };
   }
 
-  // ---- comment popover (shared by demo transcript snippet) ----
   const commentPopover = document.getElementById('commentPopover');
   const cpTag = document.getElementById('cpTag');
   const cpText = document.getElementById('cpText');
@@ -320,20 +291,11 @@ Grading rules:
     cpText.textContent = el.dataset.comment || '';
     commentPopover.classList.remove('hidden');
 
-    // Reset any leftover inline left/top from a previous show before
-    // measuring, so the natural (unclamped) width/position is read fresh.
     commentPopover.style.left = '0px';
     commentPopover.style.top = '0px';
 
-    // Measure the popover's REAL rendered width. The CSS only sets
-    // max-width:300px (not a fixed width), so short comments render a
-    // narrower bubble, using a hardcoded 300 here was the bug: it clamped
-    // position and placed the arrow as if every popover were exactly 300px
-    // wide, so on narrower bubbles the arrow landed outside the actual
-    // bubble, floating over the transcript text instead of on the comment.
     const popW = commentPopover.getBoundingClientRect().width || 300;
 
-    // Position fixed to the viewport, anchored directly under the clicked span.
     const elRect = el.getBoundingClientRect();
     const margin = 12;
     let left = elRect.left;
@@ -343,7 +305,6 @@ Grading rules:
     commentPopover.style.left = left + 'px';
     commentPopover.style.top = top + 'px';
 
-    // If the popover would run off the bottom of the viewport, flip it above the span instead.
     const popRect = commentPopover.getBoundingClientRect();
     if(popRect.bottom > window.innerHeight - margin){
       top = elRect.top - popRect.height - 10;
@@ -353,8 +314,6 @@ Grading rules:
       commentPopover.classList.remove('cp-flip');
     }
 
-    // Point the little arrow at the clicked span, using the popover's real
-    // measured width (popW above) rather than an assumed fixed width.
     const arrowLeft = Math.max(10, Math.min(elRect.left + elRect.width/2 - left, popW - 20));
     const arrowEl = commentPopover.querySelector('.cp-arrow');
     if(arrowEl) arrowEl.style.left = arrowLeft + 'px';
@@ -369,7 +328,6 @@ Grading rules:
   window.addEventListener('scroll', hideCommentPopover, true);
   window.addEventListener('resize', hideCommentPopover);
 
-  // ---- auth form wiring ----
   const authForm = document.getElementById('authForm');
   const authTabLogin = document.getElementById('authTabLogin');
   const authTabSignup = document.getElementById('authTabSignup');
@@ -388,15 +346,6 @@ Grading rules:
     authInfo.classList.add('hidden');
   }
 
-  // ===== CLERK (email verification only) =====
-  // Clerk never becomes the account system here — Supabase Auth still owns
-  // the account/session. Clerk's ONLY job is proving the person actually
-  // controls the email address before we let a Supabase account be created
-  // for it. Flow: Clerk sends+checks the code client-side (needs the public
-  // publishable key only) -> once verified, we call a Supabase Edge
-  // Function that re-checks that verification server-side against Clerk's
-  // Backend API (using a secret key that never reaches the browser) before
-  // creating the Supabase user with email_confirm already set to true.
   let clerkLoadPromise = null;
   async function getClerk(){
     if(!window.Clerk) throw new Error('clerk_not_loaded:Verification service failed to load. Check your connection and reload.');
@@ -404,14 +353,8 @@ Grading rules:
     await clerkLoadPromise;
     return window.Clerk;
   }
-  // Kick off Clerk's SDK load as soon as this script runs, well before
-  // anyone has finished filling out the sign-up form, so the "send code"
-  // step doesn't have to wait on the SDK itself, only the actual network
-  // call to send the email.
-  getClerk().catch(() => {}); // swallow here, real errors surface on submit
-  // Holds the in-progress Clerk sign-up between "send code" and "verify
-  // code" submits. Cleared on success, failure, or switching auth tabs.
-  let pendingSignUp = null; // { clerkSignUp, email, password }
+  getClerk().catch(() => {});
+  let pendingSignUp = null;
 
   function resetPendingSignUp(){
     pendingSignUp = null;
@@ -424,16 +367,8 @@ Grading rules:
     document.getElementById('authPassword').disabled = false;
   }
   const authCardEl = document.querySelector('.auth-card');
-  let authMode = 'login'; // 'login' | 'signup'
+  let authMode = 'login';
 
-  // The card is normally vertically centered by its flex parent
-  // (.landing-hero), but that means switching to "Sign Up" (which adds
-  // the confirm-password field and makes the card taller) shifts the
-  // TOP edge upward too, since flexbox re-centers around the box's
-  // current height. To keep the top edge fixed and only let the bottom
-  // grow, we measure where the card naturally centers in its shorter
-  // "Log In" state once, then pin it there with a fixed margin-top and
-  // align-self:flex-start (which doesn't re-center on height changes).
   function lockAuthCardTop(){
     if(!authCardEl) return;
     var wasSignup = authConfirmWrap && !authConfirmWrap.classList.contains('hidden');
@@ -441,8 +376,6 @@ Grading rules:
     var hero = authCardEl.closest('.landing-hero');
     if(hero){
       var photo = hero.querySelector('.landing-hero-photo');
-      // Measure the flex-start baseline (top of the hero's content box)
-      // by pinning the card there with zero margin first.
       authCardEl.style.alignSelf = 'flex-start';
       authCardEl.style.marginTop = '0px';
       var baselineTop = authCardEl.getBoundingClientRect().top;
@@ -484,10 +417,6 @@ Grading rules:
 
   function describeAuthError(err){
     if(!err) return 'Unknown error.';
-    // Supabase errors are usually {message, status, code}; but network/CORS
-    // failures throw plain Error/TypeErrors, and some edge cases hand back
-    // odd shapes. Never trust a single field blindly, build the fullest
-    // readable string we can so the box never shows a stray fragment.
     const parts = [];
     if(typeof err === 'string') return err;
     if(err.message) parts.push(err.message);
@@ -498,28 +427,12 @@ Grading rules:
     try{ return JSON.stringify(err); }catch(e){ return String(err); }
   }
 
-  // Step 1 of sign-up: collect email+password, ask Clerk to send a code to
-  // that email. Nothing is created in Supabase yet. Password is included
-  // in the Clerk sign-up (not just the email) because Clerk only finalizes
-  // a sign-up (and only then hands back a real user id we can look up
-  // server-side) once every field it requires is present — without it,
-  // verifying the code alone leaves the sign-up "incomplete" and there is
-  // no user id for the Edge Function to check.
   async function startSignupVerification(email, password){
     const clerk = await getClerk();
-    // Clerk activates a client-side session the moment a sign-up completes,
-    // separate from (and unrelated to) the Supabase session we actually
-    // care about. If a previous sign-up on this browser left one active,
-    // Clerk refuses to start a new sign-up attempt ("You're already signed
-    // in") — clear it first so this always works, including for a second,
-    // different account on the same browser.
     if(clerk.session){ try{ await clerk.signOut(); }catch(e){} }
     const clerkSignUp = await clerk.client.signUp.create({ emailAddress: email, password });
     await clerkSignUp.prepareEmailAddressVerification({ strategy: 'email_code' });
     pendingSignUp = { clerkSignUp, email, password };
-    // Swap the email/password/confirm fields OUT for the code field rather
-    // than stacking the code field below them, so the card doesn't grow
-    // taller than it needs to.
     document.getElementById('authEmailWrap').classList.add('hidden');
     document.getElementById('authPasswordWrap').classList.add('hidden');
     authConfirmWrap.classList.add('hidden');
@@ -530,27 +443,15 @@ Grading rules:
     showAuthInfo('A message has been sent to your email. Please enter the 6 digit code from that email below.');
   }
 
-  // Step 2 of sign-up: check the code with Clerk, and only once Clerk
-  // confirms it, ask our Edge Function to create the actual Supabase
-  // account (the Edge Function re-checks with Clerk server-side too, so a
-  // tampered client request alone can never create an unverified account).
   async function completeSignupVerification(code){
     if(!pendingSignUp) throw new Error('No verification in progress, start sign-up again.');
     const { clerkSignUp, email, password } = pendingSignUp;
-    // Only actually submit the code if this sign-up isn't already verified.
-    // Retrying this step (e.g. because account creation failed on a
-    // previous attempt, after the code itself had already gone through)
-    // would otherwise resubmit the same code against an already-verified
-    // sign-up, which Clerk correctly rejects with "already verified" —
-    // and previously that left the user stuck with no way to continue.
     if(clerkSignUp.verifications?.emailAddress?.status !== 'verified'){
       try{
         await clerkSignUp.attemptEmailAddressVerification({ code });
       }catch(err){
         const msg = err?.errors?.[0]?.message || err?.message || '';
         if(!/already.*verif/i.test(msg)) throw err;
-        // else: Clerk already accepted an earlier attempt with this code,
-        // fall through and treat it as verified.
       }
     }
     if(clerkSignUp.verifications?.emailAddress?.status !== 'verified'){
@@ -561,17 +462,7 @@ Grading rules:
       throw new Error('clerk_setup:Verification succeeded but Clerk did not finish creating a user record, double check the sign-up is configured to require only email and password.');
     }
     await createVerifiedAccount(email, password, clerkUserId);
-    // Clerk's job is done — its client session isn't needed anymore and
-    // would otherwise block a future sign-up on this browser (see the
-    // comment in startSignupVerification), so clear it right away rather
-    // than waiting for the next sign-up to clean it up.
     try{ const clerk = await getClerk(); if(clerk.session) await clerk.signOut(); }catch(e){}
-    // Arm the first-run tutorial right here, at the one moment we know for
-    // certain the account was actually just created — not on every form
-    // submit while the Sign Up tab happens to be active (that used to also
-    // fire on the "send code" step, before an account existed, so if
-    // someone abandoned mid-verification the tutorial could misfire later
-    // on an unrelated sign-in). tutorial.js just watches for this key.
     try{ localStorage.setItem('extemplary_tutorial_pending_email', email); }catch(e){}
     resetPendingSignUp();
     const { error: signInError } = await supabaseClient.auth.signInWithPassword({ email, password });
@@ -579,14 +470,6 @@ Grading rules:
     window.location.href = 'index.html';
   }
 
-  // Calls the `create-verified-account` Supabase Edge Function, which:
-  //   1) uses CLERK_SECRET_KEY (server-side secret) to re-confirm with
-  //      Clerk's Backend API that clerkUserId's email really is verified
-  //      and matches `email`,
-  //   2) uses SUPABASE_SERVICE_ROLE_KEY to create the Supabase user with
-  //      email_confirm: true (so Supabase's own confirmation email never
-  //      fires — Clerk already proved ownership).
-  // See the deployment instructions for this function's source.
   async function createVerifiedAccount(email, password, clerkUserId){
     const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/create-verified-account`, {
       method: 'POST',
@@ -597,7 +480,7 @@ Grading rules:
       },
       body: JSON.stringify({ email, password, clerkUserId })
     });
-    if(res.status === 409) return; // account_already_exists: an earlier attempt already created it, that's fine, treat as success
+    if(res.status === 409) return;
     if(!res.ok){
       const info = await res.json().catch(() => ({}));
       throw new Error(info.error || ('account_creation_failed:' + res.status));
@@ -633,7 +516,6 @@ Grading rules:
     const originalBtnText = authSubmitBtn.textContent;
     try{
       if(authMode === 'signup'){
-        // Already sent a code — this submit is the "enter code" step.
         if(pendingSignUp){
           const code = document.getElementById('authCode').value.trim();
           if(!code){ showAuthError('Enter the verification code.'); return; }
@@ -671,16 +553,12 @@ Grading rules:
     }
   });
 
-  // ---- landing-page decorative & interactive demos ----
   (function setupTranscriptHighlightDemo(){
     const el = document.getElementById('transcriptDemoText');
     if(!el) return;
     const waveBars = Array.from(document.querySelectorAll('#vocalWaveIcon .vw-bar'));
     function pulseWave(word){
       if(!waveBars.length) return;
-      // Rough "amplitude" per bar: louder/taller around the middle of the
-      // word's syllable count, tapering at the edges, plus a little jitter
-      // so it doesn't look mechanically identical bar to bar.
       const intensity = Math.max(0.35, Math.min(1, (word ? word.length : 3) / 9));
       waveBars.forEach((bar, idx) => {
         const mid = (waveBars.length - 1) / 2;
@@ -702,7 +580,6 @@ Grading rules:
       if(i < spans.length){
         spans[i].classList.add('tw-active');
         pulseWave(spans[i].textContent);
-        // Rough natural-speech pacing: longer words linger a bit longer.
         const len = spans[i].textContent.length;
         const dur = 190 + Math.min(len, 10) * 22;
         i++;
@@ -710,12 +587,11 @@ Grading rules:
       }else{
         idleWave();
         i = 0;
-        setTimeout(step, 900); // pause at the end before looping
+        setTimeout(step, 900);
       }
     }
     step();
   })();
-
 
   (function setupHeroHeadline(){
     const variants = [
@@ -736,7 +612,6 @@ Grading rules:
     }
   })();
 
-
   (function setupLandingReveal(){
     const targets = document.querySelectorAll('#authGate .landing-example');
     if(!targets.length) return;
@@ -756,21 +631,6 @@ Grading rules:
     targets.forEach(t => io.observe(t));
   })();
 
-  // ----- scroll-hijacked alternating slide-in for the feature cards -----
-  // Cards slide in from the left (even index) / right (odd index). While a
-  // card is mid-slide, page scroll is intercepted and instead drives that
-  // card's progress directly from the wheel/touch/key delta, so scroll
-  // speed & direction control the animation instead of a fixed-time tween.
-  // ----- shared per-frame scheduler -----
-  // Both the card-hijack (which sometimes WRITES scrollTop) and the photo
-  // parallax (which READS scrollTop) were each running their own independent
-  // requestAnimationFrame loop. Two separate rAF chains aren't guaranteed to
-  // fire in a fixed order relative to each other, so frame to frame, the
-  // parallax's read would sometimes land before the hijack's write and
-  // sometimes after, flip-flopping between two slightly different scroll
-  // values. That flip-flop is what showed up as the image vibrating. Running
-  // both off one shared loop, in a fixed registration order (hijack's scroll
-  // write first, parallax's read second), removes that race entirely.
   window.__frameTasks = [];
 
   (function ensureFrameLoop(){
@@ -781,7 +641,6 @@ Grading rules:
     requestAnimationFrame(tick);
   })();
 
-
   (function setupFeatureScrollHijack(){
     const grid = document.getElementById('landingFeatureGrid');
     const cards = grid ? Array.from(grid.querySelectorAll('.feature-card')) : [];
@@ -791,19 +650,13 @@ Grading rules:
       return;
     }
 
-    const SENS_WHEEL = 0.0028;   // drives an active card's slide-in progress, higher = fewer scrolls needed
+    const SENS_WHEEL = 0.0028;
     const SENS_TOUCH = 0.0042;
     const SENS_KEY = 0.14;
-    const APPROACH_STEP_MAX = 46;      // per-event feel, used to size the per-frame cap below
-    const APPROACH_FRAME_CAP = 120;    // max px of physical scroll applied per animation frame, keeps the physical scroll pace the same as before even though input is now coalesced
+    const APPROACH_STEP_MAX = 46;
+    const APPROACH_FRAME_CAP = 120;
     const state = cards.map((el, i) => ({ el, dir: i % 2 === 0 ? 'left' : 'right', progress: 0 }));
     let currentIndex = 0;
-    // 'approach': plain, clamped, controlled scrolling toward the next card
-    //             (this is what replaces the old auto-scroll, there is no
-    //             animation here, just direct 1:1 scrolling driven by input).
-    // 'slide':    input instead drives that card's slide-in progress; entered
-    //             only once the card has scrolled all the way up so its
-    //             whole body is on screen ("the very bottom of the screen").
     let mode = 'approach';
 
     const scroller = document.getElementById('authGate') || document.scrollingElement || document.documentElement;
@@ -811,7 +664,7 @@ Grading rules:
 
     function render(i){
       const s = state[i];
-      const eased = 1 - Math.pow(1 - s.progress, 3); // easeOutCubic, snappier near the end
+      const eased = 1 - Math.pow(1 - s.progress, 3);
       const offsetPct = (1 - eased) * 100;
       if(s.progress <= 0){
         s.el.style.transform = `translateX(${s.dir === 'left' ? -100 : 100}%)`;
@@ -830,16 +683,6 @@ Grading rules:
 
     state.forEach((s, i) => { s.progress = 0; render(i); });
 
-    // Targeted safety net: the wheel/touch hijack above normally arms and
-    // slides every card in, but the one card using data-trigger="top" is
-    // both the tallest card and on a different, more fragile arming path
-    // (rect.top<=0 rather than the default "whole card visible"), so a fast
-    // scroll/trackpad flick can occasionally pass through its arming check
-    // without ever catching it, leaving it stuck at opacity:0 forever.
-    // This only watches that one card, and only steps in if it's actually
-    // scrolled substantially into view while still unrevealed, animating it
-    // in smoothly (not an instant snap) so it doesn't change how the other
-    // cards feel.
     (function ensureTopTriggerCardReveals(){
       const idx = cards.findIndex(c => c.dataset.trigger === 'top');
       if(idx === -1 || !('IntersectionObserver' in window)) return;
@@ -848,7 +691,7 @@ Grading rules:
           if(!entry.isIntersecting) return;
           io.unobserve(entry.target);
           const s = state[idx];
-          if(s.progress >= 1) return; // hijack already revealed it normally
+          if(s.progress >= 1) return;
           const startProgress = s.progress;
           const duration = 550;
           const startTime = performance.now();
@@ -875,9 +718,6 @@ Grading rules:
       return window.getComputedStyle(scroller).display !== 'none';
     }
 
-    // Only step in once the grid has actually started entering the screen, 
-    // otherwise scrolling through the hero/headline above it would get
-    // hijacked too.
     function nearSection(){
       const rect = grid.getBoundingClientRect();
       return rect.top < window.innerHeight && rect.bottom > 0;
@@ -887,9 +727,6 @@ Grading rules:
       return authGateVisible() && nearSection() && currentIndex < cards.length;
     }
 
-    // Hard-reset hook: called the moment the user signs in, so the hijack
-    // releases scroll/keyboard immediately rather than waiting on the next
-    // event to notice authGate is gone.
     window.__releaseFeatureScrollHijack = function(){
       currentIndex = cards.length;
       mode = 'approach';
@@ -897,13 +734,11 @@ Grading rules:
 
     function normalizeWheel(e){
       let d = e.deltaY;
-      if(e.deltaMode === 1) d *= 16;      // lines -> ~px
-      else if(e.deltaMode === 2) d *= window.innerHeight; // pages -> px
+      if(e.deltaMode === 1) d *= 16;
+      else if(e.deltaMode === 2) d *= window.innerHeight;
       return Math.max(-90, Math.min(90, d));
     }
 
-    // Handle one already-normalized, already-coalesced delta for the current
-    // frame (positive = scrolling down).
     function handleDelta(delta, sens){
       const card = cards[currentIndex];
 
@@ -918,7 +753,7 @@ Grading rules:
         } else if(next <= 0 && delta < 0){
           s.progress = 0;
           render(currentIndex);
-          mode = 'approach'; // release, scrolling back up is now plain scroll
+          mode = 'approach';
         } else {
           s.progress = Math.max(0, Math.min(1, next));
           render(currentIndex);
@@ -926,41 +761,27 @@ Grading rules:
         return;
       }
 
-      // mode === 'approach', handle both directions ourselves (see note
-      // below on why negative deltas are no longer handed off to native
-      // scroll).
       const step = Math.max(-APPROACH_FRAME_CAP, Math.min(APPROACH_FRAME_CAP, delta));
       scroller.scrollTop += step;
-      if(delta <= 0) return; // moving up: no card-arming check needed
+      if(delta <= 0) return;
       const rect = card.getBoundingClientRect();
       const armed = card.dataset.trigger === 'top'
-        ? rect.top <= 0                       // arm as soon as its top reaches the top of the screen
-        : rect.bottom <= window.innerHeight + 2; // default: wait until the whole card is on screen
+        ? rect.top <= 0
+        : rect.bottom <= window.innerHeight + 2;
       if(armed){
         mode = 'slide';
       }
     }
 
-    // Raw events only accumulate a pending delta (cheap: no layout reads or
-    // writes), the actual DOM work (scrollTop writes, getBoundingClientRect
-    // checks, card transforms) happens at most once per animation frame in
-    // flush(). Doing that work synchronously on every single wheel/touch tick
-    // was what caused the glitching under fast scrolling: a rapid burst of
-    // events each forced their own layout + style write, competing for the
-    // same frame and falling behind. Coalescing to one flush per frame fixes
-    // that regardless of how fast input arrives.
     let pendingDelta = 0;
     let pendingSens = SENS_WHEEL;
-    const FRAME_DELTA_CAP = 130; // ceiling on how much can accumulate before one flush, regardless of how many wheel/trackpad micro-events fired that frame
+    const FRAME_DELTA_CAP = 130;
 
     function queueDelta(delta, sens){
       pendingDelta = Math.max(-FRAME_DELTA_CAP, Math.min(FRAME_DELTA_CAP, pendingDelta + delta));
       pendingSens = sens;
     }
 
-    // Registered first, so any scrollTop write this produces is guaranteed
-    // to happen before the parallax's read in the same frame (see the
-    // shared scheduler above).
     window.__frameTasks.push(function(){
       if(pendingDelta === 0) return;
       const d = pendingDelta;
@@ -968,20 +789,6 @@ Grading rules:
       handleDelta(d, pendingSens);
     });
 
-    // IMPORTANT: while captured(), every wheel event is hijacked, including
-    // upward ones, rather than only positive deltas. Real trackpads/mice
-    // don't emit perfectly one-signed deltas during a single continuous
-    // gesture (momentum deceleration and sensor noise routinely produce a
-    // stray negative tick mid-swipe); letting those individual ticks fall
-    // through to native scrolling handed control back and forth between two
-    // uncoordinated scroll engines from one event to the next, and it was
-    // that tug-of-war over scrollTop, not the parallax math, that showed
-    // up as visible vibration. Handling both directions through our own
-    // coalesced/frame-batched path (handleDelta, above) keeps a single
-    // authority over scrollTop for the whole gesture; captured() already
-    // naturally releases control once the user has scrolled far enough that
-    // the section is no longer near the viewport, so leaving the section by
-    // scrolling up still works, it's just driven by one consistent engine.
     window.addEventListener('wheel', (e) => {
       if(!captured()) return;
       const delta = normalizeWheel(e);
@@ -997,7 +804,7 @@ Grading rules:
     window.addEventListener('touchmove', (e) => {
       if(touchY === null || !captured()){ touchY = e.touches[0] ? e.touches[0].clientY : null; return; }
       const y = e.touches[0].clientY;
-      const delta = Math.max(-90, Math.min(90, touchY - y)); // finger moving up == scrolling down
+      const delta = Math.max(-90, Math.min(90, touchY - y));
       e.preventDefault();
       queueDelta(delta, SENS_TOUCH);
       touchY = y;
@@ -1021,26 +828,18 @@ Grading rules:
     if(!bg) return;
 
     function measure(){
-      // background-attachment:fixed sizes/positions against the viewport,
-      // not the element's own box, so the width to fit against is the
-      // viewport's width.
       bg.style.backgroundSize = `${window.innerWidth}px auto`;
     }
 
     window.addEventListener('resize', measure);
-    // Recompute once fonts/images settle in, since that can shift layout width.
     window.addEventListener('load', measure);
     measure();
   })();
 
-  // ----- "See an Example" from the landing page now hands off to the
-  // ----- real app in an unauthenticated preview mode. -----
   document.getElementById('landingExampleBtn').addEventListener('click', () => {
     window.location.href = 'index.html?preview=example';
   });
 
-  // ----- make the "Watch & read along" demo snippet's colored comments -----
-  // ----- actually clickable, using the exact same popover the real app uses -----
   attachCommentListeners(document.getElementById('wrSnippet'), () => {});
 
   (function setupWrVideoModal(){
@@ -1062,14 +861,13 @@ Grading rules:
     }
     function close(){
       modal.classList.remove('show');
-      embed.innerHTML = ''; // stop playback
+      embed.innerHTML = '';
     }
     document.getElementById('wrThumb').addEventListener('click', open);
     modal.querySelector('.wr-video-close').addEventListener('click', close);
     modal.querySelector('.wr-video-backdrop').addEventListener('click', close);
   })();
 
-  // ----- "Sign Up Free" buttons inside locked demo overlays -----
   document.querySelectorAll('.demo-signup-cta').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelector('.landing-hero').scrollIntoView({ behavior:'smooth', block:'center' });
@@ -1126,8 +924,6 @@ Grading rules:
     paint();
   })();
 
-  // ----- constellation / network background for the hero (sign-up) area -----
-
   (function setupHeroConstellation(){
     const canvas = document.getElementById('heroConstellation');
     if(!canvas) return;
@@ -1135,8 +931,8 @@ Grading rules:
     const ctx = canvas.getContext('2d');
     const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     let w = 0, h = 0, dpr = Math.min(window.devicePixelRatio || 1, 2);
-    let nodes = [];       // free-floating scatter nodes, chained to their nearest neighbors
-    let meshNodes = [];   // jittered-grid nodes, connected to grid neighbors, the "fabric"
+    let nodes = [];
+    let meshNodes = [];
     let mouse = { x: null, y: null };
     let raf = null;
 
@@ -1145,11 +941,8 @@ Grading rules:
       return Math.max(70, Math.min(240, Math.round(area / 8000)));
     }
 
-    // Bias x toward the left/right margins (outside the photo) so the side
-    // strips get noticeably denser, longer constellation chains, while the
-    // photo area (roughly the middle 76%) still has some sparse coverage.
     function biasedX(){
-      const sideBand = w * 0.16; // width of each dense side strip
+      const sideBand = w * 0.16;
       if(Math.random() < 0.72){
         const left = Math.random() < 0.5;
         const base = Math.random() * sideBand;
@@ -1162,17 +955,13 @@ Grading rules:
       return {
         x: biasedX(),
         y: Math.random() * h,
-        z: Math.random(), // depth, 0 = far, 1 = near, drives 3D parallax + size
+        z: Math.random(),
         vx: (Math.random() - 0.5) * 0.35,
         vy: (Math.random() - 0.5) * 0.35,
         r: 1.1 + Math.random() * 1.6
       };
     }
 
-    // Scatter mesh points organically across the side bands (with a slight
-    // pull toward the very edges) instead of a rigid grid, then link each
-    // to its several nearest neighbors. Irregular spacing + drifting motion
-    // reads as woven fabric rippling, not a fixed set of vertical bars.
     function buildMesh(){
       meshNodes = [];
       const bandW = w * 0.26;
@@ -1220,8 +1009,6 @@ Grading rules:
       meshNodes.forEach(n => {
         n.x += n.vx;
         n.y += n.vy;
-        // keep drifting inside whichever side band it belongs to, bouncing
-        // softly off the inner/outer edges so the web stays put but isn't static
         const inLeftBand = n.x < bandW + 40;
         const loBound = inLeftBand ? 0 : w - bandW;
         const hiBound = inLeftBand ? bandW : w;
@@ -1230,8 +1017,6 @@ Grading rules:
         if(n.y < -10){ n.y = h + 10; } else if(n.y > h + 10){ n.y = -10; }
       });
 
-      // connect each point to its 3 nearest neighbors, an organic
-      // triangulated web instead of a fixed grid pattern
       const K = 3;
       const maxLink = Math.max(90, Math.min(w, h) * 0.14);
       ctx.lineWidth = 0.6;
@@ -1272,11 +1057,6 @@ Grading rules:
       ctx.clearRect(0, 0, w, h);
       const linkDist = Math.max(190, Math.min(w, h) * 0.3);
 
-      // Keep the effect strictly in the back: clip out the central content
-      // zone (same inset as the photo, which also underlies the headline
-      // and sign-in card) so nodes/links never paint across the photo,
-      // headline text, or auth card in front of them, only the side
-      // margins behind that content are drawn into.
       const clipX = w * 0.12, clipY = h * 0.12, clipW = w * 0.76, clipH = h * 0.76;
       ctx.save();
       ctx.beginPath();
@@ -1284,7 +1064,6 @@ Grading rules:
       ctx.rect(clipX, clipY, clipW, clipH);
       ctx.clip('evenodd');
 
-      // update + parallax toward pointer for a subtle 3D drift
       nodes.forEach(n => {
         n.x += n.vx;
         n.y += n.vy;
@@ -1298,13 +1077,8 @@ Grading rules:
         if(n.y < -20) n.y = h + 20; else if(n.y > h + 20) n.y = -20;
       });
 
-      // fabric mesh first, underneath the scatter constellations
       drawMesh();
 
-      // for each scatter node, connect to its several nearest neighbors
-      // (not just everything in radius), that's what turns "two dots and
-      // a line" into long strung-together constellations threading through
-      // many points.
       const K = 5;
       for(let i = 0; i < nodes.length; i++){
         const a = nodes[i];
@@ -1318,7 +1092,7 @@ Grading rules:
         }
         distances.sort((p, q) => p.dist - q.dist);
         distances.slice(0, K).forEach(({ j, dist }) => {
-          if(j < i) return; // avoid drawing each edge twice
+          if(j < i) return;
           const b = nodes[j];
           const alpha = (1 - dist / linkDist) * 0.4 * ((a.z + b.z) / 2 + 0.3);
           ctx.strokeStyle = `rgba(120,160,220,${alpha.toFixed(3)})`;
@@ -1330,7 +1104,6 @@ Grading rules:
         });
       }
 
-      // dots, sized/lit by depth for the 3D feel
       nodes.forEach(n => {
         const size = n.r * (0.6 + n.z * 1.1);
         const alpha = 0.35 + n.z * 0.55;
@@ -1354,14 +1127,12 @@ Grading rules:
     });
     hero.addEventListener('mouseleave', () => { mouse.x = null; mouse.y = null; });
 
-    step(!reduceMotion); // always paint at least one frame; loop unless reduced motion is requested
+    step(!reduceMotion);
   })();
-
-  // ----- subtle 3D tilt on feature cards, mouse-driven -----
 
   (function setupTilt(){
     if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    if(window.matchMedia && window.matchMedia('(hover: none)').matches) return; // skip on touch
+    if(window.matchMedia && window.matchMedia('(hover: none)').matches) return;
     document.querySelectorAll('#authGate .feature-card').forEach(card => {
       let raf = null;
       card.addEventListener('mousemove', (e) => {
@@ -1382,8 +1153,6 @@ Grading rules:
       });
     });
   })();
-
-  // ----- "Real practice questions" landing demo: 1 real free try -----
 
   (function setupDemoQuestions(){
     const DEMO_Q_KEY = 'extemplary-demo-question-used';
@@ -1473,8 +1242,6 @@ Grading rules:
     });
   })();
 
-  // ----- "Current event briefings" landing demo: 1 real free try -----
-
   (function setupDemoBriefing(){
     const DEMO_BF_KEY = 'extemplary-demo-briefing-used';
     const btn = document.getElementById('demoBriefingBtn');
@@ -1525,11 +1292,6 @@ Grading rules:
       timingRow.style.pointerEvents = 'none'; timingRow.style.opacity = '0.5';
     }
 
-    // A transient network hiccup (ad blocker, brief connectivity drop, cold
-    // edge function) shows up as a bare "Failed to fetch" TypeError with no
-    // HTTP status at all. Worth one silent retry before bothering the person
-    // with an error, since a real failure (bad prompt, quota, etc.) will
-    // fail the same way twice in a row anyway.
     async function callGeminiWithRetry(prompt, category){
       try{
         return await callGemini(prompt, undefined, category);
@@ -1550,10 +1312,6 @@ Grading rules:
       loading.classList.remove('hidden');
       demoBfProgress.start(typeof BF_PHRASES !== 'undefined' ? BF_PHRASES : ['Pulling together your briefing…'], 92);
       try{
-        // A condensed version of the real briefing prompt, scoped to just
-        // one section so the free demo is quick, the full multi-section
-        // Tournament Briefing (domestic + international + economic +
-        // "what to expect") is what you get once signed in.
         const dateStr = new Date().toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
         const timingDesc = describeDemoTiming();
         const prompt = `You are prepping a competitive NSDA extemp speaker whose tournament is ${timingDesc}. Today is ${dateStr}. Use Google Search to find real, current news from the last week. Write a brief briefing in exactly this plain-text structure (use this exact "## " header, nothing before it):\n\n## Domestic\n4-5 bullet points ("- ") on the most important U.S. domestic stories from the last week. Each bullet MUST start with a short label followed by a colon, like "- Government Shutdown Fight: description here." Wrap the 2-3 most important key terms in double asterisks like **this**.\n\nFormatting rules: plain text only besides the "**bold**" spans, no other markdown, no intro or closing remarks, nothing before "## Domestic" or after the last bullet.`;
@@ -1579,8 +1337,6 @@ Grading rules:
       }
     });
   })();
-
-  // ----- "Citation checker" landing demo: 1 real free try -----
 
   (function setupDemoCitation(){
     const DEMO_CC_KEY = 'extemplary-demo-citation-used';
@@ -1670,15 +1426,12 @@ Grading rules:
     });
   })();
 
-
   function renderMiniTrendBars(){
     document.querySelectorAll('.fc-mini-trend-fill[data-pct]').forEach(fillEl => {
       const pct = parseFloat(fillEl.dataset.pct) || 0;
       fillEl.style.background = colorFromRatio(pct / 100);
     });
   }
-  // Deferred via setTimeout: colorFromRatio is declared further down this
-  // same script, same reason renderDemoCategoryCard below is deferred.
   setTimeout(renderMiniTrendBars, 0);
 
   function renderDemoCategoryCard(){
@@ -1700,8 +1453,6 @@ Grading rules:
         </div>
       </div>`;
   }
-  // Deferred via setTimeout: CIRCLE_PATH/inlineMd/escHtml/bandClass are
-  // declared further down this same script, so this needs to run after the
   setTimeout(renderDemoCategoryCard, 0);
 
   (function animateLandingGoalRing(){
@@ -1738,11 +1489,8 @@ Grading rules:
     if(!leftInner || !rightInner) return;
     const WORDS = DATA.WORDS;
 
-    // Picks `count` distinct random words from the list and joins them into
-    // one line, regenerated fresh every time a row's animation loops, so
-    // the wall never repeats the same phrase twice in a row.
     function randomLineText(wordList){
-      const count = 2 + Math.floor(Math.random() * 3); // 2, 3, or 4 words
+      const count = 2 + Math.floor(Math.random() * 3);
       const pool = wordList.slice();
       const picked = [];
       for(let k = 0; k < count && pool.length; k++){
@@ -1761,21 +1509,12 @@ Grading rules:
         span.textContent = randomLineText(wordList);
         span.style.top = (i * spacing + 40) + 'px';
 
-        // Every row uses the same wobble keyframe but with direction:alternate,
-        // so motion continuously reverses at each extreme instead of ever
-        // snapping back to its start, that snap was what caused the visible
-        // "skip" whenever the old animation looped. Half the rows start out
-        // of phase (alternate-reverse) so they don't all move in lockstep.
         const direction = (i % 2 === 0) ? 'alternate' : 'alternate-reverse';
-        const duration = 18 + (i % 5) * 3; // 18–30s, slow and varied per row
+        const duration = 18 + (i % 5) * 3;
         span.style.animation = 'driftWobble ' + duration + 's ease-in-out infinite';
         span.style.animationDirection = direction;
         span.style.animationDelay = '-' + ((i * 1.7) % duration).toFixed(1) + 's';
 
-        // Swap in new random words only at the extremes of the wobble (where
-        // horizontal velocity is momentarily zero), and crossfade the text via
-        // opacity rather than popping it, so the content change is never
-        // visible as a jump, satisfies a smooth, continuous-feeling wall.
         span.addEventListener('animationiteration', () => {
           span.style.opacity = '0';
           setTimeout(() => {
@@ -1790,11 +1529,6 @@ Grading rules:
     fillColumn(leftInner, WORDS, 30, 0);
     fillColumn(rightInner, WORDS, 30, 5);
 
-    // Smooth, dramatic depth parallax: the word wall should barely move
-    // relative to the page, scrolling far only shifts it a tiny bit, and
-    // that tiny shift is eased continuously (lerp) each frame instead of
-    // being snapped straight to the scroll position, so it never feels
-    // jumpy even on fast/trackpad scrolling.
     let targetLeftY = 0, targetRightY = 0;
     let currentLeftY = 0, currentRightY = 0;
     function computeParallaxTargets(){
@@ -1814,29 +1548,14 @@ Grading rules:
     requestAnimationFrame(animateParallax);
   })();
 
-  // ---- redirect to the app once signed in; landing page itself never ----
-  // ---- shows the app UI, so there's no onSignedIn/onSignedOut here. ----
   (async function initAuth(){
-    if(!supabaseClient) return; // no client lib available, let them try the form, it'll surface a clear error
+    if(!supabaseClient) return;
     const { data } = await supabaseClient.auth.getSession();
-    // Ignore an anonymous session here too — getAuthToken() may have
-    // already silently signed one in (e.g. from a free-try demo used
-    // before the person ever opens the sign-up form), and that should
-    // never count as "already logged in, skip the landing page."
     if(data?.session && !data.session.user?.is_anonymous){
       window.location.href = 'index.html';
       return;
     }
     supabaseClient.auth.onAuthStateChange((event, session) => {
-      // getAuthToken() calls signInAnonymously() to authorize edge-function
-      // calls (the free-try demos, and the account-verification call
-      // during sign-up itself), and that ALSO fires a SIGNED_IN event.
-      // Without this check, the moment sign-up called the edge function
-      // mid-verification, this listener would redirect to index.html
-      // immediately, before the real account was even created and before
-      // the real signInWithPassword ever ran — silently breaking sign-up
-      // (and the tutorial, since it never got armed). Only a real,
-      // non-anonymous session should ever trigger this redirect.
       if(event === 'SIGNED_IN' && session && !session.user?.is_anonymous){
         window.location.href = 'index.html';
       }

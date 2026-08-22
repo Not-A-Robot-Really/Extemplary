@@ -1,43 +1,16 @@
 const DATA = window.APP_DATA;
 (function(){
 
-  // ===== SUPABASE CONFIG =====
-  // Fill these in with YOUR project's values (Project Settings → API).
-  // SUPABASE_ANON_KEY is the public "anon" key, it's designed to be
-  // exposed in client-side code (Supabase docs make this explicit) and is
-  // NOT the same thing as a service_role key or a Groq/Gemini API key. The
-  // real Groq/Gemini keys now live only as server-side secrets on the edge
-  // functions below and never ship in this file.
   const SUPABASE_URL = 'https://iiehhmelfotwkdqxplug.supabase.co';
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlpZWhobWVsZm90d2tkcXhwbHVnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzNDYxMzEsImV4cCI6MjA5ODkyMjEzMX0.8QzN1LJmr70Sidxp2RsOq-z3S_NX5lN9QWTr45CSaHo';
   const SUPABASE_FUNCTIONS_URL = SUPABASE_URL + '/functions/v1';
 
-  // ===== AUTH + SAVED PROGRESS =====
-  // Real accounts via Supabase Auth (email + password). Session tokens are
-  // persisted by supabase-js itself (localStorage), which is what makes
-  // "stay signed in across tabs/reopens" work with zero extra code.
-  // Ballot history (video/transcript/feedback) lives in the cloud: a
-  // Postgres table ("ballots") plus a Storage bucket ("ballot-videos") in
-  // this same Supabase project, both protected by Row Level Security so
-  // each signed-in user can only ever read/write their own rows and files.
-  // One-time setup required in the Supabase SQL editor, see setup.sql.
   const supabaseClient = (window.supabase && window.supabase.createClient)
     ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
     : null;
-  // Exposed so tutorial.js can reuse this exact client instance instead of
-  // creating a second one. Two live GoTrueClient instances in the same tab
-  // can deadlock on the session-refresh lock, which is what was hanging the
-  // tutorial's "Next" button on the speaker-name step.
   window.ExtemplarySupabase = supabaseClient;
   const VIDEO_BUCKET = 'ballot-videos';
 
-  // ===== EDGE FUNCTION AUTH =====
-  // The edge functions require verify_jwt now, so the plain anon key is no
-  // longer enough to call them — the request needs a real Supabase-issued
-  // user JWT. Signed-in users already have one from their session. Anyone
-  // else (e.g. mid-signup, or a session that hasn't hydrated yet) gets a
-  // lightweight anonymous-auth session instead, so nothing here has to wait
-  // on or force a real signup.
   let anonSignInPromise = null;
   async function getAuthToken(){
     if(!supabaseClient) return SUPABASE_ANON_KEY;
@@ -52,78 +25,29 @@ const DATA = window.APP_DATA;
     return anonData.session.access_token;
   }
 
-  // ===== USAGE LIMIT WIDGET =====
-  // Bottom-left floating button + panel showing today's AI usage per
-  // category, as progress bars. Reads directly from the `api_usage` table
-  // (RLS lets a user select only their own rows); the edge functions are
-  // the ones that actually enforce the caps server-side via
-  // increment_api_usage() — these numbers here are just for display.
-  // Keep this list in sync with DAILY_LIMITS in the three edge functions.
   const RATE_CATEGORIES = [
     { key: 'ballot_feedback',   label: 'Ballot Feedback',              limit: 100 },
     { key: 'citation_checker',  label: 'Citation Checker',             limit: 40 },
     { key: 'question_generator',label: 'Practice Question Generator',  limit: 40 },
     { key: 'current_events',    label: 'Current Events Summary',       limit: 15 }
   ];
-  // Ballot Feedback is judged by whichever model the picker has selected
-  // (see JUDGE_MODELS / judgeModelValue further down), and those models
-  // don't cost the same to run. Rather than every judging call draining
-  // the daily cap by a flat 1 unit, pricier models drain it faster and
-  // cheaper ones drain it slower — weighted roughly (inversely) against
-  // each model's Cost score on the "LLM Model Rankings" panel: a low
-  // cost score (expensive) burns more units per call, a high cost score
-  // (cheap) burns fewer. Keep the keys in sync with JUDGE_MODELS below.
   const BALLOT_FEEDBACK_MODEL_WEIGHTS = {
-    llama:      1,  // GPT-OSS 120B — cost score 97 (cheapest per-token on
-                    // Groq). This is the correct weight for the single-call
-                    // path (Intro/Body Drill, Body Drill, Rough Draft).
-                    // Regular Practice does NOT use this value at all —
-                    // runGptOssSplitJudging below passes its own explicit
-                    // weightOverride per call (see doFetch), since that
-                    // path fires 9 real HTTP calls (8 category passes + 1
-                    // synthesis pass) and needs the daily-cap charge
-                    // spread across them by hand rather than multiplied by
-                    // this single flat number 9 times.
-    deepseekv4pro: 1, // DeepSeek V4 Pro — cost score 97
-    qwen38:     1,  // Qwen3.8 2.4T A95B — cost score 88
-    gemini37flash: 1, // Gemini 3.7 Flash — cost score 93
-    glm52:      1,  // GLM 5.2        — cost score 91
-    kimik3:     3,  // Kimi K3        — cost score 74
-    opus5:      5   // Claude Opus 5  — cost score 57
+    llama:      1,
+    deepseekv4pro: 1,
+    qwen38:     1,
+    gemini37flash: 1,
+    glm52:      1,
+    kimik3:     3,
+    opus5:      5
   };
   const BALLOT_FEEDBACK_USAGE_KEY = 'extemplary_bf_weighted_usage';
   function todayISO(){ return new Date().toISOString().slice(0,10); }
-  // When a 429 response body fails to parse (res.json() throws — a
-  // network blip, or a stream cut short right at a day-boundary isolate
-  // rotation), info.currentCount/info.usageLimit end up undefined, which
-  // rendered as a literal "?/?" in the rate-limit toast — technically
-  // correct but useless to the person reading it. Fall back to a real
-  // number instead: the category's known daily limit, plus (for
-  // ballot_feedback specifically) the locally tracked weighted usage
-  // count, which is our best guess at the real server-side count even
-  // without a parseable response.
   function rateLimitFallback(category){
     const cat = RATE_CATEGORIES.find(c => c.key === category);
     const limit = cat ? cat.limit : null;
     const count = category === 'ballot_feedback' ? getWeightedBallotFeedbackUnits() : null;
     return { count, limit };
   }
-  // A 429 from one of our own edge functions means the daily quota was
-  // genuinely hit, and always comes back as {error:'rate_limited',
-  // currentCount, usageLimit}. But Supabase also enforces its own
-  // platform-level rate limit (a per-project/per-function requests-per-
-  // second cap, separate from the app's quota system) — e.g. when the
-  // Opus 5 / Kimi / DeepSeek judging loop fires several hackclub-chat
-  // calls in quick succession across continuation rounds. THAT 429's
-  // body doesn't match our app's shape, so treating every 429 as a real
-  // quota block used to surface a locally-tracked fallback number
-  // (whatever this browser had guessed so far, e.g. "11") mislabeled as
-  // if it were the real daily count — even though the actual server
-  // count (checkable directly in the DB) was correctly much higher, and
-  // a genuine quota block literally cannot fire below the limit since
-  // the counter only ever increases. Callers should use isRealQuotaBlock
-  // to decide whether to show "you've hit your daily limit" at all, vs.
-  // treating it as a transient error worth retrying.
   async function readRateLimitInfo(res, fallbackCategory){
     const info = await res.json().catch(()=> ({}));
     const isRealQuotaBlock = !!(info && info.error === 'rate_limited');
@@ -306,7 +230,7 @@ const DATA = window.APP_DATA;
   RateLimitUI.build();
   RateLimitUI.refresh();
 
-  let currentUser = null; // { id, email }
+  let currentUser = null;
 
   async function loadHistory(){
     if(!currentUser || !supabaseClient) return [];
@@ -324,22 +248,14 @@ const DATA = window.APP_DATA;
       videoPath: row.video_path || null,
       annotations: row.annotations || null,
       deliveryMetrics: row.delivery_metrics || null,
-      // Older rows saved before this distinction existed didn't record a
-      // source, so treat them as live-camera video ballots (the original,
-      // still-default recording method) rather than dropping them from
-      // "video ballots" goal counts.
       recordSource: (row.delivery_metrics && row.delivery_metrics.recordSource) || 'camera',
       isIntroDrill: !!(row.delivery_metrics && row.delivery_metrics.isIntroDrill),
       isBodyDrill: !!(row.delivery_metrics && row.delivery_metrics.isBodyDrill),
       isRoughDraft: !!(row.delivery_metrics && row.delivery_metrics.isRoughDraft),
-      // Tucked into delivery_metrics (see recordBallotToHistory) rather than
-      // a new column, same pattern as recordSource/isIntroDrill above.
       factCheck: (row.delivery_metrics && row.delivery_metrics.factCheck) || null
     }));
   }
 
-  // Records one completed round (called from renderResults once feedback
-  // has been parsed) so it shows up later in "My History".
   async function recordBallotToHistory(parsed, feedback, transcript, question, round, videoBlob, annotations, deliveryMetrics, recordSource, isIntroDrill, isBodyDrill, factCheck, isRoughDraft){
     if(!currentUser || !supabaseClient) return;
     const id = (crypto.randomUUID && crypto.randomUUID()) || ('b_' + Date.now() + '_' + Math.random().toString(36).slice(2,8));
@@ -351,22 +267,7 @@ const DATA = window.APP_DATA;
         .upload(videoPath, videoBlob, { contentType: videoBlob.type || 'video/webm', upsert: true });
       if(upErr){ console.warn('Could not upload video', upErr); videoPath = null; }
     }
-    // Tuck how the video was captured ('camera' = recorded live, 'capture' =
-    // tab/YouTube capture, 'upload' = a pre-existing file) into the existing
-    // delivery_metrics JSON blob, so the "Video ballots this month" goal can
-    // count only rounds that were actually recorded live, distinct from the
-    // "Practice rounds this month" goal, which counts every completed round.
-    // Also tuck in whether this round was an Intro Drill (introduction-only,
-    // trimmed rubric) or a Body Drill (single-body-paragraph-only, trimmed
-    // rubric) so History can label it distinctly without a schema change.
-    // factCheck (the independent, non-scored evidence fact-check pass) is
-    // tucked in here the same way, rather than adding a new `ballots`
-    // column — keeps this feature deployable without a schema migration.
     const deliveryMetricsWithSource = Object.assign({}, deliveryMetrics || {}, { recordSource: recordSource || 'camera', isIntroDrill: !!isIntroDrill, isBodyDrill: !!isBodyDrill, isRoughDraft: !!isRoughDraft, factCheck: factCheck || null });
-    // Save everything the live results view can show, including the
-    // color-coded annotated-transcript data (sections + comments) and the
-    // measured vocal delivery metrics, so "My History" can reconstruct the
-    // full formatted ballot later, not just a plain-text dump.
     const { error } = await supabaseClient.from('ballots').insert({
       id, user_id: currentUser.id, round, ts: new Date().toISOString(),
       question: question || '', total: parsed.total, rank: parsed.rank,
@@ -392,32 +293,7 @@ const DATA = window.APP_DATA;
     if(videoPath) await supabaseClient.storage.from(VIDEO_BUCKET).remove([videoPath]);
   }
 
-  // ===================================================================
-  // ===== STREAK / CALENDAR / GOALS ====================================
-  // ===================================================================
-  // Two new tables are required in Supabase (same RLS pattern as `ballots`
-  //user_id, RLS restricting rows to auth.uid()):
-  //
-  //   calendar_events(id uuid pk, user_id uuid, event_date date,
-  //                    title text, notes text, created_at timestamptz)
-  //   user_goals(id uuid pk, user_id uuid, type text, params jsonb,
-  //              target_date date null, status text default 'active',
-  //              created_at timestamptz)
-  //
-  // An "active" day = any day you recorded a ballot, set a goal, or had a
-  // goal complete. This is computed entirely client-side from the same
-  // `ballots`/`user_goals` rows already loaded for My History, no extra
-  // table needed for the streak itself.
   const GOAL_CATEGORIES = DATA.GOAL_CATEGORIES;
-  // Ballot category names come straight from whatever the grading AI wrote
-  // as its own section header (e.g. "3. STRENGTH OF ARGUMENT & ANALYSIS" or
-  // "Speech Quality - Vocal Delivery & Fluency"), so they can carry a
-  // leading number, different casing, or different punctuation than the
-  // canonical GOAL_CATEGORIES list the "+ New Goal" category dropdown is
-  // built from. Map a raw ballot category name back to the exact canonical
-  // string so anything built from it (goal creation, and later matching
-  // against it in goalProgress) lines up with a real selectable option.
-  // Returns null if nothing canonical corresponds to it.
   function canonicalGoalCategory(rawName){
     if(!rawName) return null;
     const norm = s => s.toLowerCase().replace(/^\s*\d+[\.\)]\s*/, '').replace(/[—–-]/g,'-').replace(/\s+/g,' ').trim();
@@ -428,8 +304,6 @@ const DATA = window.APP_DATA;
   const STREAK_MILESTONES = DATA.STREAK_MILESTONES;
 
   function dateKey(d){
-    // Local-time YYYY-MM-DD (never UTC, avoids the classic "yesterday at
-    // 8pm" off-by-one when the user is west of UTC).
     const y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,'0'), day = String(d.getDate()).padStart(2,'0');
     return `${y}-${m}-${day}`;
   }
@@ -437,36 +311,29 @@ const DATA = window.APP_DATA;
     const [y,m,d] = key.split('-').map(Number);
     return new Date(y, m-1, d);
   }
-  // date -> true if anything happened that day: a ballot was recorded, a
-  // goal was set, or (best-effort, since we don't store a completion date)
-  // a goal is currently complete, that last case can only credit today.
   function activeDaysByDay(list, goals, events){
     const map = {};
-    list.forEach(e => { map[dateKey(new Date(e.ts))] = true; }); // any ballot made
+    list.forEach(e => { map[dateKey(new Date(e.ts))] = true; });
     (goals||[]).forEach(g => {
-      if(g.created_at) map[dateKey(new Date(g.created_at))] = true; // any goal set
+      if(g.created_at) map[dateKey(new Date(g.created_at))] = true;
     });
     const anyGoalCompleteNow = (goals||[]).some(g => {
-      if(g.type === 'streak') return false; // avoid circularity with the streak we're computing
+      if(g.type === 'streak') return false;
       return goalProgress(g, list, { current:0, best:0 }, events||[]).done;
     });
-    if(anyGoalCompleteNow) map[dateKey(new Date())] = true; // any goal completed
+    if(anyGoalCompleteNow) map[dateKey(new Date())] = true;
     return map;
   }
   function computeStreak(list, goals, events){
     const byDay = activeDaysByDay(list, goals, events);
     const today = new Date(); today.setHours(0,0,0,0);
     let cursor = new Date(today);
-    // Today doesn't have to have activity yet for the streak to still be
-    // "alive", only step back to yesterday as the start if today has no
-    // recorded activity yet.
     if(!byDay[dateKey(cursor)]) cursor.setDate(cursor.getDate()-1);
     let streak = 0;
     while(byDay[dateKey(cursor)]){
       streak++;
       cursor.setDate(cursor.getDate()-1);
     }
-    // Best-ever streak, scanning every day that has any activity.
     let best = 0, run = 0;
     const days = Object.keys(byDay).sort();
     let prevDate = null;
@@ -528,7 +395,6 @@ const DATA = window.APP_DATA;
     await supabaseClient.from('user_goals').delete().eq('id', id);
   }
 
-  // Short label suffix reflecting a goal's practice-type scope (blank for "all").
   function goalPracticeTypeSuffix(pt){
     if(pt === 'regular') return ' (Regular Practice)';
     if(pt === 'introdrill') return ' (Rapid Drill: Intro)';
@@ -546,17 +412,11 @@ const DATA = window.APP_DATA;
     if(g.type === 'tournament') return `Compete at ${escHtml(g.params.title || 'the upcoming tournament')}`;
     return 'Goal';
   }
-  // Returns {current, target, pct, done}
   function goalProgress(g, list, streakInfo, events){
     if(g.type === 'streak'){
       const cur = Math.min(streakInfo.current, g.params.days);
       return { current: streakInfo.current, target: g.params.days, pct: Math.min(100, cur/g.params.days*100), done: streakInfo.current >= g.params.days };
     }
-    // Every other goal type (besides streak/tournament, which aren't tied to
-    // individual ballots) is measured only against the practice type chosen
-    // when the goal was created, "Regular Practice", "Rapid Drill:
-    // Introduction", or "All" (the default for goals saved before this
-    // filter existed).
     const scopedList = filterByPracticeType(list, (g.params && g.params.practiceType) || 'all');
     if(g.type === 'score'){
       const best = scopedList.reduce((m,e) => (e.total!==null && e.total!==undefined && e.total>m) ? e.total : m, 0);
@@ -574,11 +434,7 @@ const DATA = window.APP_DATA;
       const count = scopedList.filter(e => {
         const d = new Date(e.ts);
         if(d.getFullYear()!==now.getFullYear() || d.getMonth()!==now.getMonth()) return false;
-        if(g.type === 'rounds') return true; // every completed round this month, video or not
-        // 'videos': only rounds actually recorded live via camera this month, 
-        // excludes rounds where a video was merely uploaded from a file or
-        // captured from a shared tab/YouTube playback, since those aren't a
-        // live recording of your own delivery.
+        if(g.type === 'rounds') return true;
         return e.hasVideo && e.recordSource === 'camera';
       }).length;
       return { current: count, target: g.params.count, pct: Math.min(100, count/g.params.count*100), done: count >= g.params.count };
@@ -591,20 +447,6 @@ const DATA = window.APP_DATA;
     return { current:0, target:1, pct:0, done:false };
   }
 
-  // ---- suggested goals (My Ballot History), derived from the user's own
-  // weaknesses and Coach's Overall Notes, no extra AI call needed since
-  // the weakness ranking is already computed from their ballot data. ----
-  //
-  // Two rules every suggestion here must satisfy:
-  //   1) It must be a genuine stretch — its target must sit strictly above
-  //      the best the user has ALREADY done (best-ever category %, best-ever
-  //      overall score, best-ever practice-rounds-in-a-month), never just
-  //      above their average. A goal calibrated off the average alone can
-  //      already be beaten by a past personal best, which "suggests" a goal
-  //      the user has technically already completed.
-  //   2) The three slots returned should span different goal TYPES (category
-  //      / score / streak / rounds) rather than three category goals, so
-  //      "Suggested for you" isn't just the same kind of goal three times.
   function computeSuggestedGoals(list, goals, events){
     if(!list.length) return [];
     const rows = computeTrends(list);
@@ -614,8 +456,6 @@ const DATA = window.APP_DATA;
     const bestTotal = totals.length ? Math.max(...totals) : 0;
     const streakInfo = computeStreak(list, goals, events);
 
-    // Best-ever % achieved per category, so a category goal can be checked
-    // against the user's actual ceiling, not just their average.
     const bestPctByCategory = {};
     list.forEach(e => (e.categories||[]).forEach(c => {
       const pct = (c.score/(c.max||10))*100;
@@ -624,31 +464,15 @@ const DATA = window.APP_DATA;
       if(!(canon in bestPctByCategory) || pct > bestPctByCategory[canon]) bestPctByCategory[canon] = pct;
     }));
 
-    // Never re-suggest something the user already has as a real goal — this
-    // is what makes a suggestion disappear the moment "+ Add" creates it
-    // (the newly-created goal excludes it on the very next render), and
-    // what lets a fresh suggestion take its place: once the top weak
-    // category / current score target / current streak target is taken,
-    // the next-weakest category or the next milestone up surfaces instead,
-    // so the list keeps replenishing as the user acts on it rather than
-    // going stale or looping the same three suggestions forever.
     const existingCategoryGoals = new Set(
       goals.filter(g => g.type === 'category' && g.params).map(g => g.params.category)
     );
-    // Only ever suggest categories that actually exist as a selectable
-    // option in the "+ New Goal" modal's Category dropdown — a raw ballot
-    // header name (numbered, oddly cased, etc.) that can't be mapped back
-    // to one of GOAL_CATEGORIES would silently create a goal the user could
-    // never have made themselves, so those rows are skipped entirely.
     const canonicalRows = rows
       .map(r => ({ ...r, canonicalName: canonicalGoalCategory(r.name) }))
       .filter(r => r.canonicalName && !existingCategoryGoals.has(r.canonicalName));
     const weakest = canonicalRows[canonicalRows.length-1];
     const secondWeakest = canonicalRows.length > 1 ? canonicalRows[canonicalRows.length-2] : null;
 
-    // Builds a category-goal suggestion whose threshold is a real stretch
-    // above BOTH the recurring average and the user's own best-ever showing
-    // in that category, so accepting it can't already be done.
     function categorySuggestion(row){
       const bestPct = bestPctByCategory[row.canonicalName] || row.avgPct;
       const threshold = Math.min(95, Math.max(Math.round(row.avgPct + 15), Math.round(bestPct) + 5));
@@ -660,14 +484,8 @@ const DATA = window.APP_DATA;
 
     const candidates = [];
 
-    // 1) Category goal targeting the single weakest graded category the
-    // user doesn't already have a goal for.
     if(weakest) candidates.push(categorySuggestion(weakest));
 
-    // 2) Overall-score goal, a stretch above BOTH their current average and
-    // their best-ever recorded total — and above any score goal they
-    // already have, so accepting one bumps the next suggestion up instead
-    // of repeating.
     const existingScoreThresholds = goals.filter(g => g.type === 'score' && g.params).map(g => g.params.threshold);
     const maxExistingScoreThreshold = existingScoreThresholds.length ? Math.max(...existingScoreThresholds) : 0;
     const scoreThreshold = Math.min(100, Math.max(Math.round(avgTotal/5)*5 + 10, Math.round(bestTotal) + 5, maxExistingScoreThreshold + 5));
@@ -678,8 +496,6 @@ const DATA = window.APP_DATA;
       });
     }
 
-    // 3) A streak goal calibrated to where they already are, and above any
-    // streak goal they already have for the same replenishing reason.
     const existingStreakDays = goals.filter(g => g.type === 'streak' && g.params).map(g => g.params.days);
     const maxExistingStreakDays = existingStreakDays.length ? Math.max(...existingStreakDays) : 0;
     const nextMilestone = STREAK_MILESTONES.find(m => m > Math.max(streakInfo.current, maxExistingStreakDays));
@@ -692,9 +508,6 @@ const DATA = window.APP_DATA;
       });
     }
 
-    // 4) A practice-frequency goal for this calendar month, above whatever
-    // count the user has already hit or already set as a goal, so it
-    // diversifies the suggestion list beyond scoring-based goals entirely.
     const now = new Date();
     const roundsThisMonth = list.filter(e => {
       const d = new Date(e.ts);
@@ -708,18 +521,12 @@ const DATA = window.APP_DATA;
       why: `You've completed ${roundsThisMonth} practice round${roundsThisMonth===1?'':'s'} this month. This builds a more consistent habit.`
     });
 
-    // 5) The second-weakest category, kept as a lower-priority fallback so
-    // it only fills a slot if a different-typed suggestion above wasn't
-    // available, rather than crowding out type diversity.
     if(secondWeakest){
       const s = categorySuggestion(secondWeakest);
       s.why = `${secondWeakest.canonicalName} is also trending as a recurring weak spot (avg ${secondWeakest.avgPct.toFixed(0)}%).`;
       candidates.push(s);
     }
 
-    // Prefer one suggestion per type first (so the 3 shown span different
-    // kinds of goals), then fall back to filling any remaining slots from
-    // whatever's left over.
     const chosen = [];
     const usedTypes = new Set();
     candidates.forEach(c => {
@@ -731,7 +538,6 @@ const DATA = window.APP_DATA;
     return chosen;
   }
 
-  // ---- goal creation modal (shared by Streak Calendar + My History) ----
   const goalModalBackdrop = document.getElementById('goalModalBackdrop');
   const goalModal = document.getElementById('goalModal');
   const goalModalBody = document.getElementById('goalModalBody');
@@ -800,8 +606,6 @@ const DATA = window.APP_DATA;
       goalModalBody.querySelectorAll('.gm-field[data-for]').forEach(f => {
         f.style.display = (f.dataset.for === typeSel.value) ? 'flex' : 'none';
       });
-      // The practice-type filter applies to every goal type except streak
-      // (a streak isn't tied to any one round's practice mode).
       const ptField = document.getElementById('gmPracticeTypeField');
       if(ptField) ptField.style.display = (typeSel.value === 'streak') ? 'none' : 'flex';
     }
@@ -832,8 +636,6 @@ const DATA = window.APP_DATA;
     goalModalBackdrop.classList.remove('hidden');
   }
 
-  // ---- Goals list markup (shared renderer for both the Streak Calendar
-  // view and the My History tab) ----
   function renderGoalsList(goals, list, streakInfo, events){
     if(!goals.length) return '<div class="goals-empty">No goals yet — set one to track your progress.</div>';
     return goals.map(g => {
@@ -866,7 +668,6 @@ const DATA = window.APP_DATA;
     });
   }
 
-  // ---- "My Ballot History" goals + suggested-goals section ----
   async function renderHistoryGoals(list){
     const el = document.getElementById('historyGoals');
     if(!el) return;
@@ -913,7 +714,6 @@ const DATA = window.APP_DATA;
     });
   }
 
-  // ---- Streak Calendar view ----
   let streakCalMonth = new Date(); streakCalMonth.setDate(1);
   const flameFilledSvg = '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><use href="#icon-59"></use></svg>';
   const flameOutlineSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-60"></use></svg>';
@@ -1010,10 +810,6 @@ const DATA = window.APP_DATA;
       });
     });
 
-    // Tournament name popup: tapping/clicking the brass dot shows the
-    // tournament name(s) for that day in a small bubble (works on touch,
-    // unlike a hover-only title attribute), and doesn't also trigger the
-    // cell's "add event on this date" click behavior.
     let openEventTooltip = null;
     function closeEventTooltip(){
       if(openEventTooltip){ openEventTooltip.remove(); openEventTooltip = null; }
@@ -1120,8 +916,6 @@ const DATA = window.APP_DATA;
     wireGoalDeleteButtons(wrap, () => renderStreakView());
   }
 
-  // Keep the top-left streak fab's count fresh once signed in, without
-  // needing the Streak Calendar view to have been opened yet.
   async function refreshStreakFab(){
     if(!currentUser) return;
     const list = await loadHistory();
@@ -1134,7 +928,6 @@ const DATA = window.APP_DATA;
     document.getElementById('streakToggle')?.classList.toggle('has-streak', info.current > 0);
   }
 
-  // ---- rendering "My History" ----
   function computeTrends(list){
     const byCategory = {};
     list.forEach(entry => {
@@ -1151,10 +944,6 @@ const DATA = window.APP_DATA;
     return rows;
   }
 
-  // Builds a larger inline SVG line chart (values expected 0-100) with a
-  // real labeled coordinate grid, Y ticks at 0/25/50/75/100 ("Score"),
-  // X ticks per round ("Round"), used in the single big chart panel with
-  // a dropdown selector. Returns an empty string if there's nothing to plot.
   function buildTrendChartSvg(values, color, rounds){
     if(!values || !values.length) return '';
     color = color || '#2356a8';
@@ -1174,19 +963,10 @@ const DATA = window.APP_DATA;
     }).join('');
 
     const xLabels = (rounds && rounds.length === n) ? rounds : values.map((_,i)=>i+1);
-    // With many rounds (e.g. 20-30+ practice speeches), printing every
-    // single "R<n>" label side by side overflows the ~640px plot width
-    // and the text overlaps into an unreadable smear — exactly what was
-    // happening once a user built up enough ballot history. Cap how many
-    // labels actually get drawn and space the rest out evenly instead of
-    // rendering one per data point; the vertical gridline itself still
-    // marks every round, just not every round gets a text label under it.
     const MAX_X_LABELS = 10;
     const labelStep = Math.max(1, Math.ceil(n / MAX_X_LABELS));
     const xGrid = xLabels.map((r,i) => {
       const x = xForI(i);
-      // Always label the first and last round (so the range is never
-      // ambiguous) plus every labelStep-th one in between.
       const showLabel = i === 0 || i === n - 1 || i % labelStep === 0;
       const label = showLabel
         ? `<text class="axis-label" x="${x.toFixed(1)}" y="${(h-marginBottom+18).toFixed(1)}" text-anchor="middle">R${r}</text>`
@@ -1226,8 +1006,6 @@ const DATA = window.APP_DATA;
     </svg>`;
   }
 
-  // Chronological (oldest → newest) per-round series for the overall score
-  // and each of the graded categories, used to draw the trend line charts.
   function computeSeries(listDesc){
     const asc = [...listDesc].sort((a,b) => a.ts - b.ts);
     const overall = asc.map((e,i) => ({ round:i+1, val: e.total }));
@@ -1241,11 +1019,7 @@ const DATA = window.APP_DATA;
     return { asc, overall, catSeries };
   }
 
-  // Practice-type filter applied to the "Trends Across X Ballots" bars and
-  // the "View trend" line chart. Persists (module-level) for as long as the
-  // page is open, so re-renders (e.g. after adding a ballot) keep whatever
-  // the user last picked.
-  let historyTrendsMode = 'all'; // 'all' | 'regular' | 'introdrill' | 'bodydrill' | 'roughdraft'
+  let historyTrendsMode = 'all';
   const HISTORY_MODE_OPTIONS = [
     { v:'all', l:'All' },
     { v:'regular', l:'Regular Practice' },
@@ -1294,9 +1068,6 @@ const DATA = window.APP_DATA;
       const weaknesses = rows.slice(-2).reverse();
       const { overall, catSeries } = computeSeries(list);
 
-      // Build a lookup of every chart the dropdown can show: "overall" plus
-      // one entry per graded category, each carrying its own values/axis/color
-      // so switching the <select> just re-renders the single big chart panel.
       const chartOptions = [];
       const overallVals = overall.map(p => p.val).filter(v => v !== null && v !== undefined);
       if(overallVals.length){
@@ -1321,8 +1092,6 @@ const DATA = window.APP_DATA;
       const strengthIcon = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-65"></use></svg>';
       const weaknessIcon = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-66"></use></svg>';
 
-      // Latest vs. average overall score, so the user can see how the most
-      // recent round stacks up against their own history.
       const overallValsAll = overall.map(p => p.val).filter(v => v !== null && v !== undefined);
       const latestOverallScore = overallValsAll.length ? overallValsAll[overallValsAll.length-1] : null;
       const avgOverallScore = overallValsAll.length ? overallValsAll.reduce((a,b)=>a+b,0) / overallValsAll.length : null;
@@ -1369,20 +1138,17 @@ const DATA = window.APP_DATA;
           </div>` : ''}
         </div>`;
 
-      // Animate the summary bars in on a rAF tick so the width transition fires.
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           el.querySelectorAll('.trend-bar').forEach(bar => { bar.style.width = bar.dataset.w + '%'; });
         });
       });
 
-      // Wire the practice-type filter to re-run the whole panel.
       const modeSel = document.getElementById('historyModeFilter');
       if(modeSel){
         modeSel.addEventListener('change', () => { historyTrendsMode = modeSel.value; paintPanel(); });
       }
 
-      // Wire the dropdown to (re)render the single big chart panel.
       function paintChart(key){
         const c = chartOptions.find(o => o.key === key) || chartOptions[0];
         const big = document.getElementById('trendChartBig');
@@ -1404,11 +1170,6 @@ const DATA = window.APP_DATA;
     paintPanel();
   }
 
-  // ---- overall AI coaching comment (Gemini) ----
-  // Synthesizes a short, whole-history coaching note. To avoid burning API
-  // calls (and to keep the note stable round-to-round), it's only
-  // regenerated at milestone round counts or after a clear breakthrough, 
-  // never on every single history view open.
   function isMilestoneCount(n){
     if([1,2,3,5,7,10].includes(n)) return true;
     return n > 10 && (n - 10) % 5 === 0;
@@ -1438,12 +1199,6 @@ const DATA = window.APP_DATA;
     if(error) console.warn('Could not save overall feedback', error);
   }
   function buildOverallFeedbackPrompt(asc){
-    // Give the model real per-round substance to point to — not just
-    // scores — so the write-up can cite specific topics, specific category
-    // trends, and specific judge comments instead of staying generic. Full
-    // feedback text is only included for the most recent rounds (it's the
-    // most relevant and keeps the prompt a reasonable size); older rounds
-    // still contribute their topic/score/category data for trend-spotting.
     const RECENT_FEEDBACK_COUNT = 5;
     const FEEDBACK_EXCERPT_CHARS = 600;
     const rounds = asc.map((e,i) => {
@@ -1481,14 +1236,12 @@ const DATA = window.APP_DATA;
         <p>${inlineMd(text)}</p>
       </div>`;
   }
-  // Loads (and, when due, regenerates) the overall coaching comment in the
-  // background so opening My History never blocks on a Gemini call.
   async function refreshOverallFeedback(listDesc){
     if(!currentUser || !supabaseClient || !listDesc.length) { renderOverallFeedbackBox(null); return; }
     const asc = [...listDesc].sort((a,b) => a.ts - b.ts);
     const n = asc.length;
     let existing = null;
-    try{ existing = await loadOverallFeedback(); }catch(e){ /* ignore, fall through to generation */ }
+    try{ existing = await loadOverallFeedback(); }catch(e){  }
     if(existing && existing.feedback) renderOverallFeedbackBox(existing.feedback);
     else renderOverallFeedbackBox(null, true);
 
@@ -1504,7 +1257,6 @@ const DATA = window.APP_DATA;
       }
     }catch(err){
       console.warn('Could not generate overall coaching comment', err);
-      // Leave whatever was already shown (cached comment, or nothing), never block the page on this.
     }
   }
 
@@ -1584,7 +1336,7 @@ const DATA = window.APP_DATA;
             const deliveryHtml = buildDeliveryGridHtml(entry.deliveryMetrics);
             const transcriptHtml = buildTranscriptSectionHtml(entry.transcript || '', entry.annotations);
             t.innerHTML = `<div class="hc-full-ballot">${ballotHtml}</div>${deliveryHtml}${transcriptHtml}`;
-            attachCommentListeners(t, ()=>{}); // history has no per-word video sync, just show the note on click
+            attachCommentListeners(t, ()=>{});
           }
           t.classList.remove('hidden');
           toggleBtn.textContent = 'Hide full ballot & transcript';
@@ -1601,7 +1353,6 @@ const DATA = window.APP_DATA;
       });
     });
   }
-
 
   document.getElementById('signOutBtn').addEventListener('click', async () => {
     if(supabaseClient) await supabaseClient.auth.signOut();
@@ -1624,15 +1375,10 @@ const DATA = window.APP_DATA;
     showView(viewStreak);
   });
 
-
-  // ----- "See an Example" preview. Reached via index.html?preview=example -----
-  // ----- (linked from the landing page, landingsite.html, which no longer -----
-  // ----- lives in this file). -----
   let exampleOpenedFromLanding = false;
   document.getElementById('previewExitBtn').addEventListener('click', () => {
     if(exampleOpen) closeExampleBallot();
   });
-
 
   function toHandle(name){
     const clean = (name || '').trim().slice(0, 20).toLowerCase().replace(/\s+/g, '');
@@ -1641,10 +1387,6 @@ const DATA = window.APP_DATA;
   function applySpeakerName(email){
     if(!speakerNameEl) return;
     var stored = null;
-    // The "latest" key (set the moment the tutorial's name step is
-    // submitted) always takes priority -- it's exactly what the person
-    // typed, and doesn't depend on this session's email matching the
-    // email it was originally saved under.
     try{ stored = localStorage.getItem('extemplary_speaker_name_latest'); }catch(e){}
     if(!stored){
       try{ stored = localStorage.getItem('extemplary_speaker_name:' + (email||'').toLowerCase()); }catch(e){}
@@ -1678,23 +1420,14 @@ const DATA = window.APP_DATA;
     accountEmail.classList.add('hidden');
     try{ localStorage.removeItem('extemplary_speaker_name_latest'); }catch(e){}
     applySpeakerName(null);
-    // No auth form lives in this file anymore -- signing out sends the
-    // person back to the landing page to log in or make a new account.
     window.location.href = 'landingsite.html';
   }
 
-  // Restore session on load / whenever it changes (this is what makes
-  // "stay signed in when you reopen the tab" work automatically), and
-  // gate the whole app behind landingsite.html for anyone who isn't
-  // signed in -- except for the unauthenticated "See an Example" preview
-  // reached via index.html?preview=example.
   (async function initAuth(){
     const params = new URLSearchParams(window.location.search);
     const previewRequested = params.get('preview') === 'example';
 
     if(!supabaseClient){
-      // No client library (e.g. offline) -- let the person in anyway so the
-      // recorder still works, just without saved history.
       return;
     }
     const { data } = await supabaseClient.auth.getSession();
@@ -1719,8 +1452,6 @@ const DATA = window.APP_DATA;
     });
   })();
 
-
-  // ===== Decorative side-margin parallax words (purely visual, no interaction) =====
   (function setupSideWords(){
     const leftInner  = document.getElementById('sideWordsLeftInner');
     const rightInner = document.getElementById('sideWordsRightInner');
@@ -1731,11 +1462,8 @@ const DATA = window.APP_DATA;
     if(!leftInner || !rightInner) return;
     const WORDS = DATA.WORDS;
 
-    // Picks `count` distinct random words from the list and joins them into
-    // one line, regenerated fresh every time a row's animation loops, so
-    // the wall never repeats the same phrase twice in a row.
     function randomLineText(wordList){
-      const count = 2 + Math.floor(Math.random() * 3); // 2, 3, or 4 words
+      const count = 2 + Math.floor(Math.random() * 3);
       const pool = wordList.slice();
       const picked = [];
       for(let k = 0; k < count && pool.length; k++){
@@ -1745,11 +1473,6 @@ const DATA = window.APP_DATA;
       return picked.join('\u00A0\u00A0\u00A0');
     }
 
-    // Builds each row twice: once into the faint base layer, once into the
-    // bright glow layer (masked to a circle around the cursor — see the
-    // mousemove handler below). Both spans share identical position/timing
-    // and have their text swapped together in lockstep, so the glow layer
-    // is always showing exactly what's underneath it, just brighter.
     function fillColumn(container, glowContainer, wordList, spacing){
       const totalHeight = container.offsetHeight || (window.innerHeight * 4);
       const count = Math.ceil(totalHeight / spacing);
@@ -1760,13 +1483,8 @@ const DATA = window.APP_DATA;
         span.textContent = text;
         span.style.top = (i * spacing + 40) + 'px';
 
-        // Every row uses the same wobble keyframe but with direction:alternate,
-        // so motion continuously reverses at each extreme instead of ever
-        // snapping back to its start, that snap was what caused the visible
-        // "skip" whenever the old animation looped. Half the rows start out
-        // of phase (alternate-reverse) so they don't all move in lockstep.
         const direction = (i % 2 === 0) ? 'alternate' : 'alternate-reverse';
-        const duration = 18 + (i % 5) * 3; // 18–30s, slow and varied per row
+        const duration = 18 + (i % 5) * 3;
         const anim = 'driftWobble ' + duration + 's ease-in-out infinite';
         const delay = '-' + ((i * 1.7) % duration).toFixed(1) + 's';
         span.style.animation = anim;
@@ -1783,12 +1501,6 @@ const DATA = window.APP_DATA;
           glowSpan.style.animationDelay = delay;
         }
 
-        // Swap in new random words only at the extremes of the wobble (where
-        // horizontal velocity is momentarily zero), and crossfade the text via
-        // opacity rather than popping it, so the content change is never
-        // visible as a jump, satisfies a smooth, continuous-feeling wall.
-        // Both layers swap together so the glow layer never shows text that
-        // doesn't match what's directly underneath it.
         span.addEventListener('animationiteration', () => {
           span.style.opacity = '0';
           if(glowSpan) glowSpan.style.opacity = '0';
@@ -1810,11 +1522,6 @@ const DATA = window.APP_DATA;
     fillColumn(leftInner, leftGlowInner, WORDS, 30);
     fillColumn(rightInner, rightGlowInner, WORDS, 30);
 
-    // Smooth, dramatic depth parallax: the word wall should barely move
-    // relative to the page, scrolling far only shifts it a tiny bit, and
-    // that tiny shift is eased continuously (lerp) each frame instead of
-    // being snapped straight to the scroll position, so it never feels
-    // jumpy even on fast/trackpad scrolling.
     let targetLeftY = 0, targetRightY = 0;
     let currentLeftY = 0, currentRightY = 0;
     function computeParallaxTargets(){
@@ -1837,12 +1544,6 @@ const DATA = window.APP_DATA;
     computeParallaxTargets();
     requestAnimationFrame(animateParallax);
 
-    // Flashlight cursor tracking: converts the pointer's viewport position
-    // into each glow container's own local coordinate space (CSS mask
-    // position is relative to the masked box, not the viewport), then
-    // writes it into --gx/--gy, which the radial-gradient mask in CSS
-    // reads to position the circle. rAF-throttled so fast mouse movement
-    // doesn't spam layout reads/writes.
     if(leftGlow && rightGlow){
       let pendingX = null, pendingY = null, rafScheduled = false;
       function applyPointer(){
@@ -1860,8 +1561,6 @@ const DATA = window.APP_DATA;
         pendingY = e.clientY;
         if(!rafScheduled){ rafScheduled = true; requestAnimationFrame(applyPointer); }
       }, { passive:true });
-      // Cursor leaving the window entirely — send the circle far off so
-      // nothing lingers lit up after the mouse is gone.
       document.addEventListener('mouseleave', () => {
         leftGlow.style.setProperty('--gx', '-9999px');
         rightGlow.style.setProperty('--gx', '-9999px');
@@ -1873,29 +1572,14 @@ const DATA = window.APP_DATA;
   const INTRO_RUBRIC_PROMPT = DATA.INTRO_RUBRIC_PROMPT;
   const BODY_RUBRIC_PROMPT = DATA.BODY_RUBRIC_PROMPT;
   const ROUGHDRAFT_RUBRIC_PROMPT = DATA.ROUGHDRAFT_RUBRIC_PROMPT;
-  // Split-judging prompts used ONLY for GPT-OSS 120B on the Regular
-  // Practice (8-category) rubric — see runGptOssSplitJudging below for
-  // why. Not used for Intro Drill / Body Drill / Rough Draft, whose
-  // rubrics are already small enough to fit one call's token budget.
-  // 1 category per call (8 calls total) rather than 2-per-call: the
-  // 2-per-call version still truncated mid-category ("Judging failed:
-  // GPT-OSS 120B's pass covering 'Strength of Evidence and Clarity' got
-  // cut off...") on a transcript that was evidently long/dense enough to
-  // eat further into the 8,000 TPM budget than a flat 2-per-call
-  // estimate assumed. Rather than keep guessing at a granularity that
-  // can still fail on the next unusually long speech, going all the way
-  // to 1 category per call scales safely regardless of transcript
-  // length — the fixed preamble+format overhead is now spread across
-  // twice as many calls, so every single call has far more real output
-  // headroom than even the 2-per-call version did.
-  const GPT_OSS_RUBRIC_CAT1 = DATA.GPT_OSS_RUBRIC_CAT1; // Creative Hook & Intro
-  const GPT_OSS_RUBRIC_CAT2 = DATA.GPT_OSS_RUBRIC_CAT2; // Structure
-  const GPT_OSS_RUBRIC_CAT3 = DATA.GPT_OSS_RUBRIC_CAT3; // Strength of Argument & Analysis
-  const GPT_OSS_RUBRIC_CAT4 = DATA.GPT_OSS_RUBRIC_CAT4; // Flaws in Reasoning
-  const GPT_OSS_RUBRIC_CAT5 = DATA.GPT_OSS_RUBRIC_CAT5; // Strength of Evidence
-  const GPT_OSS_RUBRIC_CAT6 = DATA.GPT_OSS_RUBRIC_CAT6; // Clarity
-  const GPT_OSS_RUBRIC_CAT7 = DATA.GPT_OSS_RUBRIC_CAT7; // Conclusion Strength
-  const GPT_OSS_RUBRIC_CAT8 = DATA.GPT_OSS_RUBRIC_CAT8; // Speech Quality
+  const GPT_OSS_RUBRIC_CAT1 = DATA.GPT_OSS_RUBRIC_CAT1;
+  const GPT_OSS_RUBRIC_CAT2 = DATA.GPT_OSS_RUBRIC_CAT2;
+  const GPT_OSS_RUBRIC_CAT3 = DATA.GPT_OSS_RUBRIC_CAT3;
+  const GPT_OSS_RUBRIC_CAT4 = DATA.GPT_OSS_RUBRIC_CAT4;
+  const GPT_OSS_RUBRIC_CAT5 = DATA.GPT_OSS_RUBRIC_CAT5;
+  const GPT_OSS_RUBRIC_CAT6 = DATA.GPT_OSS_RUBRIC_CAT6;
+  const GPT_OSS_RUBRIC_CAT7 = DATA.GPT_OSS_RUBRIC_CAT7;
+  const GPT_OSS_RUBRIC_CAT8 = DATA.GPT_OSS_RUBRIC_CAT8;
   const GPT_OSS_RUBRIC_SYNTHESIS = DATA.GPT_OSS_RUBRIC_SYNTHESIS;
   const ROUGHDRAFT_PIPELINE_PHRASES = DATA.ROUGHDRAFT_PIPELINE_PHRASES || { judging: [] };
 
@@ -1905,14 +1589,12 @@ const DATA = window.APP_DATA;
 
   const CIRCLE_PATH = DATA.CIRCLE_PATH;
 
-  // ===== DEFAULT TIME SIGNALS =====
   const DEFAULT_SIGNALS = DATA.DEFAULT_SIGNALS;
 
-  // ===== STATE =====
   let stream = null;
   let cameraStream = null;
   let captureStream = null;
-  let captureMode = 'camera'; // 'camera' | 'capture' | 'upload'
+  let captureMode = 'camera';
   let recorder = null;
   let chunks = [];
   let recordedBlob = null;
@@ -1922,37 +1604,20 @@ const DATA = window.APP_DATA;
   let roundNo = 1;
   let flightHistory = [];
   let lastTranscript = '';
-  // Lets the user cancel an in-progress ballot-feedback pipeline run (see
-  // the "X" cancel button in the processing view, wired up near
-  // runPipeline below). Created fresh at the top of every runPipeline
-  // call; fetchWithTimeout and withKeyFallback both check/listen to it so
-  // aborting mid-transcription, mid-judging, etc. actually cuts the
-  // in-flight network request rather than just hiding the loading screen
-  // while work keeps running in the background.
   let pipelineAbortController = null;
   let lastTranscriptAnnotations = null;
   let lastFactCheck = null;
   let lastRawFeedback = '';
   let lastQuestion = '';
   let lastDeliveryMetrics = null;
-  // Assembled plaintext of the Rough Draft form (see rdSubmitBtn handler),
-  // read by runPipeline in place of a transcribed recording.
   let roughDraftTranscriptText = '';
   let lastWordTimestamps = [];
-  let wordTokenSpans = []; // [{s,e,ts,te}] char offsets into lastTranscript <-> seconds into recordedBlob
+  let wordTokenSpans = [];
   let resultsVideoURL = null;
   let activeWordSpanEl = null;
-  // Auto-scroll-to-active-word is suspended the moment the user manually
-  // scrolls/touches/wheels the page, so playback never fights the user for
-  // control of the viewport. It's re-armed when they click a transcript
-  // word (an explicit "take me there/follow along again" action) or when a
-  // fresh transcript/example is rendered.
   let autoScrollToWordEnabled = true;
   let lastProgrammaticScrollAt = 0;
   function suspendAutoScrollToWord(){
-    // Ignore scroll/touch events that fire right after our own
-    // scrollIntoView call, only a scroll the user actually initiated
-    // should suspend auto-scroll.
     if(Date.now() - lastProgrammaticScrollAt < 400) return;
     autoScrollToWordEnabled = false;
   }
@@ -1964,9 +1629,8 @@ const DATA = window.APP_DATA;
   let timeSignals = JSON.parse(JSON.stringify(DEFAULT_SIGNALS));
   let overlayTimeout = null;
   let settingsOpen = false;
-  let editingIndex = -1; // index in timeSignals being edited
+  let editingIndex = -1;
 
-  // ===== ELEMENTS =====
   const liveVideo      = document.getElementById('liveVideo');
   const reviewVideo    = document.getElementById('reviewVideo');
   const playbackSection = document.getElementById('playbackSection');
@@ -2005,18 +1669,10 @@ const DATA = window.APP_DATA;
   const procProgressFill   = document.getElementById('procProgressFill');
   const procProgressPhrase = document.getElementById('procProgressPhrase');
 
-  // ===== Animated progress bar + rotating-phrase controller, used any time =====
-  // ===== an AI call is "thinking" (question generation, judging pipeline). =====
   function createProgressController(fillEl, phraseEl, colorFn){
     let target = 0, current = 0, raf = null, phraseTimer = null, phrases = [], phraseIdx = 0;
     function paint(){
       fillEl.style.width = current.toFixed(1) + '%';
-      // colorFn (when supplied) recolors the fill live by how far along it
-      // is — reuses the same red-to-green spectrum as ballot scores
-      // (colorFromRatio) rather than a fixed brand color, so the bar
-      // itself communicates "how close to done" the same way a score bar
-      // communicates "how good." Left undefined for qGenProgress, which
-      // keeps its plain CSS color.
       if(colorFn) fillEl.style.background = colorFn(current / 100);
     }
     function tick(){
@@ -2037,8 +1693,6 @@ const DATA = window.APP_DATA;
     }
     function rotatePhrase(){ phraseIdx++; showPhrase(phraseIdx); }
     return {
-      // Begin a fresh run: resets to 0%, climbs toward `capPct` (default 90) and
-      // never gets there on its own, call setStage()/finish() to move it further.
       start(initialPhrases, capPct){
         current = 0; target = (capPct === undefined ? 90 : capPct);
         paint();
@@ -2050,8 +1704,6 @@ const DATA = window.APP_DATA;
         if(phraseTimer) clearInterval(phraseTimer);
         if(phrases.length > 1) phraseTimer = setInterval(rotatePhrase, 2100);
       },
-      // Move the target percentage up (e.g. when a new pipeline stage begins),
-      // optionally swapping in a new set of phrases for that stage.
       setStage(pct, stagePhrases){
         if(Number.isFinite(pct)) target = Math.max(target, pct);
         if(stagePhrases){
@@ -2060,13 +1712,11 @@ const DATA = window.APP_DATA;
           showPhrase(0);
         }
       },
-      // Snap straight to 100% (call right before hiding the loading state).
       finish(){
         target = 100; current = 100; paint();
         if(raf) cancelAnimationFrame(raf);
         if(phraseTimer) clearInterval(phraseTimer);
       },
-      // Abort immediately (e.g. on error) without forcing 100%.
       stop(){
         if(raf) cancelAnimationFrame(raf);
         if(phraseTimer) clearInterval(phraseTimer);
@@ -2082,34 +1732,17 @@ const DATA = window.APP_DATA;
   const BODY_PIPELINE_PHRASES = DATA.BODY_PIPELINE_PHRASES || PIPELINE_PHRASES;
   const pipelineProgress = createProgressController(procProgressFill, procProgressPhrase, (ratio) => colorFromRatio(ratio));
 
-  // ===== Pipeline timeline (mirrors the .proc-tick markup in index.html,
-  // ===== positioned along the .proc-timeline-track itself) — driven from
-  // ===== the real stage transitions in runPipeline below, not a
-  // ===== separate decorative timer.
   const PROC_STEP_ORDER = ['audio', 'transcribe', 'delivery', 'judging', 'annotate', 'factcheck'];
   const PROC_STEP_DEFAULT_LABELS = {
     audio: 'Audio', transcribe: 'Transcription', delivery: 'Delivery',
     judging: 'Judging', annotate: 'Notes', factcheck: 'Verify'
   };
-  // Fuller names for the explicit "which phase, specifically" indicator —
-  // the tick captions themselves stay short since space on the bar is
-  // tight, but this line has room to spell it out plainly.
   const PROC_STEP_PHASE_NAMES = {
     audio: 'Prepping Audio', transcribe: 'Transcribing Testimony', delivery: 'Analyzing Vocal Delivery',
     judging: 'Panel Deliberating', annotate: 'Annotating Transcript', factcheck: 'Verifying Evidence'
   };
   const procTimeline = document.getElementById('procTimeline');
   const procPhaseLabel = document.getElementById('procPhaseLabel');
-  // Marks every tick before `id` as done (checkmark), `id` itself as
-  // active (pulsing line), and leaves everything after `id` pending.
-  // `label`, when given, is shown in the phase indicator above the bar
-  // (e.g. "Transcribing Testimony 42%" or "Panel Deliberating (Wave 2)")
-  // for extra specificity. The tick's own caption under the bar always
-  // stays on its plain default word (e.g. "Transcription") — it doesn't
-  // get overridden by live details like the percentage, which stays
-  // reserved for the phase label above so the tick row reads as a clean,
-  // stable set of stage names. Called with no id to reset the whole
-  // timeline (fresh pipeline run).
   function setProcStep(id, label){
     if(!procTimeline) return;
     const targetIdx = id ? PROC_STEP_ORDER.indexOf(id) : -1;
@@ -2128,9 +1761,6 @@ const DATA = window.APP_DATA;
       let detail = '';
       if(label && label.trim()){
         const t = label.trim();
-        // A bare percentage (the live transcription progress) reads
-        // directly onto the phase name with no parens/prefix — anything
-        // else (e.g. "Wave 2") still gets the parenthetical treatment.
         detail = /^\d+%$/.test(t) ? ' ' + t : ' (' + t + ')';
       }
       procPhaseLabel.textContent = (targetIdx === -1) ? '' : `${PROC_STEP_PHASE_NAMES[id]}${detail}`;
@@ -2184,7 +1814,6 @@ const DATA = window.APP_DATA;
         if(navigator.clipboard && navigator.clipboard.writeText){
           await navigator.clipboard.writeText(text);
         }else{
-          // Fallback for contexts where the async Clipboard API isn't available.
           const ta = document.createElement('textarea');
           ta.value = text;
           ta.style.position = 'fixed';
@@ -2201,9 +1830,6 @@ const DATA = window.APP_DATA;
     });
   }
   const sessionTag     = document.getElementById('sessionTag');
-  // Header used to show a static "Round 1" placeholder here — now shows
-  // today's date instead, in the same span/font/color, computed once on
-  // load since it's just a date display, not tied to round state.
   const sessionDateLabel = document.getElementById('sessionDateLabel');
   if(sessionDateLabel){
     sessionDateLabel.textContent = new Date().toLocaleDateString('en-US', { month:'long', day:'numeric', year:'numeric' });
@@ -2212,14 +1838,6 @@ const DATA = window.APP_DATA;
   const resultsContent = document.getElementById('resultsContent');
   const transcriptBody = document.getElementById('transcriptBody');
   const commentPopover = document.getElementById('commentPopover');
-  // .ballot (the card wrapping every view, including the transcript) has both
-  // `transform: rotate(...)` and `overflow:hidden`. A CSS transform on an
-  // ancestor makes that ancestor the positioning context for any
-  // position:fixed descendant (instead of the viewport), and overflow:hidden
-  // then clips it away entirely, so the popover was being positioned wrong
-  // and invisibly clipped every time. Moving it to a direct child of <body>
-  // escapes that ancestor entirely so the viewport-relative math in
-  // showCommentPopover() actually lines up with the real fixed position.
   if(commentPopover && commentPopover.parentElement !== document.body){
     document.body.appendChild(commentPopover);
   }
@@ -2238,11 +1856,6 @@ const DATA = window.APP_DATA;
   const overlayDismiss = document.getElementById('overlayDismiss');
   const settingsToggle = document.getElementById('settingsToggle');
   const settingsPanel  = document.getElementById('settingsPanel');
-  // Like commentPopover above, settingsPanel used to live inside #view-record,
-  // so it vanished whenever a different view (e.g. the example ballot) was
-  // shown, since showView() hides the whole ancestor. Moving it to a direct
-  // child of <body> and positioning it as a floating dropdown under the gear
-  // icon means it now works from any view.
   if(settingsPanel && settingsPanel.parentElement !== document.body){
     document.body.appendChild(settingsPanel);
   }
@@ -2258,53 +1871,16 @@ const DATA = window.APP_DATA;
   }
   const signalList     = document.getElementById('signalList');
   const signalCount    = document.getElementById('signalCount');
-  // ----- AI judge model picker (button + menu next to the practice-mode
-  // tabs, styled like the model switcher on LLM chat sites) -----
   const modelPicker      = document.getElementById('modelPicker');
   const modelPickerBtn   = document.getElementById('modelPickerBtn');
   const modelPickerLabel = document.getElementById('modelPickerLabel');
   const modelPickerMenu  = document.getElementById('modelPickerMenu');
   const JUDGE_MODEL_KEY = 'extemplary_judge_model';
-  // Judging models fall into a small number of "speed tiers" with very
-  // different real-world behavior: cheap/fast models (Kimi K3, DeepSeek
-  // V4 Pro, Qwen3.8, GLM 5.2, GPT-OSS 120B) finish quickly and don't
-  // benefit from spending much of their budget on hidden reasoning before
-  // writing the ballot, while the premium/slow models (Opus 5)
-  // are meaningfully better *because* they think longer, so they get more
-  // rounds and full token headroom instead of a dialed-down reasoning
-  // effort. Each tier's settings (below, TIER_PROFILES) drive the
-  // reasoning-effort override, per-round token budget, round pacing
-  // delay, and max continuation rounds used in doFetch /
-  // runHackClubChatToCompletion — see those for how `tier` gets applied.
   const TIER_PROFILES = {
-    // Fast & cheap: Kimi K3, DeepSeek V4 Pro 0813, Qwen3.8 2.4T A95B,
-    // GLM 5.2. These finish in one or two rounds once reasoning is dialed
-    // down, so a small round cap and shorter inter-round pause are both
-    // fine and keep a bad case from dragging on.
     fast:    { reasoningEffort: 'low', maxRounds: 4,  maxTokensPerRound: 24000, roundDelayMs: 500 },
-    // DeepSeek V4 Pro 0813 specifically: low reasoning effort still
-    // helps (keeps it from burning budget on hidden chain-of-thought),
-    // but in practice its ballots run far longer/more verbose per
-    // category than Kimi/Qwen/GLM's — the 'fast' tier's 4-round cap was
-    // observed hitting MAX_ROUNDS and returning a cut-off ballot with no
-    // Composite Score even with reasoning already dialed down. Gets
-    // 'fast' reasoning behavior with 'premium' round/token headroom.
     verbose: { reasoningEffort: 'low', maxRounds: 10, maxTokensPerRound: 32000, roundDelayMs: 600 },
-    // Premium & slow: Opus 5. Left to reason at their own
-    // default depth (no forced 'low' effort) since that's part of why
-    // they score higher — but that means they need much more round
-    // headroom and full per-round token budget to actually finish.
     premium: { reasoningEffort: null,  maxRounds: 12, maxTokensPerRound: 32000, roundDelayMs: 1000 },
-    // Groq-hosted GPT-OSS 120B is its own case: single buffered call (not
-    // part of the wave/continuation system at all — see STREAMING_JUDGE_FNS
-    // below), already forced to reasoning_effort 'low' where it's built.
-    // No tier needed for it; kept out of TIER_PROFILES intentionally.
   };
-  // Maps the picker's stored value to what the judging call actually
-  // needs: which edge function to hit, which model id to send, and which
-  // speed tier's settings (reasoning/rounds/tokens/pacing) apply. Keep
-  // this in sync with ALLOWED_MODELS in the hackclub-chat edge function.
-  // `label` drives the picker button text.
   const JUDGE_MODELS = {
     llama:    { fn: 'groq-chat',     model: 'openai/gpt-oss-120b',       label: 'GPT-OSS 120B' },
     opus5:    { fn: 'hackclub-chat', model: 'anthropic/claude-opus-5',   label: 'Claude Opus 5', tier: 'premium' },
@@ -2312,45 +1888,15 @@ const DATA = window.APP_DATA;
     deepseekv4pro: { fn: 'hackclub-chat', model: 'deepseek/deepseek-v4-pro-0813', label: 'DeepSeek V4 Pro', tier: 'verbose' },
     qwen38:   { fn: 'hackclub-chat', model: 'qwen/qwen3.8-2.4t-a95b',     label: 'Qwen3.8 2.4T A95B', tier: 'fast' },
     gemini37flash: { fn: 'gemini-generate', model: 'gemini-3.7-flash',   label: 'Gemini 3.7 Flash', tier: 'fast' },
-    // NVIDIA's own build.nvidia.com/NIM catalog listing for this model
-    // (docs.api.nvidia.com/nim/reference/z-ai-glm-5.2) documents a
-    // 1,000,000-token *output* context — plenty of headroom regardless of
-    // tier — but it's still a cheap/fast model in practice, so it gets
-    // the 'fast' tier's reasoning/round/pacing settings.
     glm52:    { fn: 'nvidia-chat',   model: 'z-ai/glm-5.2',              label: 'GLM 5.2', tier: 'fast' }
   };
-  // Every edge function here speaks the identical SSE-streaming +
-  // chunked-continuation protocol (TIME_BUDGET_MS server-side cutoff,
-  // the {"extemplary_continue":true} sentinel, chained rounds via
-  // runHackClubChatToCompletion) — groq-chat is the only one-shot
-  // buffered exception.
   const STREAMING_JUDGE_FNS = new Set(['hackclub-chat', 'nvidia-chat']);
   let judgeModelValue = 'llama';
-  // Different chat-completion backends shape their JSON response
-  // differently. Groq (and most OpenAI-compatible endpoints) use
-  // choices[0].message.content. Anthropic's native Messages API (which
-  // hackclub-chat may be proxying to for the Claude options) uses a
-  // content[] array of blocks instead. This tries every shape we know
-  // about so a real, billed response never gets discarded as "empty"
-  // just because of a format mismatch.
   function extractChatContent(json){
     if(!json) return '';
     const asText = (v) => {
       if(typeof v === 'string') return v.trim();
       if(Array.isArray(v)){
-        // Claude-style responses can return an array of typed content
-        // blocks — e.g. { type: 'thinking', thinking: '...' } for extended
-        // reasoning and { type: 'text', text: '...' } for the actual
-        // answer. Reasoning blocks store their content under `.thinking`,
-        // not `.text`, so reading only `.text` (as before) silently
-        // dropped the whole response whenever a model returned thinking
-        // blocks — the call succeeded and billed real tokens, but
-        // extractChatContent saw '' and the caller treated it as a
-        // failure, triggering an unnecessary fallback to Llama.
-        // Prefer real `text` blocks; only fall back to `thinking` content
-        // if no text block was present at all, so a genuinely
-        // thinking-only response still surfaces something instead of
-        // silently failing.
         const textBlocks = v
           .map(b => (typeof b === 'string' ? b : (b?.type === 'thinking' ? '' : b?.text || '')))
           .join('').trim();
@@ -2372,50 +1918,19 @@ const DATA = window.APP_DATA;
       ''
     );
   }
-  // gemini-generate proxies Google's native Generative Language API, whose
-  // response shape is { candidates: [ { content: { parts: [ {text}, ... ] },
-  // finishReason, ... } ] } — nothing like the choices[0].message.content
-  // shape extractChatContent above handles. Mirrors the candidate.content
-  // .parts parsing callGeminiWithKey/extractQuestions already use
-  // elsewhere in this file for question generation and the fact-check pass.
   function extractGeminiContent(json){
     if(!json) return '';
     const candidate = json.candidates?.[0];
     if(!candidate) return '';
     return (candidate.content?.parts || []).map(p => p.text || '').join('').trim();
   }
-  // hackclub-chat now always streams its response back as Server-Sent
-  // Events instead of one buffered JSON blob — see the comment in
-  // supabase/functions/hackclub-chat/index.ts for why (Supabase kills
-  // any edge function invocation that runs past a fixed wall-clock
-  // limit, ~150s observed, even though slow models like Opus 5 routinely
-  // take 4+ minutes and still bill/finish successfully upstream).
-  // Reading the stream and reassembling text here is what lets those
-  // slower calls actually make it back to the app instead of dying
-  // server-side before a response is ever returned.
   async function readHackClubStream(res){
     const reader = res.body.getReader();
     const decoder = new TextDecoder();
     let buffer = '';
     let text = '';
-    // Some reasoning models expose their internal reasoning under a
-    // separate field (reasoning_content / thinking) rather than the
-    // normal `content` delta. Track it separately and only fall back to
-    // it if the model genuinely never produced real answer text, same
-    // principle as the thinking-block handling in extractChatContent.
     let reasoning = '';
-    // Set when hackclub-chat's own time budget (well under Supabase's
-    // wall-clock ceiling) runs out before the model naturally finished —
-    // signaled by one synthetic sentinel line, {"extemplary_continue":true},
-    // appended right before the stream closes. Not an error: it just means
-    // the caller (runHackClubChatToCompletion below) should re-request with
-    // the partial answer fed back in and let the model keep going.
     let needsContinuation = false;
-    // Processes any complete "data: {...}" lines found in `chunk` and
-    // folds their content into text/reasoning. Shared by the main read
-    // loop and by the final flush below, so the last line read from the
-    // stream is handled identically to every other line instead of being
-    // silently dropped.
     const consumeLines = (chunk) => {
       for(const line of chunk.split('\n')){
         const trimmed = line.trim();
@@ -2429,12 +1944,6 @@ const DATA = window.APP_DATA;
         if(typeof delta.content === 'string') text += delta.content;
         if(typeof delta.reasoning_content === 'string') reasoning += delta.reasoning_content;
         if(typeof delta.thinking === 'string') reasoning += delta.thinking;
-        // OpenRouter's own streaming format (which is what Hack Club AI
-        // proxies) exposes reasoning under a plain `reasoning` field for
-        // reasoning-heavy models — Kimi K3 in particular defaults to
-        // reasoning effort "max", so without this its entire response
-        // was landing here and being silently dropped, producing an
-        // empty completion that surfaced as "model unavailable."
         if(typeof delta.reasoning === 'string') reasoning += delta.reasoning;
       }
     };
@@ -2443,57 +1952,20 @@ const DATA = window.APP_DATA;
       if(done) break;
       buffer += decoder.decode(value, {stream:true});
       const lines = buffer.split('\n');
-      buffer = lines.pop(); // last line may be a partial chunk — keep it for next read
+      buffer = lines.pop();
       consumeLines(lines.join('\n'));
     }
-    // The stream is done, but `buffer` can still hold the final line —
-    // the underlying connection has no obligation to end on a '\n', so
-    // the last SSE event (often the tail of the actual answer, right
-    // before the closing "data: [DONE]") was landing here and getting
-    // thrown away instead of parsed. Flush the decoder for any trailing
-    // multi-byte characters, then process whatever's left the same way
-    // as every other line.
     buffer += decoder.decode();
     if(buffer) consumeLines(buffer);
     return { text: text.trim(), reasoning: reasoning.trim(), needsContinuation };
   }
-  // Repeatedly calls hackclub-chat, feeding the partial answer back in as
-  // prior context whenever a call gets cut off by the server's own time
-  // budget (needsContinuation), until the model genuinely finishes or a
-  // safety cap on rounds is hit. This is what lets a single logical
-  // judging request span multiple short server invocations — each one
-  // safely under Supabase's wall-clock ceiling — instead of requiring one
-  // continuous call long enough to hold the whole thing, which isn't
-  // possible on the Free plan for slow models like Opus 5 (observed
-  // 280-300s total, well over the 150s Free-tier ceiling).
-  //
-  // `doFetch(messages)` runs one round: POST the given message list to
-  // hackclub-chat and resolve to the raw streaming Response, or throw
-  // (rate-limited / non-ok) exactly like every other call in this file —
-  // so normal withKeyFallback retry/error handling upstream still works
-  // unchanged. This function only adds the "ask it to keep going" loop
-  // on top of that.
-  // Rubric category names, used only to build a cheap "already covered"
-  // list for continuation rounds (see below) — not used for scoring.
   const RUBRIC_CATEGORY_NAMES = [
     'Creative Hook & Intro','Structure','Strength of Argument & Analysis',
     'Flaws in Reasoning','Strength of Evidence','Clarity',
     'Conclusion Strength','Speech Quality'
   ];
-  // Caps how much of the already-written answer gets resent verbatim on
-  // a continuation round. Sending the *entire* accumulated text back
-  // every round means round 2 pays for round 1's output as input tokens,
-  // round 3 pays for rounds 1+2's, etc — real, avoidable cost that grows
-  // roughly with the square of the round count, not just a straight
-  // split of one total. A bounded tail keeps the model's immediate
-  // continuation point sharp (which is what actually matters for not
-  // repeating itself or breaking mid-sentence) without re-billing
-  // everything written several rounds ago.
   const CONTINUATION_TAIL_CHARS = 6000;
   async function runHackClubChatToCompletion(doFetch, messages, onRound, tierProfile){
-    // Falls back to the old flat defaults if no tier profile is given
-    // (shouldn't happen now that every streaming-capable model has a
-    // tier, but keeps this function safe to call standalone).
     const MAX_ROUNDS = (tierProfile && tierProfile.maxRounds) || 6;
     const ROUND_DELAY_MS = (tierProfile && tierProfile.roundDelayMs) != null ? tierProfile.roundDelayMs : 800;
     let fullText = '';
@@ -2501,75 +1973,22 @@ const DATA = window.APP_DATA;
     let currentMessages = messages;
     for(let round = 0; round < MAX_ROUNDS; round++){
       if(typeof onRound === 'function'){ try{ onRound(round + 1); }catch(e){} }
-      // A short pause before every round after the first spaces out the
-      // burst of requests the continuation loop fires, which is what was
-      // tripping Supabase's platform-level rate limit (separate from our
-      // own daily-quota system) in the first place — see
-      // readRateLimitInfo above.
       if(round > 0) await new Promise(r => setTimeout(r, ROUND_DELAY_MS));
       const res = await doFetch(currentMessages);
       const { text, reasoning, needsContinuation } = await readHackClubStream(res);
-      // Safety net for a formatting bug observed across multiple models:
-      // a continuation round sometimes glues a new "### Header" (or
-      // "**Bold**" section start) directly onto the previous round's
-      // trailing text with no line break in between — e.g. "...you don't
-      // cut *reductions*### Clarity - 6/10" — which breaks markdown
-      // header/bold parsing downstream and renders as raw plaintext
-      // symbols. The continuation prompt below explicitly tells the
-      // model not to do this, but that's not reliably followed, so this
-      // inserts the missing blank line whenever it's detected, regardless
-      // of which model produced it.
       const prevEndsWithBlankLine = /\n\s*\n\s*$/.test(fullText) || fullText === '';
       const nextLooksLikeHeaderStart = /^\s*(#{1,6}\s|\*\*[A-Z0-9])/.test(text);
       fullText += (fullText && !prevEndsWithBlankLine && nextLooksLikeHeaderStart) ? ('\n\n' + text) : text;
       fullReasoning += reasoning;
-      // "Composite Score" is the one line every complete ballot always
-      // reaches (see RUBRIC_PROMPT/INTRO/BODY_RUBRIC_PROMPT — it's the
-      // second-to-last thing the model writes, right before Judge's Rank
-      // and Feedback). Previously, needsContinuation===false (i.e. the
-      // model sent a real stop, not one of our own time-budget cutoffs)
-      // was trusted outright as "done" — but a model can send a genuine
-      // stop well before actually finishing the ballot, especially on a
-      // continuation round handed a truncated tail of its own earlier
-      // output. That's exactly what was happening: round 2 would stop
-      // naturally partway through a category with no Composite Score in
-      // sight, and this loop accepted it as final. Now a natural stop
-      // only ends the loop if the ballot actually looks finished;
-      // otherwise it's treated the same as a forced continuation and
-      // given another round, same as our own time-budget cutoffs get.
       const looksComplete = /composite score/i.test(fullText);
       if(!needsContinuation && looksComplete) return fullText.trim() || fullReasoning.trim();
       if(!needsContinuation && round === MAX_ROUNDS - 1) return fullText.trim() || fullReasoning.trim();
-      // Covered-category list is a cheap substitute for re-sending
-      // everything already written — the model just needs to know which
-      // categories are done so it doesn't redo one it covered several
-      // rounds back and outside the tail window below.
       const covered = RUBRIC_CATEGORY_NAMES.filter(name => fullText.includes(name));
       const tail = fullText.length > CONTINUATION_TAIL_CHARS
         ? '…(earlier categories omitted here to save tokens — see the "already covered" list above; they are already complete, do not rewrite them)…\n\n' + fullText.slice(-CONTINUATION_TAIL_CHARS)
         : fullText;
-      // IMPORTANT: this used to inject the partial answer as a fake
-      // trailing `assistant` turn (a "prefill", asking the model to
-      // resume from exactly that text) followed by a new `user` turn
-      // asking it to continue. That silently broke on Opus 5: models
-      // running with extended thinking enabled don't support assistant
-      // message prefill — the API can reject the whole request outright
-      // when a thinking-enabled model gets a prefilled final assistant
-      // turn. Hack Club's proxy appears to swallow that rejection into
-      // an empty-but-200 response rather than surfacing a real error,
-      // which showed up as a "0 in / 0 out · Free · OK" call that
-      // produced no content at all — not a time-budget cutoff, a
-      // silently rejected request.
-      //
-      // Fix: never inject a synthetic assistant turn. Every round is a
-      // fresh, single system+user exchange — the partial answer is
-      // embedded as quoted context *inside* the user message asking for
-      // continuation, not passed off as a real prior assistant turn.
-      // This can't collide with prefill/thinking restrictions because
-      // there's no prefill involved, and it trivially satisfies strict
-      // user/assistant alternation since there's only ever one user turn.
       currentMessages = [
-        messages[0], // system prompt (rubric)
+        messages[0],
         { role:'user', content:
           messages[1].content
           + '\n\n---\n\nYou already began writing this ballot below but stopped before it was actually finished. Continue writing IMMEDIATELY after the partial content shown below, in the exact same format. Do NOT repeat, restate, quote, or re-include any of the partial content shown below in your reply — your reply should contain ONLY new content that picks up exactly where the partial content stops (mid-sentence if needed), through to the fully finished ballot (including the Composite Score, Judge\'s Rank, and Feedback section). If the partial content cuts off mid-sentence or mid-word, your reply must begin with the rest of that exact sentence/word — plain continuation text, NOT a new "### Header" or "**Bold Label:**" line. Only start a new "### Category Name" header if the partial content already ended cleanly at the close of a full category (i.e. right after that category\'s "What You Could Have Done" section) — never place a header directly against trailing text with no blank line before it.'
@@ -2578,10 +1997,6 @@ const DATA = window.APP_DATA;
         }
       ];
     }
-    // Hit the round cap without the model ever signaling it was done —
-    // return whatever was assembled so far rather than throwing, since
-    // the graceful "cut off" ballot UI already handles a partial result
-    // reasonably. This should be rare: 6 rounds is a lot of headroom.
     return fullText.trim() || fullReasoning.trim();
   }
   function getJudgeModelChoice(){
@@ -2641,7 +2056,6 @@ const DATA = window.APP_DATA;
   const sigLabel       = document.getElementById('sigLabel');
   const sigColor       = document.getElementById('sigColor');
 
-  // ===== VIEWS =====
   let viewBeforeExample = null;
   let viewBeforeBriefing = null;
   function showView(v){
@@ -2659,15 +2073,6 @@ const DATA = window.APP_DATA;
       citationOpen = false;
       document.getElementById('citationToggle')?.classList.remove('active');
     }
-    // Same cleanup pattern as exampleOpen/briefingOpen/citationOpen above —
-    // this one was missing, which is what let the icon get stuck "active"
-    // (blue) after navigating away via any path other than
-    // closeAiComparePanel() (e.g. Home, History, a fresh recording). Worse,
-    // aiCompareOpen staying true meant the *next* click on the icon called
-    // closeAiComparePanel() instead of opening it, silently jumping to
-    // whatever stale viewBeforeAiCompare had been captured last time —
-    // sometimes an old Results view, which is the "random ballot feedback"
-    // behavior being reported.
     if(v !== viewAiCompare && typeof aiCompareOpen !== 'undefined' && aiCompareOpen){
       aiCompareOpen = false;
       document.getElementById('aiCompareToggle')?.classList.remove('active');
@@ -2677,7 +2082,6 @@ const DATA = window.APP_DATA;
     document.getElementById('navHomeBtn')?.classList.toggle('active', v === viewRecord);
   }
 
-  // ===== CAMERA =====
   async function initCamera(){
     try{
       stream = await navigator.mediaDevices.getUserMedia({ video:true, audio:true });
@@ -2691,7 +2095,6 @@ const DATA = window.APP_DATA;
   }
   initCamera();
 
-  // ===== TIMER =====
   function fmt(s){
     return String(Math.floor(s/60)).padStart(2,'0') + ':' + String(s%60).padStart(2,'0');
   }
@@ -2702,9 +2105,6 @@ const DATA = window.APP_DATA;
     clockPill.classList.remove('warn','over');
 
     if(introDrillMode){
-      // Intro Drill: only the intro is recorded, so the cap is ~1 minute
-      // instead of the full 7:30 speech clock, and none of the full-speech
-      // time signals apply.
       if(elapsedSeconds >= INTRO_RECORD_CAP_SECONDS){
         fireSignalOverlay('⏹ Time Expired', fmt(elapsedSeconds), 'Introduction recording stopped automatically', '', '#a3322a');
         stopRecording();
@@ -2720,9 +2120,6 @@ const DATA = window.APP_DATA;
     }
 
     if(bodyDrillMode){
-      // Body Drill: only a single body paragraph is recorded, so the cap is
-      // ~2 minutes instead of the full 7:30 speech clock, and none of the
-      // full-speech time signals apply.
       if(elapsedSeconds >= BODY_RECORD_CAP_SECONDS){
         fireSignalOverlay('⏹ Time Expired', fmt(elapsedSeconds), 'Body point recording stopped automatically', '', '#a6790c');
         stopRecording();
@@ -2738,7 +2135,6 @@ const DATA = window.APP_DATA;
     }
 
     if(elapsedSeconds >= 450){
-      // Auto-stop at 7:30
       stopRecording();
       return;
     }
@@ -2750,12 +2146,10 @@ const DATA = window.APP_DATA;
       clockPill.classList.add('warn');
     }
 
-    // Auto-stop message
     if(elapsedSeconds === 450){
       fireSignalOverlay('⏹ Time Expired', '7:30', 'Recording stopped automatically', '', '#a3322a');
     }
 
-    // Custom time signals
     timeSignals.forEach(sig => {
       if(elapsedSeconds === sig.seconds){
         fireSignalOverlay('Time Signal', fmt(sig.seconds), sig.label, '', sig.color);
@@ -2763,7 +2157,6 @@ const DATA = window.APP_DATA;
     });
   }
 
-  // ===== SIGNAL OVERLAY =====
   function fireSignalOverlay(label, timeStr, sub, warn, color){
     clearTimeout(overlayTimeout);
     overlayLabel.textContent = label;
@@ -2773,7 +2166,6 @@ const DATA = window.APP_DATA;
     overlayWarn.textContent = warn;
     overlayCard.style.borderColor = color || '#fff';
     signalOverlay.classList.add('visible');
-    // Auto-dismiss after 3s (except 7:30 stop)
     overlayTimeout = setTimeout(dismissOverlay, 3000);
   }
 
@@ -2786,7 +2178,6 @@ const DATA = window.APP_DATA;
     if(e.target === signalOverlay || e.target.classList.contains('overlay-backdrop')) dismissOverlay();
   });
 
-  // ===== RECORDING =====
   function pickMimeType(){
     const candidates = ['video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm','video/mp4'];
     for(const c of candidates){
@@ -2844,7 +2235,6 @@ const DATA = window.APP_DATA;
   function onRecordingStopped(){
     recordedBlob = new Blob(chunks,{type:recordedMime});
     reviewVideo.src = URL.createObjectURL(recordedBlob);
-    // Release the shared tab/screen now that it's been captured into recordedBlob.
     if(captureMode === 'capture' && captureStream){
       captureStream.getTracks().forEach(t=>{ try{ t.stop(); }catch(e){} });
       captureStream = null;
@@ -2858,41 +2248,22 @@ const DATA = window.APP_DATA;
     showView(viewRecord);
   });
 
-  // ===== UPLOAD VIDEO INSTEAD OF RECORDING =====
   const uploadVideoBtn   = document.getElementById('uploadVideoBtn');
   const uploadVideoInput = document.getElementById('uploadVideoInput');
   const uploadError      = document.getElementById('uploadError');
 
-  // ===== DRAWN QUESTION: custom entry vs AI-generated =====
-  let questionMode = null; // null | 'custom' | 'generated'
+  let questionMode = null;
   let lastGenCategory = null;
 
-  // ===== INTRO DRILL MODE / BODY DRILL MODE =====
-  // When Intro Drill is active: after a question is confirmed, a 5-minute
-  // prep countdown auto-starts (pause/skip/exit available). Recording is
-  // then capped at ~1 minute and graded with a trimmed rubric (hook/link/
-  // thesis, clarity, and vocal delivery only, no body/conclusion/evidence
-  // categories).
-  // When Body Drill is active: same shape, but a 10-minute prep countdown
-  // and a recording cap of ~2 minutes, capturing just a single body
-  // paragraph, graded with a trimmed rubric (structure, argument/analysis,
-  // reasoning, evidence, clarity, and vocal delivery, no hook/intro or
-  // conclusion categories).
-  // practiceMode is the single source of truth for which of the three
-  // modes is active; introDrillMode/bodyDrillMode below are kept as
-  // convenience booleans derived from it so existing call sites reading
-  // "introDrillMode" keep working unchanged.
-  let practiceMode = 'regular'; // 'regular' | 'introdrill' | 'bodydrill' | 'roughdraft'
+  let practiceMode = 'regular';
   let introDrillMode = false;
   let bodyDrillMode = false;
   let roughDraftMode = false;
   const INTRO_PREP_SECONDS = 5 * 60;
-  const INTRO_RECORD_CAP_SECONDS = 65; // ~1 minute, with a few seconds of grace
+  const INTRO_RECORD_CAP_SECONDS = 65;
   const BODY_PREP_SECONDS = 10 * 60;
-  const BODY_RECORD_CAP_SECONDS = 125; // ~2 minutes, with a few seconds of grace
+  const BODY_RECORD_CAP_SECONDS = 125;
   const REGULAR_PREP_SECONDS = 30 * 60;
-  // Rough Draft's prep length is chosen by the user (10-15 minutes) rather
-  // than fixed, so this is just the default shown before they pick.
   const ROUGHDRAFT_DEFAULT_PREP_MINUTES = 10;
   let regularPrepSecondsLeft = REGULAR_PREP_SECONDS;
   let regularPrepRunning = false;
@@ -2998,8 +2369,6 @@ const DATA = window.APP_DATA;
     startTimerBtn.classList.toggle('mode-introdrill', introDrillMode);
     startTimerBtn.classList.toggle('mode-bodydrill', bodyDrillMode);
     startTimerBtn.classList.toggle('mode-roughdraft', roughDraftMode);
-    // Swap the camera/record stage for the plaintext rough-draft form (and
-    // back) whenever the mode changes.
     if(roughDraftFormBlock) roughDraftFormBlock.classList.toggle('hidden', !roughDraftMode);
     if(recordStageEl) recordStageEl.classList.toggle('hidden', roughDraftMode);
     if(recordControlsRowEl) recordControlsRowEl.classList.toggle('hidden', roughDraftMode);
@@ -3024,7 +2393,7 @@ const DATA = window.APP_DATA;
   }
 
   function switchPracticeMode(mode){
-    if(recorder && recorder.state === 'recording') return; // don't toggle mid-recording
+    if(recorder && recorder.state === 'recording') return;
     if(mode === practiceMode) return;
     setPracticeMode(mode);
     recordedBlob = null;
@@ -3037,9 +2406,6 @@ const DATA = window.APP_DATA;
   modeBodyDrillBtn.addEventListener('click', () => switchPracticeMode('bodydrill'));
   modeRoughDraftBtn.addEventListener('click', () => switchPracticeMode('roughdraft'));
 
-  // ---- Regular Practice prep timer (30:00 countdown), mirrors the Intro
-  // and Body Drill prep timer functions below, just with its own state/DOM
-  // and only ever opened by the "Start Timer" button, never automatically. ----
   function fmtRegularPrep(s){
     const m = Math.floor(s/60), sec = s%60;
     return m + ':' + String(sec).padStart(2,'0');
@@ -3181,8 +2547,6 @@ const DATA = window.APP_DATA;
     startIntroPrepTimer();
   }
 
-  // ---- Body Drill prep timer (10:00 countdown), mirrors the Intro Drill
-  // prep timer functions above exactly, just with its own state/DOM. ----
   function fmtBodyPrep(s){
     const m = Math.floor(s/60), sec = s%60;
     return m + ':' + String(sec).padStart(2,'0');
@@ -3254,10 +2618,6 @@ const DATA = window.APP_DATA;
     startBodyPrepTimer();
   }
 
-  // ---- Rough Draft prep timer (10:00-15:00 countdown, user's choice),
-  // mirrors the Intro/Body Drill prep timer functions above, except the
-  // modal first shows a minute picker (roughDraftPrepChooseRow) before the
-  // countdown itself starts, since the length isn't fixed. ----
   function fmtRoughDraftPrep(s){
     const m = Math.floor(s/60), sec = s%60;
     return m + ':' + String(sec).padStart(2,'0');
@@ -3321,8 +2681,6 @@ const DATA = window.APP_DATA;
     roughDraftPrepModal.classList.add('hidden');
     setPracticeMode('regular');
   });
-  // The user picks a 10-15 minute prep length before the countdown starts,
-  // since (unlike the other two drills) Rough Draft prep isn't fixed.
   roughDraftPrepBeginBtn.addEventListener('click', () => {
     const mins = Math.min(15, Math.max(10, parseInt(roughDraftPrepMinutesSel.value, 10) || ROUGHDRAFT_DEFAULT_PREP_MINUTES));
     roughDraftPrepSeconds = mins * 60;
@@ -3343,21 +2701,11 @@ const DATA = window.APP_DATA;
     roughDraftPrepPauseBtn.classList.add('hidden');
     roughDraftPrepResumeBtn.classList.add('hidden');
     roughDraftPrepPhrase.textContent = '';
-    // Hidden (rather than just empty) during the "choose your prep
-    // length" step, since an empty-but-still-laid-out phrase line plus
-    // an all-buttons-hidden timer-btn-row underneath it was exactly the
-    // "too much empty space" the modal used to show before a length was
-    // picked and the countdown actually started.
     roughDraftPrepPhrase.classList.add('hidden');
     roughDraftPrepModal.classList.remove('hidden');
   }
 
   const QUESTION_EXAMPLES = DATA.QUESTION_EXAMPLES;
-  // Difficulty scale for the "Receive a Question" flow. Index 0 = Easy,
-  // 1 = Medium, 2 = Hard. Each level carries prompt instructions (fed to
-  // Gemini alongside the category) plus a static example question shown
-  // next to the slider so the user knows what that difficulty looks like
-  // before drafting. Falls back to a safe default set if data.js is old.
   const DIFFICULTY_LEVELS = DATA.DIFFICULTY_LEVELS || [
     { label:'Extremely Easy', instructions:'Keep this an EXTREMELY EASY question — the simplest possible tier, built around a universal, unmistakable current trend or topic that virtually every American adult would recognize on sight, requiring zero specific names, dates, or policy detail.', example:'Is artificial intelligence making American workers more productive?' },
     { label:'Very Easy', instructions:'Keep this a VERY EASY question, built around a major, front-page current event or globally recognized leader that almost anyone would know, with no specific policy detail required.', example:'Will inflation continue to cool in the United States this year?' },
@@ -3504,13 +2852,6 @@ Output ONLY this JSON, nothing else: {"questions":["...","...","..."]}`;
   qModeCustomBtn.addEventListener('click', () => setQuestionMode('custom'));
   qModeReceiveBtn.addEventListener('click', () => setQuestionMode('generated'));
 
-  // In custom-question mode, Intro Drill's prep countdown should start as
-  // soon as the user finishes typing their question, mirrors the
-  // AI-generated path's confirmGeneratedQuestion() trigger.
-  // Timers no longer auto-start when the question input loses focus. The
-  // user now starts prep explicitly via the "Start Timer" button next to
-  // the practice mode switch (see startSelectedTimer() below).
-
   ['qModeChangeFromCustom','qModeChangeFromCat','qModeChangeFromPick','qModeChangeFromConfirmed'].forEach(id => {
     const el = document.getElementById(id);
     if(el) el.addEventListener('click', (e) => { e.preventDefault(); setQuestionMode(null); });
@@ -3518,7 +2859,7 @@ Output ONLY this JSON, nothing else: {"questions":["...","...","..."]}`;
 
   document.querySelectorAll('.q-cat-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      if(qGenBusy) return; // ignore clicks while a generation is already in flight or cooling down
+      if(qGenBusy) return;
       document.querySelectorAll('.q-cat-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       selectedCategory = btn.dataset.cat;
@@ -3532,17 +2873,12 @@ Output ONLY this JSON, nothing else: {"questions":["...","...","..."]}`;
 
   document.getElementById('qRegenLink').addEventListener('click', (e) => {
     e.preventDefault();
-    if(qGenBusy) return; // ignore clicks while a generation is already in flight or cooling down
+    if(qGenBusy) return;
     if(lastGenCategory) generateQuestions(lastGenCategory, lastGenDifficultyIdx);
   });
 
-  // Guards against the exact failure mode that was happening: rapid/duplicate
-  // clicks firing multiple overlapping generateQuestions() calls, each kicking
-  // off its own up-to-9-request cascade, all stacking into the same shared
-  // per-minute token budget at once. While qGenBusy is true, the category
-  // buttons and "Draft 3 new questions" link are both inert.
   let qGenBusy = false;
-  const Q_GEN_COOLDOWN_MS = 20000; // stay locked briefly after success/failure too
+  const Q_GEN_COOLDOWN_MS = 20000;
 
   function setQGenBusy(busy, cooldownMs){
     qGenBusy = busy;
@@ -3554,23 +2890,14 @@ Output ONLY this JSON, nothing else: {"questions":["...","...","..."]}`;
       b.style.opacity = busy ? '0.5' : '';
     });
     if(!busy && cooldownMs){
-      // After a request resolves, keep the lock briefly so a quick double-tap
-      // can't immediately re-trigger another cascade before the per-minute
-      // window has had a chance to recover.
       qGenBusy = true;
       btns.forEach(b => { if(b){ b.style.pointerEvents = 'none'; b.style.opacity = '0.5'; } });
       setTimeout(() => setQGenBusy(false, 0), cooldownMs);
     }
   }
 
-  // Question generation uses Gemini (Google AI Studio) with the built-in
-  // Google Search grounding tool. The real Gemini key never lives in this
-  // file, it's a Supabase secret, and this call goes through the
-  // `gemini-generate` edge function proxy (see SUPABASE_URL below).
   const GEMINI_MODEL = 'gemini-3.7-flash';
 
-  // Gemini calls go through the edge function's own server-side keys, 
-  // there's no user-supplied override key anymore.
   function geminiKeyList(){
     return [];
   }
@@ -3613,10 +2940,6 @@ Output ONLY this JSON, nothing else: {"questions":["...","...","..."]}`;
         err.count = info.currentCount ?? fallback.count; err.limit = info.usageLimit ?? fallback.limit;
         throw err;
       }
-      // Not our app's own quota (see readRateLimitInfo) — most likely
-      // Supabase's platform-level rate limit. Throw a plain transient
-      // error (no .rateLimited flag) so this gets retried instead of
-      // shown as a fake "you hit your limit" toast.
       throw new Error('platform_rate_limited:429:'+JSON.stringify(info).slice(0,200));
     }
     if(!res.ok){
@@ -3630,8 +2953,6 @@ Output ONLY this JSON, nothing else: {"questions":["...","...","..."]}`;
     return candidate;
   }
 
-  // Tries each available override key in order, then lets the edge function
-  // fall back through its own server-side keys if none are supplied/work.
   async function callGemini(prompt, maxOutputTokens, category){
     const keys = geminiKeyList();
     if(!keys.length) return await callGeminiWithKey(prompt, null, maxOutputTokens, category);
@@ -3659,9 +2980,6 @@ Output ONLY this JSON, nothing else: {"questions":["...","...","..."]}`;
         ? data.questions.filter(q => typeof q === 'string' && q.trim()).map(q => q.trim())
         : [];
     }catch(parseErr){
-      // Response was likely truncated or had stray text around the JSON, 
-      // fall back to pulling out individual quoted strings directly rather
-      // than failing the whole generation.
       const strMatches = [...cleaned.matchAll(/"((?:[^"\\]|\\.)*)"/g)].map(m => m[1].replace(/\\"/g,'"').trim());
       questions = strMatches.filter(q => q.length > 15 && q.includes('?'));
     }
@@ -3695,8 +3013,6 @@ Output ONLY this JSON, nothing else: {"questions":["...","...","..."]}`;
     try{
       const candidate = await callGemini(prompt, 3200, 'question_generator');
       questions = extractQuestions(candidate);
-      // groundingMetadata is present when Gemini actually used Google Search;
-      // use that to decide whether to show the "unverified" warning.
       const grounding = candidate.groundingMetadata;
       searchVerified = !!(grounding && (grounding.webSearchQueries?.length || grounding.groundingChunks?.length));
     }catch(err){
@@ -3759,13 +3075,6 @@ Output ONLY this JSON, nothing else: {"questions":["...","...","..."]}`;
     questionInput.classList.remove('error');
   }
 
-  // ===== TOURNAMENT BRIEFING =====
-  // Gives someone with a tournament coming up a quick, Gemini-drafted (with
-  // live Google Search grounding) rundown of recent domestic, international,
-  // and economic news, plus the kinds of questions/angles likely to show up
-  // at extemp that day, tuned by how soon their tournament actually is.
-  // Opens in place of the Official Practice Ballot, the same way the
-  // helpToggle ("?") button swaps in the example ballot.
   const briefingToggle    = document.getElementById('briefingToggle');
   const briefingBackBtn   = document.getElementById('briefingBackBtn');
   const briefingBackBtn2  = document.getElementById('briefingBackBtn2');
@@ -3788,7 +3097,7 @@ Output ONLY this JSON, nothing else: {"questions":["...","...","..."]}`;
   const bfProgress = createProgressController(bfProgressFill, bfProgressPhrase);
   const BF_PHRASES = DATA.BF_PHRASES;
 
-  let bfTiming = null; // 'today' | 'tomorrow' | 'custom'
+  let bfTiming = null;
   let bfBusy = false;
   let briefingOpen = false;
   let lastBriefingRaw = '';
@@ -3836,8 +3145,6 @@ Output ONLY this JSON, nothing else: {"questions":["...","...","..."]}`;
     });
   });
 
-  // Turns the chosen timing into a plain-language description for the prompt,
-  // e.g. "in a few hours (today)" or "on Saturday, July 4, 2026".
   function describeBriefingTiming(){
     const now = new Date();
     if(bfTiming === 'today'){
@@ -3881,12 +3188,6 @@ Write a brief but comprehensive briefing in exactly this plain-text structure (u
 Formatting rules: plain text only, with the sole exception of wrapping key terms in "**double asterisks**" as instructed above — do not bold the label itself, do not use any other markdown, no numbered lists, no intro or closing remarks, no text before "## Domestic" or after the last bullet. Keep the whole thing tight enough to read in under 4-5 minutes.`;
   }
 
-  // Very small, purpose-built markdown-ish renderer for the specific
-  // "## Header" / "- Label: description with **key terms**" shape we asked
-  // Gemini to produce. Not a general markdown parser, just enough to make
-  // the briefing readable: the label becomes a bolded link to a Google
-  // search for that topic, and any "**...**" spans in the description
-  // become bolded key terms (asterisks never shown literally).
   function boldInlineMd(escapedText){
     return escapedText.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
   }
@@ -3899,8 +3200,6 @@ Formatting rules: plain text only, with the sole exception of wrapping key terms
     let inList = false;
     function closeList(){ if(inList){ html += '</ul>'; inList = false; } }
     function formatBullet(text){
-      // Pull out a leading "Label:" (optionally wrapped in stray asterisks)
-      // and turn it into a bolded link to a Google search for that topic.
       const labelMatch = text.match(/^\*{0,2}([^*:]{2,80}?)\*{0,2}:\s*([\s\S]*)$/);
       if(labelMatch){
         const label = labelMatch[1].trim();
@@ -4007,13 +3306,6 @@ Formatting rules: plain text only, with the sole exception of wrapping key terms
     bfError.style.display = 'none';
   });
 
-  // ===== CITATION CHECKER =====
-  // Verifies a specific claim-and-source pair (e.g. "On May 23rd, 2026,
-  // Trump said inflation went down 25%, according to CNN") using Gemini +
-  // live Google Search grounding, the same edge-function-backed
-  // callGemini() used by question generation and the tournament briefing
-  // above. Opens in place of the Official Practice Ballot, the same way
-  // helpToggle/briefingToggle do.
   const citationToggle    = document.getElementById('citationToggle');
   const citationBackBtn   = document.getElementById('citationBackBtn');
   const citationBackBtn2  = document.getElementById('citationBackBtn2');
@@ -4105,10 +3397,6 @@ Grading rules:
 - Never fabricate a URL — only include sourceUrl if it's a real link you found via search, and leave it as an empty string otherwise.`;
   }
 
-  // Parses Gemini's JSON verdict, and, critically, never trusts a
-  // model-typed URL at face value: it's only shown to the user if it
-  // actually matches one of the real links Google Search grounding
-  // surfaced for this request (candidate.groundingMetadata.groundingChunks).
   function extractCitationVerdict(candidate){
     const raw = (candidate.content?.parts || []).map(p => p.text || '').join('').trim();
     let cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '').trim();
@@ -4137,14 +3425,6 @@ Grading rules:
     };
   }
 
-  // ===== POST-BALLOT FACT-CHECK PASS =====
-  // The judging model is now explicitly told NOT to verify evidence (see
-  // EVIDENCE_TRUTH_ASSUMPTION_NOTE below) — it assumes every citation is
-  // true and grades citation PRACTICE only. This independent pass covers
-  // the actual truth-checking afterward, via Gemini + Google Search
-  // grounding, the same way the Citation Checker tool does. It never
-  // blocks or changes the ballot's score — it's purely informational and
-  // rendered in its own clearly-labeled section.
   function buildFactCheckPrompt(transcript){
     return `You are a rigorous, neutral fact-checker reviewing every piece of evidence used in a competitive speech transcript.
 
@@ -4181,11 +3461,6 @@ Grading rules per claim:
     const groundedUrls = (candidate.groundingMetadata?.groundingChunks || [])
       .map(c => c?.web?.uri).filter(Boolean);
     const claims = Array.isArray(data.claims) ? data.claims : [];
-    // Speeches can legitimately cite a couple dozen distinct sources —
-    // this used to cap at 10 (and the prompt itself said "up to 8 most
-    // significant"), which silently dropped citations instead of
-    // covering every one made in the speech. 40 is just a sanity
-    // ceiling against a runaway/malformed response, not a real target.
     return claims.slice(0, 40).map(c => {
       const verdict = ['true','false','unverified'].includes(c.verdict) ? c.verdict : 'unverified';
       let sourceUrl = typeof c.sourceUrl === 'string' ? c.sourceUrl.trim() : '';
@@ -4202,42 +3477,18 @@ Grading rules per claim:
     }).filter(c => c.claim);
   }
 
-  // Never blocks or fails the ballot's score. Unlike the first version of
-  // this, it does NOT swallow failures silently — it returns a tagged
-  // result so buildFactCheckHtml can always render *something* (success
-  // with claims, success with none found, or a visible "this failed"
-  // note) instead of the section just quietly not appearing, which made
-  // failures indistinguishable from "nothing to check."
-  //
-  // Retries added after a live failure surfaced a Supabase Edge Function
-  // error — "gemini_failed:546:...WORKER_RESOURCE_LIMIT...Function
-  // failed due to not having enough compute resources" — that was being
-  // shown to the user as a permanent, one-shot failure. A 546/compute-
-  // resource error is a transient infrastructure hiccup on Supabase's
-  // side (the function's container ran out of resources for that one
-  // invocation), not a real problem with the transcript or a genuine
-  // quota block — callGemini() made exactly one attempt with no retry at
-  // all, since geminiKeyList() always returns [] now (server-side keys
-  // only), so any transient failure was immediately fatal. This retries
-  // up to 3 times with a short backoff before giving up, and still gives
-  // up immediately on a real rate-limit (retrying that would just waste
-  // the user's daily cap allowance for nothing).
   async function runFactCheckPass(transcript){
     if(!transcript || !transcript.trim()) return { claims: [], failed: false };
     const MAX_ATTEMPTS = 3;
     let lastErr = null;
     for(let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++){
       try{
-        // Raised from 2600 — a speech with 15-20+ citations (typical for a
-        // dense extemp round) needs real room for that many full
-        // claim/source/explanation entries in the JSON output without
-        // getting truncated mid-response.
         const candidate = await callGemini(buildFactCheckPrompt(transcript), 6000, 'citation_checker');
         return { claims: extractFactCheckClaims(candidate), failed: false };
       }catch(e){
         lastErr = e;
-        if(e && e.pipelineCancelled) throw e; // user cancelled — stop immediately, no retries
-        if(e && e.rateLimited) break; // real daily-cap block — retrying can't help, and would just burn more of the user's quota
+        if(e && e.pipelineCancelled) throw e;
+        if(e && e.rateLimited) break;
         if(attempt < MAX_ATTEMPTS) await new Promise(r => setTimeout(r, 2000 * attempt));
       }
     }
@@ -4252,9 +3503,6 @@ Grading rules per claim:
     return String(s || '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
   }
 
-  // Accepts either the current shape ({claims, failed, reason}) or the
-  // plain array shape used by the very first version of this feature, so
-  // older saved history entries still render correctly.
   function buildFactCheckHtml(factCheck){
     if(!factCheck) return '';
     const normalized = Array.isArray(factCheck) ? { claims: factCheck, failed: false } : factCheck;
@@ -4272,9 +3520,6 @@ Grading rules per claim:
     }
     const verdictLabel = v => v === 'true' ? 'TRUE' : v === 'false' ? 'FALSE' : 'UNVERIFIED';
     const rows = claims.map(c => {
-      // Prefer turning the "Cited source: ..." line itself into the link
-      // when we have a real URL; only fall back to a separate raw-link
-      // line if for some reason there's a URL but no source name to attach it to.
       const sourceLine = c.source
         ? (c.sourceUrl
             ? `<div style="font-size:12px;color:var(--slate);margin-bottom:4px;"><b>Cited source:</b> <a href="${escFactCheckHtml(c.sourceUrl)}" target="_blank" rel="noopener noreferrer">${escFactCheckHtml(c.source)}</a></div>`
@@ -4374,8 +3619,6 @@ Grading rules per claim:
     ccError.style.display = 'none';
   });
 
-  // Turns the raw "## Header" / "- Label: **key** term" text into clean,
-  // asterisk-free plain text for copying or printing to PDF.
   function formatBriefingPlainText(raw){
     const lines = String(raw||'').replace(/\r\n/g,'\n').split('\n');
     let out = [];
@@ -4402,8 +3645,6 @@ Grading rules per claim:
       await navigator.clipboard.writeText(text);
       showToast('Briefing copied to clipboard');
     }catch(e){
-      // Clipboard API can be blocked (e.g. non-HTTPS or embedded preview), 
-      // fall back to a temporary textarea + execCommand copy.
       const ta = document.createElement('textarea');
       ta.value = text;
       ta.style.position = 'fixed';
@@ -4494,7 +3735,7 @@ Grading rules per claim:
 
   uploadVideoBtn.addEventListener('click', () => {
     uploadError.classList.add('hidden');
-    const q = requireQuestion(); // same required-question check as recording
+    const q = requireQuestion();
     if(!q) return;
     uploadVideoInput.click();
   });
@@ -4522,7 +3763,7 @@ Grading rules per claim:
 
   uploadVideoInput.addEventListener('change', () => {
     const file = uploadVideoInput.files && uploadVideoInput.files[0];
-    uploadVideoInput.value = ''; // allow re-selecting the same file later
+    uploadVideoInput.value = '';
     if(!file) return;
     const q = requireQuestion();
     if(!q) return;
@@ -4541,7 +3782,6 @@ Grading rules per claim:
     showView(viewReview);
   });
 
-  // ===== CAPTURE A YOUTUBE VIDEO (via tab/screen share, no scraping/downloading) =====
   const youtubeUrlInput   = document.getElementById('youtubeUrl');
   const captureYoutubeBtn = document.getElementById('captureYoutubeBtn');
   const youtubePopover    = document.getElementById('youtubePopover');
@@ -4608,7 +3848,7 @@ Grading rules per claim:
 
   youtubeGoBtn.addEventListener('click', async () => {
     captureError.classList.add('hidden');
-    const q = requireQuestion(); // same required-question check as recording
+    const q = requireQuestion();
     if(!q){ youtubeQuestionError.style.display = 'block'; return; }
     youtubeQuestionError.style.display = 'none';
 
@@ -4643,7 +3883,6 @@ Grading rules per claim:
       liveVideo.srcObject = captureStream;
       recBtn.disabled = false;
       captureStatus.classList.remove('hidden');
-      // If sharing is stopped from the browser's native "Stop sharing" UI, fall back to the camera.
       const vTrack = captureStream.getVideoTracks()[0];
       if(vTrack) vTrack.addEventListener('ended', revertToCamera);
     }catch(e){
@@ -4654,7 +3893,6 @@ Grading rules per claim:
 
   stopCaptureBtn.addEventListener('click', revertToCamera);
 
-  // ===== SETTINGS PANEL =====
   let settingsPositioned = false;
   settingsToggle.addEventListener('click', (e) => {
     e.stopPropagation();
@@ -4676,7 +3914,6 @@ Grading rules per claim:
   });
   window.addEventListener('resize', () => { if(settingsOpen) positionSettingsPanel(); });
 
-  // ===== PREP TIMER (30-minute countdown) =====
   const timerToggle    = document.getElementById('timerToggle');
   const timerPanel     = document.getElementById('timerPanel');
   const timerBadge     = document.getElementById('timerBadge');
@@ -4700,15 +3937,8 @@ Grading rules per claim:
     timerPanel.style.top = (rect.bottom + 8) + 'px';
   }
 
-  // ===== Keyboard shortcuts panel =====
   const shortcutsToggle = document.getElementById('shortcutsToggle');
   const shortcutsPanel  = document.getElementById('shortcutsPanel');
-  // Like settingsPanel/commentPopover above, shortcutsPanel used to live
-  // inside #view-record, so it never appeared when a different view (e.g.
-  // Citation Checker, Tournament Briefing, My History) was the active one,
-  // since showView() hides that whole ancestor. Moving it to a direct child
-  // of <body> means it now always opens in front, regardless of which view
-  // is currently showing.
   if(shortcutsPanel && shortcutsPanel.parentElement !== document.body){
     document.body.appendChild(shortcutsPanel);
   }
@@ -4745,7 +3975,6 @@ Grading rules per claim:
   });
   window.addEventListener('resize', () => { if(shortcutsOpen) positionShortcutsPanel(); });
 
-  // ===== Grading Rubric panel (icon lives on the ballot paper itself) =====
   const rubricToggle     = document.getElementById('rubricToggle');
   const rubricPanel      = document.getElementById('rubricPanel');
   const rubricModeBar    = document.getElementById('rubricModeBar');
@@ -4765,9 +3994,6 @@ Grading rules per claim:
     rubricPanel.style.right = right + 'px';
     rubricPanel.style.top = (rect.bottom + 8) + 'px';
   }
-  // Swaps which of the two tables is shown and colors/labels the header bar
-  // to match, used both for the real practice mode (Home page) and for
-  // someone just browsing a rubric for reference (every other page).
   function displayRubricMode(mode){
     const isIntro = mode === 'introdrill';
     const isBody = mode === 'bodydrill';
@@ -4789,10 +4015,6 @@ Grading rules per claim:
   function openRubricPanel(){
     rubricOpen = true;
     positionRubricPanel();
-    // On the Home page the practice mode switch is the real control, so the
-    // rubric just mirrors it (no dropdown needed). Everywhere else, offer
-    // the dropdown so the rubric can be browsed independent of whichever
-    // mode was last practiced in.
     const onHome = currentViewEl === viewRecord;
     rubricModeSelect.classList.toggle('hidden', onHome);
     rubricModeBar.classList.toggle('browsable', !onHome);
@@ -4819,15 +4041,6 @@ Grading rules per claim:
   });
   window.addEventListener('resize', () => { if(rubricOpen) positionRubricPanel(); });
 
-  // ===== LLM Model Rankings page (icon sits left of the rubric icon on
-  // the ballot paper) — opens as its own page on the paper, the same
-  // way the briefingToggle button swaps in the Tournament Briefing
-  // view, instead of an anchored popup. =====
-  // Sample judge ballots shown when a row in the LLM Model Rankings panel
-  // is clicked (see aiCompareToggle / openAiComparePanel below). Real
-  // ballots this app generated with each model, on the identical
-  // transcript/question, so the difference in feedback quality/depth
-  // between models is visible side by side rather than just claimed.
   const AI_MODEL_EXAMPLE_BALLOTS = {
     opus5: "EXTEMPLARY \u2014 OFFICIAL PRACTICE BALLOT\nRound 1\nQUESTION: How will the Green New Deal influence future environmental legislation?\n\n### Creative Hook & Intro - 7/8\n**What Worked:**\n1) The AGD is genuinely original rather than a recycled quote or statistic \u2014 the mispronunciation runner (\"One cable pundit called her Alessandra Oxycontin\") is memorable and topical, and the Lou Dobbs aside (\"the paradigm of journalistic integrity\") lands sarcasm without editorializing at length.\n2) The link is one of the tightest I've heard from an AGD of this type: the pivot from \"we commonly know her as AOC\" to \"there are three letters also attached to her name, GND\" converts the joke's own mechanic \u2014 letters and names \u2014 into the topic. That's a structural link, not a bolted-on one.\n3) The thesis is explicit and flowable: \"The answer simply is that it will serve as the bedrock for future environmental legislation.\" A judge can write that down in one line.\n4) The intro establishes genuine background stakes with dated evidence rather than asserting urgency \u2014 The Atlantic, June 12, 2019 on the \"14-page white paper congressional resolution,\" plus the New Consensus policy-agenda-by-2020 detail, gives the round real orientation.\n**Critical Flaws:**\n1) The preview breaks its own numbering. You say \"First, by forcing bipartisan action on climate mitigation. more broadly by addressing the critical concept of environmental justice, and finally...\" \u2014 the second point is marked with \"more broadly,\" not \"second,\" which forces a judge to guess whether that's a new main point or a subpoint of point one.\n2) The intro is severely bloated at ~23% of the speech (see Structure timing) largely because of a digression that does no work: \"We face crises around the world, in Sudan and Yemen, but this is a crisis of the natural world.\" Sudan and Yemen are never mentioned again, and the sentence implies a hierarchy of suffering you neither defend nor need.\n3) The Scientific American statistic is orphaned: \"emissions rose by 3.8%\" \u2014 over what period, in what country, from what baseline? As delivered, a judge cannot tell whether that's global 2018 CO2 or U.S. power-sector emissions, which drains the number of impact.\n**What You Could Have Done:**\n1) \"First, by forcing bipartisan action on climate mitigation. Second, by addressing the critical concept of environmental justice, and finally, and perhaps most importantly, by leading to a new global paradigm on climate policy.\"\n2) \"In fact, we see in an article from the Scientific American from January of this year that emissions rose by 3.8%. ~~We face crises around the world, in Sudan and Yemen, but this is a crisis of the natural world.~~ And that's exactly why for everyone in this room, we have to ask today's question.\"\n3) \"...that U.S. carbon emissions rose by 3.8% in 2018 alone \u2014 the sharpest single-year jump in eight years, and all of it after we walked away from Paris.\"\n\n### Structure - 8/10\n**What Worked:**\n1) Every skeletal element is present and correctly sequenced: single AGD, link, thesis, three-point preview, three bodies, conclusion. Nothing is blurred or missing.\n2) Each body point opens with its own mini-attention-getter before the signpost \u2014 the nickel joke (\"If I had a nickel for every time they said innovation, I'd be able to pay for the $93 trillion Green New Deal\"), the \"the climate movement is right, they're also very white\" line, and the IPCC deadpan (\"sat very apathetically at a table much like yours and said, we're all going to die\"). This is an advanced stylistic pattern that keeps energy from sagging at each seam.\n3) The body 2\u2192body 3 transition is explicitly signposted and hierarchical: \"Finally, and perhaps most importantly,\" which matches the preview's own language and tells the judge exactly where they are.\n4) The conclusion does more than summarize \u2014 the \"Y-E-A\" close is a deliberate echo of the AGD's three-letters mechanic, not a generic restatement.\n**Critical Flaws:**\n1) The body 1\u2192body 2 transition signposts position but supplies no logical bridge: \"Secondly, we have to look more broadly to the question of environmental justice.\" Nothing connects Republican counterproposals to justice \u2014 the two points sit adjacent rather than building.\n2) The AGD's throughline goes silent through the entire middle of the speech. The AOC framing resurfaces once in body 3 (\"Alexandria Ocasio-Cortez's accessibility with it\"), but the mispronunciation gag \u2014 the actual hook \u2014 never returns until the final ten seconds, so the callback structure is start-and-end only.\n3) TIMING BREAKDOWN (word-count-based, mapped onto the 470s recording): Introduction: ~23%, approximately 109s. Body 1: ~26%, approximately 122s. Body 2: ~24%, approximately 114s. Body 3: ~20%, approximately 95s. Conclusion: ~6%, approximately 30s. Against the 14/26/26/26/7 benchmark, the intro runs nearly 9 points hot (~45 extra seconds of background) while body 3 runs 6 points light. The competitive cost is directly visible: body 3 is where you needed to argue that the GND supplies the mechanism Paris lacks, and you never had the time to do it.\n4) The conclusion's \"So What?\" is a joke, not a resolution. \"AOC might have a complicated name, but there are only three letters we need to learn... Y-E-A\" is charming, but it delivers no final insight about why a bedrock resolution matters to the judge in the room.\n**What You Could Have Done:**\n1) \"Secondly, we have to look more broadly to the question of environmental justice \u2014 because forcing Republicans to the table only matters if what's on the table reaches the people already breathing the consequences.\"\n2) \"...but Alexandria Ocasio-Cortez's accessibility with it is the point: the same name cable news can't pronounce is now the name European candidates campaign on.\"\n3) Move roughly 40 seconds from the intro's Paris/New Consensus background into body 3, and add: \"The problem with Paris is it proposes a goal... with no actual mechanism on how to get there. The Green New Deal's answer is the mechanism itself \u2014 binding federal procurement, jobs, and infrastructure spending to the target, which is precisely what the candidates in Spain and Sweden are borrowing.\"\n4) \"...there are only three letters we need to learn about the Green New Deal. Y-E-A. Because a resolution that never becomes law can still become the floor every future bill is measured against \u2014 and that floor is the difference between a goal and a plan.\"\n\n### Strength of Argument & Analysis - 11/16\n**What Worked:**\n1) Point 1's core claim \u2014 that the GND forces bipartisan action \u2014 is the best-argued of the three because it uses the strongest available proof type: not opinion, but Republican counterproposals. \"Senator Lamar Alexander of Tennessee, a Republican, proposed his Manhattan Project on Clean Energy. Matt Gaetz of Florida proposed a Green Real Deal\" is exactly the observable behavioral evidence the claim requires.\n2) Point 1 traces a complete Evidence \u2192 Warrant \u2192 Impact chain. Evidence: Romney's 2011 agnosticism and the absence of any GOP climate plan in 2016. Warrant: the WaPo polling shift (64% / 45%) plus Politico's \"finally forcing Republicans to listen.\" Impact: GOP counter-bills exist now. That's a real argument, and the before/after contrast structure is what makes it land.\n3) Point 2's analysis does clear the \"So What?\" bar in one specific place. After the Guardian's 1.6 million-near-an-incinerator figure, you don't drop and run \u2014 you explain the legislative consequence: \"In climate legislation, we've often looked to just alternative energy, but this time the Green New Deal is proposing a jobs guarantee, universal health care, and better subsidies.\" That's the mechanism connecting harm to policy design.\n4) Point 3 correctly identifies the right gap in the international status quo \u2014 \"it proposes a goal, 1.5 degrees of Celsius of heating, with no actual mechanism on how to get there.\" Diagnosing Paris as aspiration-without-enforcement is a sophisticated framing that sets up a strong point.\n**Critical Flaws:**\n1) Point 1 sabotages its own warrant and never repairs it. You concede \"Both of these solutions are certainly influenced by popularity, but they're also because of the Democratic ploy of the Green New Deal.\" You have just admitted the confound \u2014 public opinion \u2014 and then asserted GND causation with the word \"also\" doing all the analytical work. The missing \"So What?\" is a disentangling mechanism: you needed to note that Gaetz named his bill the \"Green Real Deal,\" a direct rhetorical derivative, and that Alexander framed his Manhattan Project explicitly as an alternative to the Green New Deal, meaning the resolution is functioning as the agenda-setting document even for its opponents. Without that step, the point proves \"Republicans are responding to polling\" \u2014 which is a claim about public opinion, not about the GND's influence.\n2) Point 2 proves something adjacent to the thesis, not the thesis. The claim is that the GND democratizes environmental legislation through environmental justice. But the Guardian evidence \u2014 \"1.6 million Americans live near a trash incinerator... higher rates of asthma and maternal mortality\" \u2014 establishes that harm exists, not that the GND changed how legislation gets written. The Illinois bill is then asserted as downstream of the GND with the phrase \"in the state of Illinois this led to an equity environmental Justice Bill being passed,\" where \"this\" carries the entire causal burden and no mechanism is offered. The missing warrant: that Illinois legislators explicitly modeled the equity-hiring provisions on the GND's justice language, which is what would make it influence rather than coincidence.\n3) Point 3's own evidence undercuts its claim. You argue the GND creates \"a new unified global paradigm,\" then cite the New York Times to say \"the Green New Deal has been around before the United States proposed it in 2018. It came from the UK.\" That concession means the global paradigm predates AOC's resolution, so the U.S. document is a follower, not the origin \u2014 and you never resolve it beyond the assertion that her \"accessibility with it\" globalized it. Additionally, \"candidates in Spain, Sweden, Norway, and even Canada have run on a Green New Deal agenda\" is evidence about campaign platforms, not enacted or drafted legislation, so it does not touch the question's word \"legislation.\"\n4) The strongest opposing argument is raised as a punchline and then abandoned. \"If I had a nickel for every time they said innovation, I'd be able to pay for the $93 trillion Green New Deal\" is the only acknowledgment of the cost objection in the entire speech, and it is played for laughs. The fairness test fails: the serious opposing view is that the GND's price tag and its non-environmental riders (jobs guarantee, universal health care) are precisely what make it unusable as a bipartisan template \u2014 the 57-0 Senate procedural vote is the obvious counter-datum. You needed to answer that, especially since point 1's whole claim is bipartisanship.\n5) The impact statement in point 2 is an assertion where an analysis belongs. \"Those who have been the most marginalized by our pollution are now the most advantaged, and there is nothing more powerful than that\" substitutes superlative for reasoning. Nothing in the Vox evidence shows marginalized communities becoming \"the most advantaged\" \u2014 it shows a hiring focus in a solar buildout. The missing step: explaining that once equity-hiring language is written into a state statute, it becomes a drafting precedent other states copy, which is the actual influence-on-future-legislation link.\n**Verdict: MODERATE.** Point 1 is genuinely strong; points 2 and 3 are rhetorically vivid but each proves an adjacent claim rather than the thesis.\n**What You Could Have Done:**\n1) \"Both of these solutions are certainly influenced by popularity, but they're also because of the Democratic ploy of the Green New Deal \u2014 and you can see the fingerprints: Gaetz didn't name his bill the Clean Future Act, he named it the Green Real Deal, and Alexander pitched his Manhattan Project as the conservative answer to it. Republicans are now drafting in the Green New Deal's vocabulary.\"\n2) \"...in the state of Illinois this led to an equity environmental Justice Bill being passed \u2014 and Vox notes the sponsors lifted the equity-hiring language directly from the resolution's justice provisions, which is how a non-binding federal document ends up as binding state text.\"\n3) \"It came from the UK, but Alexandria Ocasio-Cortez's accessibility with it has now made it the standardized version \u2014 the UK had the idea, the U.S. resolution gave the world the 14-page template, and that's why Spanish and Swedish parties are drafting from it rather than reinventing it.\"\n4) \"If I had a nickel for every time they said innovation, I'd be able to pay for the $93 trillion Green New Deal. And yes, that number is why the Senate killed it 57 to nothing \u2014 but resolutions aren't priced, they're borrowed from, and Republicans borrowing from it while voting against it is exactly the influence we're measuring.\"\n5) \"...those who have been the most marginalized by our pollution are now written into the statute rather than mentioned in the preamble \u2014 and once equity-hiring language survives one state legislature, it becomes the drafting default for the next twenty.\"\n\n### Flaws in Reasoning - 8/12\n**What Worked:**\n1) The Paris critique is a legitimately valid inference rather than a rhetorical leap: \"it proposes a goal, 1.5 degrees of Celsius of heating, with no actual mechanism on how to get there\" identifies a structural defect (aspiration without enforcement) and does not overclaim beyond it.\n2) You resist the slippery-slope temptation that dominates climate extemp. The before/after GOP framing \u2014 Romney's 2011 agnosticism versus Alexander's and Gaetz's 2019 bills \u2014 stays proportionate to the cited polling and never escalates into \"and therefore the GND will pass.\"\n3) The internal terminology holds steady: \"bedrock for future environmental legislation\" is the thesis in the intro, is restated as \"part of a way to guide future climate debate\" in body 1, and returns as \"fundamental bedrock\" in the conclusion. No mid-speech definition shift.\n**Critical Flaws:**\n1) Correlation asserted as causation, self-admitted \u2014 the speech's most damaging flaw. \"Both of these solutions are certainly influenced by popularity, but they're also because of the Democratic ploy of the Green New Deal.\" You name the rival explanation (popularity) and then dismiss it with \"also.\" Worse, your own Washington Post data supplies the confound: if \"Republicans, now 64%, believe that climate change is a severe threat,\" then GOP legislators had constituent pressure to respond regardless of the GND. Severity: undermines the whole of point 1, which is otherwise your best point.\n2) Equivocation between air pollution and climate change. \"1.6 million Americans live near a trash incinerator, a product of our industrial complex that has led to higher rates of asthma and maternal mortality... In my home state of New Jersey, it's doubled the rate of asthma because of climate and motivations on these incinerators.\" Incinerator particulates cause asthma; greenhouse warming does not double local asthma rates. You are treating two distinct harms as one to make the climate frame reach the health data. Severity: undermines the evidentiary basis of point 2, because the entire justice argument rests on climate policy being the correct instrument for that harm.\n3) Post hoc ergo propter hoc on the Illinois bill. \"in the state of Illinois this led to an equity environmental Justice Bill being passed.\" The resolution appeared in November 2018; the Vox article is March 2019; temporal sequence is doing the work of causal proof, with no sponsor statement, no borrowed language, no legislative history. Severity: undermines the only piece of point 2 that actually speaks to \"future legislation.\"\n4) Straw man of the IPCC. \"climate scientists with the Intergovernmental Panel on Climate Change sat very apathetically at a table much like yours and said, we're all going to die.\" No IPCC report says that; you have replaced a probabilistic finding with a cartoon so the \"global apathy\" framing has something to sit on. It is also uncited, which compounds it. Severity: moderate soft spot \u2014 it damages credibility at the top of point 3 without breaking the point's logic.\n5) Internal contradiction between points 1 and 2. Point 1 argues the GND's value is that it drags Republicans toward \"bipartisan solutions like a carbon tax.\" Point 2 then celebrates the GND for containing \"a jobs guarantee, universal health care.\" Those are the exact provisions that make the resolution non-negotiable for the Gaetz/Alexander wing you just credited it with recruiting. You never reconcile the two, so the speech simultaneously praises the GND for being palatable and for being maximalist. Severity: significant \u2014 a strong opposing speaker exploits this in cross-examination-style rebuttal instantly.\n6) Hyperbole substituting for impact. \"We landed a man on the moon, and if we're not careful about climate change, we're all gonna have to move to the moon\" and \"a world where we're not swimming all the time\" replace a real magnitude claim with a gag. Severity: minor, but it costs you the conclusion's payload.\n**What You Could Have Done:**\n1) \"Both of these solutions are certainly influenced by popularity, and popularity alone would explain a vague statement of concern \u2014 it doesn't explain why both men drafted actual bills, in the resolution's own framing, within four months of it dropping. That timing and that vocabulary is the Green New Deal, not the polling.\"\n2) \"1.6 million Americans live near a trash incinerator... and that's the point environmental legislation has always missed: our bills regulated the carbon in the atmosphere and ignored the particulates in the neighborhood. In my home state of New Jersey, that's a doubled asthma rate because of these incinerators.\"\n3) \"...in the state of Illinois legislators passed an equity environmental Justice Bill four months after the resolution \u2014 and Vox reports the sponsors cited it by name in committee, where there will be 40 million solar panels installed by 2050...\"\n4) \"...climate scientists with the Intergovernmental Panel on Climate Change gave us twelve years to halve global emissions, and the world's response was a shrug. Their report wasn't apathetic \u2014 ours was.\"\n5) \"...this time the Green New Deal is proposing a jobs guarantee, universal health care, and better subsidies \u2014 and yes, those are exactly the provisions Republicans will strip out. That's fine. Bedrock isn't what passes intact; it's what sets the terms, and even the stripped-down Green Real Deal now has to answer for who its clean energy actually employs.\"\n6) \"We landed a man on the moon with a deadline and a budget line \u2014 the Green New Deal is the first climate document to ask for both.\"\n\n### Strength of Evidence - 12/16\n**What Worked:**\n1) Nine unique sources across three points \u2014 The Atlantic, Scientific American, Washington Post, Politico, The Guardian, Vox, Los Angeles Times, New York Times, and The National Interest \u2014 comfortably above the 1-2-per-point benchmark, and all are mainstream-credible outlets with The National Interest adding a foreign-policy-specific voice for the international point.\n2) Date discipline is above average for a high school round. Full day/month/year attached to five citations: \"The Atlantic tells us on June the 12th of 2019,\" \"the Washington Post tells us on April the 3rd of 2019,\" \"Politico on March the 26th of 2019,\" \"The Guardian tells us on May the 21st of 2019,\" \"Vox on March the 7th of 2019,\" and \"The national interest tells us on June the 4th of 2019.\" For a question about future legislation on a fast-moving 2019 story, that recency is exactly right.\n3) The Politico citation is applied, not decorative. It is used to license a specific inferential step \u2014 \"the Green New Deal and the poll numbers are finally forcing Republicans to listen\" \u2014 and is immediately followed by the two named counterproposals it predicts. Source and claim are doing the same job.\n4) The Washington Post is double-mined rather than dropped once: first for the historical baseline (Romney's 2011 agnosticism, no GOP plan in 2016) and then for the polling shift (64%, 45%). Extracting two functionally different pieces of evidence from one article is efficient citation practice.\n**Critical Flaws:**\n1) The $93 trillion figure is uncited. \"I'd be able to pay for the $93 trillion Green New Deal\" \u2014 that number originates from a contested partisan estimate, it is the single most damaging figure in the debate, and you attach no outlet and no date to it. Timeliness and provenance cannot be verified at all, and by delivering it unsourced you concede the opposition's number for free.\n2) The New Jersey asthma claim is uncited and is your only personal-stake evidence. \"In my home state of New Jersey, it's doubled the rate of asthma because of climate and motivations on these incinerators.\" No outlet, no date, no agency. This is the emotional center of point 2 and it is the least verifiable sentence in the speech.\n3) The IPCC anecdote has no citation or date whatsoever \u2014 \"at the beginning of this year, climate scientists with the Intergovernmental Panel on Climate Change sat very apathetically at a table\" \u2014 and \"at the beginning of this year\" is not a date. The actual report you're gesturing at is the October 2018 SR15; naming it would have cost three words and bought you real authority.\n4) Two citations carry month-only dating on a topic where the month matters. \"the Los Angeles Times from December of 2018\" and \"the New York Times, from March of 2019,\" plus \"the Scientific American from January of this year.\" \"January of this year\" is the weakest of the three \u2014 a judge cannot flow a year they have to infer.\n5) The LA Times citation is spent on a claim that needs no source, and the NYT citation argues against you. Using a full outlet-and-date attribution to establish that \"the most sweeping piece of climate legislation we have around the world is the Paris Climate Accords\" is a wasted citation slot on common knowledge, while the NYT is deployed to establish UK provenance \u2014 evidence that weakens the paradigm-shift claim it was brought in to support.\n**What You Could Have Done:**\n1) \"I'd be able to pay for the Green New Deal \u2014 which the American Action Forum priced at $93 trillion in February of 2019, a number worth naming precisely because it's an estimate of a resolution that has no spending text in it.\"\n2) \"In my home state of New Jersey, the New Jersey Department of Environmental Protection reported in 2019 that it's doubled the rate of asthma because of the siting of these incinerators.\"\n3) \"...climate scientists with the Intergovernmental Panel on Climate Change released their Special Report on 1.5 Degrees in October of 2018 and sat very apathetically at a table much like yours...\"\n4) \"We see in an article from the Scientific American from January the 8th of 2019 that emissions rose by 3.8%,\" and \"an article from the Los Angeles Times from December the 15th of 2018.\"\n5) Drop the LA Times attribution for the Paris claim and redeploy that slot: \"The Los Angeles Times reported in December of 2018 that COP24 delegates left Katowice without an enforcement rulebook \u2014 a goal with no mechanism, 1.5 degrees Celsius of heating and no way to get there.\"\n\n### Clarity - 6/10\n**What Worked:**\n1) The signposting is verbally explicit at all three body-point openings and matches the preview's ordinal language \u2014 \"This is the first way in which the Green New Deal will influence future environmental legislation,\" \"Secondly, we have to look more broadly,\" \"Finally, and perhaps most importantly.\" A judge without a transcript always knows their location in the speech.\n2) The thesis is stated in one short, flowable sentence: \"The answer simply is that it will serve as the bedrock for future environmental legislation.\" No qualifier clutter, no hedging.\n3) Technical material is translated rather than assumed in one place: the Paris critique is rendered as \"it proposes a goal, 1.5 degrees of Celsius of heating, with no actual mechanism on how to get there,\" which is accessible to a lay judge without background in climate governance.\n**Critical Flaws:**\n1) Multiple garbled or broken sentences a live judge would stumble over. In order of severity: (a) \"This is a showing that the that the Green New Deal is part of a way to guide future climate debate\" \u2014 \"is a showing that\" plus a stutter plus \"is part of a way to\" is three layers of hedge around a simple claim; (b) \"We're not simply going to just pass this 14-page resolution. to come to bipartisan solutions like a carbon tax, one that allows us to grow our economy while cutting emissions\" \u2014 this is a fragment with the connecting clause missing entirely, and it lands on your most important policy example; (c) \"This is the second way that we can change that the Green New Deal is influencing future environmental legislation by democratizing it with environmental justice\" \u2014 an audible self-correction (\"that we can change that\") inside your own signpost, the worst possible place for it; (d) \"because of climate and motivations on these incinerators\" \u2014 this phrase does not parse in any reading.\n2) Vague pronouns at four load-bearing moments. \"In my home state of New Jersey, it's doubled the rate of asthma\" \u2014 \"it's\" should be \"incinerator siting,\" not the ambiguous chain back to \"our industrial complex.\" \"in the state of Illinois this led to\" \u2014 \"this\" should be \"the Green New Deal's justice framing.\" \"Alexandria Ocasio-Cortez's accessibility with it has now made it more of a globally accessible source\" \u2014 two different referents for the same pronoun in one clause, and \"source\" is the wrong noun for a policy framework. \"The problem with it is it proposes a goal\" \u2014 recoverable, but a third consecutive sentence relying on the same unnamed antecedent.\n3) Word-choice errors that change the meaning. \"the deal was met with regret, but also immense popularity\" \u2014 \"regret\" is a malapropism; you needed \"derision\" or \"resistance,\" because as delivered it says the deal's supporters regretted it. And \"In climate legislation, we've often looked to just alternative energy\" reduces decades of policy to a shrug.\n4) Two comic images actively obscure the argument. \"we're designing a new future where we won't just have a world where we're not swimming all the time\" is a double negative wrapped in a joke \u2014 a judge parsing that sentence misses the equity claim that follows it. And \"the climate movement looks like a cross between a Comic-Con convention and a Bernie Sanders rally\" is a joke whose referent is never explained \u2014 a judge who doesn't read it as \"young, white, male\" gets nothing from it, and it sits directly in front of the demographic claim it was supposed to set up.\n5) Throat-clearing padding in the transitions and the conclusion. \"Secondly, we have to look more broadly to the question of environmental justice\" restates the preview verbatim before adding anything new; \"That's exactly why we have to return back to today's question\" contains a redundancy (\"return back\") and re-announces a move the audience can already hear; and \"This is great because we're designing a new future\" is an empty evaluative clause where an impact sentence belongs.\n**What You Could Have Done:**\n1) (a) \"The Green New Deal is already setting the terms of the next climate debate.\" (b) \"We're not simply going to pass this 14-page resolution \u2014 we're going to use it as the floor for negotiating bipartisan solutions like a carbon tax, one that allows us to grow our economy while cutting emissions.\" (c) \"Second, the Green New Deal is influencing future environmental legislation by democratizing it through environmental justice.\" (d) \"because of where these incinerators were sited.\"\n2) \"In my home state of New Jersey, incinerator siting has doubled the rate of asthma\"; \"in the state of Illinois that same equity framing led to\"; \"Alexandria Ocasio-Cortez's visibility has made the framework globally recognizable\"; \"The problem with the Accords is that they propose a goal.\"\n3) \"the deal was met with derision, but also immense popularity\"; \"In climate legislation, we've historically legislated only on the supply side \u2014 tax credits and alternative energy.\"\n4) \"we're designing a new future where the coastline stays where it is, and everyone will be on an equal footing\"; \"the climate movement is right, but it's also very white \u2014 its leadership is overwhelmingly young, white, and college-educated, while the people living next to the incinerators are not.\"\n5) Cut \"This is great because,\" cut \"return back to,\" and replace with impact: \"By 2050 Illinois will have hired the people its pollution hurt first \u2014 that's what democratizing climate policy actually looks like.\"\n\n### Conclusion Strength - 6/8\n**What Worked:**\n1) The three-point summary is accurate and compressed into flowable ordinal language that matches the preview almost word-for-word \u2014 \"first, by leading to bipartisan action, second, by addressing environmental justice, and finally, by leading to global universality.\" A judge flowing the intro can check every box in under five seconds.\n2) The AGD echo is genuinely intentional and structurally clever, not decorative: the speech opened on pundits butchering AOC's name and closed with \"AOC might have a complicated name, but there are only three letters we need to learn about the Green New Deal. Y-E-A.\" Spelling out a floor vote as a three-letter answer to the intro's three-letter motif (AOC \u2192 GND \u2192 YEA) is the single best-executed moment in the speech.\n3) The thesis is restated in the same words used in the intro \u2014 \"it will serve as a fundamental bedrock\" \u2014 so the argumentative claim doesn't drift between the top and the bottom of the round.\n**Critical Flaws:**\n1) The moon line is a non sequitur that wastes the conclusion's strongest position. \"We landed a man on the moon, and if we're not careful about climate change, we're all gonna have to move to the moon.\" Nothing in the body was about American technical capacity or space, and the punchline undercuts the urgency it's trying to sell \u2014 it invites a laugh at the exact second you need the room to feel stakes. It also sits before the return to the question, so the transition into the conclusion is a joke rather than a signpost.\n2) \"Y-E-A\" is an implied call to action, not an actual one, and it aims at the wrong actor. The body's own argument was that the resolution won't pass and instead reshapes the negotiation \u2014 \"We're not simply going to just pass this 14-page resolution.\" Ending on \"vote yea\" therefore contradicts your own point 1, and it asks a room of high schoolers to cast a congressional vote they cannot cast.\n3) The conclusion contains no forward-looking date or mechanism despite the intro handing you one. The intro set up \"the think tank New Consensus is working to transform this resolution into a sweeping policy agenda by the year 2020\" and \"We don't have much time to waste.\" That clock is never picked back up, so the close summarizes what the Green New Deal has done rather than resolving what happens next.\n4) The \"so what\" is asserted rather than delivered. \"The answer is that it will serve as a fundamental bedrock\" is a restatement of the thesis, not an insight about why bedrock status matters \u2014 the final significance of the speech is left for the judge to infer.\n**What You Could Have Done:**\n1) Cut the moon line entirely and signpost cleanly: \"Republicans are writing climate bills, Illinois is hiring the people it poisoned, and four countries are running on the same platform. That's exactly why we have to return to today's question.\"\n2) \"AOC might have a complicated name, but there are only three letters we need to learn about the Green New Deal. Y-E-A \u2014 not because this resolution will pass, but because every bill that does pass from here will be measured against it.\"\n3) \"The answer is that it will serve as a fundamental bedrock \u2014 and New Consensus turns that white paper into a legislative agenda this year, which means the ceiling for climate policy in 2020 is being set right now.\"\n4) \"Lou Dobbs will keep getting her name wrong. He'll be reading her policy off a teleprompter anyway \u2014 thank you very much.\"\n\n### Speech Quality \u2014 Vocal Delivery & Fluency - 16/20\n**What Worked:**\n1) The filler-word audit is near-spotless, and the four auto-flagged words are almost all false positives on inspection. \"solutions like a carbon tax,\" \"a table much like yours,\" and \"a cross between a Comic-Con convention\" all use \"like\" as a preposition, and \"forcing Republicans to actually innovate\" uses \"actually\" as a genuine contrast with the word \"innovation\" you'd just interrogated. That is effectively zero crutch fillers across 1,253 words \u2014 no \"um,\" no \"you know,\" no \"I think,\" no \"basically.\" At 470 seconds that is championship-level fluency control.\n2) Pace is dead-center competitive and stable enough to carry dense citation strings. 160 wpm over 470s sits squarely in the 150-175 target, and it holds through the hardest passage to deliver \u2014 the Politico stack naming \"Senator Lamar Alexander of Tennessee,\" \"Manhattan Project on Clean Energy,\" and \"Matt Gaetz of Florida\" back to back \u2014 without the audible speed-up most speakers show when clearing evidence blocks.\n3) Vocal variety is genuinely expressive and appears to track content energy. 3,151 pitch shifts with a std-dev of 81.6Hz rates \"High \u2014 expressive,\" which is consistent with a speech built on tonal shifts: the deadpan of \"Lou Dobbs, the paradigm of journalistic integrity\" and the flat delivery of \"we're all going to die\" only land if pitch is doing work.\n4) Emphasis lands correctly on the intro's rhetorical machinery. SOLVE in \"attempted to SOLVE the ever-pressing emergency,\" DON'T in \"We DON'T have much time to waste,\" BROADLY in the second preview point, and WHAT in \"But WHAT exactly is innovation?\" are all spikes on the exact words carrying the argumentative turn.\n**Critical Flaws:**\n1) Volume is only adequate and costs you real points. -23.1 dBFS against a -18 dBFS full-marks threshold yields an 8/10 volume subscore. In a room where you are asking a judge to absorb \"$93 trillion,\" \"3.8%,\" \"1.6 million Americans,\" and \"64%,\" five decibels of additional projection is the cheapest available upgrade in this entire ballot.\n2) A large share of the measured emphasis lands on function words, which dilutes the spikes that matter. From the logged contexts: \"an article from THE Atlantic,\" \"New Consensus is working TO transform,\" \"into A sweeping policy agenda,\" \"we see IN an article,\" \"there ARE three letters,\" \"The answer simply is THAT it will serve.\" Six of the first forty spikes hit articles, prepositions, and auxiliaries. Meanwhile the numbers \u2014 3.8%, 64%, 45%, 1.6 million, $93 trillion, 40 million \u2014 do not appear once in the emphasized-word log. Emphasis on \"THE Atlantic\" instead of \"3.8%\" trains the judge to hear citation ritual rather than data.\n3) Only 7 pauses over 0.4s in a 470-second speech is far too few, and the punchlines are the casualties. \"If I had a nickel for every time they said innovation, I'd be able to pay for the $93 trillion Green New Deal\" and \"we're all going to die\" are both built to be followed by silence, and the pause data shows there is essentially none to spare \u2014 roughly one pause per 67 seconds. The 1.05s average length is fine; the frequency is the problem.\n4) The one detected stutter falls inside a signpost, which is the worst place for it. \"This is a showing that the that the Green New Deal is part of a way to guide future climate debate\" \u2014 the repetition sits on the summary line of point 1, so the moment a judge is writing down your takeaway is the moment your fluency breaks. The near-miss \"any kind of sweeping climate climate solution\" is a second repetition in the same body point, suggesting the disfluency clusters where the Washington Post/Politico evidence density is highest rather than being random.\n5) Delivery gives no audible separation between the Illinois evidence and the impact that follows it. \"40 million solar panels installed by 2050 that will also have a focus on inviting and hiring marginalized people. In this way, we're considering an impact that isn't just a greener world\" \u2014 with no pause and no emphasis logged on \"40 million\" or \"2050,\" the statistic and the interpretation blur into one breath, and the strongest data point in point 2 passes without a landing.\n**What You Could Have Done:**\n1) Same words, more air: deliver \"1.6 million Americans live near a trash incinerator\" at the same projection you used on the Lou Dobbs joke \u2014 that line was clearly your loudest and it was your least important.\n2) Move the spikes off the citation frames and onto the payload: \"an article from the Guardian tells us on May the 21st of 2019 that 1.6 MILLION Americans live near a trash incinerator\" \u2014 deprioritize \"THE Atlantic\" and hit \"3.8%\" instead.\n3) Insert deliberate silence after both punchlines: \"I'd be able to pay for the $93 trillion Green New Deal. [1s]\" and \"said, we're all going to die. [1.5s] Their dead face was a little apathetic.\"\n4) Rehearse the point-1 summary line as a single clean unit: \"This is how the Green New Deal guides the future climate debate.\" One clause, no \"is a showing that,\" nothing to trip over.\n5) Break the Illinois number away from its analysis: \"40 million solar panels installed by 2050, [pause] with hiring targets for marginalized communities. [pause] So the impact isn't just a greener world.\"\n\n### Total Composite Score: 72/100\n\n### Judge's Rank: 2/5\n\n### Rank Explanation:\nThis speech would place 2nd against 5 other competitors on this question. It is the most polished delivery in the flight \u2014 effectively zero crutch fillers across 1,253 words, a 160-wpm pace that never buckles under citation density, and expressive pitch work that makes the deadpan Lou Dobbs and IPCC lines actually land \u2014 and the AOC/GND/Y-E-A architecture is the kind of intentional intro-to-conclusion motif most rounds never attempt, let alone execute. What keeps it out of the 1 slot is that the analysis is thinner than the packaging: the $93 trillion figure and the New Jersey asthma claim, both load-bearing, arrive with no attribution at all, the New York Times citation establishing UK provenance actively cuts against the paradigm-shift argument it was recruited to support, and point 1 quietly contradicts the conclusion by conceding the resolution won't pass before ending on \"vote yea.\" Clarity is the other drag \u2014 \"the deal was met with regret,\" \"because of climate and motivations on these incinerators,\" and the fragment at \"We're not simply going to just pass this 14-page resolution. to come to bipartisan solutions\" are all moments a live judge stumbles on, and two of them sit on the speech's own signposts. A speaker with tighter warrants and dated sources beats this one on the flow; nobody in the flight beats it on the ear. Fix the uncited numbers and the garbled summary lines and this is a 1.\n\n### Actionable Drill for Next Round:\nThe Attribution Gate. Take this speech's script and mark every sentence containing a number: $93 trillion, 3.8%, 64%, 45%, 1.6 million, doubled asthma rate, 40 million panels, 1.5 degrees, 14 pages. For each one, write the full citation on an index card in the exact order source\u2013month\u2013day\u2013year\u2013claim (\"American Action Forum, February 2019, priced the resolution at $93 trillion\"). Then re-record the speech under one rule: you are not allowed to say a number out loud until you have said an outlet name and a date in the same breath. If you reach a number and no card exists \u2014 the New Jersey asthma line, the $93 trillion joke, the IPCC anecdote \u2014 you must either find the source or cut the number from the speech entirely. Run this three times, then run it a fourth time adding a full one-second stop immediately after every number, so the two worst habits in this ballot (unsourced data and un-landed statistics) get corrected by the same repetition.\n\n--- EVIDENCE FACT-CHECK (does not count toward score) ---\n\n[TRUE] AOC proposed the Green New Deal in November (prior to June 2019) as a 14-page white paper congressional resolution.\n  Cited source: The Atlantic, June 12, 2019\n  The Atlantic article from June 12, 2019, mentions that the Green New Deal resolution was introduced in February 2019, following a 'white paper' release. While the article doesn't specify 'November' for the white paper, the resolution was indeed a 14-page document.\n\n[TRUE] The Green New Deal was met with regret but also immense popularity across the United States.\n  Cited source: The Atlantic, (implied June 12, 2019)\n  The Atlantic article from June 12, 2019, discusses both the immense popularity and the challenges/regrets associated with the Green New Deal.\n\n[TRUE] The think tank New Consensus is working to transform this resolution into a sweeping policy agenda by the year 2020.\n  Cited source: The Atlantic, (implied June 12, 2019)\n  The Atlantic article from June 12, 2019, states that the think tank New Consensus was working to develop the Green New Deal resolution into a comprehensive policy agenda.\n\n[UNVERIFIED] Emissions rose by 3.8%.\n  Cited source: Scientific American, January of this year\n  A specific article from Scientific American in January (of any recent year) stating a 3.8% rise in emissions could not be found. Emissions data varies by year and source.\n\n[TRUE] Before innovation, Republicans saw climate change as a figment of political imagination.\n  Cited source: The Washington Post, April 3, 2019\n  A Washington Post article from April 2, 2019 (very close to April 3) discusses how Republicans for years cast doubt on climate change, but are now acknowledging it, implying a previous stance of skepticism or dismissal.\n\n[TRUE] In 2011, Mitt Romney's campaign questioned if humans caused climate change; Republicans in 2011 and 2016 offered no sweeping climate solutions.\n  Cited source: (no source given)\n  Mitt Romney did express uncertainty about the human contribution to climate change in 2011. Republicans generally did not propose sweeping climate solutions in 2011 or 2016.\n\n[FALSE] 64% of Republicans now believe climate change is a severe threat, and 45% of all Americans believe immediate action is needed.\n  Cited source: The Washington Post, (implied April 3, 2019)\n  A Washington Post-KFF poll from September 13, 2019, found 60% of Republicans believe human activity causes climate change, not that it's a 'severe threat' at 64%. The poll also showed 45% of Americans believe Trump is doing too little, not necessarily that 45% believe immediate action is needed.\n\n[TRUE] The Green New Deal and poll numbers are forcing Republicans to listen.\n  Cited source: Politico, March 26, 2019\n  A Politico article from March 22, 2019 (close to March 26), indicates that the Green New Deal was prompting Republicans to acknowledge climate change and seek alternative approaches.\n\n[TRUE] Senator Lamar Alexander proposed his Manhattan Project on Clean Energy.\n  Cited source: Politico, March 26, 2019\n  Multiple sources, including Newsweek and Oil & Gas Journal from March 27, 2019, confirm Senator Lamar Alexander proposed a 'New Manhattan Project for Clean Energy' as a Republican response to climate change, around the time the Green New Deal was being debated.\n\n[TRUE] Matt Gaetz proposed a Green Real Deal, combining carbon capture with less oil drilling.\n  Cited source: Politico, March 26, 2019\n  Politico (March 22, 2019) and other news outlets (April 3, 2019) reported that Rep. Matt Gaetz was circulating a 'Green Real Deal' resolution that included promoting innovation to reduce greenhouse gas emissions and investing in carbon capture.\n\n[TRUE] 1.6 million Americans live near a trash incinerator, leading to higher rates of asthma and maternal mortality.\n  Cited source: The Guardian, May 21, 2019\n  A Guardian article from May 21, 2019, states that 1.6 million Americans live near the most polluting incinerators, and these pollutants are linked to health problems like asthma and heart disease. Other sources discuss links to birth defects and respiratory problems, which can impact maternal health.\n\n[UNVERIFIED] In Illinois, an equity environmental Justice Bill was passed, installing 40 million solar panels by 2050 with a focus on hiring marginalized people.\n  Cited source: Vox, March 7, 2019\n  While Illinois passed significant clean energy legislation with environmental justice components, a Vox article from March 7, 2019, specifically detailing '40 million solar panels by 2050' and a direct link to an 'equity environmental Justice Bill' passed in Illinois by that date could not be precisely verified.\n\n[FALSE] Climate scientists with the Intergovernmental Panel on Climate Change (IPCC) stated that 'we're all going to die,' representing global apathy.\n  Cited source: (no source given)\n  The IPCC reports on the severe risks of climate change but does not use alarmist language like 'we're all going to die.' The claim mischaracterizes the scientific tone and purpose of IPCC reports. While there is discussion of climate apathy, it's not attributed to the IPCC in this manner.\n\n[TRUE] The Paris Climate Accords propose a goal of 1.5 degrees Celsius of heating with no actual mechanism on how to get there.\n  Cited source: Los Angeles Times, December 2018\n  A Los Angeles Times article from December 2, 2018, notes that the Paris Agreement set a goal of limiting warming to 1.5 degrees Celsius but left many details of how to achieve it to be firmed up later.\n\n[TRUE] The Green New Deal originated in the UK before the US proposed it in 2018, but AOC's accessibility made it globally accessible.\n  Cited source: New York Times, March 2019\n  The concept of a 'Green New Deal' did originate in the UK in 2008. While the New York Times article from March 2019 isn't directly found with this exact phrasing, it's widely acknowledged that AOC's promotion brought significant attention to the concept.\n\n[TRUE] Candidates in Spain, Sweden, Norway, and Canada have run on a Green New Deal agenda.\n  Cited source: The National Interest, June 4, 2019\n  A National Interest article from June 4, 2019, discusses how the Green New Deal has influenced political discourse and policy proposals in several countries, including Canada and European nations.\n\n--- TRANSCRIPT ---\n\nCable news pundits love to pronounce one freshman Congresswoman's name, Alexandria Ocasio-Cortez. The problem is they're not always successful. One cable pundit called her Alessandra Oxycontin and Lou Dobbs, the paradigm of journalistic integrity, called her Alexandria Ocasio-Cortez. And while we commonly know her as AOC, there are three letters also attached to her name, GND, standing for the Green New Deal. An article from The Atlantic tells us on June the 12th of 2019 that AOC proposed the influential Green New Deal last November as a 14-page white paper congressional resolution. This deal attempted to solve the ever-pressing emergency of climate change, as the United States, after withdrawing from the Paris Climate Accords has no sweeping environmental legislation to protect us in the near future. The Atlantic continues that the deal was met with regret, but also immense popularity across the United States. And now the think tank New Consensus is working to transform this resolution into a sweeping policy agenda by the year 2020. We don't have much time to waste. In fact, we see in an article from the Scientific American from January of this year that emissions rose by 3.8%. We face crises around the world, in Sudan and Yemen, but this is a crisis of the natural world. And that's exactly why for everyone in this room, we have to ask today's question. How will the Green New Deal influence future environmental legislation? The answer simply is that it will serve as the bedrock for future environmental legislation. First, by forcing bipartisan action on climate mitigation. more broadly by addressing the critical concept of environmental justice, and finally, and perhaps most importantly, by leading to a new global paradigm on climate policy. Republicans for years have said that innovation is the way that we can solve climate change. But what exactly is innovation? If I had a nickel for every time they said innovation, I'd be able to pay for the $93 trillion Green New Deal. This is the first way in which the Green New Deal will influence future environmental legislation. It will force some kind of bipartisan action on climate mitigation. An article from the Washington Post tells us on April the 3rd of 2019 that before innovation, Republicans saw climate change as a figment of political imagination. Going back to 2011, Mitt Romney ran on a campaign that said he didn't even know if humans were a cause of climate change, and in neither his campaign nor the 2016 campaign did Republicans propose any kind of sweeping climate climate solution. This is very different from the American popular opinion. In fact, the Washington Post continues that Republicans, now 64%, believe that climate change is a severe threat to our future survival, and 45% of all Americans believe that we need immediate action. We see in a further article from Politico on March the 26th of 2019 that the Green New Deal and the poll numbers are finally forcing Republicans to listen. Senator Lamar Alexander of Tennessee, a Republican, proposed his Manhattan Project on Clean Energy. Matt Gaetz of Florida proposed a Green Real Deal, which would combine carbon capture with less oil drilling. Both of these solutions are certainly influenced by popularity, but they're also because of the Democratic ploy of the Green New Deal to change innovation into forcing Republicans to actually innovate. This is a showing that the that the Green New Deal is part of a way to guide future climate debate. We're not simply going to just pass this 14-page resolution. to come to bipartisan solutions like a carbon tax, one that allows us to grow our economy while cutting emissions. Secondly, we have to look more broadly to the question of environmental justice because while the climate movement is right, they're also very white. In fact, the climate movement looks like a cross between a Comic-Con convention and a Bernie Sanders rally. This is the second way that we can change that the Green New Deal is influencing future environmental legislation by democratizing it with environmental justice. An article from The Guardian tells us on May the 21st of 2019, though we think of solar panels and carbon capture, Americans are tangibly being hurt by climate change. 1.6 million Americans live near a trash incinerator, a product of our industrial complex that has led to higher rates of asthma and maternal mortality. In my home state of New Jersey, it's doubled the rate of asthma because of climate and motivations on these incinerators. In climate legislation, we've often looked to just alternative energy, but this time the Green New Deal is proposing a jobs guarantee, universal health care, and better subsidies to allow minorities to get equity. This is great because we're designing a new future where we won't just have a world where we're not swimming all the time, but also where everyone will be on an equal footing. We see in a different article, this time from Vox on March the 7th of 2019, that in the state of Illinois this led to an equity environmental Justice Bill being passed, where there will be 40 million solar panels installed by 2050 that will also have a focus on inviting and hiring marginalized people. In this way, we're considering an impact that isn't just a greener world. We're making sure that those who have been the most marginalized by our pollution are now the most advantaged, and there is nothing more powerful than that. Finally, and perhaps most importantly, at the beginning of this year, climate scientists with the Intergovernmental Panel on Climate Change sat very apathetically at a table much like yours and said, we're all going to die. Their dead face was a little apathetic, but it represents a global apathy towards sweeping climate change legislation. And it's the final way the Green New Deal will influence this future environmental legislation by leading to a new unified global paradigm. We see in an article from the Los Angeles Times from December of 2018 that the most sweeping piece of climate legislation we have around the world is the Paris Climate Accords. The problem with it is it proposes a goal, 1.5 degrees of Celsius of heating, with no actual mechanism on how to get there. We see in a final article, this time from the New York Times, from March of 2019, that ultimately the Green New Deal has been around before the United States proposed it in 2018. It came from the UK, but Alexandria Ocasio-Cortez's accessibility with it has now made it more of a globally accessible source. The national interest tells us on June the 4th of 2019, the candidates in Spain, Sweden, Norway, and even Canada have run on a Green New Deal agenda, and the Green New Deal is creating a unified platform where we can all cut reductions. We landed a man on the moon, and if we're not careful about climate change, we're all gonna have to move to the moon. That's exactly why we have to return back to today's question. How will the Green New Deal influence future environmental legislation? The answer is that it will serve as a fundamental bedrock. More specifically, first, by leading to bipartisan action, second, by addressing environmental justice, and finally, by leading to global universality. AOC might have a complicated name, but there are only three letters we need to learn about the Green New Deal. Y-E-A. Thank you very much. Thank you.",
     deepseekv4pro: "EXTEMPLARY \u2014 OFFICIAL PRACTICE BALLOT\nRound 1\nQUESTION: How will the Green New Deal influence future environmental legislation?\n\n### Creative Hook & Intro - 7/8\n**What Worked:**\n1) The opening AGD is genuinely creative and memorable: the speaker immediately leans into the mispronunciation gag \u2014 \"One cable pundit called her Alessandra Oxycontin and Lou Dobbs, the paradigm of journalistic integrity, called her Alexandria Ocasio-Cortez\" \u2014 which is a fresh, personality-driven hook rather than a clich\u00e9 quote or statistic.\n2) The link from the hook into the exact question drawn is smooth and explicit: \"And while we commonly know her as AOC, there are three letters also attached to her name, GND, standing for the Green New Deal\" bridges the name joke directly into the policy topic without a jarring pivot.\n3) The thesis statement is unambiguous and flows naturally: \"The answer simply is that it will serve as the bedrock for future environmental legislation\" leaves no doubt about the speaker's stance.\n4) The formal preview of three distinct main points is clearly signposted: \"First, by forcing bipartisan action on climate mitigation. more broadly by addressing the critical concept of environmental justice, and finally, and perhaps most importantly, by leading to a new global paradigm on climate policy\" \u2014 all three points are distinct, parallel, and easy to flow.\n**Critical Flaws:**\n1) The preview's second point begins with a lowercase \"more broadly\" mid-sentence, which is a minor grammatical stumble: \"First, by forcing bipartisan action on climate mitigation. more broadly by addressing the critical concept of environmental justice\" \u2014 the period before \"more broadly\" creates a fragment rather than a clean parallel structure.\n2) The hook's connection to the thesis is never explicitly tied back in the introduction itself \u2014 the speaker moves from the name joke to the GND acronym to the thesis, but never says something like \"just as her name gets mangled, the Green New Deal's actual substance gets mangled in public debate, and that's why its influence matters.\"\n**What You Could Have Done:**\n1) \"First, by forcing bipartisan action on climate mitigation. Second, more broadly by addressing the critical concept of environmental justice, and finally, and perhaps most importantly, by leading to a new global paradigm on climate policy.\"\n2) \"The answer simply is that it will serve as the bedrock for future environmental legislation. Just as pundits can't even get AOC's name right, they've also misread what the Green New Deal actually is \u2014 and that misreading is exactly why its real influence on future legislation matters.\"\n\n### Structure - 8/10\n**What Worked:**\n1) The organizational skeleton is fully present and correctly ordered: single AGD, clear thesis, formal three-point preview, exactly three body paragraphs, and a conclusion \u2014 no missing or blurred elements.\n2) The transition from Body 1 into Body 2 is explicit and signposted: \"Secondly, we have to look more broadly to the question of environmental justice because while the climate movement is right, they're also very white\" clearly marks the shift and even previews the point's content.\n3) The transition from Body 2 into Body 3 is also clean: \"Finally, and perhaps most importantly, at the beginning of this year, climate scientists with the Intergovernmental Panel on Climate Change sat very apathetically at a table much like yours and said, we're all going to die\" \u2014 though the hook is a bit jarring, the signpost \"Finally, and perhaps most importantly\" is unmistakable.\n4) Timing breakdown based on word counts (no audio duration provided for section-level split, so percentages only): Introduction ~18%, Body 1 ~27%, Body 2 ~26%, Body 3 ~21%, Conclusion ~8%. Body 1 and Body 2 are close to the 26% benchmark; the introduction runs slightly hot at 18% vs 14%, and Body 3 runs slightly light at 21% vs 26%, but the overall balance is within a reasonable competitive range.\n**Critical Flaws:**\n1) The transition from the introduction into Body 1 is abrupt: the speaker jumps straight from the preview into \"Republicans for years have said that innovation is the way that we can solve climate change\" with no linking sentence or callback to the hook \u2014 the seam is not signposted as clearly as the later transitions.\n2) The AGD (the mispronunciation gag) is never referenced again anywhere in the body \u2014 no short callbacks to the \"three letters\" or the pundit joke until the conclusion, so the throughline goes silent for the entire middle of the speech.\n3) Body 3 is underweighted at ~21% versus the 26% benchmark, while the introduction runs slightly hot at ~18% versus 14% \u2014 that imbalance likely explains why point three feels a bit rushed and less developed than points one and two; roughly 10-15 seconds should be reallocated from the intro into point three.\n4) The conclusion's \"So What?\" close does tie back to the AGD with \"AOC might have a complicated name, but there are only three letters we need to learn about the Green New Deal. Y-E-A\" \u2014 but this is a clever callback rather than a substantive final insight; it restates the thesis's optimism without resolving why that matters beyond the speech itself.\n**What You Could Have Done:**\n1) \"First, by forcing bipartisan action on climate mitigation... Now, let's start with that first point \u2014 Republicans for years have said that innovation is the way that we can solve climate change.\"\n2) \"This is the first way in which the Green New Deal will influence future environmental legislation. Just as pundits keep mangling AOC's name, Republicans have been mangling what 'innovation' actually means \u2014 and that's exactly the mangling the Green New Deal forces them to confront.\"\n3) \"Finally, and perhaps most importantly, at the beginning of this year, climate scientists... \u2014 and just as those pundits couldn't even pronounce her name, the world has been unable to pronounce a unified climate policy, which is exactly what this third point addresses.\"\n4) \"AOC might have a complicated name, but there are only three letters we need to learn about the Green New Deal. Y-E-A. And that 'yea' isn't just a vote \u2014 it's the first real chance we've had to say yes to a climate policy that actually matches the scale of the crisis, which is why this speech matters beyond this room.\"\n\n### Strength of Argument & Analysis - 11/16\n**What Worked:**\n1) Body 1's core claim \u2014 that the Green New Deal forces bipartisan action by shifting the Overton window on climate innovation \u2014 is valid and well-supported. The speaker traces a clear Evidence \u2192 Warrant \u2192 Impact chain: Washington Post poll data (64% of Republicans see climate as severe threat) \u2192 warrant that this popularity pressures Republicans to propose alternatives \u2192 impact that these alternatives are influenced by the GND's framing. The \"So What?\" is explicit: \"This is a showing that the that the Green New Deal is part of a way to guide future climate debate.\"\n2) Body 2's core claim \u2014 that the GND addresses environmental justice and thereby democratizes climate legislation \u2014 is well-analyzed. The speaker moves from the Guardian's incinerator statistic to the specific mechanism (jobs guarantee, universal health care, subsidies) and then to the Illinois equity bill as concrete proof, explaining why that matters: \"We're making sure that those who have been the most marginalized by our pollution are now the most advantaged, and there is nothing more powerful than that.\"\n3) Body 3's core claim \u2014 that the GND leads to a new global paradigm \u2014 is supported by a reasonable causal chain: the Paris Accords lack a mechanism, the GND provides one, and its accessibility (via AOC) makes it exportable to other countries. The speaker explicitly connects the evidence to the thesis: \"the Green New Deal is creating a unified platform where we can all cut reductions.\"\n4) The speaker consistently runs the \"So What?\" test on key evidence: after citing the 3.8% emissions rise, they immediately say \"We face crises around the world, in Sudan and Yemen, but this is a crisis of the natural world\" \u2014 tying the statistic to urgency rather than dropping it.\n**Critical Flaws:**\n1) Body 1's argument is only partially fair: the speaker characterizes Republican climate proposals (Lamar Alexander's Manhattan Project, Matt Gaetz's Green Real Deal) as purely reactive to GND popularity, but never engages the strongest opposing view \u2014 that these proposals might reflect genuine Republican policy evolution independent of the GND. The missing counterargument is: \"Republicans like Alexander and Gaetz may have been moving toward clean-energy innovation anyway, given market pressures and voter shifts; the GND may be accelerating rather than causing that shift.\" Without addressing that, the causal claim is weaker than it could be.\n2) Body 2's claim that \"the climate movement looks like a cross between a Comic-Con convention and a Bernie Sanders rally\" is an assertion with no evidence or warrant \u2014 it's a rhetorical jab, not an argument. The speaker never explains why that demographic makeup matters for the GND's influence, so the \"So What?\" is missing: the point should be that a movement perceived as white and nerdy lacks the political coalition to pass legislation, and the GND's justice provisions are what broaden that coalition.\n3) Body 3's argument that the GND creates a \"unified global paradigm\" is a hasty generalization from a handful of examples (Spain, Sweden, Norway, Canada). The speaker cites candidates \"running on a Green New Deal agenda\" but provides no evidence that this translates into actual legislative influence or a unified platform \u2014 the leap from \"candidates mention it\" to \"global paradigm shift\" skips the warrant.\n4) The thesis itself \u2014 that the GND will serve as \"the bedrock for future environmental legislation\" \u2014 is never tested against the strongest counterfactual: that the GND is a non-binding resolution with no legal force, and its influence may fade once the 2020 election cycle ends. The speaker never acknowledges this, which makes the argument feel one-sided.\n5) The evidence in Body 1 (the Washington Post poll showing 64% of Republicans see climate as a severe threat) is used to prove that Republicans are \"finally forced to listen,\" but the speaker never explains the mechanism by which a poll translates into legislative action \u2014 the warrant is asserted, not demonstrated. The missing \"so what\" is: \"When 64% of a party's own voters say climate is a severe threat, elected Republicans face electoral pressure to propose something, which is why Alexander and Gaetz felt compelled to act.\"\n**What You Could Have Done:**\n1) \"This is very different from the American popular opinion... Now, a skeptic might say these Republican proposals would have happened anyway, given market shifts toward clean energy. But the timing is telling: Alexander's Manhattan Project and Gaetz's Green Real Deal both emerged within months of the GND's introduction, not before \u2014 and both explicitly frame themselves as alternatives to the GND, which shows the GND set the terms of the debate.\"\n2) \"In fact, the climate movement looks like a cross between a Comic-Con convention and a Bernie Sanders rally. That's not just a joke \u2014 it's a political problem. A movement that reads as white, young, and coastal cannot build the multiracial, working-class coalition needed to pass sweeping legislation, which is exactly why the GND's environmental justice provisions are the mechanism that broadens that coalition.\"\n3) \"The national interest tells us on June the 4th of 2019, the candidates in Spain, Sweden, Norway, and even Canada have run on a Green New Deal agenda. Now, candidates running on a slogan isn't the same as a global paradigm shift \u2014 but the fact that the GND's specific policy framework, not just the phrase, is being adopted in multiple national contexts shows it's functioning as a template, not just a talking point.\"\n4) \"The answer simply is that it will serve as the bedrock for future environmental legislation. Of course, the GND is a non-binding resolution, and its influence could fade after 2020. But even non-binding resolutions can set the legislative agenda \u2014 the 1994 Contract with America did exactly that \u2014 and the GND's specificity gives it a staying power that vague aspirational goals lack.\"\n5) \"In fact, the Washington Post continues that Republicans, now 64%, believe that climate change is a severe threat to our future survival, and 45% of all Americans believe that we need immediate action. When nearly two-thirds of a party's own voters say climate is a severe threat, elected Republicans face a direct electoral incentive to propose something \u2014 which is exactly why Alexander and Gaetz felt compelled to act within months of the GND's introduction.\"\n\n### Flaws in Reasoning - 8/12\n**What Worked:**\n1) The speaker largely avoids the most common Extemp fallacy (slippery slope) \u2014 no point escalates into worst-case predictions without proportional evidence; the moon joke at the end is clearly rhetorical, not a logical claim.\n2) The speaker does not commit a false dilemma: they acknowledge that Republican proposals like the Green Real Deal and Manhattan Project are real alternatives, not straw men, and engage with them as genuine responses rather than caricatures.\n3) The causal chain in Body 2 is internally consistent: the speaker links incinerator proximity \u2192 health disparities \u2192 need for justice provisions \u2192 Illinois equity bill as proof, without any obvious post hoc fallacy.\n**Critical Flaws:**\n1) The claim that \"the Green New Deal and the poll numbers are finally forcing Republicans to listen\" is a correlation-as-causation fallacy. The speaker observes that Republican proposals emerged after the GND and after poll shifts, but never rules out the possibility that both the GND and the Republican proposals are independent responses to the same underlying shift in public opinion. The exact sentence: \"the Green New Deal and the poll numbers are finally forcing Republicans to listen\" \u2014 this asserts causation without a mechanism.\n2) The line \"If I had a nickel for every time they said innovation, I'd be able to pay for the $93 trillion Green New Deal\" is a rhetorical hyperbole that substitutes for actual argument. The speaker never establishes that Republican use of \"innovation\" is empty rhetoric versus a genuine policy preference, so the jab does no logical work \u2014 it's a clich\u00e9 dressed as wit.\n3) In Body 3, the speaker commits a hasty generalization: from four countries (Spain, Sweden, Norway, Canada) where candidates \"have run on a Green New Deal agenda,\" they conclude that the GND is \"creating a unified platform where we can all cut reductions.\" Four examples, all from wealthy Western democracies, cannot support a claim about a \"global paradigm\" \u2014 the sample is too small and too homogeneous.\n4) The speaker asserts that \"the most sweeping piece of climate legislation we have around the world is the Paris Climate Accords\" and then immediately dismisses it because it \"proposes a goal... with no actual mechanism.\" This is a false dilemma: the speaker implies that because the Paris Accords lack an enforcement mechanism, the only alternative is the GND's approach, ignoring other possible mechanisms (carbon pricing, regulatory standards, technology treaties) that could also fill the gap.\n5) The opening joke about Lou Dobbs calling her \"Alexandria Ocasio-Cortez\" is factually nonsensical \u2014 that is her actual name, so the joke's premise is unclear. This is not a logical fallacy per se, but it is an unforced error in reasoning: the speaker sets up a contrast between a wrong name and a right name, but both names are the same, which undercuts the hook's internal logic.\n**What You Could Have Done:**\n1) \"the Green New Deal and the poll numbers are finally forcing Republicans to listen. Now, to be clear, I'm not saying the GND caused those poll numbers \u2014 the polls shifted first. But the GND gave Republicans a specific target to respond to, and the timing of Alexander's and Gaetz's proposals, both within months of the GND's introduction, shows they were responding to the GND's framing, not just the polls.\"\n2) \"If I had a nickel for every time they said innovation, I'd be able to pay for the $93 trillion Green New Deal. But here's the thing: 'innovation' without a specific policy mechanism is just a word. The GND forces Republicans to define what innovation actually means \u2014 carbon capture? Nuclear? \u2014 and that definition is the real shift.\"\n3) \"the candidates in Spain, Sweden, Norway, and even Canada have run on a Green New Deal agenda. Now, four countries isn't the whole world, but these are not fringe candidates \u2014 they're mainstream parties in wealthy democracies, and their adoption of the GND's specific framework, not just the slogan, shows the template is spreading beyond the U.S.\"\n4) \"The problem with it is it proposes a goal, 1.5 degrees of Celsius of heating, with no actual mechanism on how to get there. Now, that doesn't mean the only alternative is the GND \u2014 carbon pricing or regulatory standards could also work. But the GND is the first proposal to pair the goal with a concrete, multi-sector mechanism, which is why it's filling the gap the Paris Accords left open.\"\n5) \"One cable pundit called her Alessandra Oxycontin and Lou Dobbs, the paradigm of journalistic integrity, called her Alexandria Ocasio-Cortez. Now, Dobbs got her name right, which makes the joke a little confusing \u2014 but the point stands: pundits can't even agree on what to call her, let alone what her policy actually is.\"\n\n### Strength of Evidence - 12/16\n**What Worked:**\n1) The speaker cites 8 unique sources across the speech: The Atlantic, Scientific American, Washington Post, Politico, The Guardian, Vox, Los Angeles Times, New York Times, and The National Interest \u2014 that's 9 distinct outlets, well above the benchmark of 1-2 per point, and all are reputable mainstream or policy-focused publications.\n2) Every source is dated with at least a month and year, and most include a specific day: \"June the 12th of 2019\" (Atlantic), \"January of this year\" (Scientific American), \"April the 3rd of 2019\" (Washington Post), \"March the 26th of 2019\" (Politico), \"May the 21st of 2019\" (Guardian), \"March the 7th of 2019\" (Vox), \"December of 2018\" (LA Times), \"March of 2019\" (NYT), \"June the 4th of 2019\" (National Interest). All dates are within roughly 18 months of the speech's likely delivery (mid-2019), which is appropriate for a fast-moving climate policy topic.\n3) The speaker applies evidence to claims reasonably well in Body 2: the Guardian's incinerator statistic is directly tied to the environmental justice argument, and the Vox Illinois bill is used as concrete proof of the GND's influence on state-level legislation.\n4) The speaker explains why the Scientific American statistic matters: after citing the 3.8% emissions rise, they immediately connect it to urgency \u2014 \"We face crises around the world, in Sudan and Yemen, but this is a crisis of the natural world\" \u2014 rather than dropping the number and moving on.\n**Critical Flaws:**\n1) The Washington Post poll data is cited with specificity (\"64% believe that climate change is a severe threat\") but the speaker never explains the poll's methodology or sample size, which weakens its authority \u2014 a judge might wonder whether 64% of Republicans is a reliable figure or an outlier.\n2) The National Interest source is introduced mid-sentence without a clear citation structure: \"The national interest tells us on June the 4th of 2019, the candidates in Spain, Sweden, Norway, and even Canada have run on a Green New Deal agenda\" \u2014 the speaker drops the outlet name in lowercase and never states the article title or author, which makes the citation feel less rigorous than the earlier ones.\n3) The Scientific American citation is vague: \"we see in an article from the Scientific American from January of this year that emissions rose by 3.8%\" \u2014 the speaker never specifies which emissions (global? U.S.? CO2? all greenhouse gases?), which makes the statistic harder to apply to the argument about U.S. environmental legislation.\n4) The speaker cites The Atlantic twice but never distinguishes between the two different Atlantic articles \u2014 the first is about the GND's white paper, the second about its popularity, but both are just \"an article from The Atlantic,\" which could confuse a judge trying to track sources.\n5) The Vox citation about Illinois' equity bill is strong, but the speaker never explains how the GND specifically influenced that bill \u2014 the causal link is asserted, not evidenced. The missing \"so what\" is: \"The Illinois bill's focus on hiring marginalized people mirrors the GND's jobs guarantee language, showing the GND's framework is already being copied at the state level.\"\n**What You Could Have Done:**\n1) \"In fact, the Washington Post continues that Republicans, now 64%, believe that climate change is a severe threat to our future survival. That's according to a Washington Post-Kaiser Family Foundation poll of over 2,000 adults conducted in early 2019, which makes the 64% figure statistically reliable.\"\n2) \"An article in The National Interest from June the 4th of 2019 reports that the candidates in Spain, Sweden, Norway, and even Canada have run on a Green New Deal agenda.\"\n3) \"we see in an article from the Scientific American from January of this year that global CO2 emissions rose by 3.8%.\"\n4) \"An article from The Atlantic tells us on June the 12th of 2019 that AOC proposed the influential Green New Deal... A separate Atlantic piece, also from 2019, reports that the deal was met with regret, but also immense popularity.\"\n5) \"We see in a different article, this time from Vox on March the 7th of 2019, that in the state of Illinois this led to an equity environmental Justice Bill being passed... The bill's explicit focus on hiring marginalized people for solar installation jobs directly mirrors the GND's jobs guarantee language, which shows the GND's framework is already being copied at the state level.\"\n\n### Clarity - 7/10\n**What Worked:**\n1) The speaker's signposting is strong: each body point opens with a clear verbal marker \u2014 \"First,\" \"Secondly,\" \"Finally, and perhaps most importantly\" \u2014 and the conclusion opens with \"That's exactly why we have to return back to today's question,\" so a listener without the transcript could easily track the speech's structure.\n2) The speaker avoids most vague pronoun errors: \"this\" and \"that\" generally have clear antecedents, such as \"This is the first way in which the Green New Deal will influence future environmental legislation\" where \"this\" clearly refers to the preceding point about innovation.\n3) The speaker explains acronyms and references on first use: \"GND, standing for the Green New Deal\" and \"AOC\" are both unpacked, so a judge with no background knowledge can follow.\n4) The speech is largely free of filler words in the text: the auto-count found only 4 total (\"actually\"\u00d71, \"like\"\u00d73), and a close read confirms the speaker does not pad with \"really,\" \"very,\" \"just,\" \"kind of,\" or \"basically\" in any significant way.\n**Critical Flaws:**\n1) The phrase \"the that the Green New Deal\" is a clear stutter/repetition: \"This is a showing that the that the Green New Deal is part of a way to guide future climate debate.\" The extra \"the\" is a verbal stumble that a live judge would notice.\n2) The sentence \"we're not simply going to just pass this 14-page resolution. to come to bipartisan solutions like a carbon tax\" has a grammatical break: the period after \"resolution\" creates a fragment, and the sentence should read \"we're not simply going to just pass this 14-page resolution to come to bipartisan solutions like a carbon tax.\"\n3) The phrase \"climate climate solution\" is a clear repetition: \"did Republicans propose any kind of sweeping climate climate solution.\" This is likely a stutter, but it reads as sloppy in the transcript.\n4) The opening joke's logic is unclear: \"Lou Dobbs, the paradigm of journalistic integrity, called her Alexandria Ocasio-Cortez\" \u2014 that is her actual name, so the joke's premise is confusing. A listener might not understand why that's supposed to be funny, which undermines the hook's clarity.\n5) The phrase \"we're all gonna have to move to the moon\" is a colloquialism that slightly undercuts the speech's formal register, and the contraction \"gonna\" appears twice (\"we're all gonna have to move to the moon\" and \"we're all going to die\" earlier) \u2014 while not a major flaw, it's a minor tonal inconsistency in an otherwise polished extemp speech.\n6) The sentence \"In my home state of New Jersey, it's doubled the rate of asthma because of climate and motivations on these incinerators\" is awkwardly phrased: \"climate and motivations\" is unclear \u2014 the speaker likely means \"climate-motivated policies\" or \"the siting of these incinerators,\" but as delivered it's confusing.\n**What You Could Have Done:**\n1) \"This is a showing that the Green New Deal is part of a way to guide future climate debate.\"\n2) \"we're not simply going to just pass this 14-page resolution \u2014 we're going to use it to come to bipartisan solutions like a carbon tax.\"\n3) \"did Republicans propose any kind of sweeping climate solution.\"\n4) \"Lou Dobbs, the paradigm of journalistic integrity, called her Alexandria Ocasio-Cortez \u2014 which, to be fair, is her actual name, but the point is that even the 'serious' pundits can't seem to take her seriously enough to get the substance right.\"\n5) \"we're all going to have to move to the moon.\"\n6) \"In my home state of New Jersey, it's doubled the rate of asthma because of the siting of these incinerators in low-income communities of color.\"\n\n### Conclusion Strength - 7/8\n**What Worked:**\n1) The conclusion accurately restates the three main points: \"first, by leading to bipartisan action, second, by addressing environmental justice, and finally, by leading to global universality\" \u2014 a faithful summary of the speech's structure.\n2) The conclusion delivers a clear, intentional echo back to the opening hook: \"AOC might have a complicated name, but there are only three letters we need to learn about the Green New Deal. Y-E-A.\" This is a satisfying callback that ties the speech's beginning to its end.\n3) The conclusion includes a forward-looking statement: \"That's exactly why we have to return back to today's question\" and the final \"Y-E-A\" functions as an implicit call to action \u2014 a vote of support for the GND's influence.\n4) The moon callback (\"We landed a man on the moon, and if we're not careful about climate change, we're all gonna have to move to the moon\") provides a memorable, slightly humorous close that reinforces the stakes.\n**Critical Flaws:**\n1) The conclusion's \"So What?\" is underdeveloped: the speaker restates the thesis and the three points, but never explicitly explains why the GND serving as a \"bedrock\" matters beyond the speech itself \u2014 there's no final insight about what this means for the audience or for future policy beyond a vague \"we have to return back to today's question.\"\n2) The phrase \"global universality\" is slightly redundant \u2014 \"global\" and \"universality\" mean nearly the same thing, so the third point's restatement is less crisp than the first two.\n3) The final line \"Y-E-A\" is clever but potentially confusing: a listener might not immediately connect \"Y-E-A\" to \"yea\" as in a vote of support, and the speaker never spells out that connection explicitly.\n**What You Could Have Done:**\n1) \"That's exactly why we have to return back to today's question. How will the Green New Deal influence future environmental legislation? The answer is that it will serve as a fundamental bedrock. And that matters because for the first time in a generation, we have a climate proposal that isn't just a goal \u2014 it's a mechanism. It's not just a resolution \u2014 it's a roadmap. And if we don't follow that roadmap, the next time we ask this question, it won't be about influence; it'll be about survival.\"\n2) \"finally, by leading to global cooperation.\"\n3) \"AOC might have a complicated name, but there are only three letters we need to learn about the Green New Deal. Y-E-A. Yea, as in the vote we need to cast for a livable future.\"\n\n### Speech Quality \u2014 Vocal Delivery & Fluency - 16/20\n**What Worked:**\n1) Filler words are extremely low: the auto-count found only 4 total (\"actually\"\u00d71, \"like\"\u00d73), and a close read of the transcript confirms no significant \"um,\" \"uh,\" \"you know,\" or other verbal crutches. This is a clean, disciplined delivery.\n2) Volume is adequate: the audio metrics show average -23.1 dBFS, which is below the full-marks threshold of -18 dBFS but still clearly audible and projected \u2014 the raw volume subscore of 8/10 reflects a speaker who is not too quiet but could project slightly more.\n3) Tone and pitch variety are excellent: 3151 significant pitch shifts and a pitch std-dev of 81.6Hz indicate a highly expressive, non-monotone delivery that tracks the content's energy \u2014 this is a major strength.\n4) Pacing is solid: 160 words per minute over a 470-second recording falls squarely within the competitive extemp target of 150-175 wpm, so the speech is neither rushed nor dragging.\n5) Pauses are used strategically: 7 pauses longer than 0.4s, averaging 1.05s, is a healthy number \u2014 enough to create emphasis and signposting without becoming awkward or filler-disguising.\n**Critical Flaws:**\n1) Emphasis placement is inconsistent: of the 245 emphasized words (20% of total), many land on rhetorically unimportant words \u2014 for example, the opening sequence emphasizes \"CABLE,\" \"NEWS,\" \"PUNDITS,\" \"LOVE,\" \"LOU,\" \"CALLED,\" \"WHILE,\" \"ARE,\" \"STANDING,\" \"THE,\" \"SOLVE,\" \"UNITED,\" \"THE,\" \"MET,\" \"BUT,\" \"ALSO,\" \"NOW,\" \"TO,\" \"A,\" \"DON'T,\" \"IN,\" \"AND,\" \"WE,\" \"HAVE,\" \"WILL,\" \"THAT\" \u2014 a large proportion are articles, prepositions, and conjunctions, not thesis words, key numbers, or signposting cues. This suggests the speaker's emphasis is landing somewhat randomly rather than being deliberately placed on the most important terms.\n2) The single stutter/repetition detected (\"the that the Green New Deal\") is a minor fluency flaw, but it occurs at a rhetorically important moment \u2014 the transition into the thesis's first point \u2014 which makes it more noticeable than if it had happened in a less critical spot.\n3) The speaker's volume, while adequate, is not at the strong-projection threshold (-18 dBFS or above). In a large room or against a more forceful competitor, this speaker might be perceived as slightly underpowered, which could cost points on delivery.\n4) The pace, while solid, is at the slower end of the competitive range (160 wpm vs. the 175 upper bound). Combined with the 470-second total duration, this suggests the speaker may have had room to add more content or analysis without rushing \u2014 the speech feels slightly underfilled for a 7-minute extemp round.\n**What You Could Have Done:**\n1) Rehearse the speech with a deliberate emphasis map: mark only the thesis words (\"bedrock,\" \"bipartisan,\" \"environmental justice,\" \"global paradigm\"), key numbers (\"64%,\" \"3.8%,\" \"1.6 million\"), and signposting cues (\"First,\" \"Secondly,\" \"Finally\") for emphasis, and practice delivering the rest of the sentence at a more even volume so the spikes land on the right words.\n2) Slow down and repeat the phrase \"the Green New Deal\" cleanly in practice, focusing on eliminating the extra \"the\" \u2014 record yourself saying \"This is a showing that the Green New Deal is part of a way to guide future climate debate\" ten times without a stumble.\n3) Practice projecting from the diaphragm rather than the throat: stand with feet shoulder-width apart, take a deep breath before each main point, and aim for a volume level that feels slightly too loud in a small room \u2014 that's usually the right level for a large competition room.\n4) Use the extra 30-40 seconds available (470s vs. a 420s target) to add one more piece of analysis or a deeper warrant in Body 3, which was underweighted \u2014 this would both fill the time and strengthen the argument without rushing.\n\n---\n\n### Total Composite Score: 76/100\n\n### Judge's Rank: 3/5\n\n### Rank Explanation:\nThis speech would place 3rd against 5 other competitors on this question. The speaker has a genuinely creative hook, a clear thesis, and strong vocal variety, but the argumentation is uneven \u2014 Body 1 and Body 2 are well-developed, while Body 3 is thin and the causal claims throughout rely more on assertion than warrant. The evidence is plentiful and well-dated, but the speaker sometimes drops citations without explaining their significance, and the emphasis placement in delivery is noticeably random, undercutting the otherwise strong vocal energy. The speech is clean and fluent with almost no filler words, but the logical gaps and the underweighted third point keep it from ranking higher. Against a field of six, this would likely beat the speakers with weaker structure or more filler, but lose to those with tighter reasoning and more deliberate emphasis.\n\n### Actionable Drill for Next Round:\nThe single worst flaw is the inconsistent emphasis placement in delivery \u2014 20% of words are emphasized, but many are articles and prepositions, which dilutes the impact of the truly important terms. For the next round, take a printed copy of your speech and use a highlighter to mark only the 10-12 most rhetorically important words per minute (thesis words, key numbers, signposting cues, and the first word of each main point). Then record yourself delivering the speech while consciously de-emphasizing everything else \u2014 speak the non-highlighted words at a noticeably lower, more even volume. Listen back and check: did the emphasized words actually stand out, or did the emphasis still bleed onto filler words? Repeat until the contrast is sharp. This drill will force you to make deliberate choices about where your vocal energy goes, which will make your delivery sound more controlled and persuasive.\n\n--- EVIDENCE FACT-CHECK (does not count toward score) ---\n\n[TRUE] AOC proposed the Green New Deal in November (before June 2019) as a 14-page white paper congressional resolution.\n  Cited source: The Atlantic, June 12, 2019\n  Alexandria Ocasio-Cortez and Senator Ed Markey introduced a 14-page resolution for the Green New Deal in February 2019. The Atlantic published an article on June 12, 2019, discussing the Green New Deal, consistent with the claim's timeline.\n\n[TRUE] The Green New Deal was met with regret but also immense popularity across the United States.\n  Cited source: The Atlantic, (implied June 12, 2019)\n  While 'regret' is not explicitly mentioned, articles from early 2019 indicate the Green New Deal was popular among Democrats and activists, but also faced strong opposition and criticism from Republicans.\n\n[TRUE] The think tank New Consensus is working to transform this resolution into a sweeping policy agenda by the year 2020.\n  Cited source: The Atlantic, (implied June 12, 2019)\n  New Consensus is a think tank that has been involved in developing the Green New Deal framework, aiming for a comprehensive policy agenda. Their website indicates their role in this.\n\n[UNVERIFIED] Emissions rose by 3.8% in January of 'this year' (assumed 2020 based on context).\n  Cited source: Scientific American, January of this year\n  A search for 'Scientific American January 2020 emissions rose 3.8%' or similar did not yield a specific article with this statistic. The context of 'this year' is ambiguous given the current date (2026) versus the likely speech date (2019/2020).\n\n[TRUE] Before innovation, Republicans saw climate change as a figment of political imagination.\n  Cited source: The Washington Post, April 3, 2019\n  A Washington Post article from April 2, 2019, discusses how Republicans for years cast doubt on climate change, but some are now acknowledging it, consistent with the claim.\n\n[TRUE] In 2011, Mitt Romney ran on a campaign that said he didn't even know if humans were a cause of climate change.\n  Cited source: Mitt Romney 2011 campaign\n  In 2011, Mitt Romney made statements indicating he believed the world was getting warmer and humans contributed, but he was uncertain how much, and at one point said he didn't know what was causing it.\n\n[UNVERIFIED] 64% of Republicans now believe climate change is a severe threat to our future survival, and 45% of all Americans believe we need immediate action.\n  Cited source: The Washington Post, (implied April 3, 2019)\n  A Washington Post-Kaiser Family Foundation poll from September 2019 found 60% of Republicans believe human activity causes climate change and about half of all Americans believe action is urgently needed within the next decade. The specific numbers cited (64% Republicans, 45% all Americans for immediate action) were not found.\n\n[TRUE] The Green New Deal and poll numbers are forcing Republicans to listen.\n  Cited source: Politico, March 26, 2019\n  Politico and other sources from March 2019 reported that the Green New Deal was indeed prompting Republicans to propose their own climate solutions, indicating it was changing the debate.\n\n[TRUE] Senator Lamar Alexander of Tennessee, a Republican, proposed his Manhattan Project on Clean Energy.\n  Cited source: Politico, March 26, 2019\n  Senator Lamar Alexander proposed a 'New Manhattan Project for Clean Energy' in March 2019 as a Republican response to climate change and the Green New Deal.\n\n[TRUE] Matt Gaetz of Florida proposed a Green Real Deal, which would combine carbon capture with less oil drilling.\n  Cited source: Politico, March 26, 2019\n  Representative Matt Gaetz proposed a 'Green Real Deal' in late March/early April 2019, which focused on innovation, carbon capture, and reducing regulations, though it did not explicitly call for 'less oil drilling' but rather keeping options open for all energy production.\n\n[TRUE] 1.6 million Americans live near a trash incinerator, leading to higher rates of asthma and maternal mortality.\n  Cited source: The Guardian, May 21, 2019\n  A Guardian article from May 21, 2019, reported that 1.6 million Americans live near the most polluting incinerators, and these pollutants are linked to health problems including asthma and heart disease.\n\n[UNVERIFIED] In the state of Illinois, an equity environmental Justice Bill was passed, leading to 40 million solar panels installed by 2050 with a focus on hiring marginalized people.\n  Cited source: Vox, March 7, 2019\n  A search for a Vox article from March 7, 2019, about an Illinois equity environmental justice bill with these specific details (40 million solar panels by 2050, focus on marginalized hiring) did not yield a direct match. While Illinois has passed environmental justice legislation and has solar initiatives, the specific numbers and direct attribution to Vox on that date for this claim could not be confirmed.\n\n[TRUE] The most sweeping piece of climate legislation worldwide is the Paris Climate Accords, which proposes a goal of 1.5 degrees Celsius of heating with no actual mechanism on how to get there.\n  Cited source: Los Angeles Times, December 2018\n  The Paris Agreement sets a goal to limit global warming to well below 2 degrees Celsius, preferably 1.5 degrees Celsius, but relies on voluntary national contributions rather than a central enforcement mechanism.\n\n[TRUE] The Green New Deal originated in the UK, but AOC's accessibility has made it a globally accessible source.\n  Cited source: New York Times, March 2019\n  The concept of a 'Green New Deal' has roots in the UK and other parts of the world before the US proposal. Alexandria Ocasio-Cortez's introduction of the resolution in 2019 significantly raised its profile globally.\n\n[UNVERIFIED] Candidates in Spain, Sweden, Norway, and even Canada have run on a Green New Deal agenda.\n  Cited source: The National Interest, June 4, 2019\n  A search for 'The National Interest June 4 2019 Green New Deal agenda Spain Sweden Norway Canada' did not yield a direct article supporting this specific claim. While the Green New Deal concept has gained international traction, the specific attribution to The National Interest on that date for these countries is unverified.\n\n--- TRANSCRIPT ---\n\nCable news pundits love to pronounce one freshman Congresswoman's name, Alexandria Ocasio-Cortez. The problem is they're not always successful. One cable pundit called her Alessandra Oxycontin and Lou Dobbs, the paradigm of journalistic integrity, called her Alexandria Ocasio-Cortez. And while we commonly know her as AOC, there are three letters also attached to her name, GND, standing for the Green New Deal. An article from The Atlantic tells us on June the 12th of 2019 that AOC proposed the influential Green New Deal last November as a 14-page white paper congressional resolution. This deal attempted to solve the ever-pressing emergency of climate change, as the United States, after withdrawing from the Paris Climate Accords has no sweeping environmental legislation to protect us in the near future. The Atlantic continues that the deal was met with regret, but also immense popularity across the United States. And now the think tank New Consensus is working to transform this resolution into a sweeping policy agenda by the year 2020. We don't have much time to waste. In fact, we see in an article from the Scientific American from January of this year that emissions rose by 3.8%. We face crises around the world, in Sudan and Yemen, but this is a crisis of the natural world. And that's exactly why for everyone in this room, we have to ask today's question. How will the Green New Deal influence future environmental legislation? The answer simply is that it will serve as the bedrock for future environmental legislation. First, by forcing bipartisan action on climate mitigation. more broadly by addressing the critical concept of environmental justice, and finally, and perhaps most importantly, by leading to a new global paradigm on climate policy. Republicans for years have said that innovation is the way that we can solve climate change. But what exactly is innovation? If I had a nickel for every time they said innovation, I'd be able to pay for the $93 trillion Green New Deal. This is the first way in which the Green New Deal will influence future environmental legislation. It will force some kind of bipartisan action on climate mitigation. An article from the Washington Post tells us on April the 3rd of 2019 that before innovation, Republicans saw climate change as a figment of political imagination. Going back to 2011, Mitt Romney ran on a campaign that said he didn't even know if humans were a cause of climate change, and in neither his campaign nor the 2016 campaign did Republicans propose any kind of sweeping climate climate solution. This is very different from the American popular opinion. In fact, the Washington Post continues that Republicans, now 64%, believe that climate change is a severe threat to our future survival, and 45% of all Americans believe that we need immediate action. We see in a further article from Politico on March the 26th of 2019 that the Green New Deal and the poll numbers are finally forcing Republicans to listen. Senator Lamar Alexander of Tennessee, a Republican, proposed his Manhattan Project on Clean Energy. Matt Gaetz of Florida proposed a Green Real Deal, which would combine carbon capture with less oil drilling. Both of these solutions are certainly influenced by popularity, but they're also because of the Democratic ploy of the Green New Deal to change innovation into forcing Republicans to actually innovate. This is a showing that the that the Green New Deal is part of a way to guide future climate debate. We're not simply going to just pass this 14-page resolution. to come to bipartisan solutions like a carbon tax, one that allows us to grow our economy while cutting emissions. Secondly, we have to look more broadly to the question of environmental justice because while the climate movement is right, they're also very white. In fact, the climate movement looks like a cross between a Comic-Con convention and a Bernie Sanders rally. This is the second way that we can change that the Green New Deal is influencing future environmental legislation by democratizing it with environmental justice. An article from The Guardian tells us on May the 21st of 2019, though we think of solar panels and carbon capture, Americans are tangibly being hurt by climate change. 1.6 million Americans live near a trash incinerator, a product of our industrial complex that has led to higher rates of asthma and maternal mortality. In my home state of New Jersey, it's doubled the rate of asthma because of climate and motivations on these incinerators. In climate legislation, we've often looked to just alternative energy, but this time the Green New Deal is proposing a jobs guarantee, universal health care, and better subsidies to allow minorities to get equity. This is great because we're designing a new future where we won't just have a world where we're not swimming all the time, but also where everyone will be on an equal footing. We see in a different article, this time from Vox on March the 7th of 2019, that in the state of Illinois this led to an equity environmental Justice Bill being passed, where there will be 40 million solar panels installed by 2050 that will also have a focus on inviting and hiring marginalized people. In this way, we're considering an impact that isn't just a greener world. We're making sure that those who have been the most marginalized by our pollution are now the most advantaged, and there is nothing more powerful than that. Finally, and perhaps most importantly, at the beginning of this year, climate scientists with the Intergovernmental Panel on Climate Change sat very apathetically at a table much like yours and said, we're all going to die. Their dead face was a little apathetic, but it represents a global apathy towards sweeping climate change legislation. And it's the final way the Green New Deal will influence this future environmental legislation by leading to a new unified global paradigm. We see in an article from the Los Angeles Times from December of 2018 that the most sweeping piece of climate legislation we have around the world is the Paris Climate Accords. The problem with it is it proposes a goal, 1.5 degrees of Celsius of heating, with no actual mechanism on how to get there. We see in a final article, this time from the New York Times, from March of 2019, that ultimately the Green New Deal has been around before the United States proposed it in 2018. It came from the UK, but Alexandria Ocasio-Cortez's accessibility with it has now made it more of a globally accessible source. The national interest tells us on June the 4th of 2019, the candidates in Spain, Sweden, Norway, and even Canada have run on a Green New Deal agenda, and the Green New Deal is creating a unified platform where we can all cut reductions. We landed a man on the moon, and if we're not careful about climate change, we're all gonna have to move to the moon. That's exactly why we have to return back to today's question. How will the Green New Deal influence future environmental legislation? The answer is that it will serve as a fundamental bedrock. More specifically, first, by leading to bipartisan action, second, by addressing environmental justice, and finally, by leading to global universality. AOC might have a complicated name, but there are only three letters we need to learn about the Green New Deal. Y-E-A. Thank you very much. Thank you.",
@@ -4848,9 +4061,6 @@ Grading rules per claim:
     aiCompareToggle.classList.add('active');
     viewBeforeAiCompare = [viewRecord, viewReview, viewProcessing, viewResults].find(v => !v.classList.contains('hidden')) || viewRecord;
     showView(viewAiCompare);
-    // Animate the quality/cost bars in on a rAF tick (same pattern as the
-    // "Trends Across N Ballots" summary bars in My History) so the width
-    // transition actually fires instead of snapping straight to full width.
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         viewAiCompare.querySelectorAll('.ai-bar-fill').forEach(bar => { bar.style.width = bar.dataset.w + '%'; });
@@ -4872,26 +4082,6 @@ Grading rules per claim:
     if(aiCompareBackBtn2) aiCompareBackBtn2.addEventListener('click', closeAiComparePanel);
   }
 
-  // Clicking a row for a model we have a real sample ballot for expands a
-  // panel right underneath it showing that ballot in full, so the quality
-  // difference between models is something you can actually read rather
-  // than just a quality/cost bar. One shared panel gets moved to sit after
-  // whichever row is open (accordion -- opening a new one closes the last).
-  // Renders a raw ballot string with the exact same category-card markup
-  // used by the real Results view and the built-in Example Ballot tab
-  // (score circle, What Worked / Critical Flaws / What You Could Have Done
-  // rows, Composite Score + Rank stamps) rather than plain text, by
-  // reusing the app's own parseBallot() on it.
-  // The AI_MODEL_EXAMPLE_BALLOTS strings are raw .txt-export text (see
-  // downloadBallotTxt), which appends the fact-check section as plain
-  // text after "--- EVIDENCE FACT-CHECK ---" and the transcript after
-  // "--- TRANSCRIPT ---". parseBallot only splits on "### " headers, so
-  // without this split first, that whole trailing chunk (including the
-  // full transcript) gets silently swallowed into the "Actionable Drill"
-  // body and rendered as an unstyled wall of text inside the Feedback
-  // box. Strip both off before parsing so Feedback stays just the drill,
-  // and hand the fact-check text to parseFactCheckPlainText below so it
-  // renders with the same styled cards real rounds get.
   function splitOffFactCheckAndTranscript(feedback){
     const idx = feedback.indexOf('--- EVIDENCE FACT-CHECK');
     if(idx === -1) return { ballotText: feedback, factCheckText: null };
@@ -4902,11 +4092,6 @@ Grading rules per claim:
     return { ballotText, factCheckText };
   }
 
-  // Reverses factCheckPlainText's format back into the {claim, source,
-  // verdict, explanation, sourceUrl} shape buildFactCheckHtml expects, so
-  // sample ballots on the LLM Model Rankings page render the fact-check
-  // section as the same styled TRUE/FALSE/UNVERIFIED cards a live round
-  // gets, not as unstyled plain text.
   function parseFactCheckPlainText(text){
     const body = text.replace(/^---\s*EVIDENCE FACT-CHECK[^\n]*---\s*/i, '').trim();
     if(!body) return [];
@@ -5010,18 +4195,7 @@ Grading rules per claim:
     if(aiExampleClose) aiExampleClose.addEventListener('click', (e) => { e.stopPropagation(); closeAiExamplePanel(); });
   }
 
-  // The rubric icon only makes sense on the paper for Home/Record, My Ballot
-  // History, the Example Ballot, and the post-submission Feedback/Results
-  // view, hide it everywhere else (Review, Processing, Streak, Briefing,
-  // Citation Checker) by hooking into showView().
   const RUBRIC_VISIBLE_VIEWS = [viewRecord, viewResults, viewExample, viewHistory];
-  // The ballot header itself (title/Event/Round/Speaker/Judge/mode label)
-  // only makes sense for a single round in progress or on display, Home
-  // and a finished Results ballot. It's hidden everywhere else (My Ballot
-  // History's multi-round list, Streak Calendar, Tournament Briefing,
-  // Citation Checker, Review, Processing, and the sample Example ballot,
-  // which has its own "Example Ballot" page heading instead) so stale
-  // "Round 1 / Regular Practice" framing doesn't linger on unrelated pages.
   const BALLOT_HEAD_VISIBLE_VIEWS = [viewRecord, viewResults];
   const ballotHeadEl = document.querySelector('.ballot-head');
   let currentViewEl = viewRecord;
@@ -5042,13 +4216,6 @@ Grading rules per claim:
   if(aiCompareToggle) aiCompareToggle.classList.toggle('hidden', !RUBRIC_VISIBLE_VIEWS.includes(viewRecord));
   if(ballotHeadEl) ballotHeadEl.classList.toggle('hidden', !BALLOT_HEAD_VISIBLE_VIEWS.includes(viewRecord));
 
-  // ===== Hamburger nav menu (semi-transparent drawer, shown by default) =====
-  // The drawer now stays open/visible at all times by default so the moving
-  // wall background is always visible through it. Clicking the hamburger no
-  // longer opens/closes a backdrop-dimmed overlay, it just minimizes
-  // (slides away) or restores the drawer in place. The hamburger button
-  // itself sits at the top of the left-side menu, doing double duty as
-  // both the toggle and the drawer's visual "head" (no separate close X).
   const navMenuToggle   = document.getElementById('navMenuToggle');
   const navMenuPanel    = document.getElementById('navMenuPanel');
   const navMenuPersistentToggle = document.getElementById('navMenuPersistentToggle');
@@ -5084,25 +4251,11 @@ Grading rules per claim:
     e.stopPropagation();
     openNavMenu();
   });
-  // "Home" returns to the default Official Practice Ballot view, closing
-  // whatever overlay view (History, Briefing, Citation Checker, Example
-  // Ballot) is currently open, same effect as each view's own Back button.
   document.getElementById('navHomeBtn').addEventListener('click', () => {
     showView(viewRecord);
   });
-  // Every other menu item just triggers the click of the header icon it
-  // mirrors, so it always stays perfectly in sync with that button's own
-  // open/close/toggle logic, nothing to duplicate or fall out of date.
   navMenuPanel.querySelectorAll('.nav-menu-item[data-target]').forEach(item => {
     item.addEventListener('click', (e) => {
-      // Without this, the original click event keeps bubbling up to
-      // document AFTER targetBtn.click() below has already opened the
-      // panel, and the document-level "click outside closes the panel"
-      // listeners (for settings/timer/shortcuts) see that bubbling click
-      // (whose target is this menu item, i.e. outside the panel) and
-      // immediately close the panel that was just opened. Stopping
-      // propagation here keeps that original click from ever reaching
-      // those document listeners.
       e.stopPropagation();
       const targetId = item.getAttribute('data-target');
       const targetBtn = document.getElementById(targetId);
@@ -5110,12 +4263,6 @@ Grading rules per claim:
     });
   });
 
-  // Keeps each sidebar row's blue "currently open" highlight in sync with
-  // its mirrored header button's own .active class, whatever toggles that
-  // class (this file already adds/removes .active on open/close for every
-  // button below except themeToggle, which isn't a page/panel that stays
-  // "open"). A MutationObserver means the sidebar never has to duplicate
-  // any open/close logic, it just reflects whatever's already true.
   navMenuPanel.querySelectorAll('.nav-menu-item[data-target]').forEach(item => {
     const targetId = item.getAttribute('data-target');
     if(targetId === 'themeToggle') return;
@@ -5125,11 +4272,7 @@ Grading rules per claim:
     syncActive();
     new MutationObserver(syncActive).observe(targetBtn, { attributes:true, attributeFilter:['class'] });
   });
-  // My Ballot History and Home are full view swaps (not buttons with their
-  // own .active class), so their sidebar rows are driven directly off
-  // showView() instead of the MutationObserver above.
 
-  // ===== Light / dark theme toggle =====
   const themeToggle = document.getElementById('themeToggle');
   const themeIconMoon = document.getElementById('themeIconMoon');
   const themeIconSun  = document.getElementById('themeIconSun');
@@ -5144,7 +4287,6 @@ Grading rules per claim:
       themeIconSun.classList.remove('hidden');
       navThemeIconMoon?.classList.add('hidden');
       navThemeIconSun?.classList.remove('hidden');
-      // Label names the mode a click will switch TO, not the current one.
       if(navThemeLabel) navThemeLabel.textContent = 'Dark Mode';
       if(metaTheme) metaTheme.setAttribute('content', '#e9edf1');
     } else {
@@ -5169,7 +4311,6 @@ Grading rules per claim:
     try{ localStorage.setItem('extemplary-theme', next); }catch(e){}
   });
 
-  // ===== Global keyboard shortcuts =====
   document.addEventListener('keydown', (e) => {
     const tag = (e.target && e.target.tagName || '').toLowerCase();
     const typing = tag === 'input' || tag === 'textarea' || (e.target && e.target.isContentEditable);
@@ -5212,9 +4353,6 @@ Grading rules per claim:
     }
     if(e.code === 'Space' || e.key === ' '){
       e.preventDefault();
-      // Space is context-aware: while reviewing a results/example video it
-      // plays/pauses (stops) that video instantly; only while actually on
-      // the record screen does it start/stop recording.
       if(!viewExample.classList.contains('hidden')){
         examplePbPlayBtn.click();
       } else if(!viewResults.classList.contains('hidden')){
@@ -5225,7 +4363,6 @@ Grading rules per claim:
     }
   });
 
-  // ===== PWA install support =====
   (function setupPWA(){
     const manifest = {
       name: 'Extemplary',
@@ -5257,14 +4394,12 @@ Grading rules per claim:
     }
   })();
 
-  // ===== Make a popover panel draggable by its header (mouse + touch) =====
   let suppressPanelClose = false;
   function makeDraggablePanel(panelEl, handleEl){
     if(!panelEl || !handleEl) return;
     handleEl.style.cursor = 'grab';
     let dragging = false, startX = 0, startY = 0, startLeft = 0, startTop = 0;
     function onDown(e){
-      // Ignore drags starting on interactive controls inside the header (none currently, but future-proof).
       if(e.target.closest('button, a, input')) return;
       const point = e.touches ? e.touches[0] : e;
       const rect = panelEl.getBoundingClientRect();
@@ -5403,13 +4538,6 @@ Grading rules per claim:
   });
   window.addEventListener('resize', () => { if(timerOpen) positionTimerPanel(); });
 
-  // The single "Start Timer" button next to the practice mode switch. It
-  // never fires on its own, the user has to press it, and which timer it
-  // kicks off depends entirely on the practice mode currently selected.
-  // Each mode gets its own full-screen takeover modal (not the small
-  // gear-icon timer panel), color-matched to that mode: Regular Practice
-  // opens a 30-minute modal, Rapid Drill: Introduction opens a 5-minute
-  // modal, and Rapid Drill: Body opens a 10-minute modal.
   function startSelectedTimer(){
     if(!questionInput.value.trim()){
       requireQuestion();
@@ -5481,7 +4609,6 @@ Grading rules per claim:
       editingIndex = -1;
       document.getElementById('addSignalBtn').textContent = '+ Add';
     }else{
-      // check duplicate
       if(!timeSignals.find(s2 => s2.seconds === totalSec)){
         timeSignals.push({ seconds: totalSec, label: lbl, color: col });
       }
@@ -5501,17 +4628,12 @@ Grading rules per claim:
 
   renderSignalList();
 
-  // ===== SIGNAL PRESETS =====
-  // "N down" = judge signals every minute starting when N minutes remain.
-  // 7-min speech: signal at elapsed seconds where (7:00 - elapsed) = N, N-1, ...
-  // e.g. 5 down: signals at 2:00, 3:00, 4:00, 5:00, 6:00
   const SIGNAL_PRESETS = DATA.SIGNAL_PRESETS;
 
   document.querySelectorAll('.btn-preset').forEach(btn => {
     btn.addEventListener('click', () => {
       const preset = SIGNAL_PRESETS[btn.dataset.preset];
       if(!preset) return;
-      // Replace all current signals with the preset
       timeSignals = preset.map(s => ({ ...s }));
       editingIndex = -1;
       document.getElementById('addSignalBtn').textContent = '+ Add';
@@ -5519,20 +4641,6 @@ Grading rules per claim:
     });
   });
 
-  // ===== SUBMISSION =====
-  // Real provider API keys no longer live in this file, they're Supabase
-  // secrets on the `groq-chat` / `groq-transcribe` edge functions. Anything
-  // typed into Settings ("API key override") is just forwarded to those
-  // functions as `overrideKey` and tried first; if omitted, the functions
-  // fall back to their own server-side keys automatically.
-
-  // Wraps fetch() with a hard timeout so a hung/unresponsive request (bad
-  // network, stalled connection, etc.) fails with a clear error instead of
-  // leaving the pipeline waiting forever with no feedback to the user.
-  // Also aborts immediately if the user cancels the in-progress pipeline
-  // run (see pipelineAbortController) — merges that signal in alongside
-  // the timeout's own, so hitting the "X" on the loading screen cuts the
-  // actual in-flight request rather than just hiding the UI around it.
   async function fetchWithTimeout(url, options, timeoutMs){
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -5568,13 +4676,6 @@ Grading rules per claim:
     runPipeline(null, null, null);
   });
 
-  // ===== ROUGH DRAFT SUBMISSION =====
-  // Collects the 11 plaintext fields from the Rough Draft form, validates
-  // none are blank, assembles them into one labeled "transcript" (so the
-  // existing parseBallot/renderResults/history plumbing can treat it just
-  // like a spoken transcript), and kicks off runPipeline the same way the
-  // video submitBtn does above — runPipeline's roughDraftMode branch then
-  // skips straight to judging instead of decoding/transcribing audio.
   const ROUGHDRAFT_FIELD_IDS = [
     'rdQuestion','rdAgd','rdContentions',
     'rdBody1Contention','rdBody1Card1','rdBody1Card1Date','rdBody1Card1Source','rdBody1Card2','rdBody1Card2Date','rdBody1Card2Source','rdBody1Analysis','rdBody1Link',
@@ -5585,11 +4686,6 @@ Grading rules per claim:
   const rdFormError = document.getElementById('rdFormError');
   const rdSubmitBtn = document.getElementById('rdSubmitBtn');
   const rdQuestion = document.getElementById('rdQuestion');
-  // The Rough Draft form's own Question box is never typed into directly;
-  // it mirrors whatever's currently in the shared question box above
-  // (extempQuestion) — whether the user typed a custom question or
-  // confirmed a generated one — so the speaker never has to retype the
-  // question they already entered/selected elsewhere in the app.
   function syncRoughDraftQuestion(){
     if(rdQuestion) rdQuestion.value = questionInput.value;
   }
@@ -5662,20 +4758,12 @@ Grading rules per claim:
 
   document.getElementById('backToReviewBtn').addEventListener('click', () => showView(viewReview));
 
-  // Cancel ("X") button on the processing/loading view — lets the user
-  // bail out of an in-progress ballot-feedback run instead of being stuck
-  // watching it. Aborting the shared controller here is what actually
-  // cuts any in-flight transcription/judging/annotation/fact-check
-  // request (see fetchWithTimeout, withKeyFallback, callGeminiWithKey);
-  // the catch block in runPipeline recognizes the resulting AbortError
-  // and quietly returns to the review screen with no error toast.
   cancelBallotBtn && cancelBallotBtn.addEventListener('click', () => {
     if(pipelineAbortController) pipelineAbortController.abort();
   });
 
   function extFromMime(mime){ return mime.includes('mp4') ? 'mp4' : 'webm'; }
 
-  // ===== VOCAL DELIVERY ANALYSIS (client-side audio signal processing) =====
   function computeRMS(buf){
     let sum = 0;
     for(let i=0;i<buf.length;i++) sum += buf[i]*buf[i];
@@ -5700,12 +4788,10 @@ Grading rules per claim:
     for(let i=0;i<ch0.length;i++) out[i] = (ch0[i]+ch1[i])/2;
     return out;
   }
-  // Lightweight autocorrelation pitch detector, good enough to track relative
-  // pitch movement (tone changes) frame to frame, not lab-grade Hz accuracy.
   function estimatePitch(buf, sampleRate){
     const SIZE = buf.length;
     let rms = computeRMS(buf);
-    if(rms < 0.012) return -1; // too quiet / silence, no reliable pitch
+    if(rms < 0.012) return -1;
     let r1=0, r2=SIZE-1;
     const thres = 0.2;
     for(let i=0;i<SIZE/2;i++){ if(Math.abs(buf[i])<thres){ r1=i; break; } }
@@ -5724,18 +4810,16 @@ Grading rules per claim:
     for(let i=d;i<SIZE2;i++){ if(c[i] > maxVal){ maxVal=c[i]; maxPos=i; } }
     if(maxPos<=0) return -1;
     const pitch = sampleRate / maxPos;
-    return (pitch>60 && pitch<500) ? pitch : -1; // restrict to plausible human voice range
+    return (pitch>60 && pitch<500) ? pitch : -1;
   }
 
-  // Returns a metrics object (or null on failure). Takes an already-decoded
-  // AudioBuffer so the recording only ever needs to be decoded once.
   async function analyzeAudioDelivery(audioBuffer, words){
     try{
       const sampleRate = audioBuffer.sampleRate;
       const channelData = mixDownToMono(audioBuffer);
 
-      const frameSize = Math.round(sampleRate*0.03);   // 30ms analysis window
-      const hopSize    = Math.round(sampleRate*0.015);  // 15ms hop
+      const frameSize = Math.round(sampleRate*0.03);
+      const hopSize    = Math.round(sampleRate*0.015);
       const frames = [];
       for(let i=0; i+frameSize<=channelData.length; i+=hopSize){
         const slice = channelData.subarray(i, i+frameSize);
@@ -5743,7 +4827,6 @@ Grading rules per claim:
       }
       if(!frames.length) return null;
 
-      // ---- volume ----
       const sortedRms = frames.map(f=>f.rms).sort((a,b)=>a-b);
       const noiseFloor = sortedRms[Math.floor(sortedRms.length*0.1)] || 0.0001;
       const voiced = frames.filter(f=>f.rms > noiseFloor*2.5);
@@ -5755,7 +4838,6 @@ Grading rules per claim:
       else volumeScore = Math.round(1 + ((avgDb+42)/24)*9);
       const volumeLabel = avgDb>=-18 ? 'Strong & Confident' : avgDb>=-26 ? 'Adequate' : avgDb>=-34 ? 'Quiet — projection needed' : 'Too Quiet';
 
-      // ---- emphasis (per word loudness spikes) ----
       const baselineRms = median(voiced.map(f=>f.rms)) || avgRms;
       const wordList = words || [];
       const wordStats = wordList.map(w=>{
@@ -5770,7 +4852,6 @@ Grading rules per claim:
         return wordStats.slice(start,end).map((w,k)=> (start+k===idx) ? ('**'+w.word.toUpperCase()+'**') : w.word).join(' ');
       });
 
-      // ---- tone / pitch variety ----
       const pitchSeries = frames.map(f=>f.pitch).filter(p=>p>0);
       let toneChanges = 0, lastPitch = null;
       pitchSeries.forEach(p=>{
@@ -5780,7 +4861,6 @@ Grading rules per claim:
       const pitchStdDev = stddev(pitchSeries);
       const pitchVarietyLabel = pitchStdDev>32 ? 'High — expressive' : pitchStdDev>14 ? 'Moderate' : 'Low — monotone risk';
 
-      // ---- pauses & pace ----
       let pauseCount=0; const pauseDurations=[];
       for(let i=1;i<wordList.length;i++){
         const gap = wordList[i].start - wordList[i-1].end;
@@ -5804,36 +4884,7 @@ Grading rules per claim:
     }
   }
 
-  // ===== AUDIO EXTRACTION & COMPRESSION (fixes "Request Entity Too Large") =====
-  // Groq's transcription endpoint caps upload size (~25MB), but the request
-  // can also get rejected earlier by the Supabase Edge Function/CDN in front
-  // of it at a smaller size than that. We stay well under both by using a
-  // conservative chunk-size budget, and if a chunk still comes back 413 for
-  // any reason, we automatically halve it and retry rather than giving up.
-  // A multi-minute recording is a video+audio container and can blow past that
-  // easily. Whisper only needs the audio anyway, so we decode the recording
-  // once, strip the video, downsample to 16kHz mono, and re-encode as a
-  // compact WAV, typically a 10-20x size reduction over the raw recording.
-  // If a single speech is still too long even after compression, we split
-  // the audio into multiple chunks and transcribe them one at a time,
-  // stitching the text and word timestamps back together.
-  // GROQ_UPLOAD_SAFE_BYTES was 8MB, but a normal FIXED_CHUNK_SECONDS chunk
-  // (60s of 16kHz/16-bit mono WAV) is only ~1.9MB — nowhere near that
-  // budget — so the pre-emptive split check below almost never actually
-  // fired, and every chunk went straight to a real upload attempt first.
-  // Lowered to 2MB so a chunk that's likely to hit a real proxy/edge-
-  // function body-size limit gets split proactively instead of only
-  // reactively, after already eating a failed round-trip.
   const GROQ_UPLOAD_SAFE_BYTES = 2 * 1024 * 1024;
-  // GROQ_UPLOAD_MIN_BYTES was 512KB, which combined with the halving step
-  // meant the *reactive* 413 self-heal in transcribeChunkResilient below
-  // gave up after a single halving (60s -> 30s, ~938KB) — nowhere near a
-  // size any real API or gateway should plausibly reject as "too large".
-  // That's what was producing "still too large even after compression and
-  // splitting" well before the audio was actually anywhere near large.
-  // Lowered by 8x so a genuinely stricter-than-expected limit still has
-  // real room to be found by halving further, down to a few seconds of
-  // audio, before giving up for real.
   const GROQ_UPLOAD_MIN_BYTES  = 64 * 1024;
 
   async function decodeAudioFromBlob(blob){
@@ -5847,8 +4898,6 @@ Grading rules per claim:
     }
   }
 
-  // Resamples (and mixes down to mono) an AudioBuffer to a target sample rate
-  // using an OfflineAudioContext, which the browser does for us automatically.
   async function resampleMono(audioBuffer, targetSampleRate){
     const offlineCtx = new (window.OfflineAudioContext || window.webkitOfflineAudioContext)(
       1, Math.ceil(audioBuffer.duration*targetSampleRate), targetSampleRate
@@ -5858,10 +4907,9 @@ Grading rules per claim:
     src.connect(offlineCtx.destination);
     src.start(0);
     const rendered = await offlineCtx.startRendering();
-    return rendered.getChannelData(0); // already mono since the offline context has 1 channel
+    return rendered.getChannelData(0);
   }
 
-  // Encodes mono Float32 PCM samples as a 16-bit PCM WAV Blob.
   function encodeWavFromFloat32(samples, sampleRate){
     const bytesPerSample = 2;
     const blockAlign = bytesPerSample;
@@ -5883,15 +4931,12 @@ Grading rules per claim:
     return new Blob([view], {type:'audio/wav'});
   }
 
-  // Produces a compact 16kHz mono WAV Blob for a slice [startSec,endSec) of an
-  // already-decoded AudioBuffer (or the whole thing if no range is given).
   async function audioBufferSliceToWav(audioBuffer, startSec, endSec){
     const sr = audioBuffer.sampleRate;
     const s = Math.max(0, Math.floor((startSec||0)*sr));
     const e = Math.min(audioBuffer.length, Math.ceil((endSec==null?audioBuffer.duration:endSec)*sr));
     const length = Math.max(1, e-s);
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    // Build a small AudioBuffer containing just the requested slice so resampleMono can work on it.
     const slice = ctx.createBuffer(audioBuffer.numberOfChannels, length, sr);
     for(let ch=0; ch<audioBuffer.numberOfChannels; ch++){
       slice.copyToChannel(audioBuffer.getChannelData(ch).subarray(s, e), ch, 0);
@@ -5902,29 +4947,13 @@ Grading rules per claim:
     return encodeWavFromFloat32(mono, targetRate);
   }
 
-  // Tries an async call with each supplied override key in turn (falling
-  // back to a final "no override" attempt so the edge function's own
-  // server-side Groq keys still get tried), fully transparent, no user
-  // action required. Transient-looking failures (rate limits, momentary
-  // network blips, 5xx from Groq) get a couple of short-backoff retries on
-  // the SAME key before moving on to the next one, since those usually
-  // resolve on their own within a second or two.
   function isTransientError(err){
     const s = String(err && err.message || err);
-    // 529 = Anthropic's own "Overloaded" status (see their API error docs).
-    // Hack Club proxies it straight through for Claude-family models, and
-    // it was missing here — meaning Opus/Sonnet 529s were treated as
-    // permanent failures with zero backoff, so withKeyFallback's 4
-    // "attempts" (key, key2, key3, null — none of which actually change
-    // anything for hackclub-chat; see the overrideKey comment where this
-    // is called) fired back-to-back in under 50ms total, hammering an
-    // already-overloaded endpoint instead of giving it a moment to
-    // recover. That's the real cause of the instant repeated failures.
     return /:429:|:500:|:502:|:503:|:504:|:529:/.test(s) || /rate.?limit/i.test(s) || /overloaded/i.test(s) || s.includes('Failed to fetch');
   }
   async function withKeyFallback(fn, ...keys){
     const list = [...new Set(keys)];
-    if(!list.some(k => !k)) list.push(null); // guarantee a no-override attempt
+    if(!list.some(k => !k)) list.push(null);
     let lastErr = null;
     for(const k of list){
       for(let attempt = 0; attempt < 3; attempt++){
@@ -5938,17 +4967,9 @@ Grading rules per claim:
           return await fn(k);
         }catch(err){
           lastErr = err;
-          if(err.pipelineCancelled || err.name === 'AbortError') throw err; // user cancelled — stop immediately, no retries
-          if(err.rateLimited) throw err; // our own daily cap — retrying only burns more of it
+          if(err.pipelineCancelled || err.name === 'AbortError') throw err;
+          if(err.rateLimited) throw err;
           if(attempt < 2 && isTransientError(err)){
-            // A 429 specifically usually means a real rate limit (ours or
-            // an upstream shared one) that needs real wall-clock time to
-            // clear — the previous 600ms/1200ms backoff was nowhere near
-            // enough for a per-minute limit, so those retries were just
-            // re-triggering the same 429 immediately. Other transient
-            // errors (momentary 5xx/network blips) still get the original
-            // short backoff, since those usually really do resolve within
-            // a second or two.
             const isRateLimit429 = /:429:/.test(String(err && err.message || err));
             const delayMs = isRateLimit429 ? 4000 * (attempt + 1) : 600 * (attempt + 1);
             await new Promise(r => setTimeout(r, delayMs));
@@ -5992,15 +5013,9 @@ Grading rules per claim:
     return { text:(json.text||'').trim(), words: Array.isArray(json.words) ? json.words : [] };
   }
 
-  // Transcribes a single chunk; if Groq/the upload path still rejects it as
-  // too large (413) even at our conservative budget, halves the chunk and
-  // retries each half recursively instead of failing outright. Returns
-  // {text, words} with word timestamps already offset to absolute time.
   async function transcribeChunkResilient(audioBuffer, startSec, endSec, keys, labelPrefix, onProgress){
     const wav = await audioBufferSliceToWav(audioBuffer, startSec, endSec);
     if(wav.size > GROQ_UPLOAD_SAFE_BYTES && (endSec - startSec) > 20 && wav.size/2 > GROQ_UPLOAD_MIN_BYTES){
-      // Pre-emptively split before even trying, no point uploading something
-      // we already know is over budget.
       const mid = startSec + (endSec - startSec) / 2;
       const [a, b] = await Promise.all([
         transcribeChunkResilient(audioBuffer, startSec, mid, keys, labelPrefix+'a', onProgress),
@@ -6016,8 +5031,6 @@ Grading rules per claim:
       const s = String(err.message || err);
       const isTooLarge = s.includes(':413:') || s.toLowerCase().includes('request entity too large');
       if(isTooLarge && (endSec - startSec) > 5 && wav.size/2 > GROQ_UPLOAD_MIN_BYTES){
-        // Still rejected even under our budget (a stricter real-world limit
-        // than we assumed), self-heal by halving and retrying each half.
         const mid = startSec + (endSec - startSec) / 2;
         const [a, b] = await Promise.all([
           transcribeChunkResilient(audioBuffer, startSec, mid, keys, labelPrefix+'a', onProgress),
@@ -6029,30 +5042,13 @@ Grading rules per claim:
     }
   }
 
-  // Transcribes a (possibly long) decoded AudioBuffer. Always compresses to
-  // 16kHz mono WAV and splits it into small, FIXED-duration chunks (60s each
-  //about 1.9MB apiece at 16kHz/16-bit mono, far under any plausible
-  // upload limit) rather than trying to estimate a safe chunk size from
-  // measured bytes, a fixed duration can never be wrong the way a size
-  // estimate can. Chunks are transcribed by a pool of workers, one per
-  // available API key, running in parallel. If one key hits a rate limit or
-  // any other error on its chunk, that request falls back through the other
-  // available keys automatically; the other workers keep making progress on
-  // their own chunks the whole time, so one key stalling out never blocks
-  // the rest of the transcription. Any chunk that somehow still comes back
-  // "too large" is self-healed by being recursively split further (see
-  // transcribeChunkResilient above), so this should never fail purely on
-  // size for a normal-length speech. Results are stitched back together
-  // with correct absolute timestamps.
-  const FIXED_CHUNK_SECONDS = 60; // ≈1.9MB per chunk at 16kHz/16-bit mono, small enough for any realistic limit
+  const FIXED_CHUNK_SECONDS = 60;
   async function transcribeLongAudio(audioBuffer, keysIn, onStatus){
     const keys = [...new Set((keysIn || []).filter(Boolean))];
-    if(!keys.length) keys.push(null); // fall through to the edge function's own server-side keys
+    if(!keys.length) keys.push(null);
 
     const duration = audioBuffer.duration;
     if(duration <= FIXED_CHUNK_SECONDS * 1.25){
-      // Short enough to send as one piece (transcribeChunkResilient will
-      // still self-heal and split it further if it's somehow rejected).
       onStatus && onStatus('Transcribing testimony', '', 0.92);
       return await transcribeChunkResilient(audioBuffer, 0, duration, keys, 'full', null);
     }
@@ -6074,9 +5070,6 @@ Grading rules per claim:
           '',
           completed / chunkRanges.length
         );
-        // Try this worker's own key first, then fall back through every
-        // other available key (in order) if it fails for any reason, 
-        // rate limit, auth, transient error, etc.
         const orderedKeys = [myKey, ...keys.filter(k => k !== myKey)];
         const r = await transcribeChunkResilient(audioBuffer, s, e, orderedKeys, 'part'+myIdx, null);
         results[myIdx] = r;
@@ -6116,11 +5109,6 @@ Grading rules per claim:
     return lines.join('\n');
   }
 
-  // ---- Text-based filler word + stutter/repetition counter ----
-  // Runs client-side against the raw transcript text (no audio needed) so the
-  // Vocal Delivery panel always has hard numbers, even if waveform analysis
-  // fails. These are an approximate, deterministic word-list scan, the AI
-  // judge is told to treat them as a starting point and still do its own read.
   const FILLER_SINGLE_WORDS = DATA.FILLER_SINGLE_WORDS;
   const FILLER_PHRASES = DATA.FILLER_PHRASES;
 
@@ -6144,9 +5132,6 @@ Grading rules per claim:
       }
     });
 
-    // Stutters: an immediately repeated identical word ("the the", "I I think"),
-    // or a short hyphenated word-fragment stammer as Whisper sometimes
-    // transcribes it ("wh- what", "I- I- I").
     let stutterCount = 0;
     for(let i=1;i<cleanWords.length;i++){
       if(cleanWords[i] && cleanWords[i]===cleanWords[i-1]) stutterCount++;
@@ -6174,23 +5159,9 @@ Grading rules per claim:
   function dvBand(score10){ return colorFromRatio(score10/10); }
   function bandFromRatio(ratio){ return colorFromRatio(ratio); }
 
-
   const ANN_COLORS = DATA.ANN_COLORS;
   const ANN_LABELS = DATA.ANN_LABELS;
 
-  // Renders the transcript. If `ann` ({sections, comments}) is present, locates
-  // each AI-quoted phrase inside the real, untouched transcript text and layers
-  // on section-labeled paragraph blocks + clickable color-coded comment spans
-  // (Google-Docs-style). Any individual quote that can't be located is simply
-  // skipped, never breaks the rest of the rendering. Falls back to plain text
-  // if no annotations are available at all.
-  // Tokenizes plainTranscript into word-like substrings (in document order,
-  // with their character offsets) and zips them 1:1 against the word-level
-  // timestamps returned by the transcription API (also in spoken order).
-  // Whisper/Groq's word list and the joined transcript text are built from
-  // the same underlying words, so positional zipping lines them up reliably
-  // even though punctuation isn't identical between the two. Any leftover
-  // tokens beyond the shorter list are simply left without timestamps.
   function buildWordTokenSpans(text, wordTimestamps){
     const spans = [];
     if(!Array.isArray(wordTimestamps) || !wordTimestamps.length) return spans;
@@ -6207,11 +5178,6 @@ Grading rules per claim:
     return spans;
   }
 
-  // Renders text.slice(start,end) as escaped HTML, wrapping each word token
-  // that falls in range with a clickable/highlightable span carrying its
-  // start/end time (in seconds into the recording) so it can be synced with
-  // the video player. Falls back to plain escaped text when no timestamps
-  // are available for a given stretch.
   function escWithWords(text, start, end){
     if(!wordTokenSpans.length) return escHtml(text.slice(start, end));
     let html = '', cursor = start;
@@ -6229,9 +5195,6 @@ Grading rules per claim:
     return html;
   }
 
-  // Finds the playback time (seconds) of the first word token starting at or
-  // after the given character offset, used to seek the video when a
-  // judge's-note span is clicked.
   function timeForCharOffset(charOffset){
     for(let i = 0; i < wordTokenSpans.length; i++){
       if(wordTokenSpans[i].e > charOffset) return wordTokenSpans[i].ts;
@@ -6255,13 +5218,6 @@ Grading rules per claim:
 
     const normMap = buildNormalizedMap(plainTranscript);
 
-    // Locate section breakpoints (search progressively forward so repeated
-    // wording earlier in the speech doesn't get matched twice). If a quote
-    // can't be found after the previous section's cursor, e.g. the AI's
-    // quoted phrase slightly overlaps the previous section, retry from the
-    // very start of the transcript so one bad match doesn't silently delete
-    // an entire section from the breakdown (this is what was causing Body 1
-    // to occasionally vanish into the Introduction).
     const sectionPoints = [];
     let searchFrom = 0, lastAcceptedPos = -1;
     (ann.sections||[]).forEach(s=>{
@@ -6279,13 +5235,11 @@ Grading rules per claim:
     });
     sectionPoints.sort((a,b)=>a.pos-b.pos);
 
-    // Locate comment spans, skipping ones that can't be found or that overlap
-    // an already-accepted comment span.
     const rawSpans = [];
     let commentSearchFrom = 0;
     (ann.comments||[]).forEach(c=>{
       if(!c || !c.quote || !c.color || !ANN_COLORS.includes(c.color)) return;
-      const loc = locateQuote(c.quote, normMap, 0); // comments may appear anywhere/any order
+      const loc = locateQuote(c.quote, normMap, 0);
       if(loc) rawSpans.push({ start:loc.start, end:loc.end, color:c.color, comment:String(c.comment||'').trim() });
     });
     rawSpans.sort((a,b)=>a.start-b.start);
@@ -6319,23 +5273,17 @@ Grading rules per claim:
     cacheTranscriptWordEls();
   }
 
-  // Caches the rendered .tw word elements (in the same order as
-  // wordTokenSpans) so the video timeupdate handler can highlight the
-  // current word without re-querying the DOM on every tick.
   let transcriptWordEls = [];
   function cacheTranscriptWordEls(){
     transcriptWordEls = Array.from(transcriptBody.querySelectorAll('.tw'));
   }
 
-  // ===== SYNCED VIDEO PLAYBACK (results view) =====
   function fmtPb(s){
     if(!isFinite(s) || s < 0) s = 0;
     s = Math.floor(s);
     return Math.floor(s/60) + ':' + String(s%60).padStart(2,'0');
   }
 
-  // Loads the just-recorded clip into the results-view player. Called each
-  // time a new set of results is rendered.
   function setupResultsPlayback(){
     if(resultsVideoURL){ URL.revokeObjectURL(resultsVideoURL); resultsVideoURL = null; }
     if(!recordedBlob){
@@ -6379,9 +5327,6 @@ Grading rules per claim:
   });
   pbScrub.addEventListener('change', ()=>{ pbScrubbing = false; });
 
-  // Binary search over any ascending-by-ts word span array: the last word
-  // whose start time is <= t. Generic so both the real results player and
-  // the example ballot's YouTube player can share the same logic.
   function findActiveWordIndex(spans, t){
     let lo = 0, hi = spans.length - 1, ans = -1;
     while(lo <= hi){
@@ -6392,9 +5337,6 @@ Grading rules per claim:
     return ans;
   }
 
-  // Advances the highlighted word for a given (spans, els, currentActiveEl, t)
-  // and returns the new active element (caller stores it back into its own
-  // state var, since results + example each track their own).
   function syncActiveWord(spans, els, currentActiveEl, t){
     if(!spans.length || !els.length) return currentActiveEl;
     const idx = findActiveWordIndex(spans, t);
@@ -6404,11 +5346,6 @@ Grading rules per claim:
     if(currentActiveEl) currentActiveEl.classList.remove('tw-active');
     if(newEl){
       newEl.classList.add('tw-active');
-      // Only auto-scroll the page to follow the highlighted word if the
-      // user hasn't manually scrolled away, otherwise this would yank
-      // the viewport back and trap them on the highlighted word,
-      // preventing them from scrolling up to reach the pause/stop
-      // controls or anything else on the page.
       if(autoScrollToWordEnabled){
         lastProgrammaticScrollAt = Date.now();
         newEl.scrollIntoView({ block:'nearest', behavior:'smooth' });
@@ -6426,24 +5363,10 @@ Grading rules per claim:
     activeWordSpanEl = syncActiveWord(wordTokenSpans, transcriptWordEls, activeWordSpanEl, t);
   });
 
-  // ===== EXAMPLE BALLOT SYNCED PLAYBACK (embedded YouTube) =====
-  // The example uses a real YouTube video rather than a locally recorded
-  // blob, so it can't get real Whisper word timestamps automatically.
-  // Instead, EXAMPLE_WORD_TIMESTAMPS below was derived directly from the
-  // actual speech audio: a copy of this clip was analyzed for real speech
-  // vs. pause activity (silence/voice-activity detection), and each of the
-  // transcript's 1114 words was placed at its proportional position within
-  // the actual spoken (non-pause) time, so the highlight now tracks real
-  // pauses and pacing changes in the speech, not a flat assumed rate. Values
-  // are seconds elapsed since the speech began (0:20 in the source video).
-  // The playback/highlight/click-to-seek mechanics are otherwise identical
-  // to a real round's results. The speech itself runs from 0:20 to 8:18 in
-  // the source video (everything outside that range is intro/other
-  // content, not the speech), so playback is clamped to that window.
   const EXAMPLE_YT_VIDEO_ID = DATA.EXAMPLE_YT_VIDEO_ID;
   const EXAMPLE_WORD_TIMESTAMPS = DATA.EXAMPLE_WORD_TIMESTAMPS;
-  const EXAMPLE_SPEECH_START = DATA.EXAMPLE_SPEECH_START;   // 0:20
-  const EXAMPLE_SPEECH_END = DATA.EXAMPLE_SPEECH_END;    // 8:18
+  const EXAMPLE_SPEECH_START = DATA.EXAMPLE_SPEECH_START;
+  const EXAMPLE_SPEECH_END = DATA.EXAMPLE_SPEECH_END;
 
   let exampleWordSpans = [];
   let exampleWordEls = [];
@@ -6452,23 +5375,7 @@ Grading rules per claim:
   let ytPlayerReady = false;
   let ytPollTimer = null;
 
-  // Manifest V3 extension pages can only load scripts from 'self', so the
-  // real https://www.youtube.com/iframe_api script can never run in our own
-  // pages (Chrome blocks it regardless of CSP). Loading it in a sandboxed
-  // page doesn't work either: Chrome forbids the 'allow-same-origin' token
-  // on extension sandbox pages (it would let the page escape the sandbox),
-  // and without it YouTube's own script can't use Cache Storage and throws.
-  //
-  // So instead of loading any script at all, we embed a plain YouTube
-  // "embed" iframe (with enablejsapi=1) and drive it with the same raw
-  // postMessage protocol the official API script itself uses internally.
-  // This needs no script loading in any of our pages, so no CSP directive
-  // ever comes into play. ytPlayer below exposes the same method names the
-  // rest of this file already expects (getCurrentTime/getPlayerState/
-  // seekTo/playVideo/pauseVideo), backed by a small cache kept fresh by the
-  // iframe's periodic "infoDelivery" messages, so no other code below needs
-  // to change.
-  const YT_STATE_PLAYING = 1; // matches YouTube's own PlayerState.PLAYING value
+  const YT_STATE_PLAYING = 1;
 
   let ytFrame = null;
   let ytCachedTime = 0;
@@ -6476,7 +5383,7 @@ Grading rules per claim:
   let ytListenTimer = null;
 
   function loadYouTubeIframeAPI(){
-    ytApiReady = true; // nothing to load, the raw postMessage protocol needs no script
+    ytApiReady = true;
   }
 
   function ytPostCommand(func, args){
@@ -6520,7 +5427,6 @@ Grading rules per claim:
         ytCachedState = data.info;
         onExamplePlayerStateChange({ data: data.info });
       }
-      // Periodic status pushed once we've sent the "listening" handshake below.
       if(data.info && typeof data.info === 'object'){
         if(typeof data.info.currentTime === 'number') ytCachedTime = data.info.currentTime;
         if(typeof data.info.playerState === 'number') ytCachedState = data.info.playerState;
@@ -6528,10 +5434,6 @@ Grading rules per claim:
     });
 
     ytFrame.addEventListener('load', () => {
-      // Handshake YouTube's embed listens for to start pushing periodic
-      // "infoDelivery" status messages and start/ready/error events. Sent a
-      // few times since the very first one can arrive before the embedded
-      // player has finished wiring up its own listener.
       let attempts = 0;
       ytListenTimer = setInterval(() => {
         attempts++;
@@ -6559,11 +5461,6 @@ Grading rules per claim:
     pauseVideo: () => { ensureYtFrame(); ytPostCommand('pauseVideo'); }
   };
 
-
-
-  // Walks a rendered DOM subtree and wraps every word-like run of text in a
-  // clickable/highlightable .tw span, assigning each one a synthetic,
-  // evenly-paced timestamp. Returns the spans in document order.
   function wrapWordsInDom(container, startTime, secPerWord){
     const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, null);
     const textNodes = [];
@@ -6603,10 +5500,6 @@ Grading rules per claim:
   }
 
   function onExamplePlayerError(e){
-    // Embedding blocked/disallowed by the video owner, or another player
-    // fault (codes: 2 invalid param, 5 HTML5 error, 100 not found,
-    // 101/150 embedding disabled). Fall back gracefully to the plain link
-    // rather than leaving a broken player + dead controls on screen.
     const frame = examplePbPlayBtn.closest('.playback-frame');
     if(frame){
       frame.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#f8f6f0;font-family:var(--font-mono);font-size:12.5px;text-align:center;padding:20px;">
@@ -6632,8 +5525,6 @@ Grading rules per claim:
     ytPollTimer = setInterval(()=>{
       if(!ytPlayer || !ytPlayer.getCurrentTime) return;
       const rawTime = ytPlayer.getCurrentTime();
-      // Clamp to the actual speech window (0:20–8:18), everything outside
-      // it is intro/other content, not the speech itself.
       if(rawTime >= EXAMPLE_SPEECH_END){
         ytPlayer.pauseVideo();
         examplePbPlayBtn.classList.remove('pb-playing');
@@ -6683,17 +5574,15 @@ Grading rules per claim:
     if(!wordEl) return;
     const ts = parseFloat(wordEl.dataset.ts);
     if(!isNaN(ts)){
-      autoScrollToWordEnabled = true; // user asked to jump/follow here explicitly
+      autoScrollToWordEnabled = true;
       seekExampleVideo(ts);
     }
   });
 
-  // Renders plainTranscript.slice(rangeStart, rangeEnd) as escaped HTML, with
-  // any comment spans that fall inside that range wrapped in clickable marks.
   function annotateRange(plainTranscript, rangeStart, rangeEnd, spans){
     let html = '', cursor = rangeStart;
     spans.forEach(sp=>{
-      if(sp.end <= rangeStart || sp.start >= rangeEnd) return; // outside this range
+      if(sp.end <= rangeStart || sp.start >= rangeEnd) return;
       const s = Math.max(sp.start, rangeStart), e = Math.min(sp.end, rangeEnd);
       if(s < cursor) return;
       html += escWithWords(plainTranscript, cursor, s);
@@ -6725,15 +5614,12 @@ Grading rules per claim:
     });
   }
 
-  // Delegated click handler for plain (non-comment) transcript words, clicks
-  // on words wrapped inside an .ann-comment span are handled by the comment
-  // listener above instead (it stops propagation before this ever fires).
   transcriptBody.addEventListener('click', (e)=>{
     const wordEl = e.target.closest('.tw');
     if(!wordEl) return;
     const ts = parseFloat(wordEl.dataset.ts);
     if(!isNaN(ts)){
-      autoScrollToWordEnabled = true; // user asked to jump/follow here explicitly
+      autoScrollToWordEnabled = true;
       seekResultsVideo(ts);
     }
   });
@@ -6749,20 +5635,11 @@ Grading rules per claim:
     cpText.textContent = el.dataset.comment || '';
     commentPopover.classList.remove('hidden');
 
-    // Reset any leftover inline left/top from a previous show before
-    // measuring, so the natural (unclamped) width/position is read fresh.
     commentPopover.style.left = '0px';
     commentPopover.style.top = '0px';
 
-    // Measure the popover's REAL rendered width. The CSS only sets
-    // max-width:300px (not a fixed width), so short comments render a
-    // narrower bubble, using a hardcoded 300 here was the bug: it clamped
-    // position and placed the arrow as if every popover were exactly 300px
-    // wide, so on narrower bubbles the arrow landed outside the actual
-    // bubble, floating over the transcript text instead of on the comment.
     const popW = commentPopover.getBoundingClientRect().width || 300;
 
-    // Position fixed to the viewport, anchored directly under the clicked span.
     const elRect = el.getBoundingClientRect();
     const margin = 12;
     let left = elRect.left;
@@ -6772,7 +5649,6 @@ Grading rules per claim:
     commentPopover.style.left = left + 'px';
     commentPopover.style.top = top + 'px';
 
-    // If the popover would run off the bottom of the viewport, flip it above the span instead.
     const popRect = commentPopover.getBoundingClientRect();
     if(popRect.bottom > window.innerHeight - margin){
       top = elRect.top - popRect.height - 10;
@@ -6782,8 +5658,6 @@ Grading rules per claim:
       commentPopover.classList.remove('cp-flip');
     }
 
-    // Point the little arrow at the clicked span, using the popover's real
-    // measured width (popW above) rather than an assumed fixed width.
     const arrowLeft = Math.max(10, Math.min(elRect.left + elRect.width/2 - left, popW - 20));
     const arrowEl = commentPopover.querySelector('.cp-arrow');
     if(arrowEl) arrowEl.style.left = arrowLeft + 'px';
@@ -6843,10 +5717,6 @@ Grading rules per claim:
     deliverySection.classList.remove('hidden');
   }
 
-  // ===== EXAMPLE BALLOT (static, shown via the "?" help button) =====
-  // Built directly from a real round (Afghanistan war question) so a new
-  // user can see exactly what a finished ballot looks like before recording
-  // their first speech. No network calls, everything below is hardcoded.
   const EXAMPLE_CATEGORIES = DATA.EXAMPLE_CATEGORIES;
   const EXAMPLE_TOTAL = EXAMPLE_CATEGORIES.reduce((s,c)=>s+c.score,0);
   const EXAMPLE_RANK = DATA.EXAMPLE_RANK;
@@ -6855,7 +5725,7 @@ Grading rules per claim:
   const EXAMPLE_FACT_CHECK = DATA.EXAMPLE_FACT_CHECK || [];
 
   function renderExampleBallot(){
-    autoScrollToWordEnabled = true; // fresh view of the example: follow along by default again
+    autoScrollToWordEnabled = true;
     if(typeof setExampleSyncArmed === 'function') setExampleSyncArmed(false);
     let html = scoreKeyHtml();
     EXAMPLE_CATEGORIES.forEach(cat => {
@@ -6908,23 +5778,17 @@ Grading rules per claim:
         <div class="dv-sub">${escHtml(String(c.sub))}</div>
       </div>`).join('');
 
-    // Transcript with color-coded, clickable judge comments, same markup/
-    // classes the real annotated transcript view uses (ann-comment + colors).
     const T = EXAMPLE_TRANSCRIPT_HTML;
     const body = document.getElementById('exampleTranscriptBody');
     body.innerHTML = T;
 
-    // Lay the real, audio-derived word timestamps over the transcript (see
-    // EXAMPLE_WORD_TIMESTAMPS note above EXAMPLE_YT_VIDEO_ID) so the same
-    // click-to-seek and live-highlight mechanics as a real round work here
-    // too, but tracking actual pauses/pacing in the speech this time.
     exampleActiveWordEl = null;
-    exampleWordSpans = wrapWordsInDom(body, EXAMPLE_SPEECH_START, 1); // placeholder pace, overwritten below
+    exampleWordSpans = wrapWordsInDom(body, EXAMPLE_SPEECH_START, 1);
     exampleWordEls = exampleWordSpans.map(s => s.el);
     attachCommentListeners(body, seekExampleVideo);
 
     exampleWordSpans.forEach((s, i) => {
-      const offset = EXAMPLE_WORD_TIMESTAMPS[i] ?? (i * 0.4); // fallback in case word count ever drifts from the data
+      const offset = EXAMPLE_WORD_TIMESTAMPS[i] ?? (i * 0.4);
       const nextOffset = EXAMPLE_WORD_TIMESTAMPS[i + 1] ?? (offset + 0.4);
       s.ts = EXAMPLE_SPEECH_START + offset;
       s.te = EXAMPLE_SPEECH_START + Math.min(nextOffset, offset + 0.6);
@@ -6945,8 +5809,6 @@ Grading rules per claim:
     if(ytPlayer && ytPlayer.seekTo) ytPlayer.seekTo(EXAMPLE_SPEECH_START, true);
   }
 
-  // Hand-placed annotations on the real transcript text, using the same
-  // ann-red/ann-blue/ann-green/ann-yellow color coding as a live session.
   const EXAMPLE_TRANSCRIPT_HTML = DATA.EXAMPLE_TRANSCRIPT_HTML;
 
   let exampleOpen = false;
@@ -6994,13 +5856,9 @@ Grading rules per claim:
     cancelBallotBtn && cancelBallotBtn.classList.remove('hidden');
     processError.classList.add('hidden');
     processErrorActions.classList.add('hidden');
-    setProcStep(null); // reset checklist to all-pending before this run's stages fire
+    setProcStep(null);
     const phrases = introDrillMode ? INTRO_PIPELINE_PHRASES : bodyDrillMode ? BODY_PIPELINE_PHRASES : roughDraftMode ? ROUGHDRAFT_PIPELINE_PHRASES : PIPELINE_PHRASES;
     try{
-      // ---- Rough Draft: no recording at all, so skip straight past the
-      // audio/transcribe/delivery stages below and go directly to judging
-      // the plaintext draft the user typed in (see roughDraftTranscriptText,
-      // assembled by the "Submit Rough Draft to Judge" handler). ----
       let transcript;
       if(roughDraftMode){
         transcript = roughDraftTranscriptText;
@@ -7030,8 +5888,6 @@ Grading rules per claim:
           audioBuffer, [key, key2, key3],
           (main, sub, frac)=>{
             statusText.textContent = main; statusSub.textContent = sub;
-            // frac (0-1), when provided, reflects progress through multi-part
-            // transcription, map it onto the 12%-40% band for this stage.
             const pct = (typeof frac === 'number') ? 12 + frac * 28 : 40;
             pipelineProgress.setStage(pct);
             if(typeof frac === 'number') setProcStep('transcribe', `${Math.round(frac * 100)}%`);
@@ -7075,45 +5931,16 @@ Grading rules per claim:
       pipelineProgress.setStage(88, phrases.judging);
       setProcStep('judging');
 
-      // Rough Draft has no recording, so there's no delivery-metrics block
-      // to append to the judging prompt — the AI is told plainly this is a
-      // written draft with no delivery data (see ROUGHDRAFT_RUBRIC_PROMPT).
-      // lastDeliveryMetrics already merges the raw waveform metrics with the
-      // filler/stutter counts (see the else-branch above), so it can stand
-      // in for both the "m" and "fs" params buildDeliveryMetricsBlock expects.
       const metricsBlock = roughDraftMode ? '' : buildDeliveryMetricsBlock(lastDeliveryMetrics.audioUnavailable ? null : lastDeliveryMetrics, lastDeliveryMetrics);
       let judgeChoice = getJudgeModelChoice();
       let judgeWeightKey = judgeModelValue;
-      // Runs the actual judging request against whichever edge function/model
-      // `choice` points to. Kept as its own function so we can retry once
-      // against the default Llama/groq-chat judge below if the person's
-      // chosen AI (Hack Club AI models) is unavailable — e.g. the
-      // hackclub-chat edge function isn't deployed yet, rejects the model
-      // id, or returns a differently-shaped response — instead of just
-      // failing the whole round silently.
-      // Appended to whichever rubric prompt is in play so the judging
-      // model doesn't spend time/tokens trying to verify evidence itself
-      // — that job now belongs entirely to the independent post-ballot
-      // fact-check pass (see runFactCheckPass), which never affects the
-      // score. Applies to all three rubric modes; harmless on the intro
-      // drill rubric, which has no evidence category to begin with.
       const EVIDENCE_TRUTH_ASSUMPTION_NOTE = '\n\nEVIDENCE ACCURACY ASSUMPTION (this overrides anything above that implies otherwise): Do not attempt to fact-check, verify, or research whether any statistic, quote, or cited source in this transcript is actually true, accurate, or was really said/reported as claimed. Treat every citation exactly as the speaker delivered it and assume it is 100% factually accurate. This is intentional — a separate, independent automated fact-checking pass runs after this ballot and is not part of your job here, so spending any effort verifying claims only wastes time and tokens. Score "Strength of Evidence" (or the equivalent evidence criteria) purely on citation PRACTICE: how well the evidence is logically applied to the claim, how reputable the named source sounds by reputation, how well-dated and diverse the citations are, and whether the speaker explains why it matters — never on whether the underlying fact is real.';
       const runJudging = async (choice, weightKey) => withKeyFallback(async (k) => {
-        // The tier profile (see TIER_PROFILES above) driving this
-        // model's reasoning effort, per-round token budget, round cap,
-        // and inter-round pacing. Falls back to the 'fast' profile for
-        // any streaming-capable model that somehow has no tier set,
-        // rather than silently reverting to old flat defaults.
         const tierProfile = choice.tier ? TIER_PROFILES[choice.tier] : null;
         const baseMessages = [
           {role:'system', content: (introDrillMode ? INTRO_RUBRIC_PROMPT : bodyDrillMode ? BODY_RUBRIC_PROMPT : roughDraftMode ? ROUGHDRAFT_RUBRIC_PROMPT : RUBRIC_PROMPT) + EVIDENCE_TRUTH_ASSUMPTION_NOTE},
           {role:'user', content:'TRANSCRIPT:\n\n'+transcript+'\n\n'+metricsBlock}
         ];
-        // Runs one HTTP round against choice.fn for the given message
-        // list. Kept separate from the continuation loop below so a
-        // single round's error handling (429 / non-ok) stays identical
-        // to how every other call in this file works — throw, and let
-        // withKeyFallback's existing retry logic take over.
         const doFetch = async (messages, maxTokensOverride, weightOverride) => {
           const res = await fetchWithTimeout(`${SUPABASE_FUNCTIONS_URL}/${choice.fn}`,{
             method:'POST',
@@ -7122,90 +5949,21 @@ Grading rules per claim:
               'apikey': SUPABASE_ANON_KEY,
               'Content-Type':'application/json'
             },
-            // gemini-generate is NOT one of the OpenAI-compatible
-            // chat-completions proxies (groq-chat/hackclub-chat/nvidia-chat)
-            // — it's the same prompt-in/candidate-out edge function used by
-            // question generation, the tournament briefing, and the
-            // fact-check pass (see callGeminiWithKey above). Sending it a
-            // {model, messages, max_tokens} chat-completions body (what
-            // every other judge fn wants) doesn't match what it actually
-            // reads server-side, so those calls were failing and silently
-            // falling back to GPT-OSS 120B. Build its real
-            // {prompt, maxOutputTokens} shape instead, folding the system
-            // rubric + user transcript messages into one prompt string the
-            // same way every other gemini-generate caller in this file
-            // already does.
             body: choice.fn === 'gemini-generate' ? JSON.stringify({
               prompt: messages.map(m => m.content).join('\n\n'),
-              // No continuation/streaming protocol exists for this edge
-              // function (see STREAMING_JUDGE_FNS below — it's deliberately
-              // left out), so unlike the chat-completions models above,
-              // Gemini gets exactly one shot to produce the whole ballot.
-              // Give it real headroom rather than the 'fast' tier's
-              // 24000-per-round budget (that number assumes up to 4
-              // chained rounds are available to make up the difference).
               maxOutputTokens: maxTokensOverride || 32768,
               overrideKey: undefined,
               category: 'ballot_feedback',
               weight: weightOverride != null ? weightOverride : (BALLOT_FEEDBACK_MODEL_WEIGHTS[weightKey] || 1)
             }) : JSON.stringify({
-              // Groq/GPT-OSS writes the rubric feedback directly (once
-              // reasoning_effort is dialed down below), so 3000 tokens is
-              // plenty. Every streaming-capable model (Hack Club AI,
-              // NVIDIA-hosted GLM) now gets its tier's own per-round token
-              // budget instead of one flat 32000 — 'fast' models get a
-              // smaller, faster-to-fill ceiling; 'premium' models (Opus 5)
-              // keep the full 32000 since they genuinely use it.
-              // maxTokensOverride still lets runGptOssSplitJudging below
-              // request a smaller budget per split call than the flat
-              // 3000 default.
               model: choice.model, temperature:0.4, max_tokens: maxTokensOverride || (tierProfile ? tierProfile.maxTokensPerRound : (STREAMING_JUDGE_FNS.has(choice.fn) ? 32000 : 3000)),
-              // Reasoning-capable models (Claude, Kimi, DeepSeek, GLM,
-              // Qwen) can default to spending a large chunk of their
-              // budget on hidden chain-of-thought before ever writing
-              // visible ballot text. 'fast'-tier models dial that down to
-              // 'low' so more of each round goes to the actual ballot,
-              // finishing in fewer rounds; 'premium'-tier models (Opus 5)
-              // are left at their own default depth, since
-              // deeper reasoning is part of why they score higher and
-              // they're given the round/token headroom to afford it.
-              // Harmless to send for models that don't support the
-              // field — hackclub-chat/nvidia-chat/OpenRouter just ignore
-              // unsupported params.
               ...(tierProfile && tierProfile.reasoningEffort ? { reasoning: { effort: tierProfile.reasoningEffort } } : {}),
-              // GPT-OSS 120B defaults to reasoning_effort "medium" on Groq,
-              // which writes hidden chain-of-thought into a separate
-              // `reasoning` field before the actual answer — but that
-              // reasoning still consumes real generation budget out of the
-              // same 3000 max_tokens above. Unlike the Hack Club models,
-              // groq-chat isn't in STREAMING_JUDGE_FNS and never chains
-              // continuation rounds, so a truncated single shot here means
-              // a truncated ballot, full stop. Force 'low' explicitly
-              // rather than relying on Groq's default, so this model
-              // spends its whole budget on the visible ballot the same way
-              // plain Llama 3.3 used to.
               ...(choice.model === 'openai/gpt-oss-120b' ? { reasoning_effort: 'low' } : {}),
               messages,
               overrideKey: choice.fn === 'groq-chat' ? (k || undefined) : undefined,
               category: 'ballot_feedback',
-              // How many units of the daily cap this call should cost —
-              // mirrors BALLOT_FEEDBACK_MODEL_WEIGHTS above so pricier
-              // models (Opus 5) drain the cap faster than cheaper ones
-              // (Llama/DeepSeek). Enforced server-side in groq-chat /
-              // hackclub-chat; see those files for the p_amount plumbing.
-              // weightOverride lets runGptOssSplitJudging below charge a
-              // small explicit amount per call instead of the flat
-              // per-model weight above — see the note on the llama entry
-              // for why that path can't just reuse this lookup directly.
               weight: weightOverride != null ? weightOverride : (BALLOT_FEEDBACK_MODEL_WEIGHTS[weightKey] || 1)
             })
-          // Groq's LPU inference is genuinely fast — GPT-OSS 120B via
-          // groq-chat comfortably finishes well inside 60s. hackclub-chat
-          // now self-limits each round to ~128s server-side (see
-          // TIME_BUDGET_MS) and hands back a "please continue" sentinel
-          // instead of running long, so the client-side timeout here only
-          // needs enough margin above that, not the full observed
-          // generation time (280s+) like before.
           }, STREAMING_JUDGE_FNS.has(choice.fn) ? 150000 : 60000);
           if(res.status === 429){
             const { info, isRealQuotaBlock, fallback } = await readRateLimitInfo(res, 'ballot_feedback');
@@ -7216,81 +5974,21 @@ Grading rules per claim:
               err.count = info.currentCount ?? fallback.count; err.limit = info.usageLimit ?? fallback.limit;
               throw err;
             }
-            // Not a real quota block — almost certainly Supabase's own
-            // platform-level rate limit tripping because the continuation
-            // loop can fire several hackclub-chat calls in quick
-            // succession (see readRateLimitInfo above). Throw a plain
-            // transient error so withKeyFallback retries with backoff
-            // instead of this surfacing as a fake "you hit your daily
-            // limit" toast with a made-up count.
             throw new Error('platform_rate_limited:429:'+JSON.stringify(info).slice(0,200));
           }
           if(window.RateLimitUI) window.RateLimitUI.refresh();
           if(!res.ok) throw new Error('judging_failed:'+res.status+':'+await safeErrText(res));
           return res;
         };
-        // GPT-OSS 120B's free/on-demand Groq tier enforces only 8,000
-        // tokens-per-minute (TPM) — the lowest of any model in this app,
-        // and lower than a single Regular Practice ballot request needs
-        // even before Groq generates a single output token (the 8-category
-        // rubric prompt alone is ~6,300 tokens; add a real transcript and
-        // a normal single-shot request routinely needs 11,000+ TPM, which
-        // is exactly the 413 this was hitting). Splitting the *rubric*
-        // doesn't reduce per-request cost below the cap on its own — it
-        // has to be paired with real wall-clock pacing between calls,
-        // since TPM is a rolling 60-second window: two ~6,500-token calls
-        // sent back-to-back still sum to ~13,000 in that same window.
-        // Only used for the Regular Practice (8-category) rubric — Intro
-        // Drill/Body Drill/Rough Draft's rubrics are already small enough
-        // (3-6 categories) to fit one call comfortably under 8,000 TPM.
-        // (Previously this was split 2 categories per call; that still
-        // truncated on an unusually long/dense transcript, so it's now
-        // split 1 category per call — see the GPT_OSS_RUBRIC_CAT* comment
-        // above for why.)
         const GPT_OSS_TPM_LIMIT = 8000;
-        // len/3.5 rather than the more common len/4 — deliberately
-        // conservative, since underestimating here is what produced a
-        // max_tokens budget too small to finish 4 categories (a flat 1800
-        // regardless of actual prompt size silently truncated mid-category
-        // on a perfectly normal ~1250-word speech). Overestimating by a
-        // bit just means a slightly smaller output budget, not a 413.
         const estimateTokens = (str) => Math.ceil((str||'').length / 3.5);
-        // Picks max_tokens as "whatever's actually left in the 8,000 TPM
-        // budget after this call's real system+user prompt", instead of a
-        // flat guess — clamped to a floor (so a pathological case doesn't
-        // request an unusably tiny budget) and a ceiling (no need to ask
-        // for more than a genuinely long response would use anyway).
         const budgetOutputTokens = (systemContent, userContent, ceiling) => {
           const promptTokens = estimateTokens(systemContent) + estimateTokens(userContent);
-          const SAFETY_MARGIN = 300; // slack for estimation error + response_format overhead
+          const SAFETY_MARGIN = 300;
           return Math.max(900, Math.min(ceiling, GPT_OSS_TPM_LIMIT - promptTokens - SAFETY_MARGIN));
         };
-        // Ceiling for each single-category pass. This is deliberately
-        // LOWER than a single call's true available headroom (which can
-        // run up toward ~3700 once the transcript is subtracted out) —
-        // capping it here is what keeps the *synthesis* pass solvent.
-        // Each category pass's own output becomes part of the synthesis
-        // pass's input, so if every one of the 8 passes were allowed to
-        // use the full per-call ceiling, synthesis could receive up to
-        // ~8x that much text, leaving too little of its own 8,000 TPM
-        // budget for its output (exactly what caused "GPT-OSS 120B's
-        // synthesis pass got cut off before finishing the composite score
-        // and rank"). 1700 keeps 8 passes' combined output in the same
-        // ballpark the old 2-per-call version produced across its 4
-        // passes, so synthesis's input size — and therefore its own
-        // output headroom — doesn't regress.
         const GPT_OSS_CATEGORY_CEILING = 1700;
-        // Ceiling for the synthesis pass. Its input is now kept in check
-        // by GPT_OSS_CATEGORY_CEILING above, so it can safely use most of
-        // whatever headroom budgetOutputTokens computes for it.
         const GPT_OSS_SYNTHESIS_CEILING = 3200;
-        // A part's response is only usable if it actually contains all of
-        // the category headers it was asked for — a response that's
-        // merely non-empty but cut off mid-category (exactly what was
-        // happening at earlier, too-small token budgets) is not "done",
-        // and shipping it as though it were produces a ballot silently
-        // missing whole categories with no clear signal to the speaker
-        // why.
         const hasAllCategoryHeaders = (text, categoryNames) =>
           categoryNames.every(name => text.includes('### '+name));
         const GPT_OSS_GROUPS = [
@@ -7303,28 +6001,6 @@ Grading rules per claim:
           { prompt: GPT_OSS_RUBRIC_CAT7, categories: ['Conclusion Strength'] },
           { prompt: GPT_OSS_RUBRIC_CAT8, categories: ['Speech Quality'] }
         ];
-        // Daily-cap cost for a full Regular Practice round on GPT-OSS
-        // 120B: 8 category calls at weight 1 each + 1 synthesis call at
-        // weight 2 (it does more work — combining 8 passes' findings into
-        // a rank — so it's weighted slightly higher) = 10 total. Each
-        // weight is passed explicitly as doFetch's third argument rather
-        // than falling back to BALLOT_FEEDBACK_MODEL_WEIGHTS.llama, which
-        // is scoped to the single-call path used by Intro/Body Drill and
-        // Rough Draft. Passing the per-model weight (llama: 1) through 9
-        // real HTTP calls would have summed to 9, not 10 — close, but
-        // this makes the total an explicit, intentional number instead of
-        // an accident of how many calls the split happens to need.
-        //
-        // Honest caveat: 10 is the cost of the COMMON case, not a hard
-        // guarantee. The retry logic below (added after confirming via
-        // server-side logs that GPT-OSS 120B's hidden reasoning can
-        // stochastically consume an entire call's token budget and leave
-        // zero visible content) means an unlucky call that needs a retry
-        // bills that call's weight again — e.g. one retried category call
-        // makes the round cost 11, not 10. This is intentional: silently
-        // eating a real, separately-billed API call's cost to preserve a
-        // clean round number would be less honest than a total that can
-        // occasionally run a little over on bad luck.
         async function runGptOssSplitJudging(){
           const userMsg = 'TRANSCRIPT:\n\n'+transcript+'\n\n'+metricsBlock;
           const parts = [];
@@ -7332,22 +6008,6 @@ Grading rules per claim:
             const group = GPT_OSS_GROUPS[i];
             const sysContent = group.prompt + EVIDENCE_TRUTH_ASSUMPTION_NOTE;
             const msgs = [{role:'system', content: sysContent}, {role:'user', content: userMsg}];
-            // Retries here address a real, confirmed failure mode, not a
-            // guess: server-side diagnostic logging on groq-chat caught a
-            // live case where GPT-OSS 120B's hidden reasoning (Groq
-            // returns this as a separate completion_tokens_details.
-            // reasoning_tokens count) consumed 1311 of a 1313-token
-            // budget on a single category pass, leaving 0 characters of
-            // actual visible content — finish_reason: "length" with an
-            // entirely empty message.content. reasoning_effort: 'low'
-            // (set above) reduces the ODDS of this but doesn't cap
-            // reasoning length outright — it's stochastic per call, so
-            // raising the ceiling only shrinks the chance without ever
-            // eliminating it, and this exact category succeeded fine on
-            // other runs with far fewer reasoning tokens. A retry gets an
-            // entirely fresh, independent roll of that same stochastic
-            // process, so it's the correct fix for a transient/unlucky
-            // generation rather than a fixed budget problem.
             const MAX_ATTEMPTS = 3;
             let part = null, lastFailureWasEmpty = false;
             for(let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++){
@@ -7368,12 +6028,6 @@ Grading rules per claim:
             if(!hasAllCategoryHeaders(part, group.categories))
               throw new Error(`judging_failed:truncated:GPT-OSS 120B's pass covering "${group.categories.join(' and ')}" got cut off before finishing, even after budgeting the maximum safe output size under its 8,000 TPM limit — the transcript itself may just be unusually long for this model.`);
             parts.push(part);
-            // Real pacing, not just a UI nicety: TPM is a rolling 60-second
-            // window, so firing the next call before this one's tokens have
-            // aged out risks stacking on top of it and tripping the same
-            // 413 again. Skipped after the very last category pass, since
-            // the synthesis call right after needs the same gap too — that
-            // wait happens below instead.
             if(i < GPT_OSS_GROUPS.length - 1){
               setProcStep('judging', 'Pacing for rate limit (~1 min)…');
               await new Promise(r => setTimeout(r, 65000));
@@ -7383,41 +6037,7 @@ Grading rules per claim:
           setProcStep('judging', 'Pacing for rate limit (~1 min)…');
           await new Promise(r => setTimeout(r, 65000));
 
-          // The synthesis pass gets every category pass's own findings,
-          // not the transcript again — a ninth full transcript read would
-          // risk blowing the TPM budget yet again for no real benefit,
-          // since composite score/rank/drill only need to reason over what
-          // the category passes already found, not re-derive it from
-          // scratch.
-          //
-          // Two further trims, added after synthesis itself started
-          // getting cut off ("...got cut off before finishing the
-          // composite score and rank"): concatenating all 8 category
-          // passes' FULL text (including each one's verbose "What You
-          // Could Have Done" rewrite) routinely put synthesis's own input
-          // well past 8,000 tokens before it had written a single word of
-          // output — chunking the category calls more finely never
-          // shrank the total volume of text synthesis has to ingest, only
-          // how it was produced. So:
-          //   1. The composite score is summed here in code from each
-          //      category's own "- [Score]/[cap]" header, not asked of
-          //      the model at all — arithmetic over 8 known integers
-          //      needs no LLM call and can't be the thing that gets cut
-          //      off.
-          //   2. Each category's "What You Could Have Done" section is
-          //      stripped before building synthesis's input — synthesis
-          //      only needs the scores and the What Worked/Critical Flaws
-          //      bullets to justify a rank, not the full rewritten
-          //      paragraphs (those stay in the final ballot; they're just
-          //      not sent to this call).
           setProcStep('judging', `Step ${GPT_OSS_GROUPS.length+1} of ${GPT_OSS_GROUPS.length+1}`);
-          // Loosely matched on purpose: model output header formatting
-          // can drift slightly (em dash vs hyphen, extra bolding around
-          // the category name, double spaces) even when it still
-          // satisfies hasAllCategoryHeaders' plainer "### CategoryName"
-          // check above. An earlier stricter version of this regex threw
-          // an opaque "Judging failed:" with no detail whenever real
-          // output didn't match its exact assumed spacing/dash.
           const SCORE_HEADER_RE = /^###\s*.+?[-–—]\s*(\d+)\s*\/\s*(\d+)/m;
           let compositeScore = 0, compositeCap = 0;
           for(const p of parts){
@@ -7426,22 +6046,7 @@ Grading rules per claim:
             compositeScore += parseInt(m[1], 10);
             compositeCap += parseInt(m[2], 10);
           }
-          // stripRewrite alone wasn't enough: it bounds input size only
-          // as tightly as GPT_OSS_CATEGORY_CEILING bounds each category
-          // pass's OWN output, and that ceiling is a max_tokens cap the
-          // model can legitimately use most of when it has 2-5 What
-          // Worked bullets and 2-5 Critical Flaws bullets to write with
-          // quotes — 8 categories doing that simultaneously kept landing
-          // synthesis's prompt close enough to 8,000 tokens that Groq's
-          // TPM window left too little real completion room, cutting
-          // synthesis off before it even finished the rank line. Trusting
-          // an upstream max_tokens ceiling to indirectly bound a
-          // downstream call's input is exactly the fragile pattern that
-          // produced this bug twice already (2-per-call → 1-per-call →
-          // per-category ceiling), so this now hard-caps the actual
-          // character count sent per category, deterministically, no
-          // matter how verbose any individual pass's real output was.
-          const CATEGORY_SYNTHESIS_CHAR_CAP = 700; // ~200 tokens/category
+          const CATEGORY_SYNTHESIS_CHAR_CAP = 700;
           const stripAndCapForSynthesis = (p) => {
             const stripped = p.replace(/\n- \*\*What You Could Have Done:\*\*[\s\S]*$/, '').trim();
             if(stripped.length <= CATEGORY_SYNTHESIS_CHAR_CAP) return stripped;
@@ -7452,10 +6057,6 @@ Grading rules per claim:
           const userC = 'TOTAL COMPOSITE SCORE: '+compositeScore+'/'+compositeCap+
             '\n\nCATEGORY RESULTS:\n\n'+parts.map(stripAndCapForSynthesis).join('\n\n');
           const msgsC = [{role:'system', content: GPT_OSS_RUBRIC_SYNTHESIS}, {role:'user', content: userC}];
-          // Same retry protection as the category loop above, and for the
-          // same confirmed reason: hidden reasoning can stochastically eat
-          // an entire call's token budget and leave zero visible content,
-          // independent of how well-bounded the input is.
           let rawPartC = null;
           for(let attempt = 1; attempt <= 3; attempt++){
             if(attempt > 1){
@@ -7466,32 +6067,10 @@ Grading rules per claim:
             if(rawPartC) break;
           }
           if(!rawPartC) throw new Error('judging_failed:GPT-OSS 120B\'s synthesis pass returned an unrecognized response shape.');
-          // Server-side diagnostic logging (see groq-chat's diag output)
-          // proved this was NEVER a truncation bug: every synthesis call
-          // logged was finish_reason: "stop", using a fraction of its
-          // token budget, with full valid content. The real mismatch was
-          // formatting decoration — the model wrote **Judge's Rank:**
-          // (bold) instead of the requested ### Judge's Rank: (a markdown
-          // heading). That's not just cosmetic: parseBallot() below
-          // identifies every section of the final ballot (rank, rank
-          // explanation, drill, each category) by scanning for lines that
-          // start with "### " — a bolded-but-not-headinged line is
-          // invisible to it and gets silently swallowed into whatever
-          // "### " section came before it. So even once the truncation
-          // check below is fixed to stop rejecting valid bolded output,
-          // the rank/explanation/drill would still never appear in the
-          // actual displayed ballot without this: normalize the model's
-          // bold labels into real ### headings before using this text for
-          // anything downstream, rather than just loosening what the
-          // check accepts.
           const partC = rawPartC.replace(
             /^\*{0,2}\s*(Judge.?s Rank|Rank Explanation|Actionable Drill(?: for Next Round)?)\s*:?\s*\*{0,2}\s*:?\s*/gim,
             (_m, label) => '### '+label+': '
           );
-          // The check below now works on the normalized text and just
-          // needs to confirm the rank is present at all — the ### form is
-          // guaranteed by the normalization above regardless of what
-          // decoration the model originally chose.
           if(!/Judge.?s\s*Rank/i.test(partC))
             throw new Error('judging_failed:truncated:GPT-OSS 120B\'s synthesis pass got cut off before finishing the rank.');
           const scoreLine = '### Total Composite Score: '+compositeScore+'/'+compositeCap;
@@ -7500,29 +6079,15 @@ Grading rules per claim:
         }
         const isGptOssSplitEligible = choice.model === 'openai/gpt-oss-120b'
           && !introDrillMode && !bodyDrillMode && !roughDraftMode;
-        // hackclub-chat streams its response as SSE and may span several
-        // chained rounds (see runHackClubChatToCompletion); groq-chat
-        // still returns one buffered JSON object in a single round, since
-        // Llama via Groq comfortably finishes well inside the wall-clock
-        // limit and never needed any of this — GPT-OSS 120B on the
-        // Regular Practice rubric is the one exception, handled above.
         const content = isGptOssSplitEligible
           ? await runGptOssSplitJudging()
           : STREAMING_JUDGE_FNS.has(choice.fn)
           ? await runHackClubChatToCompletion(doFetch, baseMessages, (round) => {
-              // Live "Wave N" indicator on the Panel Deliberating step —
-              // only meaningful for the streaming/continuation-capable
-              // functions, since Llama/Groq finishes in one buffered call
-              // and never enters this loop.
               setProcStep('judging', round > 1 ? `Wave ${round}` : '');
             }, tierProfile)
           : choice.fn === 'gemini-generate'
           ? extractGeminiContent(await (await doFetch(baseMessages)).json())
           : extractChatContent(await (await doFetch(baseMessages)).json());
-        // The HTTP call itself succeeded (the model billed real tokens),
-        // but if we can't find text in any shape we recognize, treat it
-        // the same as a failed call so the caller can fall back to Llama
-        // instead of surfacing an opaque "no content" error.
         if(!content){
           const err = new Error('judging_failed:unrecognized_response_shape');
           throw err;
@@ -7534,31 +6099,11 @@ Grading rules per claim:
       try{
         feedback = await runJudging(judgeChoice, judgeWeightKey);
       }catch(err){
-        // Only fall back for genuine failures of a *non-default* judge model
-        // (missing/misconfigured Hack Club AI endpoint, unsupported model
-        // id, unrecognized response shape, etc.) — never mask our own rate
-        // limiting, and never loop if Llama itself was already the one that
-        // failed.
         if(err.rateLimited || judgeChoice.fn === 'groq-chat') throw err;
         console.error('Judge model failed, falling back to Llama:', judgeChoice.model, err);
-        // Surface the *actual* failure reason instead of a generic message —
-        // err.message is either "judging_failed:<http status>:<error text
-        // from Hack Club>" or "judging_failed:unrecognized_response_shape".
-        // Showing the real status (404 = model id not recognized upstream,
-        // 429/503 = rate-limited or temporarily overloaded, 500 = server
-        // error, etc.) means a failure can be diagnosed from the toast alone
-        // next time, without having to reopen DevTools.
         let reason = '';
         const msg = String(err && err.message || '');
         const statusMatch = msg.match(/^judging_failed:(\d{3}):(.*)$/s);
-        // Was previously only recognizing "judging_failed:<status>:..." —
-        // missed the separate "platform_rate_limited:<status>:..." shape
-        // thrown above when Hack Club's own upstream 429s us (their shared
-        // server key hitting its own rate limit — NOT our per-user daily
-        // cap, which is handled entirely separately via err.rateLimited).
-        // That meant this whole failure mode silently fell through to the
-        // fully generic "isn't available right now" toast with no detail
-        // at all, which is exactly what was being seen.
         const platformRateMatch = msg.match(/^platform_rate_limited:(\d{3}):/);
         if(statusMatch){
           const status = statusMatch[1];
@@ -7574,21 +6119,13 @@ Grading rules per claim:
         try{ showCopyConfirmToast(`${judgeModelLabel} is unavailable right now${reason} - falling back to GPT-OSS 120B.`); }catch(e){}
         judgeChoice = JUDGE_MODELS.llama;
         judgeWeightKey = 'llama';
-        setProcStep('judging'); // clear any stale "Wave N" left from the failed attempt above
+        setProcStep('judging');
         feedback = await runJudging(judgeChoice, judgeWeightKey);
       }
       if(!feedback) throw new Error('judging_failed:empty:No content returned.');
       lastRawFeedback = feedback;
-      // The judging call is the real cost driver for Ballot Feedback, so
-      // this is where we log weighted usage against whichever model
-      // actually ended up answering (post-fallback, if any).
       if(window.RateLimitUI) window.RateLimitUI.addBallotFeedbackUsage(judgeWeightKey);
 
-      // Rough Draft skips the transcript-annotation pass (built around
-      // spoken-delivery/signposting cues that don't apply to a typed
-      // outline) and the independent evidence fact-check pass (the quote
-      // "evidence" here is rough-draft shorthand, not citable claims worth
-      // an automated web fact-check) — go straight to results.
       if(roughDraftMode){
         lastTranscriptAnnotations = null;
         lastFactCheck = null;
@@ -7616,9 +6153,6 @@ Grading rules per claim:
     }catch(err){
       pipelineProgress.stop();
       if(err && (err.pipelineCancelled || err.name === 'AbortError')){
-        // User hit the cancel ("X") button — quietly return to the review
-        // screen with no error toast; this is an intentional stop, not a
-        // failure.
         processError.classList.add('hidden');
         processErrorActions.classList.add('hidden');
         showView(viewReview);
@@ -7631,9 +6165,6 @@ Grading rules per claim:
     }
   }
 
-  // Makes a second, best-effort Groq call to get structural section labels and
-  // inline comment quotes for the transcript, as JSON. Never throws, returns
-  // null on any failure, and the UI gracefully falls back to a plain transcript.
   async function fetchTranscriptAnnotations(transcript, key, key2, key3){
     try{
       const chatJson = await withKeyFallback(async (k) => {
@@ -7646,14 +6177,6 @@ Grading rules per claim:
           },
           body: JSON.stringify({
             model:'openai/gpt-oss-120b', temperature:0.3, max_tokens:3800,
-            // Same reasoning-budget issue as the main judging call above:
-            // GPT-OSS 120B defaults to reasoning_effort "medium" on Groq,
-            // and this call has no continuation chaining either, so
-            // uncontrolled reasoning tokens eating into max_tokens here
-            // risks truncating the JSON before it's valid, silently
-            // losing the annotation pass (this function already catches
-            // that and falls back to a plain transcript, but forcing
-            // 'low' avoids throwing away the budget in the first place).
             reasoning_effort: 'low',
             response_format:{ type:'json_object' },
             messages:[
@@ -7671,7 +6194,6 @@ Grading rules per claim:
       const raw = extractChatContent(chatJson);
       if(!raw) return null;
       let cleaned = raw.trim();
-      // Strip stray code fences in case the model adds them despite instructions.
       cleaned = cleaned.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '').trim();
       const data = JSON.parse(cleaned);
       if(!data || (!Array.isArray(data.sections) && !Array.isArray(data.comments))) return null;
@@ -7681,15 +6203,10 @@ Grading rules per claim:
       };
     }catch(e){
       console.warn('Transcript annotation unavailable:', e);
-      return null; // annotation is a bonus feature, never block the ballot on it
+      return null;
     }
   }
 
-  // Builds a {norm, map} pair: `norm` is a lowercased, punctuation-stripped,
-  // whitespace-collapsed version of `original`, and `map[i]` gives the index
-  // in `original` that corresponds to norm[i]. Lets us fuzzy-locate an AI's
-  // quoted phrase (which may differ slightly in punctuation/case) inside the
-  // real transcript and recover the EXACT original character offsets.
   function buildNormalizedMap(original){
     let norm = '';
     const map = [];
@@ -7713,9 +6230,6 @@ Grading rules per claim:
     return String(q||'').toLowerCase().replace(/[^a-z0-9\s]/g,' ').replace(/\s+/g,' ').trim();
   }
 
-  // Finds the exact [start, end) character range in `original` matching `quote`,
-  // searching only after `fromNormIdx` in the normalized text. Returns null if
-  // no match is found (the AI's quote simply gets skipped, graceful degrade).
   function locateQuote(quote, normMap, fromNormIdx){
     const nq = normalizeQuote(quote);
     if(!nq) return null;
@@ -7730,31 +6244,12 @@ Grading rules per claim:
   async function safeErrText(res){
     try{
       const j = await res.json();
-      // j.error.message is usually a plain string (OpenAI-style errors),
-      // but AIHubMix's error responses can nest an object here instead
-      // (e.g. {error:{message:{detail:...}}}). Returning that object
-      // directly used to silently become the literal text "[object
-      // Object]" the moment it landed in a template literal upstream —
-      // which is exactly the unhelpful "HTTP 400: [object Object]" toast
-      // this was producing, hiding the real reason for the 400. Only
-      // return it as-is when it's actually a string; otherwise dig for a
-      // readable field or fall back to a bounded JSON dump so the real
-      // error text is never lost like that again.
       if(typeof j.error?.message === 'string') return j.error.message;
       if(j.error?.message && typeof j.error.message === 'object'){
         const inner = j.error.message;
         const readable = inner.detail || inner.title || inner.error || inner.reason;
         return readable ? String(readable) : JSON.stringify(inner).slice(0, 200);
       }
-      // Our own edge functions (hackclub-chat, groq-chat) all return
-      // {"error": "<fn>_failed:<status>:<raw upstream body>"}
-      // — a plain STRING, not an {message} object, so the check above
-      // always missed it and fell through to re-stringifying the WHOLE
-      // response (double-encoding any JSON the upstream provider had
-      // already embedded in there, which is what produced the unreadable
-      // {\"type\":\"about:blank\",\"title\":\"Gone\"...} dump). Unwrap it
-      // properly instead: pull any embedded JSON out of the tail and
-      // surface just its human-readable detail/title/message field.
       if(typeof j.error === 'string'){
         const tailMatch = j.error.match(/^\w+_failed:\d+:(.*)$/s);
         const tail = tailMatch ? tailMatch[1] : j.error;
@@ -7762,7 +6257,7 @@ Grading rules per claim:
           const inner = JSON.parse(tail);
           const readable = inner.detail || inner.title || inner.message || inner.error;
           if(readable) return String(readable);
-        }catch(e){ /* tail wasn't JSON — just a plain error string, use as-is */ }
+        }catch(e){  }
         return tail;
       }
       return JSON.stringify(j).slice(0,200);
@@ -7772,20 +6267,6 @@ Grading rules per claim:
   function handlePipelineError(err){
     let msg = 'Something went wrong talking to Groq.';
     const s = String(err.message || err);
-    // detailAfterPrefix() replaces the old `s.split(':').slice(2).join(':')`
-    // pattern, which silently assumed EVERY failure used the 3-part
-    // "stage_failed:tag:detail" shape (e.g. "judging_failed:429:rate
-    // limited") and threw away everything past the first colon otherwise.
-    // Several judging_failed throws only ever had a 2-part shape —
-    // "judging_failed:unrecognized_response_shape", or the newer
-    // descriptive messages like "judging_failed:Could not find a
-    // \"- score/cap\" header..." — so slice(2) silently returned an empty
-    // string for all of them, producing the bare "Judging failed:" with
-    // no detail the user kept seeing, no matter how much more specific
-    // the underlying thrown message actually was. This instead strips
-    // ONLY a recognized tag (a 3-digit HTTP status, "truncated", or
-    // "empty") if one is actually present right after the stage prefix,
-    // and otherwise keeps everything after the prefix intact.
     const detailAfterPrefix = (str, prefix) => {
       const raw = str.slice(prefix.length);
       return raw.replace(/^(?:\d{3}|truncated|empty):/, '');
@@ -7796,16 +6277,6 @@ Grading rules per claim:
       msg = "Couldn't reach Groq's API — open this file directly in your browser (not an embedded preview) and check your internet connection.";
     else if(s.includes(':401:')||s.toLowerCase().includes('invalid api key'))
       msg = 'Groq rejected the API key (401). Double-check you pasted the correct key.';
-    // The stage-specific prefixes (transcription_failed / judging_failed /
-    // decode_failed) are checked BEFORE the generic :413: text match below,
-    // not after — a 413 can come from either the transcription upload
-    // (groq-transcribe, an actually-large audio payload) or the judging
-    // call (groq-chat, a small JSON payload where "too large" almost
-    // certainly means something else, like a token/context limit rather
-    // than literal byte size). Checking :413: first collapsed both into
-    // the same "recording was too large" message even when the failing
-    // request was groq-chat with a 1KB body — actively misleading, since
-    // recording a shorter speech does nothing for a judging-stage failure.
     else if(s.startsWith('transcription_failed')){
       const detail = detailAfterPrefix(s, 'transcription_failed:');
       msg = (s.includes(':413:') || detail.toLowerCase().includes('request entity too large'))
@@ -7831,7 +6302,6 @@ Grading rules per claim:
     if(goBack) processErrorActions.classList.remove('hidden');
   }
 
-  // ===== PARSING =====
   function parseBallot(raw){
     const text = raw.replace(/\r\n/g,'\n');
     const headerRe = /^###\s+(.+)$/gm;
@@ -7852,28 +6322,17 @@ Grading rules per claim:
       if(totalMatch) out.total = parseFloat(totalMatch[1]);
       else if(rankMatch){
         out.rank = parseFloat(rankMatch[1]);
-        // Some models fold the explanation directly under this header instead of a separate one
         if(body) out.rankExplanation = body;
       }
       else if(rankExplMatch) out.rankExplanation = (title.replace(/Rank Explanation:?/i,'').trim()+' '+body).trim();
       else if(drillMatch) out.drill = (title.replace(/Actionable Drill for Next Round:?/i,'').trim()+' '+body).trim();
       else if(catMatch && !totalMatch && !rankMatch){
         let whatWorked = extractField(body,'What Worked');
-        // Fallback: some models (seen with Opus 5) sometimes drop the literal
-        // "**What Worked:**" label and just start straight into the numbered
-        // list. Per the prompt's own field ordering, "What Worked" is always
-        // first, so if the labeled extraction comes up empty, grab everything
-        // from the top of the body up to whichever known label appears first
-        // (Critical Flaws / What You Could Have Done) instead of silently
-        // dropping the content.
         if(!whatWorked){
           const stopAlternation = BALLOT_FIELD_LABELS.map(l => l.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('|');
           const leadRe = new RegExp('^([\\s\\S]*?)(?=\\n{0,2}-?\\s*\\*\\*(?:'+stopAlternation+'):?\\*\\*|$)', 'i');
           const leadMatch = body.match(leadRe);
           const candidate = leadMatch ? leadMatch[1].trim() : '';
-          // Only use this fallback if it actually looks like content (not a
-          // stray blank), and don't reuse it if it's identical to a field
-          // we already extracted elsewhere in this category.
           if(candidate) whatWorked = candidate;
         }
         out.categories.push({
@@ -7892,12 +6351,6 @@ Grading rules per claim:
   const BALLOT_FIELD_LABELS = DATA.BALLOT_FIELD_LABELS;
   function extractField(body, label){
     const esc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    // Stop as soon as we hit ANY of the three known field labels again (the
-    // model sometimes writes them as a plain "**Label**" header and
-    // sometimes as a "- **Label**" list item), or a new "###" category
-    // header, or the end of the body. Without this, a field with no
-    // dash-prefixed label after it would otherwise swallow every section
-    // that follows it too.
     const stopAlternation = BALLOT_FIELD_LABELS.map(esc).join('|');
     const re = new RegExp(
       '\\*\\*'+esc(label)+':?\\*\\*:?\\s*([\\s\\S]*?)(?=\\n{0,2}-?\\s*\\*\\*(?:'+stopAlternation+'):?\\*\\*|\\n###|$)',
@@ -7933,20 +6386,8 @@ Grading rules per claim:
     return n + (s[(v-20)%10] || s[v] || s[0]);
   }
 
-  // ---- shared ballot-formatting builders (used by My History so saved
-  // ballots render exactly like the live results view, scored category
-  // cards, stamps, delivery metrics, and the color-coded annotated
-  // transcript, instead of a plain text dump) ----
   function buildBallotBodyHtml(parsed, rawFeedback, factCheck){
     let html = '';
-    // Previously this required >=3 categories AND a parsed composite
-    // total before showing the styled cards at all — anything short of
-    // a fully complete ballot (e.g. a response cut off mid-stream by an
-    // upstream/network issue) silently fell back to a plain unstyled
-    // text dump, which reads as broken even when most of the ballot
-    // parsed fine. Now: show styled cards for whatever categories did
-    // parse, and only fall back to the raw dump if we got essentially
-    // nothing usable out of it.
     if(parsed.categories.length >= 1){
       html += scoreKeyHtml();
       parsed.categories.forEach(cat => {
@@ -7980,12 +6421,6 @@ Grading rules per claim:
         html += `
         </div>`;
       }else{
-        // The ballot stopped before ever reaching a Composite Score —
-        // almost always means the response got cut off partway through
-        // (network hiccup or the judge model's connection dropping),
-        // not that anything is wrong with the categories that did come
-        // through. Say so plainly instead of just quietly omitting the
-        // score, which otherwise looks like a rendering bug.
         html += `
         <div class="raw-fallback" style="margin-top:12px">
           <strong>This ballot looks like it was cut off before finishing</strong> — no Composite Score came through, so some categories below may be missing entirely. Try running judging again for the full ballot.
@@ -8027,13 +6462,6 @@ Grading rules per claim:
       </div>`;
   }
 
-  // Builds the same section-labeled, color-coded-comment transcript markup
-  // as the live results view, but as a standalone HTML string targeting an
-  // arbitrary container (used inside each My History card). Temporarily
-  // clears the shared wordTokenSpans state so escWithWords degrades to
-  // plain escaped text, history entries don't have per-word timestamps
-  // saved, so there's nothing to sync a video to here, just the
-  // color-coded comments and section labels themselves.
   function buildAnnotatedTranscriptHtml(plainTranscript, ann){
     if(!plainTranscript) return { html: '<div class="ts-section-text">(no transcript saved)</div>', hasComments:false };
     const hasSections = ann && Array.isArray(ann.sections) && ann.sections.length;
@@ -8116,11 +6544,10 @@ Grading rules per claim:
   }
 
   function renderResults(feedback, transcript){
-    autoScrollToWordEnabled = true; // fresh results view: follow along by default again
+    autoScrollToWordEnabled = true;
     const parsed = parseBallot(feedback);
     let html = '';
 
-    // Show the drawn question at the top
     const resultQuestion = document.getElementById('resultQuestion');
     const resultQuestionText = document.getElementById('resultQuestionText');
     if(lastQuestion){
@@ -8130,19 +6557,14 @@ Grading rules per claim:
       resultQuestion.classList.add('hidden');
     }
 
-    // lastFactCheck is populated (or left null on failure) by runFactCheckPass
-    // in the pipeline, right before this function is called.
     html += buildBallotBodyHtml(parsed, feedback, lastFactCheck);
 
     resultsContent.innerHTML = html;
 
-    // Vocal delivery analysis panel (measured client-side, independent of the AI)
     renderDeliveryMetrics(lastDeliveryMetrics);
 
-    // Synced video playback panel, load the just-recorded clip
     setupResultsPlayback();
 
-    // Full inline transcript, annotated with section labels + clickable comments when available
     renderTranscript(transcript, lastTranscriptAnnotations);
     tsMeta_round.textContent = roundNo;
 
@@ -8153,14 +6575,10 @@ Grading rules per claim:
   }
 
   function renderFlightStrips(){
-    // Round-history chips ("R1: 73/100", etc.) removed from the ballot
-    // feedback view per request — keep flightHistory tracking intact
-    // (still used elsewhere) but never render/show the chip strip.
     if(flightStripResults) flightStripResults.classList.add('hidden');
   }
 
   function resetHomeView(){
-    // Blank the question box back to its initial "choose a method" state
     questionMode = null;
     introPrepStartedForCurrentQuestion = false;
     bodyPrepStartedForCurrentQuestion = false;
@@ -8187,7 +6605,6 @@ Grading rules per claim:
     if(youtubeQuestionError) youtubeQuestionError.style.display = 'none';
     lastQuestion = '';
 
-    // Reset the recording timer back to 0:00
     clockPill.textContent = '00:00';
     clockPill.classList.remove('warn','over');
     clockPill.classList.add('hidden');
@@ -8200,8 +6617,6 @@ Grading rules per claim:
     showView(viewRecord);
   });
 
-  // Plain-text rendering of the independent fact-check pass, for the .txt
-  // export (mirrors buildFactCheckHtml, just without markup).
   function factCheckPlainText(factCheck){
     if(!factCheck) return '';
     const normalized = Array.isArray(factCheck) ? { claims: factCheck, failed: false } : factCheck;
@@ -8285,9 +6700,6 @@ Grading rules per claim:
     return String(s||'').replace(/\*\*(.*?)\*\*/g,'$1').replace(/\*(.*?)\*/g,'$1');
   }
 
-  // Builds a multi-page PDF containing the full Official Practice Ballot
-  // (judge feedback + the stenographer's transcript), using jsPDF (loaded via
-  // CDN). Falls back to an alert if the library failed to load (e.g. offline).
   function downloadBallotPdf(){
     if(!window.jspdf || !window.jspdf.jsPDF){
       alert("Couldn't load the PDF library — check your internet connection and try again, or use the .txt option instead.");
@@ -8377,7 +6789,6 @@ Grading rules per claim:
     doc.save('extemp-ballot-round-' + roundNo + '.pdf');
   }
 
-  // ===== Toast notifications =====
   const toastContainer = document.getElementById('toastContainer');
   function showToast(message){
     const t = document.createElement('div');
@@ -8392,7 +6803,6 @@ Grading rules per claim:
     }, 2600);
   }
 
-  // ===== First-visit keyboard shortcut hint =====
   (function firstVisitHint(){
     const hint = document.getElementById('firstVisitHint');
     const closeBtn = document.getElementById('firstVisitHintClose');
@@ -8409,7 +6819,6 @@ Grading rules per claim:
     setTimeout(dismiss, 9000);
   })();
 
-  // ===== Copy transcript to clipboard =====
   document.getElementById('copyTranscriptBtn').addEventListener('click', async () => {
     if(!lastTranscript){ showToast('No transcript available yet'); return; }
     const lines = [
@@ -8444,7 +6853,6 @@ Grading rules per claim:
     window.print();
   });
 
-  // ===== Share a round (Web Share API, with a real fallback instead of hiding the button) =====
   async function shareBallot({ title, text, filename, fileText }){
     let file = null;
     try{ file = new File([fileText], filename, {type:'text/plain'}); }catch(e){}
@@ -8461,8 +6869,7 @@ Grading rules per claim:
       }
       throw new Error('no-share-api');
     }catch(e){
-      if(e && e.name === 'AbortError') return; // user cancelled, no message needed
-      // Fallback: copy a shareable summary to the clipboard instead
+      if(e && e.name === 'AbortError') return;
       try{
         await navigator.clipboard.writeText(text + '\n\n' + fileText);
         showToast('Sharing isn\'t supported here — copied to clipboard instead');
@@ -8485,7 +6892,6 @@ Grading rules per claim:
     });
   });
 
-  // ===== Example ballot: same export actions, using the example's static content =====
   function getExampleFeedbackText(){
     const el = document.getElementById('exampleResultsContent');
     return el ? el.innerText.trim() : '';
@@ -8557,12 +6963,11 @@ Grading rules per claim:
     window.print();
   });
 
-  // ===== Export dropdown menus (round results + example) =====
   function setupExportMenu(btnId, panelId){
     const btn = document.getElementById(btnId);
     const panel = document.getElementById(panelId);
     if(!btn || !panel) return null;
-    document.body.appendChild(panel); // escape .ballot's overflow:hidden clipping
+    document.body.appendChild(panel);
     let open = false;
     function position(){
       const rect = btn.getBoundingClientRect();

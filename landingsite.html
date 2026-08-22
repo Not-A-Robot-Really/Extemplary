@@ -13,22 +13,17 @@
 <link rel="stylesheet" href="style.css" />
 <script src="data.js"></script>
 <script src="vendor/supabase.js"></script>
-<!-- Clerk is used ONLY to send + verify the sign-up email code before we
-     ever create a Supabase account. The publishable key below is safe to
-     expose in frontend code (it is not a secret) — see landing-app.js for
-     where CLERK_PUBLISHABLE_KEY must be set. -->
+
 <script async crossorigin="anonymous"
   data-clerk-publishable-key="pk_test_aW1tdW5lLWtvYWxhLTU4Mi5jbGVyay5hY2NvdW50cy5kZXYk"
   src="https://cdn.jsdelivr.net/npm/@clerk/clerk-js@latest/dist/clerk.browser.js"
   type="text/javascript"></script>
 </head>
 <body>
-<!-- Icon sprite (icons.svg) is fetched and injected here at load time by loadIcons() below. -->
+
 <div id="iconSpriteMount"></div>
 <script src="landing-icons.js"></script>
 
-
-<!-- ====== AUTH GATE ====== -->
 <div id="authGate">
   <div class="landing-hero">
     <canvas id="heroConstellation"></canvas>
@@ -41,7 +36,6 @@
       <h1 class="auth-card-logo mark" aria-label="Extemplary">
         <span class="mark-e-wrap" aria-hidden="true"><svg viewBox="0 0 36 37" fill="none"><use href="#icon-1"></use></svg></span>xtemplary
       </h1>
-      <p class="auth-sub">Sign in to save and track your practice ballots</p>
       <div class="auth-tabs">
         <button type="button" class="auth-tab active" id="authTabLogin">Log In</button>
         <button type="button" class="auth-tab" id="authTabSignup">Sign Up</button>
@@ -60,10 +54,7 @@
           <label for="authPasswordConfirm">Confirm Password</label>
           <input type="password" id="authPasswordConfirm" name="passwordConfirm" autocomplete="new-password" minlength="6" />
         </div>
-        <!-- Shown only mid-signup, after Clerk has sent a code to the email
-             above and before the Supabase account has actually been
-             created. Replaces the email/password/confirm fields above
-             rather than stacking below them, so the card doesn't grow. -->
+
         <div class="auth-info hidden" id="authInfo"></div>
         <div class="auth-field hidden" id="authCodeWrap">
           <label for="authCode">Verification code</label>
@@ -395,9 +386,6 @@
   </div>
 </div>
 
-<!-- Comment popover for the "Watch & read along" demo snippet's clickable annotations,
-     regardless of which view/panel is currently active, including the
-     Example Ballot and the landing-page preview demo. -->
 <div class="comment-popover hidden" id="commentPopover">
   <div class="cp-arrow"></div>
   <div class="cp-tag" id="cpTag"></div>

@@ -21,10 +21,10 @@
     --font-display:Georgia,'Iowan Old Style','Palatino Linotype','Book Antiqua',serif;
     --font-body:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
     --font-mono:'IBM Plex Mono','SF Mono','Courier New',monospace;
-    /* text that sits directly on the page/header background (flips per theme) */
+
     --chrome-text:#f1ecdf;
     --chrome-text-dim:#9fb0c4;
-    /* text that sits on solid accent-colored chips/buttons (always light, constant) */
+
     --on-accent:#f8f6f0;
     --watermark:rgba(255,255,255,0.09);
     --watermark-hover:rgba(255,255,255,0.55);
@@ -56,11 +56,6 @@
     outline-offset:2px;
   }
 
-  /* -------- header -------- */
-  /* The header bar stays a fixed dark navy in both themes (like the nav
-     drawer's own header) so the white brand text, session tag, and
-     account controls always stay legible, only the page body below it
-     switches between dark/light. */
   header.topbar{
     padding:22px 24px 16px;
     background:var(--charcoal);
@@ -106,14 +101,11 @@
 
   main{max-width:880px;margin:0 auto;padding:28px 24px 60px;position:relative;z-index:1;}
 
-  /* -------- decorative side-margin parallax words -------- */
   .side-words{
     position:fixed;top:0;height:100vh;
     width:calc((100vw - 928px)/2);
     overflow:hidden;pointer-events:none;z-index:0;
-    /* Edge fade: letters ease out to transparent as they approach the column
-       boundary instead of being hard-clipped, so a wide word never appears
-       to "jump" or get chopped off mid-character at the edge. */
+
     -webkit-mask-image:linear-gradient(to right, transparent 0%, black 22%, black 78%, transparent 100%);
     mask-image:linear-gradient(to right, transparent 0%, black 22%, black 78%, transparent 100%);
   }
@@ -127,12 +119,7 @@
     transform:translateX(-50%);
     transition:opacity 0.6s ease;
   }
-  /* Flashlight overlay: an exact bright duplicate of the word wall, stacked
-     on top of the faint base layer and masked down to a small soft circle
-     that tracks the cursor (see the mousemove handler in setupSideWords()).
-     Only the words physically under the cursor's circle become visible
-     here, giving the effect of the pointer "revealing" that patch of the
-     wall instead of the wall's opacity changing wholesale. */
+
   .side-words-glow{
     position:fixed;top:0;height:100vh;
     width:calc((100vw - 928px)/2);
@@ -144,17 +131,13 @@
   .side-words-glow.right{right:0;}
   .side-words-glow .side-word{color:var(--watermark-hover);transition:none;}
   @media(max-width:1180px){ .side-words-glow{display:none;} }
-  /* Single continuous wobble keyframe, always paired with animation-direction:
-     alternate in JS so the motion reverses smoothly at each extreme instead of
-     snapping back to the start position, which is what caused the visible
-     "skip" every time the animation used to loop. */
+
   @keyframes driftWobble{
     from { transform: translateX(-50%) translateX(-32px); }
     to   { transform: translateX(-50%) translateX(32px); }
   }
   @media(max-width:1180px){ .side-words{display:none;} }
 
-  /* -------- ballot card -------- */
   .ballot{
     background:var(--parchment);
     color:var(--charcoal);
@@ -169,8 +152,6 @@
     box-shadow:-1px 1px 3px rgba(0,0,0,0.15);
   }
 
-  /* -------- grading rubric icon (lives on the PAPER itself, top-right
-     corner of the ballot, distinct from the header icon row) -------- */
   .rubric-toggle-btn{
     position:absolute;top:14px;right:34px;z-index:3;
     background:none;border:none;cursor:pointer;
@@ -182,9 +163,6 @@
   .rubric-toggle-btn:hover, .rubric-toggle-btn.active{color:var(--crimson);}
   body.previewing-example .rubric-toggle-btn{display:none;}
 
-  /* -------- cancel ("X") button on the processing/loading view, lets the
-     user bail out of an in-progress ballot-feedback run instead of being
-     stuck watching it to completion -------- */
   .cancel-ballot-btn{
     position:absolute;top:14px;right:34px;z-index:5;
     background:none;border:none;cursor:pointer;
@@ -198,8 +176,6 @@
 
   .rubric-panel{width:min(640px, calc(100vw - 24px));}
 
-  /* -------- compare-AI-judges icon (sits directly left of the rubric
-     icon, same paper-corner treatment) -------- */
   .ai-compare-toggle-btn{
     position:absolute;top:14px;right:70px;z-index:3;
     background:none;border:none;cursor:pointer;
@@ -211,16 +187,6 @@
   .ai-compare-toggle-btn:hover, .ai-compare-toggle-btn.active{color:var(--crimson);}
   body.previewing-example .ai-compare-toggle-btn{display:none;}
 
-  /* Opens as its own page on the ballot paper (same treatment as the
-     Tournament Briefing / Citation Checker pages) rather than an
-     overlay panel, so it just inherits the normal page flow here.
-
-     Simple ledger-row layout: a flush colored stripe on every row
-     (not just the ones selectable here) carries the AI lab's identity
-     at a glance, the header labels sit directly over their own
-     columns using the same grid as the data rows so nothing drifts
-     out of alignment, and the quality/cost bars are a single flat
-     pill-track with the number reading first, left of the bar. */
   .ai-compare-table{
     display:flex;flex-direction:column;font-family:var(--font-body);gap:8px;
     max-width:900px;margin:0 auto;
@@ -236,15 +202,7 @@
   .ai-compare-row.ai-compare-row-head .ai-compare-rank{text-align:left;}
   .ai-compare-row.ai-compare-row-head .ai-compare-model{padding-left:8px;}
   .ai-compare-row.ai-compare-row-head .ai-compare-metric{font-weight:700;}
-  /* Each model reads like its own light ledger card — a soft parchment
-     fill with a subtle border and rounded corners, and a gentle lift
-     on hover rather than a hard snap. Every row carries a flush
-     colored stripe down the left edge sized to the card's own rounded
-     corner (data-provider sets --acc), so provider identity is
-     visible at a glance on the whole table, not only the rows you can
-     actually pick as your judge. Selectable ("available here") rows
-     stay distinguished the simple way — bold model name plus a
-     brighter/thicker stripe — rather than an extra badge. */
+
   .ai-compare-row{
     position:relative;
     display:grid;grid-template-columns:30px 168px 1fr 1fr;
@@ -268,42 +226,21 @@
     box-shadow:0 5px 14px rgba(10,20,35,0.1);
     border-color:var(--acc);
   }
-  /* Selectable rows are still distinguished by the bold model name
-     (see .ai-compare-model rule below), not by stripe thickness —
-     every row now uses the same (thicker) stripe width from
-     .ai-compare-row so the left edge reads evenly down the whole
-     table. */
-  /* Plain bold number, no badge/circle behind it — same treatment
-     whether the model ranks #1 or #9 or is available here, since the
-     stripe + logo already carry that distinction. */
+
   .ai-compare-rank{
     font-family:var(--font-mono);font-size:14px;color:var(--charcoal);font-weight:700;text-align:center;
     justify-self:center;
   }
   .ai-compare-model{font-size:13.5px;color:var(--charcoal);display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
   .ai-compare-row.available .ai-compare-model{font-weight:700;}
-  /* Provider mark (real brand logo where we have the asset, a colored
-     monogram badge otherwise) sized to sit comfortably next to the
-     model name. Square-ish, only lightly rounded — like a favicon —
-     rather than forced into a circle, since most of these brand marks
-     (Kimi's wordmark, ChatGPT's whorl-on-square) aren't circular
-     marks to begin with. Kimi's asset is a plain flat square logo, so
-     it gets zero rounding; ChatGPT's asset is already a rounded
-     square icon at the source, so it just needs to keep that same
-     rounding here instead of being clipped into a circle. */
+
   .ai-compare-model .ai-model-logo{
     width:18px;height:18px;object-fit:contain;border-radius:5px;
   }
   .ai-compare-model .ai-model-logo[src*="kimi"]{border-radius:0;}
   .ai-compare-model .ai-model-logo[src*="openai"]{border-radius:6px;}
   .ai-compare-metric{display:flex;align-items:center;gap:8px;}
-  /* Simple flat pill bar: a light recessed track and a single solid
-     fill color (picked per-score from the app's own red→orange→
-     yellow→green→teal spectrum, see colorFromRatio in app.js), no
-     gradient sheen — reads clean and calm rather than busy. The score
-     reads first, to the left of its bar, in a fixed-width mono column
-     so every bar in the table still lines up regardless of the
-     number's digit count. */
+
   .ai-bar-num{font-family:var(--font-mono);font-size:13.5px;font-weight:700;color:var(--charcoal);min-width:24px;text-align:right;}
   .ai-bar-track{
     flex:1;height:10px;min-width:70px;border-radius:3px;background:var(--rule);
@@ -318,13 +255,10 @@
     .ai-compare-row{grid-template-columns:22px 110px 1fr 1fr;gap:8px;font-size:12px;padding:10px 10px 10px 12px;}
     .ai-compare-metric{gap:5px;}
   }
-  /* Rows we have a real sample ballot for (data-example on the row) are
-     clickable, and get a highlighted border while their sample is open. */
+
   .ai-compare-row.has-example{cursor:pointer;}
   .ai-compare-row.has-example.example-open{border-color:var(--acc);box-shadow:0 5px 14px rgba(10,20,35,0.14);}
-  /* The expand panel itself -- moved by app.js to sit right after whichever
-     row was clicked, filled with that model's real ballot text run through
-     the same basicMarkdown() helper used to render actual round feedback. */
+
   .ai-compare-example{
     margin:-2px 0 8px 0;padding:16px 18px;background:#fff;
     border:1px solid var(--rule);border-radius:8px;box-shadow:0 1px 3px rgba(10,20,35,0.06);
@@ -340,7 +274,6 @@
     max-height:600px;overflow-y:auto;
   }
 
-  /* -------- rubric mode bar (label + optional browse dropdown) -------- */
   .rubric-mode-bar{
     display:flex;align-items:center;justify-content:space-between;gap:10px;
     margin-bottom:12px;padding-bottom:12px;border-bottom:1px dashed var(--rule);
@@ -358,7 +291,6 @@
     border-radius:4px;background:#ffffff;color:var(--charcoal);cursor:pointer;
   }
 
-  /* -------- home page practice mode switch -------- */
   .mode-switch-row{
     display:flex;align-items:center;gap:10px;flex-wrap:wrap;
     margin-bottom:26px;
@@ -375,9 +307,6 @@
     white-space:nowrap;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;
   }
 
-  /* -------- AI judge model picker (sits between the practice-mode tabs
-     and the start-timer button; styled like the model switcher on LLM
-     chat sites) -------- */
   .model-picker{
     position:relative;margin-left:auto;margin-bottom:6px;flex-shrink:0;
   }
@@ -457,18 +386,6 @@
   .mode-switch-hint.is-body{background:#a6790c;border-color:#7a5a08;}
   .mode-switch-hint.is-roughdraft{background:#2f7d3c;border-color:#1e5a28;}
 
-  /* Row hosting the ballot title alongside the practice-mode explainer
-     box — sits in the header gap to the left of the Rubric / LLM Model
-     Rankings icons (position:absolute, top-right of the paper; see
-     .rubric-toggle-btn / .ai-compare-toggle-btn). Uses padding-right
-     (not margin-right) plus box-sizing:border-box so the icon clearance
-     is carved out of the row's own existing width instead of adding
-     extra width on top of it — margin-right here previously pushed the
-     flex row's border-box past the grid track's boundary, which is what
-     was overflowing and stretching the rest of the page layout.
-     width:100% keeps it pinned to exactly the space this row already
-     had (the title used to sit alone in), same as before anything was
-     added here. */
   .ballot-head-top{
     display:flex;align-items:flex-start;justify-content:space-between;
     gap:8px;width:100%;box-sizing:border-box;padding-right:76px;
@@ -476,7 +393,6 @@
   .ballot-head-left{margin:0;flex:0 0 auto;display:flex;flex-direction:column;gap:4px;}
   .ballot-head-left .ballot-title{white-space:nowrap;}
 
-  /* -------- ballot-head practice mode label -------- */
   .ballot-mode-label{
     font-family:var(--font-mono);font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.6px;
     padding:4px 10px;border-radius:3px;color:#fff;display:inline-block;
@@ -513,13 +429,10 @@
   .ballot-head .field{font-family:var(--font-mono);font-size:12px;}
   .ballot-head .field b{text-transform:uppercase;letter-spacing:1px;color:var(--slate);font-weight:600;margin-right:6px;}
   .ballot-title{grid-column:1/-1;font-family:var(--font-display);font-size:22px;font-weight:700;margin:0;}
-  /* Standardized heading used at the top of every secondary page/view
-     (My Ballot History, Streak Calendar, Example Ballot, Tournament
-     Briefing, Citation Checker) so they all share the same font/size. */
+
   .page-heading{font-family:var(--font-display);font-size:22px;font-weight:700;margin:0 0 16px;color:inherit;}
   .ballot-body{padding:24px 28px 28px;}
 
-  /* -------- flight history -------- */
   .flight{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 18px;}
   .flight .chip{
     font-family:var(--font-mono);font-size:11px;border:1px solid var(--rule);
@@ -527,7 +440,6 @@
   }
   .flight .chip b{color:var(--charcoal);}
 
-  /* -------- auth gate / landing page -------- */
   #authGate{
     position:fixed;inset:0;z-index:900;
     background:linear-gradient(135deg, var(--ink) 0%, var(--ink) 45%, var(--ink-soft) 100%);
@@ -543,10 +455,6 @@
   }
   #authGate.hidden{display:none;}
 
-  /* When previewing the example ballot from the landing page (not signed
-     in), keep authGate in place (so the real app stays covered/inert) and
-     just lift <main> above it, since every other in-app view is still
-     `.hidden` at this point, only the example content actually shows. */
   body.previewing-example header.topbar{ display:none !important; }
   body.previewing-example main{ position:relative; z-index:950; max-width:none; margin:0; padding:0; min-height:100vh; }
   body.previewing-example .ballot{ border-radius:0; min-height:100vh; }
@@ -592,13 +500,7 @@
     position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;
   }
   .landing-hero-photo{
-    /* Sized/positioned in viewport units (vh) rather than percentages of
-       the hero's own height. The hero box grows taller than 100vh on
-       short screens when switching to "Sign Up" (extra confirm-password
-       field), and percentage insets would recompute against that new,
-       taller box — making the photo visibly resize on every tab switch.
-       vh is always relative to the real viewport, so this stays fixed
-       regardless of how tall the auth card gets. */
+
     position:absolute;top:5vh;left:5%;width:90%;height:90vh;
     object-fit:cover;border-radius:14px;z-index:1;opacity:0.55;
     pointer-events:none;
@@ -606,14 +508,7 @@
   .landing-hero-headline{
     max-width:440px;position:relative;z-index:2;
     animation:heroSlideIn 0.8s cubic-bezier(.2,.8,.3,1) both;
-    /* Pinned to a fixed offset from the top of the row instead of
-       align-items:center (the default on .landing-hero). With centering,
-       this box was recentering every time the auth-card next to it
-       changed height (confirm-password field, verification-code step,
-       etc appearing/disappearing) since align-items:center centers each
-       item within the shared row height, and that row height is driven
-       by whichever child is tallest. align-self:flex-start anchors it to
-       the row's top instead, so it no longer moves when the card resizes. */
+
     align-self:flex-start;
     margin-top:14vh;
   }
@@ -646,9 +541,7 @@
     animation:authCardIn 0.7s cubic-bezier(.2,.8,.3,1) both;
     overflow:hidden;
   }
-  /* Folded top-right corner, same fold used on the ballot paper in the
-     app itself, so the very first thing you see on the site is already
-     styled like the same "paper" the rest of Extemplary is built around. */
+
   .auth-card::before{
     content:"";position:absolute;top:0;right:0;
     width:0;height:0;border-style:solid;border-width:0 22px 22px 0;
@@ -708,11 +601,7 @@
   .auth-field input:hover{border-color:var(--ink-line);}
   .auth-field input:focus{outline:none;border-color:var(--crimson-deep);}
   .auth-field input:focus-visible{outline:none;border-color:var(--crimson-deep);}
-  /* Fields that only appear conditionally (confirm-password, the info
-     banner, the code step) are toggled by adding/removing .hidden via JS,
-     same mechanism as the rest of the site, but they also get a smooth
-     grow/fade-in instead of snapping into place, and a slight collapse on
-     the way out instead of vanishing instantly. */
+
   .auth-field, .auth-info{
     max-height:120px;opacity:1;overflow:hidden;
     transition:max-height 0.35s cubic-bezier(.2,.8,.3,1), opacity 0.28s ease, margin 0.35s ease;
@@ -766,13 +655,6 @@
     50%{transform:translateX(-50%) translateY(7px);}
   }
 
-  /* ----- feature showcase section ----- */
-  /* Below the constellation/hero area the page shifts from the dark ink
-     theme to a lighter blue/white one, with speechbackgr22.png as the
-     backdrop, full-bleed via .light-zone-bg (since the sections themselves
-     are centered, max-width columns), plus local overrides of the shared
-     color variables so card backgrounds, borders, and text all read
-     correctly against the lighter backdrop. */
   .landing-features, .landing-example{
     --ink-soft:#ffffff;
     --ink-line:#d3e0ef;
@@ -810,27 +692,15 @@
   }
   .feature-card:hover .fc-icon{transform:translateZ(34px) scale(1.06);}
   .feature-card .fc-icon svg{width:20px;height:20px;}
-  /* ---- per-card accent color: each feature card can set --fc-accent
-     (inline style) to recolor its icon chip, its hover border, and its
-     hover "pulse" fidget dot, without changing the shared card layout, keeps the grid feeling like one family while giving each card its
-     own identity (e.g. Rapid Drill: Intro is red, Rapid Drill: Body is
-     gold, Streak is flame-orange, Goals is progress-green). ---- */
+
   .feature-card{ position:relative; }
   .feature-card .fc-icon{ background:var(--fc-accent, var(--crimson)); }
   .feature-card:hover{ border-color:var(--fc-accent, var(--brass)); }
 
-  /* ---- header row used by cards that pair the normal icon chip with a
-     larger decorative visual to its right, in the card's empty space ---- */
   .fc-head-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
   .fc-head-row .fc-icon{margin-bottom:0;}
   .fc-decor{flex-shrink:0;display:flex;align-items:center;justify-content:center;}
 
-  /* ---- landing "Streak & calendar" card: a larger, always-lit version of
-     the header's layered flame icon sitting beside the real streak icon,
-     reusing the same flameSway/flameOuter/flameMid/flameInner/flameCore/
-     flameSpark keyframes so the motion reads identically to the real app,
-     just always animating (no live/off toggle since there's no real
-     streak state on the marketing page). ---- */
   .fc-decor-flame svg{width:58px;height:58px;overflow:visible;}
   .fc-decor-flame .flame-layer{transform-box:fill-box;transform-origin:50% 85%;}
   .fc-decor-flame .flame-sway{transform-box:fill-box;transform-origin:50% 100%;animation:flameSway 2.6s ease-in-out infinite;}
@@ -843,20 +713,9 @@
   .fc-decor-flame .flame-spark-2{animation:flameSpark 1.9s ease-in infinite;animation-delay:1.1s;}
   .fc-decor-flame .flame-spark-3{animation:flameSpark 2.5s ease-in infinite;animation-delay:1.8s;}
 
-  /* ---- landing "Goals system" card: this reuses the exact real goal
-     wheel markup/classes from My History & Streak Goals (.goal-card-seal /
-     .goal-card-seal-ring / .goal-card-seal-hole / .goal-card-seal-pct,
-     conic-gradient brass-on-rule ring), just scaled up, so it's not a
-     lookalike but literally the same component. JS drives --goal-pct up
-     to a target percent and back down on a loop for the demo. ---- */
   .fc-decor-goal-seal{width:58px;height:58px;}
   .fc-decor-goal-seal .goal-card-seal-pct{font-size:14px;}
 
-  /* ---- landing "Rapid Drill" cards: mini versions of the real trend
-     slider from My History (reuses .trend-bar-wrap/.trend-bar exactly,
-     just shrunk down), stacked as a few rows colored by score band via
-     colorFromRatio, each filling in on a stagger and then getting a
-     looping shimmer sweep once full. ---- */
   .fc-mini-trend-group{display:flex;flex-direction:column;gap:16px;margin-top:16px;}
   .fc-mini-trend-wrap{height:11px;border-radius:6px;}
   .fc-mini-trend-fill{
@@ -867,14 +726,6 @@
   }
   @keyframes fcMiniTrendExpand{ to{ transform:scaleX(1); } }
 
-  /* ---- landing "Ballot feedback storage" card: a shrunk-down preview of
-     a real My History round card, reusing the exact .history-card/.hc-*
-     classes (round badge, mode badge, date, score, pull-quote question)
-     just at reduced scale so it fits inside the feature card. ---- */
-  /* ---- landing "Ballot feedback storage" card: a shrunk-down preview of
-     a real My History round card, reusing the exact .history-card/.hc-*
-     classes (round badge, mode badge, date, score, pull-quote question)
-     just at reduced scale so it fits inside the feature card. ---- */
   .fc-mini-history{margin-top:14px;background:rgba(255,255,255,0.55);overflow:hidden;}
   .fc-mini-history .history-card-head{padding:10px 12px;gap:6px;}
   .fc-mini-history .hc-top{flex-wrap:wrap;row-gap:4px;}
@@ -886,9 +737,6 @@
   .tut-skel-cats.fc-mini-cats{display:flex;flex-direction:column;gap:0;padding:0 12px 10px !important;}
   .fc-mini-cats .hc-cat{font-size:9.5px;padding:3px 0 3px 8px;border-left-width:2px;line-height:1.3;}
 
-  /* ---- landing "Record your round" card: mini version of the real
-     Trends chart (reuses .tut-skel-chart/.tut-skel-bar exactly, just
-     shrunk down) to stand in for a waveform/analysis preview. ---- */
   .fc-mini-chart{
     margin-top:14px;width:100%;max-width:220px;height:52px;
     display:flex;align-items:flex-end;gap:3%;
@@ -897,23 +745,14 @@
   }
   .fc-mini-chart .tut-skel-bar{border-radius:2px;}
 
-  /* ---- landing "Word-for-word transcript" card: mini version of the
-     real Coach's Overall Notes card (reuses .history-overall/.tut-skel
-     exactly, just shrunk down and without its heading text). ---- */
   .fc-mini-notes{margin-top:12px;padding:12px 14px;}
   .fc-mini-notes .tut-skel-block{height:9px;margin:6px 0;}
 
-  /* ---- landing "Vocal delivery analysis" card: mini version of the
-     real per-category trend rows (reuses .trend-row/.trend-bar-wrap
-     exactly, just shrunk down and without the row labels). ---- */
   .fc-mini-trendrows{margin-top:14px;display:flex;flex-direction:column;gap:8px;}
   .fc-mini-trendrows .trend-row{padding:0;border-bottom:none;gap:8px;}
   .fc-mini-trendrows .trend-bar-wrap{height:8px;border-radius:4px;background:rgba(255,255,255,0.18);}
   .fc-mini-trendrows .trend-avg{background:rgba(255,255,255,0.3);}
 
-  /* ---- landing "Rapid Drill: Intro" card: mini version of the real
-     Overall Strengths / Overall Weaknesses columns (reuses .trend-summary
-     /.col exactly, just shrunk down). ---- */
   .fc-mini-summary{margin-top:14px;gap:10px;}
   .fc-mini-summary .col{padding:9px 11px;min-width:0;}
   .fc-mini-summary h4{font-size:9px;margin-bottom:6px;gap:5px;}
@@ -921,12 +760,8 @@
   .fc-mini-summary li{padding-left:12px;}
   .fc-mini-summary li::before{width:4px;height:4px;top:5px;}
 
-  /* ---- landing "Rapid Drill: Body" card: mini version of the real
-     Suggested Goals row (reuses .suggested-goal-card exactly, just
-     shrunk down). ---- */
   .fc-mini-suggested-group{margin-top:14px;display:flex;flex-direction:column;gap:8px;}
   .fc-mini-suggested{padding:8px 10px;gap:8px;}
-
 
   .vocal-wave-icon{gap:2.5px;}
   .vocal-wave-icon .vw-bar{
@@ -948,7 +783,6 @@
   .feature-card.wide .fc-body.stacked{display:flex;flex-direction:column;gap:16px;}
   @media (max-width:720px){ .feature-card.wide .fc-body{grid-template-columns:1fr;} }
 
-  /* ----- interactive demo widgets embedded in feature cards ----- */
   .demo-panel{
     background:var(--parchment);color:var(--charcoal);border-radius:8px;padding:16px 16px 14px;
     margin-top:16px;position:relative;overflow:hidden;box-shadow:inset 0 0 0 1px var(--rule);
@@ -966,8 +800,7 @@
   .demo-locked-overlay svg{
     width:24px;height:24px;min-width:24px;min-height:24px;flex-shrink:0;
     stroke-width:2.75;color:#5b9be0;
-    /* Force every lock icon to render at the same visual size regardless of
-       the source symbol's own internal viewBox/padding in icons.svg. */
+
     display:block;
   }
   .demo-locked-overlay svg use{width:100%;height:100%;}
@@ -979,14 +812,12 @@
   }
   .demo-signup-btn:hover{background:var(--crimson-deep);transform:translateY(-1px);}
 
-  /* mini timer demo */
   .mini-timer-display{
     font-family:var(--font-mono);font-size:40px;text-align:center;color:var(--charcoal);letter-spacing:1px;padding:6px 0 2px;
   }
   .mini-timer-display.warn{color:var(--crimson);}
   .mini-timer-btn-row{display:flex;gap:8px;justify-content:center;margin-top:6px;}
 
-  /* AI-judged ballot demo: animated score ring + staggered row reveal */
   .demo-category-reveal .badge-wrap .demo-ring-path{
     stroke-dasharray:190;stroke-dashoffset:190;
     animation:demoRingDraw 1.3s cubic-bezier(.3,.7,.3,1) 0.15s forwards;
@@ -1006,7 +837,6 @@
   .demo-category-reveal .cat-row.evidence{animation-delay:0.95s;}
   @keyframes demoFadeUp{ from{opacity:0;transform:translateY(8px);} to{opacity:1;transform:translateY(0);} }
 
-  /* watch & read-along mini preview */
   .wr-preview{display:flex;gap:14px;align-items:flex-start;}
   .wr-thumb{
     position:relative;width:150px;flex-shrink:0;border-radius:6px;overflow:hidden;box-shadow:0 4px 14px rgba(0,0,0,0.25);
@@ -1021,7 +851,6 @@
   .wr-snippet{font-family:var(--font-body);font-size:13px;line-height:1.7;color:var(--charcoal);}
   .wr-snippet .tw{cursor:default;}
 
-  /* ----- example ballot CTA section ----- */
   .landing-example{
     max-width:640px;margin:0 auto 90px;padding:32px 32px 36px;text-align:center;position:relative;z-index:1;
     background:rgba(255,255,255,0.9);border-radius:16px;box-shadow:0 20px 50px rgba(30,50,80,0.18);
@@ -1099,7 +928,6 @@
   }
   .history-card-head:hover{background:rgba(255,255,255,0.35);}
 
-  /* ---- top row: round badge + date on the left, score on the right ---- */
   .hc-top{display:flex;align-items:center;justify-content:space-between;gap:16px;}
   .hc-top-left{display:flex;align-items:center;gap:10px;flex-wrap:wrap;min-width:0;}
   .hc-round{
@@ -1118,8 +946,6 @@
   .history-card-head .hc-score{font-family:var(--font-display);font-size:30px;font-weight:800;flex-shrink:0;line-height:1;}
   .history-card-head .hc-score .hc-score-max{font-size:15px;font-weight:600;opacity:0.55;margin-left:1px;}
 
-  /* ---- question pull-quote: the day's topic, set apart and larger,
-     like a headline pulled from the round rather than a metadata line ---- */
   .hc-question{
     position:relative;text-align:center;padding:14px 34px 2px;
     border-top:1px dashed var(--rule);
@@ -1152,7 +978,6 @@
   .history-card .hc-actions button:hover{color:var(--crimson);border-color:var(--crimson);}
   .flight .chip b{color:var(--charcoal);}
 
-  /* -------- trend chart panel with dropdown selector (My History) -------- */
   .trend-chart-panel{margin-top:28px;border-top:2px solid var(--rule);padding-top:22px;}
   .tcp-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px;}
   .tcp-head label{font-family:var(--font-mono);font-size:11.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.6px;color:#000;}
@@ -1185,7 +1010,6 @@
   .trend-chart-big .grid-line{stroke:var(--rule);stroke-width:1;}
   .trend-chart-big .axis-line{stroke:#000;stroke-width:1.5;}
 
-  /* -------- overall AI coaching comment (My History) -------- */
   .history-overall{
     position:relative;overflow:hidden;
     border:1px solid var(--crimson-deep);border-radius:3px;
@@ -1203,7 +1027,6 @@
     background:rgba(255,255,255,0.6);border-color:var(--rule);
   }
 
-  /* -------- video stage -------- */
   .stage{background:var(--ink);border-radius:4px;padding:10px;border:1px solid var(--ink-line);}
   .stage .frame{position:relative;background:#000;border-radius:2px;overflow:hidden;aspect-ratio:16/10;}
   .stage video{width:100%;height:100%;object-fit:cover;display:block;}
@@ -1235,7 +1058,6 @@
   .rec-btn:disabled{opacity:0.4;cursor:not-allowed;transform:none;}
   .btn-label{font-family:var(--font-mono);font-size:11px;letter-spacing:1px;color:#2b3440;text-transform:uppercase;text-align:center;margin-top:6px;}
 
-  /* --- recording active state: pulsing ring --- */
   .rec-btn.recording{
     background:#c0392b;
     border-color:#e74c3c;
@@ -1248,7 +1070,6 @@
     100%{outline:0px solid rgba(231,76,60,0);}
   }
 
-  /* -------- gear button in header -------- */
   .gear-btn{
     background:none;border:none;cursor:pointer;
     color:#ffffff;padding:5px;border-radius:4px;
@@ -1264,9 +1085,7 @@
   #themeToggle.active{transform:none;}
   #briefingToggle.active{transform:none;}
   #citationToggle.active{transform:none;color:var(--score-green);}
-  /* Header flame icon: never rotates, and only turns orange while the
-     user is on the Calendar page (.active) AND currently has an active
-     streak (.has-streak), both classes toggled in the JS. */
+
   #streakToggle.active{transform:none;}
   #streakToggle.active.has-streak{color:#ff8a2b;}
   #timerToggle{position:relative;}
@@ -1277,7 +1096,6 @@
   .timer-badge.running{color:var(--forest);}
   .timer-badge.warn{color:var(--crimson-bright);}
 
-  /* --- clock hand: 4-frame stepped tick, only while the prep timer is running --- */
   #timerToggle .timer-hand{
     transform-box: view-box;
     transform-origin: 12px 14px;
@@ -1298,7 +1116,6 @@
   .timer-btn-row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;}
   .timer-btn-row .btn{font-size:12.5px;padding:8px 16px;}
 
-  /* -------- question block -------- */
   .question-block{margin-bottom:20px;}
   .question-block label{
     display:block;font-family:var(--font-mono);font-size:11px;
@@ -1313,7 +1130,6 @@
   .question-block textarea:focus{outline:none;border-color:var(--brass);}
   .question-block textarea.error{border-color:var(--crimson);}
 
-  /* -------- rough draft text-submission form -------- */
   .rd-form{margin-top:6px;}
   .rd-section{
     border:2px solid var(--rule);border-left:5px solid #2f7d3c;border-radius:3px;
@@ -1338,9 +1154,7 @@
   .rd-field textarea:focus{outline:none;border-color:#2f7d3c;}
   .rd-field textarea.error{border-color:var(--crimson);}
   .rd-field textarea[readonly]{background:#f1f1ec;color:var(--slate);cursor:default;}
-  /* Card date/source inputs sit in a two-column row beneath each card's
-     text, styled to match the textareas above them (same border, radius,
-     background) rather than the browser's default input chrome. */
+
   .rd-card-meta-row{display:flex;gap:10px;margin-top:8px;}
   .rd-card-meta-row .rd-field{flex:1;margin-bottom:0;}
   .rd-field input[type="text"]{
@@ -1372,7 +1186,6 @@
   .question-block .q-hint{font-size:11px;color:var(--slate);margin-top:5px;font-family:var(--font-mono);}
   .q-error{font-size:12px;color:var(--crimson);margin-top:5px;display:none;}
 
-  /* -------- citation checker -------- */
   .cc-verdict-row{display:flex;justify-content:center;margin:6px 0 20px;}
   .cc-verdict-stamp{text-align:center;border:3px solid var(--rule);border-radius:8px;padding:14px 44px;background:#ffffff;}
   .cc-verdict-stamp .label{font-family:var(--font-mono);font-size:10.5px;letter-spacing:2px;text-transform:uppercase;color:var(--slate);}
@@ -1418,7 +1231,6 @@
 
   .q-diff-slider-wrap{ padding:8px 6px 0; }
 
-  /* Badge header: flat mono-uppercase pill matching .rubric-mode-label elsewhere on the site */
   .q-diff-badge-row{
     display:flex;align-items:center;justify-content:center;gap:8px;
     margin-bottom:14px;flex-wrap:wrap;
@@ -1433,7 +1245,6 @@
     color:var(--slate);
   }
 
-  /* Track: flat, thicker bar with a plain solid fill — same radius language as .trend-bar-wrap */
   .q-diff-track-outer{
     position:relative;display:flex;align-items:center;height:34px;margin:4px 0 10px;
   }
@@ -1492,7 +1303,6 @@
   .q-diff-ticks span:last-child{ text-align:right; }
   .q-diff-ticks span.is-active{ color:var(--crimson-deep);font-weight:700; }
 
-  /* Example card: flat parchment panel, same border language as other content cards on the site */
   .q-diff-example-card{
     background:var(--parchment-deep);
     border:1px solid var(--rule);
@@ -1532,7 +1342,6 @@
   }
   @keyframes qSpin{to{transform:rotate(360deg);}}
 
-  /* -------- ai-thinking progress bar -------- */
   .progress-bar-wrap{
     width:100%;max-width:300px;margin:16px auto 0;
   }
@@ -1552,7 +1361,6 @@
     letter-spacing:0.3px;text-align:center;
   }
 
-  /* question display on results */
   .result-question{
     border:1px solid var(--rule);border-radius:3px;
     padding:14px 16px;margin-bottom:22px;
@@ -1598,7 +1406,6 @@
     color:#fff;background:rgba(0,0,0,0.55);padding:4px 10px;border-radius:20px;
   }
 
-  /* -------- settings panel -------- */
   .settings-panel{
     position:fixed;z-index:710;top:0;right:0;
     max-height:80vh;overflow-y:auto;overflow-x:hidden;
@@ -1627,11 +1434,7 @@
     background:var(--parchment-deep);border:1px solid var(--rule);border-bottom-width:2px;
     border-radius:4px;padding:3px 8px;
   }
-  /* Each signal reads like a ledger line rather than a floating card:
-     a thin left stripe carries the signal's own color (so the list is
-     scannable by color the way the calendar/goal seals are), a hairline
-     rule separates rows, and the whole row settles/lifts smoothly on
-     hover instead of snapping. */
+
   .signal-list{list-style:none;margin:0 0 14px;padding:0;display:flex;flex-direction:column;}
   .signal-row{
     display:flex;align-items:center;gap:10px;
@@ -1700,12 +1503,10 @@
   .btn-add:hover{background:#154a80;transform:translateY(-1px);}
   .sp-note{font-size:11px;font-family:var(--font-mono);color:var(--slate);margin-top:10px;}
 
-  /* -------- signal presets -------- */
   .preset-section{margin-bottom:16px;padding-bottom:16px;border-bottom:1px dashed var(--rule);}
   .preset-label{font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:var(--slate);margin-bottom:8px;}
   .preset-row{display:flex;flex-wrap:wrap;gap:7px;}
-  /* Preset chips echo the same double-rule "stamp" language used for the
-     calendar's nav arrows, instead of generic rounded pill buttons. */
+
   .btn-preset{
     font-family:var(--font-mono);font-size:11px;letter-spacing:0.5px;font-weight:600;
     padding:6px 12px;border-radius:4px;border:2px double var(--charcoal);
@@ -1714,17 +1515,11 @@
   }
   .btn-preset:hover{background:rgba(29,92,158,0.06);border-color:var(--crimson);color:var(--crimson);transform:translateY(-1px);}
 
-  /* -------- tournament briefing (in-ballot view) -------- */
   .bf-timing-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;}
   .bf-timing-btn{flex:1;min-width:130px;font-size:13px;padding:10px 12px;border:1px solid var(--rule);background:#ffffff;color:var(--charcoal);border-radius:3px;cursor:pointer;font-family:var(--font-body);}
   .bf-timing-btn:hover{border-color:var(--brass);}
   .bf-timing-btn.active{background:var(--brass);color:#fff;border-color:var(--brass);}
 
-  /* ---- landing page only: the briefing demo's timing buttons should read
-     as the exact same control as the questions demo's category buttons
-     (transparent/ghost fill, same padding, weight, hover and active states)
-     so the two hero demo cards feel like one consistent UI. Scoped to
-     #authGate so the real in-app briefing screen is untouched. ---- */
   #authGate .bf-timing-row{margin-bottom:10px;}
   #authGate .bf-timing-btn{
     background:transparent;font-weight:600;padding:9px 12px;
@@ -1760,7 +1555,6 @@
   }
   .bf-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px;}
 
-  /* -------- generic buttons -------- */
   .btn{
     font-family:var(--font-body);font-size:14px;font-weight:600;
     padding:11px 20px;border-radius:3px;border:1px solid var(--charcoal);
@@ -1774,7 +1568,6 @@
   .btn:disabled{opacity:0.45;cursor:not-allowed;}
   .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px;}
 
-  /* -------- form field -------- */
   .field-block{margin-top:18px;}
   .field-block label{
     display:block;font-family:var(--font-mono);font-size:11px;
@@ -1787,7 +1580,6 @@
   .field-hint{font-size:11px;color:var(--slate);margin-top:5px;}
   .field-error{font-size:12px;color:var(--crimson);margin-top:6px;display:none;}
 
-  /* -------- signal overlay -------- */
   #signalOverlay{
     position:fixed;inset:0;z-index:9999;
     display:flex;flex-direction:column;align-items:center;justify-content:center;
@@ -1833,11 +1625,6 @@
   }
   .overlay-dismiss:hover{color:#fff;}
 
-  /* -------- processing -------- */
-  /* No separate card background here — a distinct parchment-deep panel
-     sitting inside the parchment ballot paper created a visible two-tone
-     seam (two different "paper" colors overlapping). This now sits flush
-     as part of the ballot paper itself, same as the rest of the app. */
   .processing{
     display:flex;flex-direction:column;align-items:center;
     padding:44px 32px 40px;text-align:center;gap:14px;
@@ -1853,26 +1640,17 @@
   .processing .sub{font-size:13.5px;color:var(--slate);max-width:420px;line-height:1.5;}
   .processing .sub:empty{display:none;}
 
-  /* Explicit phase indicator, styled like every other small-caps "tag"
-     label already used across ballot cards (see .drill .tag) rather than
-     as its own one-off style. */
   .proc-phase-label{
     font-family:var(--font-mono);font-size:11px;font-weight:700;letter-spacing:1.2px;
     text-transform:uppercase;color:var(--crimson);margin-top:6px;min-height:13px;
   }
 
-  /* -------- timeline-on-a-bar: a thin-outlined, rounded track (echoes the
-     "Trends Across N Ballots" solid-fill bars, just larger) with stage
-     ticks as vertical marker lines crossing it — not dots sitting inside
-     the bar. No gradients, no glows; the fill's color is the only
-     dynamic signal, driven live by colorFromRatio (the same red-to-green
-     spectrum ballot scores use) as it climbs toward 100%. -------- */
   .proc-timeline{width:100%;max-width:560px;margin-top:18px;}
   .proc-timeline-track{
     position:relative;height:26px;border-radius:13px;
     background:var(--rule);overflow:visible;
     border:3px solid var(--ink);
-    margin-bottom:48px; /* reserves flow-space for the checkmark badges + labels below, since they're absolutely positioned and won't push subsequent siblings (like .progress-phrase) down on their own */
+    margin-bottom:48px;
   }
   .proc-timeline-fill{
     position:absolute;top:0;left:0;height:100%;width:0%;border-radius:10px;
@@ -1883,17 +1661,12 @@
     position:absolute;top:0;transform:translateX(-50%);
     height:100%;display:flex;flex-direction:column;align-items:center;z-index:2;
   }
-  /* The marker itself: a vertical line confined strictly to the bar's own
-     height — no overhang above or below it. Uniform thickness and color
-     across pending/active/done — state is communicated by the label and
-     checkmark badge instead, not by the line changing. */
+
   .proc-tick-line{
     width:2.5px;height:100%;
     background:var(--ink);opacity:0.55;
   }
-  /* Checkmark badge — a small filled circle (a quiet wax-seal-style "done"
-     mark, in keeping with the app's stamp/badge language elsewhere — see
-     .verdict-stamp) sitting just below the bar, under its own tick line. */
+
   .proc-tick-check{
     position:absolute;top:calc(100% + 6px);left:50%;width:15px;height:15px;
     border-radius:50%;background:var(--crimson-deep);
@@ -1907,25 +1680,15 @@
     font-family:var(--font-mono);font-size:10.5px;letter-spacing:0.3px;text-transform:uppercase;
     color:var(--slate);white-space:nowrap;transition:color .25s ease, font-weight .25s ease;
   }
-  /* Pending (not yet reached): muted label — default state above. */
-  /* Active (current stage): bold dark label, pulsing (the line itself no
-     longer changes — see note above). */
+
   .proc-tick.active .proc-tick-label{color:var(--charcoal);font-weight:700;animation:procLabelPulse 1.6s ease-in-out infinite;}
   @keyframes procLabelPulse{0%,100%{opacity:1;}50%{opacity:0.6;}}
-  /* Done: filled checkmark badge appears just below the bar, label settles
-     to a quieter but legible color. */
+
   .proc-tick.done .proc-tick-check{opacity:1;transform:translateX(-50%) translateY(0) scale(1);}
   .proc-tick.done .proc-tick-label{color:var(--crimson-deep);font-weight:600;}
 
-  /* Rotating extemp-flavored phrase line, sits below the timeline+labels —
-     most of the clearance comes from .proc-timeline-track's own
-     margin-bottom above, this is just a little extra breathing room.
-     Bold + blue (not italic — italic read a little too playful for what
-     should feel like a professional status line) sets it apart from the
-     status/sub text above without looking like a banner ad. */
   .processing .progress-phrase{margin-top:2px;font-size:14px;font-weight:700;color:var(--crimson);}
 
-  /* -------- results -------- */
   .stamp-row{
     display:flex;justify-content:center;align-items:stretch;
     gap:16px;flex-wrap:wrap;margin:8px 0 26px;
@@ -2004,7 +1767,6 @@
   }
   .drill p{margin:0;font-size:14px;line-height:1.6;}
 
-  /* -------- inline transcript section -------- */
   .transcript-section{
     margin-top:28px;
     border-top:2px solid var(--charcoal);
@@ -2029,7 +1791,7 @@
     padding:18px;
     border-radius:3px;
     color:var(--charcoal);
-    /* ruled paper lines */
+
     background-image:repeating-linear-gradient(
       to bottom,
       transparent,
@@ -2044,7 +1806,6 @@
   .raw-fallback h4{font-family:var(--font-display);margin:18px 0 6px;}
   .raw-fallback strong{color:var(--crimson);}
 
-  /* -------- transcript annotation feature (comments + section labels) -------- */
   .ann-legend{
     display:flex;flex-wrap:wrap;align-items:center;gap:14px;
     font-family:var(--font-mono);font-size:10.5px;color:var(--slate);
@@ -2111,7 +1872,6 @@
     border-bottom:1px solid var(--charcoal);
   }
 
-  /* -------- download format choice modal -------- */
   .dl-modal{
     position:fixed;inset:0;z-index:300;
     background:rgba(20,17,12,0.5);
@@ -2128,11 +1888,6 @@
   .dl-modal-btn{display:block;width:100%;margin-bottom:10px;text-align:center;}
   .dl-modal-btn:last-child{margin-bottom:0;}
 
-  /* -------- colorful prep-timer takeover modals (Regular/Intro/Body/Rough Draft) --------
-     All four share one card shape, spacing, and header color; only the
-     accent color (border-top glow, action button, ghost-button outline)
-     differs per mode, applied via a single --prep-accent custom property
-     instead of four repeated near-duplicate rule blocks. */
   .prep-card-regular, .prep-card-intro, .prep-card-body, .prep-card-roughdraft{
     --prep-ink:#16283c;
     border-width:2px;border-top-width:6px;border-radius:10px;
@@ -2145,12 +1900,7 @@
   .prep-card-regular{ --prep-accent:#1d5c9e;--prep-accent-dark:#123a63;--prep-accent-hover:#164a80; }
   .prep-card-intro{ --prep-accent:#a3322a;--prep-accent-dark:#7a231c;--prep-accent-hover:#872720; }
   .prep-card-body{ --prep-accent:#a6790c;--prep-accent-dark:#7a5a08;--prep-accent-hover:#8a6409; }
-  /* Rough Draft's takeover is deliberately blue, same as Regular Practice,
-     rather than its own green tab color — that green is reserved for
-     identifying the mode elsewhere in the UI (tab, badges); reusing the
-     extension's existing primary blue here keeps this modal consistent
-     with the "Begin"-style action color used throughout, instead of
-     introducing a third accent. */
+
   .prep-card-roughdraft{ --prep-accent:#1d5c9e;--prep-accent-dark:#123a63;--prep-accent-hover:#164a80; }
 
   .prep-card-regular .dl-modal-head, .prep-card-intro .dl-modal-head,
@@ -2202,7 +1952,6 @@
     z-index:1600;background:rgba(10,14,20,0.65);
   }
 
-  /* -------- vocal delivery analysis panel -------- */
   .delivery-section{margin-top:28px;border-top:2px solid var(--charcoal);padding-top:18px;}
   .delivery-section .ts-head{font-family:var(--font-display);font-size:16px;font-weight:bold;margin:0 0 4px;display:flex;align-items:center;gap:10px;}
   .delivery-section .ts-meta{font-family:var(--font-mono);font-size:11px;color:var(--slate);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;}
@@ -2213,7 +1962,6 @@
   .delivery-stat .dv-sub{font-size:10.5px;color:var(--slate);margin-top:3px;line-height:1.4;}
   .delivery-note{font-family:var(--font-mono);font-size:11px;color:var(--slate);margin-top:12px;font-style:italic;line-height:1.5;}
 
-  /* -------- word-level transcript highlighting (synced playback) -------- */
   .tw{
     cursor:pointer;border-radius:2px;transition:background-color .1s ease, color .1s ease;
   }
@@ -2225,7 +1973,6 @@
   .transcript-highlight-demo .tw{cursor:default;}
   .transcript-highlight-demo .tw:hover{background:none;}
 
-  /* -------- synced video playback panel -------- */
   .playback-section{margin-top:28px;border-top:2px solid var(--charcoal);padding-top:18px;}
   .playback-section .ts-head{font-family:var(--font-display);font-size:16px;font-weight:bold;margin:0 0 4px;}
   .playback-section .ts-meta{font-family:var(--font-mono);font-size:11px;color:var(--slate);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;}
@@ -2280,7 +2027,6 @@
   .legal{text-align:center;font-family:var(--font-mono);font-size:11px;color:var(--chrome-text-dim);margin-top:30px;letter-spacing:0.3px;}
   .hidden{display:none !important;}
 
-  /* -------- toast notifications -------- */
   .toast-container{
     position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
     z-index:600;display:flex;flex-direction:column;gap:8px;align-items:center;
@@ -2297,7 +2043,6 @@
   .toast.show{opacity:1;transform:translateY(0);}
   .toast svg{flex-shrink:0;color:var(--score-green);}
 
-  /* -------- first-visit hint (styled like Timer/Settings panels) -------- */
   .hint-banner{
     position:fixed;top:auto;right:18px;bottom:18px;left:auto;
     width:250px;max-height:none;z-index:400;
@@ -2319,7 +2064,6 @@
 
   .print-brand{display:none;}
 
-  /* -------- condensed export menu -------- */
   .export-menu-wrap{position:relative;display:inline-block;}
   .export-menu{
     position:fixed;top:0;left:0;right:auto;
@@ -2335,11 +2079,6 @@
   .export-item:hover{background:var(--parchment-deep);}
   .export-item svg{flex-shrink:0;color:var(--slate);}
 
-  /* ================= HAMBURGER NAV MENU ================= */
-  /* Solid, non-transparent header bar that houses the hamburger button.
-     It is now nested inside .nav-drawer (see index.html) so it is a true
-     part of the menu bar and slides away together with the list below it
-     instead of staying stuck in place on its own. */
   .nav-drawer-head{
     position:sticky;top:0;z-index:700;
     width:100%;
@@ -2373,9 +2112,7 @@
   }
   .nav-hamburger-fab:hover{opacity:0.8;}
   .nav-hamburger-fab svg{transition:opacity .15s;}
-  /* Persistent, separately fixed hamburger button. It only shows up while
-     the drawer is minimized, so there is always a way to bring the menu
-     back, the drawer's own header slides away with it when collapsed. */
+
   .nav-hamburger-persistent{
     position:fixed;top:16px;left:16px;z-index:700;
     width:46px;height:46px;border-radius:50%;
@@ -2386,11 +2123,7 @@
     transition:opacity .15s;
   }
   .nav-hamburger-persistent:hover{opacity:0.8;}
-  /* The drawer/menu list is shown by default and only tucks itself away
-     when the hamburger button is clicked to minimize it, see
-     .nav-drawer-collapsed below. It uses the same solid navy-header /
-     white-body pattern as the other panels on the site (e.g. the Prep
-     Timer panel), no transparency. */
+
   .nav-drawer{
     position:fixed;top:0;left:0;bottom:0;z-index:690;
     width:270px;max-width:82vw;
@@ -2401,7 +2134,7 @@
     display:flex;flex-direction:column;overflow-y:auto;
   }
   .nav-drawer.nav-drawer-collapsed{transform:translateX(-100%);pointer-events:none;}
-  /* Still used by the goal-creation modal's close button (goalModalCloseBtn) */
+
   .nav-drawer-close{
     background:none;border:none;color:var(--on-accent);cursor:pointer;
     width:30px;height:30px;display:flex;align-items:center;justify-content:center;
@@ -2422,23 +2155,18 @@
   .nav-menu-item.active svg{color:#ffffff;}
   .nav-menu-item.active:hover{background:var(--crimson);}
   .nav-menu-divider{height:1px;background:var(--rule);margin:8px 6px;}
-  /* Sign out lives at the bottom of the drawer now, styled exactly like
-     the site's other primary buttons (see .btn.primary) rather than a
-     small inline text link. */
+
   .nav-signout-btn{
     width:calc(100% - 12px);margin:4px 6px 6px;
     text-align:center;
   }
 
-
-  /* ================= PRINT STYLESHEET ================= */
   @media print{
     @page{ margin:0.6in; }
     *{ box-shadow:none !important; text-shadow:none !important; }
     html,body{background:#ffffff !important; height:auto !important; overflow:visible !important;}
     body{color:#16283c !important; display:block !important; min-height:0 !important;}
 
-    /* Hide all interactive chrome and non-ballot UI */
     header.topbar, .side-words, .toast-container, .hint-banner,
     .settings-panel, #dlModal, .comment-popover,
     #view-record, .flight, .actions, .export-menu,
@@ -2461,7 +2189,6 @@
     .ballot::before{ display:none !important; }
     .ballot-body{ display:block !important; padding:0 !important; height:auto !important; }
 
-    /* Print-only logo header */
     .print-brand{
       display:flex !important; visibility:visible !important;
       align-items:center; gap:8px;
@@ -2500,8 +2227,6 @@
     .transcript-body{ color:#16283c !important; }
     .ts-section-text{ orphans:3; widows:3; }
 
-    /* Reveal every judge annotation inline as bracketed text so no
-       feedback is lost when comments can no longer be tapped/clicked. */
     .ann-comment{
       text-decoration:none !important; cursor:default;
       background:transparent !important; padding:0 !important;
@@ -2528,7 +2253,7 @@
     .overlay-card{padding:28px 30px;}
     .overlay-card .ov-time{font-size:52px;}
   }
-  /* ================= STREAK / CALENDAR / GOALS ================= */
+
   .streak-fab{
     position:fixed;top:16px;right:16px;z-index:700;
     display:flex;align-items:center;gap:7px;
@@ -2540,23 +2265,13 @@
   .streak-fab svg{color:inherit;flex-shrink:0;width:29px;height:29px;}
   .streak-fab-count{font-family:var(--font-display);font-size:20px;font-weight:800;line-height:1;}
 
-  /* ---- realistic layered flame icon on the top-right streak fab ----
-     Four nested shapes (outer/mid/inner flame + hot core) plus a couple of
-     rising sparks, each animated on its own irregular timing so the fire
-     never reads as one uniform pulsing loop. Only "alive" while the user
-     actually has a current streak, JS toggles .flame-live on #streakFabIcon;
-     otherwise the icon sits flat and motionless in a muted grey. */
   #streakFabIcon{overflow:visible;}
   #streakFabIcon .flame-layer{transform-box:fill-box;transform-origin:50% 85%;}
   #streakFabIcon .flame-sway{transform-box:fill-box;transform-origin:50% 100%;}
-  /* Outer layer now uses the same orange as the static (non-animated)
-     flame icon (#ff8a2b) so the two read as the same fire at a glance. */
+
   #streakFabIcon .flame-outer{fill:#ff8a2b;}
   #streakFabIcon .flame-mid{fill:#ffab4d;transform:translateY(3.2px) scale(1.14);}
-  /* The "inner" flame is the smaller shape nested inside the outer one.
-     It's pulled down and enlarged so it sits low, near the base of the
-     fire (like the hot part of a real flame), instead of hovering near
-     the tip. */
+
   #streakFabIcon .flame-inner{fill:#ffcf4d;transform:translateY(2.2px) scale(1.2);}
   #streakFabIcon .flame-core{fill:#fff6d8;transform:translateY(2.6px) scale(1.3);}
   #streakFabIcon .flame-spark{fill:#ffcf80;opacity:0;transform-box:fill-box;transform-origin:50% 50%;}
@@ -2638,9 +2353,6 @@
     100%{transform:translateY(-6px) scale(0.3);opacity:0;}
   }
 
-  /* ---- streak summary card (top of Streak Calendar view) ---- */
-  /* Same treatment as the "+ New Goal" button: sharp corners, solid
-     crimson fill with a crimson-deep border, no drop shadow. */
   .streak-summary-card{
     display:flex;align-items:center;gap:22px;flex-wrap:wrap;
     border:1px solid var(--crimson-deep);border-radius:3px;padding:22px 26px;margin-bottom:22px;
@@ -2654,11 +2366,6 @@
   .ssc-stat .ssc-cap{font-family:var(--font-mono);font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;opacity:0.85;margin-top:3px;}
   .ssc-note{font-family:var(--font-mono);font-size:11.5px;opacity:0.85;flex:1;min-width:220px;}
 
-  /* ---- calendar grid ----
-     Redone as a bound ledger page rather than a generic rounded-card
-     widget: hairline table rules shared between cells (no per-cell
-     gap), a stamped double-rule head like the site's verdict/rank
-     stamps, and a wax-seal circle for "today" instead of a flat fill. */
   .streak-calendar{
     border:2px solid var(--charcoal);border-radius:4px;padding:24px 26px 20px;margin-bottom:22px;
     background:rgba(255,255,255,0.68);
@@ -2691,12 +2398,7 @@
     text-align:center;font-family:var(--font-mono);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;
     color:var(--charcoal);opacity:0.7;padding:7px 0;
   }
-  /* Cells are individually bordered and spaced apart (rather than a
-     shared hairline grid), and sized by their own content instead of a
-     fixed square, so a multi-line event label can grow the cell instead
-     of getting clipped to one line. Dates sit at the top of each cell
-     like a real desk-calendar page, with the flame/event content
-     stacked below. */
+
   .scal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:9px;}
   .scal-cell{
     position:relative;min-height:72px;border-radius:5px;border:1px solid var(--rule);
@@ -2706,13 +2408,10 @@
   }
   .scal-cell:hover{background:rgba(29,92,158,0.05);border-color:var(--crimson);}
   .scal-cell.empty{visibility:hidden;cursor:default;}
-  /* Active (streak-lit) days get a faint parchment wash instead of staying
-     flat white, so a lit week reads as a warm run of days at a glance
-     rather than needing the flame icon alone to carry it. */
+
   .scal-cell.lit{background:var(--parchment);}
   .scal-cell:hover.lit{background:var(--parchment-deep);}
-  /* Today reads as a small ink/wax stamp on the date itself rather than
-     flooding the whole cell with solid color. */
+
   .scal-cell.today{background:rgba(29,92,158,0.07);border-color:var(--crimson);box-shadow:inset 0 0 0 1px var(--crimson);}
   .scal-cell.today .scal-daynum{
     background:var(--crimson);color:#fff;opacity:1;font-weight:800;
@@ -2724,10 +2423,7 @@
   .scal-flame.lit{color:#ff8a2b;}
   .scal-flame.unlit{color:#c7cbd1;}
   .scal-cell.today .scal-flame.unlit{color:rgba(29,92,158,0.35);}
-  /* Event/tournament label: needs to be readable at a glance (e.g. a
-     "STATES" entry), so it's sized like a real word on the page and
-     allowed to wrap across a couple of lines rather than being
-     squeezed to fine print on a single truncated line. */
+
   .scal-event-label{
     display:block;width:100%;font-family:var(--font-mono);font-size:12.5px;font-weight:800;
     line-height:1.3;text-align:center;overflow-wrap:break-word;white-space:normal;
@@ -2755,11 +2451,6 @@
   .scal-legend .scal-event-dot{background:var(--brass);}
   .scal-legend .scal-goal-ring{border-color:var(--crimson);}
 
-
-  /* ---- shared section header treatment (Tournaments/Goals tabs) ----
-     Matches the small crimson icon badges used on the landing page's
-     feature cards, so these tabs read as part of the same product
-     instead of a bolted-on widget. */
   .sec-head{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:18px;padding-bottom:14px;border-bottom:2px solid var(--rule);}
   .sec-head-title{display:flex;align-items:center;gap:11px;}
   .sec-icon{
@@ -2771,7 +2462,6 @@
   .sec-icon-target{color:#dc2626;}
   .sec-head h3{font-family:var(--font-display);font-size:18px;font-weight:700;margin:0;color:#000;}
 
-  /* ---- tournaments / events list ---- */
   .streak-events{
     border:2px solid var(--charcoal);border-radius:3px;padding:22px 24px;margin-bottom:22px;
     background:rgba(255,255,255,0.6);
@@ -2801,16 +2491,6 @@
     margin-top:10px;font-family:var(--font-mono);font-size:11.5px;font-weight:600;color:var(--brass);cursor:pointer;text-decoration:underline;
   }
 
-  /* ---- goals (shared: Streak Calendar view + My History tab) ----
-     Each goal reads like a small wax-seal stamp: a round progress ring
-     (conic-gradient, no JS/SVG needed) standing in for the old flat
-     bar-in-a-box, sitting on a plain ledger row. Distinct from a generic
-     dashboard progress bar, but built entirely from the site's existing
-     ink/brass/crimson palette. The ring is built as two perfectly
-     concentric absolutely-positioned layers (both inset:0 on the same
-     square box) rather than a fixed-pixel inset on a differently-sized
-     child, so the inner disc can never drift off-center from the outer
-     ring at any size. */
   .streak-goals, .history-goals{
     border:2px solid var(--charcoal);border-radius:3px;padding:22px 24px;margin-bottom:22px;
     background:rgba(255,255,255,0.6);
@@ -2862,10 +2542,6 @@
   .goal-card-del svg{stroke-width:3.5;width:15px;height:15px;}
   .goal-card-del:hover{background:#dc2626;color:#fff;border-color:#b91c1c;transform:scale(1.06);}
 
-  /* ---- suggested goals (My History) ----
-     A small lightbulb badge on the left gives each row a reason for the
-     circular shape (this is a suggestion, not a completed goal), instead
-     of an unexplained decorative notch. */
   .suggested-goals{margin-top:20px;padding-top:16px;border-top:1px dashed var(--rule);}
   .suggested-goals h4{
     font-family:var(--font-mono);font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;
@@ -2894,7 +2570,6 @@
   }
   .sg-add:hover{background:var(--crimson-deep);}
 
-  /* ---- goal creation modal ---- */
   .goal-modal-backdrop{
     position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:780;
     opacity:0;pointer-events:none;transition:opacity .2s ease;
@@ -2929,39 +2604,14 @@
     .scal-flame{width:19px;height:19px;}
     .streak-summary-card{padding:18px 20px;}
   }
-/* =========================================================================
-   ONBOARDING TUTORIAL ("cutscene" walkthrough for brand-new accounts)
 
-   Important: the app's nav-drawer slides with a CSS transform, which
-   creates its own stacking context, that means bumping z-index on an
-   element INSIDE it can never lift it above things outside it. So instead
-   of trying to raise the highlighted target's own z-index/position (which
-   also fought the drawer's stacking context and, worse, put a
-   click-blocking layer over real buttons), the highlight ring/box below
-   are separate, body-level elements positioned on top of whatever's being
-   pointed at. The real page element itself is never touched, so it always
-   stays clickable exactly where it already is. The dim layer is purely
-   cosmetic and never intercepts clicks (pointer-events: none, always).
-
-   The instructions box is DOCKED to a fixed side rail (left or right edge
-   of the viewport, whichever the current target is furthest from) instead
-   of floating next to/over the spotlighted element. A floating tooltip
-   next to a target can easily land on top of the very thing being shown
-   off (small screens, elements near the edges, tall instructions, etc.);
-   a fixed side rail never overlaps the highlighted area because it lives
-   outside the app's main content column entirely.
-   ========================================================================= */
 #tutOverlayRoot{position:fixed;inset:0;z-index:2147483000;pointer-events:none;font-family:var(--font-body, Georgia, serif);}
 #tutDim{position:fixed;inset:0;background:rgba(12,16,24,0.55);opacity:0;transition:opacity .25s ease;pointer-events:none !important;z-index:2147483000;}
 #tutDim.tut-visible{opacity:1;}
 .tut-highlight-box{
   position:fixed;z-index:2147483002;pointer-events:none;
   border-radius:12px;
-  /* The oversized 9999px spread IS the spotlight cutout: it paints the
-     dim overlay for the entire viewport, clipped to this box's rounded
-     rect, so only the outlined area stays at normal brightness while
-     everything else reads dim, instead of the old flat page-wide
-     overlay that dimmed the highlighted box too. */
+
   box-shadow:0 0 0 9999px rgba(12,16,24,0.65);
   transition:top .15s ease, left .15s ease, width .15s ease, height .15s ease;
 }
@@ -2969,7 +2619,6 @@
   display:none;
 }
 
-/* ---- Docked side panel ------------------------------------------------ */
 #tutBox{
   position:fixed;top:50%;right:22px;left:auto;
   transform:translateY(-50%) translateX(16px);
@@ -2982,12 +2631,10 @@
   opacity:0;transition:opacity .22s ease, transform .28s cubic-bezier(.2,.8,.2,1), right .28s ease, left .28s ease;
 }
 #tutBox.tut-visible{opacity:1;transform:translateY(-50%) translateX(0);pointer-events:auto;}
-/* Docked to the left edge instead, when the spotlighted target sits in
-   the right half of the screen. */
+
 #tutBox.tut-dock-left{right:auto;left:22px;transform:translateY(-50%) translateX(-16px);}
 #tutBox.tut-dock-left.tut-visible{transform:translateY(-50%) translateX(0);}
-/* No target on this step (welcome/closing screens), same side rail,
-   just vertically centered with a touch more presence. */
+
 #tutBox.tut-center{right:22px;left:auto;}
 
 #tutBox.tut-box-formal{
@@ -3011,16 +2658,8 @@
 .tut-progress-track{height:4px;border-radius:4px;background:rgba(18,58,99,0.12);margin:-2px -2px 14px;overflow:hidden;}
 .tut-progress-fill{height:100%;border-radius:4px;background:#123a63;transition:width .3s ease;}
 
-.tut-arrow{display:none;} /* docked panel points at nothing; connection is shown by the spotlight glow instead */
+.tut-arrow{display:none;}
 
-/* ---- Tutorial-only skeleton preview of "My Ballot History" -----------
-   Shown during onboarding when the account has no recorded rounds yet, so
-   the tour doesn't point at real coach-feedback/trends/goals copy that
-   simply doesn't exist for a brand-new user. Keeps the true layout
-   (headings, card shapes, bar counts) but swaps every piece of real text
-   for plain colored placeholder blocks. Purely decorative, the real
-   renderHistoryList() always overwrites this the next time the section
-   is actually opened. */
 .tut-skel-block{
   background:rgba(0,0,0,0.08);border-radius:4px;display:inline-block;
 }
@@ -3053,11 +2692,6 @@
 .tut-skel-card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
 .tut-skel-cats{display:flex;flex-direction:column;gap:8px;}
 
-/* Real components reused (not just look-alike classes) for the History
-   skeleton preview, so it's a faithful stand-in for the live layout. Only
-   swap the bits that would otherwise carry real numbers/text/dates for
-   plain placeholder blocks; keep everything else (borders, spacing,
-   badge colors) exactly as the real page renders it. */
 .history-trends.tut-skel .trend-avg{display:inline-flex;}
 .goal-card.tut-skel .goal-card-seal-ring{background:conic-gradient(var(--brass) calc(var(--goal-pct,0) * 1%), var(--rule) 0);}
 .history-card.tut-skel .history-card-head{cursor:default;}
@@ -3065,7 +2699,6 @@
 .history-goals.tut-skel .btn[disabled]{pointer-events:none;}
 #trendChartSelectSkel{pointer-events:none;}
 
-/* ---- Tutorial completion confetti effec ---- */
 .tut-confetti-root{
   position:fixed;inset:0;z-index:2147483005;pointer-events:none;overflow:hidden;
 }
@@ -3120,9 +2753,6 @@
 .tut-btn-choice{background:#1d5c9e;color:#fff;margin-left:6px;}
 .tut-btn-choice.tut-btn-no{background:#7a7264;}
 
-/* On narrower or shorter viewports a side rail EATS too much width, so the
-   panel becomes an anchored bottom sheet instead, still never covering
-   the spotlighted area, since the app content sits above it. */
 @media (max-width: 780px), (max-height: 560px){
   #tutBox, #tutBox.tut-dock-left, #tutBox.tut-center{
     top:auto;bottom:14px;left:50%;right:auto;

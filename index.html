@@ -16,22 +16,16 @@
 <script src="vendor/supabase.js"></script>
 </head>
 <body>
-<!-- Icon sprite (icons.svg) is fetched and injected here at load time by loadIcons() below. -->
+
 <div id="iconSpriteMount"></div>
 <script src="index-icons.js"></script>
 
-
-
-<!-- Fullscreen exit button, only shown while previewing the example ballot
-     from the landing page (not signed in). Always pinned top-right. -->
 <button type="button" id="previewExitBtn" aria-label="Close example and return to sign in">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-17"></use></svg>
 </button>
 
-<!-- ====== TOAST NOTIFICATIONS ====== -->
 <div class="toast-container" id="toastContainer" aria-live="polite"></div>
 
-<!-- ====== FIRST-VISIT KEYBOARD SHORTCUT HINT (styled like the Timer/Settings panels) ====== -->
 <div class="settings-panel hint-banner hidden" id="firstVisitHint">
   <div class="sp-head">
     <span>Tip</span>
@@ -43,13 +37,11 @@
   <button type="button" id="firstVisitHintClose" class="hint-banner-close" aria-label="Dismiss">&times;</button>
 </div>
 
-<!-- ====== DECORATIVE SIDE-MARGIN WORDS (parallax) ====== -->
 <div class="side-words left" id="sideWordsLeft" aria-hidden="true"><div class="side-words-inner" id="sideWordsLeftInner"></div></div>
 <div class="side-words right" id="sideWordsRight" aria-hidden="true"><div class="side-words-inner" id="sideWordsRightInner"></div></div>
 <div class="side-words-glow left" id="sideWordsLeftGlow" aria-hidden="true"><div class="side-words-inner" id="sideWordsLeftGlowInner"></div></div>
 <div class="side-words-glow right" id="sideWordsRightGlow" aria-hidden="true"><div class="side-words-inner" id="sideWordsRightGlowInner"></div></div>
 
-<!-- ====== SIGNAL OVERLAY ====== -->
 <div id="signalOverlay" role="alert" aria-live="assertive">
   <div class="overlay-backdrop"></div>
   <div class="overlay-card" id="overlayCard">
@@ -61,7 +53,6 @@
   </div>
 </div>
 
-<!-- ====== TOURNAMENT BRIEFING MODAL ====== -->
 <header class="topbar">
   <div class="brand">
     <div class="mark"><span class="mark-e-wrap" aria-hidden="true"><svg viewBox="0 0 36 37" fill="none"><use href="#icon-18"></use></svg></span>xtemplary</div>
@@ -105,12 +96,6 @@
   </div>
 </header>
 
-<!-- ====== STREAK COUNTER, floating top-right, mirrors the hamburger fab ====== -->
-<!-- ====== HAMBURGER NAV MENU, solid header bar, top-left of the screen, ====== -->
-<!-- ====== the dark header slides together with the menu list below it as ====== -->
-<!-- ====== one piece. This separate persistent button stays fixed in place ====== -->
-<!-- ====== and only shows up while the menu is collapsed, so there is always ====== -->
-<!-- ====== a way to bring the menu back. ====== -->
 <button class="nav-hamburger-persistent hidden" id="navMenuPersistentToggle" type="button" aria-label="Open menu" title="Menu">
   <svg viewBox="0 0 24 24" width="27" height="27" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-30"></use></svg>
 </button>
@@ -190,16 +175,7 @@
 
 <main>
   <div class="ballot" id="ballot">
-    <!-- Grading Rubric icon, sits on the ballot PAPER itself (top-right corner
-         of the paper), separate from the header icon row above. Only shown
-         while the paper is displaying Home/Record, My Ballot History, the
-         Example Ballot, or the post-submission Feedback/Results view (see
-         showView()'s rubricToggle.classList.toggle logic in the JS below). -->
-    <!-- LLM Model Rankings icon, sits directly left of the Grading Rubric
-         icon on the ballot paper. Opens a panel ranking the available
-         judge models by quality/cost, mirroring the same
-         RUBRIC_VISIBLE_VIEWS show/hide + positioning pattern as
-         rubricToggle/rubricPanel below. -->
+
     <button class="ai-compare-toggle-btn" id="aiCompareToggle" type="button" aria-label="LLM Model Rankings" title="LLM Model Rankings">
       <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <rect x="3" y="14.5" width="5" height="6.5" rx="1.4"></rect>
@@ -220,28 +196,15 @@
           <div class="ballot-title" id="ballotTitle">Practice Ballot</div>
           <div class="field ballot-mode-label is-regular" id="ballotModeLabel">Regular Practice</div>
         </div>
-        <!-- Practice-mode explainer box, moved here (from just above the
-             record controls) so it sits in the header row between the
-             ballot title/mode label and the Rubric / LLM Model Rankings
-             icons in the paper's top-right corner. Background color is
-             driven by the same is-regular/is-intro/is-body classes as
-             #ballotModeLabel (kept in sync in setPracticeMode in app.js);
-             typography intentionally matches .history-overall (the
-             "Coach's Overall Notes" card) rather than the mono UI font
-             used elsewhere in the header. -->
+
         <div class="mode-switch-hint" id="modeSwitchHint">Full 7-minute round, graded on all 8 rubric categories.</div>
       </div>
     </div>
 
     <div class="ballot-body">
 
-      <!-- ====== RECORDING VIEW ====== -->
       <div id="view-record">
 
-        <!-- Practice mode switch, replaces the old separate Intro Drill
-             page/icon. Choosing "Rapid Drill: Introduction" here is what
-             now drives introDrillMode (prep timer, recording cap, rubric,
-             grading prompt) everywhere else in the app. -->
         <div class="mode-switch-row">
           <div class="mode-switch" id="modeSwitch" role="tablist" aria-label="Practice mode">
             <button type="button" class="mode-switch-btn active" id="modeRegularBtn" data-mode="regular" role="tab" aria-selected="true">Regular Practice</button>
@@ -250,10 +213,6 @@
             <button type="button" class="mode-switch-btn" id="modeRoughDraftBtn" data-mode="roughdraft" role="tab" aria-selected="false">Rough Draft</button>
           </div>
 
-          <!-- AI judge model picker, styled like the model switcher on
-               LLM chat sites (a compact button showing the current model
-               that opens a small menu of choices). Choice is persisted in
-               localStorage and read by getJudgeModelChoice() in app.js. -->
           <div class="model-picker" id="modelPicker">
             <button type="button" class="model-picker-btn" id="modelPickerBtn" aria-haspopup="listbox" aria-expanded="false" title="Choose the AI that judges your speech">
               <span class="model-picker-label" id="modelPickerLabel">GPT-OSS 120B</span>
@@ -321,7 +280,6 @@
           </button>
         </div>
 
-        <!-- YouTube link popover (toggled by the "Open Video & Capture Tab Audio" button) -->
         <div class="settings-panel hidden" id="youtubePopover">
           <div class="sp-head">
             <span>YouTube Link</span>
@@ -335,7 +293,6 @@
           </div>
         </div>
 
-        <!-- Keyboard shortcuts panel -->
         <div class="settings-panel hidden" id="shortcutsPanel">
           <div class="sp-head">
             <span>Keyboard Shortcuts</span>
@@ -351,19 +308,13 @@
           </div>
         </div>
 
-        <!-- Grading Rubric panel (toggled by the rubric icon on the ballot paper) -->
         <div class="settings-panel hidden rubric-panel" id="rubricPanel">
           <div class="sp-head">
             <span>Grading Rubric</span>
             <span>100 pts</span>
           </div>
           <div class="sp-body">
-            <!-- On the Home page the practice mode switch above is the one
-                 source of truth, so this bar just shows a colored label. On
-                 every other page (History, Results, Example Ballot) there's
-                 no mode switch in view, so a small dropdown lets someone
-                 browse either rubric for reference without changing what
-                 they're actually practicing. -->
+
             <div class="rubric-mode-bar" id="rubricModeBar">
               <span class="rubric-mode-label" id="rubricModeLabel">Regular Practice Rubric</span>
               <select class="rubric-mode-select hidden" id="rubricModeSelect" aria-label="Choose which rubric to view">
@@ -416,9 +367,6 @@
               </tfoot>
             </table>
 
-            <!-- Trimmed 3-category rubric shown only while Intro Drill mode is
-                 active, body/argument/evidence/reasoning/conclusion criteria
-                 don't apply to an introduction-only recording. -->
             <table class="rubric-table hidden" id="introRubricTable">
               <thead>
                 <tr><th>Category</th><th>Pts</th><th>Criteria</th></tr>
@@ -442,9 +390,6 @@
               </tfoot>
             </table>
 
-            <!-- Trimmed 6-category rubric shown only while Body Drill mode is
-                 active, hook/intro and conclusion criteria don't apply to a
-                 single-body-paragraph-only recording. -->
             <table class="rubric-table hidden" id="bodyRubricTable">
               <thead>
                 <tr><th>Category</th><th>Pts</th><th>Criteria</th></tr>
@@ -480,9 +425,6 @@
               </tfoot>
             </table>
 
-            <!-- Trimmed, content-only 5-category rubric shown only while Rough
-                 Draft mode is active. No vocal delivery category, since this
-                 mode grades a typed plaintext draft, not a recording. -->
             <table class="rubric-table hidden" id="roughDraftRubricTable">
               <thead>
                 <tr><th>Category</th><th>Pts</th><th>Criteria</th></tr>
@@ -516,7 +458,6 @@
           </div>
         </div>
 
-        <!-- Prep timer panel (toggled by stopwatch icon in header) -->
         <div class="settings-panel hidden" id="timerPanel">
           <div class="sp-head">
             <span>Prep Timer</span>
@@ -533,13 +474,12 @@
           </div>
         </div>
 
-        <!-- Settings panel (toggled by gear icon in header) -->
         <div class="settings-panel hidden" id="settingsPanel">
           <div class="sp-head">
             <span>Time Signals</span>
           </div>
           <div class="sp-body">
-            <!-- Presets -->
+
             <div class="preset-section">
               <div class="preset-label">Load a Preset</div>
               <div class="preset-row">
@@ -574,7 +514,6 @@
           </div>
         </div>
 
-        <!-- Question input, required before recording -->
         <div class="question-block">
 
           <div class="q-mode-row" id="qModeRow">
@@ -583,16 +522,13 @@
           </div>
           <div class="q-error" id="qModeError" style="margin-bottom:10px;color:var(--score-red);">Please choose how you'd like to enter your question.</div>
 
-          <!-- Custom-entry mode -->
           <div id="customQuestionBlock" class="hidden">
             <textarea id="extempQuestion" placeholder="Type or paste your extemp question here before recording…" rows="3"></textarea>
             <div class="q-error" id="questionError">Please enter your question before recording.</div>
           </div>
 
-          <!-- AI-generated question mode -->
           <div id="generatedQuestionBlock" class="hidden">
 
-            <!-- Step 1: category select -->
             <div id="qCategoryStep">
               <div class="q-cat-row">
                 <button class="btn ghost q-cat-btn" data-cat="Domestic" type="button">Domestic</button>
@@ -601,7 +537,6 @@
               </div>
             </div>
 
-            <!-- Step 1.5: difficulty slider -->
             <div id="qDifficultyStep" class="hidden">
               <div class="q-diff-slider-wrap">
                 <div class="q-diff-badge-row">
@@ -657,7 +592,6 @@
               </div>
             </div>
 
-            <!-- Step 2: loading -->
             <div id="qGenLoading" class="hidden" style="text-align:center;padding:14px 0;">
               <div class="q-hint" id="qGenLoadingText">Drafting three questions…</div>
               <div class="progress-bar-wrap">
@@ -666,10 +600,8 @@
               <div class="progress-phrase" id="qGenProgressPhrase"></div>
             </div>
 
-            <!-- Step 2 error -->
             <div class="q-error" id="qGenError" style="display:none;"></div>
 
-            <!-- Step 3: pick one of three -->
             <div id="qPickStep" class="hidden">
               <div class="q-hint" style="margin-bottom:8px;">Pick the question you'll speak on:</div>
               <div id="qOptionsList"></div>
@@ -679,7 +611,6 @@
               </div>
             </div>
 
-            <!-- Step 4: confirmed -->
             <div id="qConfirmedStep" class="hidden">
               <div class="q-hint">Your drawn question:</div>
               <div class="q-confirmed-text" id="qConfirmedText"></div>
@@ -689,11 +620,6 @@
           </div>
         </div>
 
-        <!-- ====== ROUGH DRAFT text-submission form ======
-             Shown instead of the camera/record stage below while Rough
-             Draft mode is active. Collects the written skeleton of a
-             speech (intro, 3 body sections, conclusion) as plaintext and
-             submits it straight to the judge, no recording involved. -->
         <div class="rd-form hidden" id="roughDraftFormBlock">
           <div class="rd-section">
             <div class="rd-section-head">Intro</div>
@@ -899,7 +825,6 @@
         </div>
       </div>
 
-      <!-- ====== REVIEW VIEW ====== -->
       <div id="view-review" class="hidden">
         <div class="stage">
           <div class="frame">
@@ -912,7 +837,6 @@
         </div>
       </div>
 
-      <!-- ====== PROCESSING VIEW ====== -->
       <div id="view-processing" class="hidden">
         <button type="button" class="cancel-ballot-btn hidden" id="cancelBallotBtn" aria-label="Cancel" title="Cancel">
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
@@ -922,27 +846,8 @@
           <div class="status" id="statusText" aria-live="polite">Transcribing testimony…</div>
           <div class="sub" id="statusSub"></div>
 
-          <!-- Explicit "which phase, specifically" indicator — separate
-               from statusText/statusSub above (which describe what's
-               happening) and from the tick labels below (which mark
-               position on the timeline). This spells out the phase count
-               and name plainly, e.g. "PHASE 4 OF 6 — PANEL DELIBERATING
-               (WAVE 2)". Driven by setProcStep in app.js. -->
           <div class="proc-phase-label" id="procPhaseLabel"></div>
 
-          <!-- Timeline-on-a-bar: one thick, black-outlined track shared by
-               the progress fill (colored live by % complete via
-               colorFromRatio) and 6 stage ticks laid along it at even
-               intervals. Ticks are vertical marker lines that cross the
-               top edge of the bar (not dots sitting inside it), each with
-               a small checkmark badge that appears above the line once
-               that stage is done, and a caption below the bar. Tick state
-               (pending/active/done) and captions are driven directly from
-               the real stage transitions in runPipeline via setProcStep —
-               "Judging"'s caption goes further and shows live specifics
-               (e.g. "Wave 2") as the judging model actually enters
-               continuation rounds, and "Transcript"'s caption shows live
-               % while transcription is in progress. -->
           <div class="proc-timeline" id="procTimeline">
             <div class="proc-timeline-track">
               <div class="proc-timeline-fill" id="procProgressFill"></div>
@@ -979,10 +884,6 @@
             </div>
           </div>
 
-          <!-- Restored: the rotating extemp-flavored / "[Model] is ..."
-               phrase line that existed before the timeline redesign.
-               Driven by pipelineProgress (createProgressController),
-               unchanged logic — just needed its DOM element back. -->
           <div class="progress-phrase" id="procProgressPhrase"></div>
         </div>
         <div class="error-box hidden" id="processError"></div>
@@ -991,11 +892,9 @@
         </div>
       </div>
 
-      <!-- ====== RESULTS VIEW ====== -->
       <div id="view-results" class="hidden">
         <div class="flight hidden" id="flightStripResults"></div>
 
-        <!-- Question displayed at top of ballot -->
         <div class="result-question hidden" id="resultQuestion">
           <div class="rq-label">Question Drawn</div>
           <div class="rq-text" id="resultQuestionText"></div>
@@ -1003,7 +902,6 @@
 
         <div id="resultsContent"></div>
 
-        <!-- Vocal delivery analysis (computed client-side from the audio waveform) -->
         <div class="delivery-section hidden" id="deliverySection">
           <div class="ts-head">Vocal Delivery Analysis</div>
           <div class="ts-meta">Measured directly from the audio waveform · independent of the AI's reading of the text</div>
@@ -1011,7 +909,6 @@
           <div class="delivery-note" id="deliveryNote"></div>
         </div>
 
-        <!-- Synced video playback: click the transcript or a judge's note to jump to that moment -->
         <div class="playback-section hidden" id="playbackSection">
           <div class="ts-head">Watch &amp; Read Along</div>
           <div class="ts-meta">Click any word in the transcript below (or a judge's note) to jump the video there</div>
@@ -1032,7 +929,6 @@
           </div>
         </div>
 
-        <!-- Full inline transcript -->
         <div class="transcript-section" id="transcriptSection">
           <div class="ts-head">Stenographer's Transcript</div>
           <div class="ts-meta" id="transcriptMeta">Round <span id="tsMeta_round">1</span> · Extemporaneous Speaking</div>
@@ -1082,7 +978,6 @@
         </div>
       </div>
 
-      <!-- ====== EXAMPLE BALLOT VIEW (static, shown via the "?" help button) ====== -->
       <div id="view-example" class="hidden">
         <div class="page-heading">Example Ballot</div>
         <div class="result-question">
@@ -1103,7 +998,6 @@
           <div class="delivery-note">These figures are measured straight from the audio waveform and word timing, then handed to the AI judge to inform the Speech Quality score above.</div>
         </div>
 
-        <!-- Synced video playback, identical interaction to a real round's results -->
         <div class="playback-section" id="examplePlaybackSection">
           <div class="ts-head">Watch &amp; Read Along</div>
           <div class="ts-meta">Click any word in the transcript below (or a judge's note) to jump the video there.</div>
@@ -1174,8 +1068,6 @@
         </div>
       </div>
 
-      <!-- ====== TOURNAMENT BRIEFING VIEW ====== -->
-      <!-- ====== HISTORY VIEW ====== -->
       <div id="view-history" class="hidden">
         <div class="page-heading">My Ballot History</div>
         <div class="actions" style="justify-content:flex-start;margin-bottom:18px;">
@@ -1189,7 +1081,6 @@
         </div>
       </div>
 
-      <!-- ====== STREAK CALENDAR VIEW ====== -->
       <div id="view-streak" class="hidden">
         <div class="page-heading">Streak Calendar</div>
         <div class="actions" style="justify-content:flex-start;margin-bottom:18px;">
@@ -1204,7 +1095,6 @@
       <div id="view-briefing" class="hidden">
         <div class="page-heading">Tournament Briefing</div>
 
-        <!-- Step 1: when's the tournament -->
         <div id="bfSetupStep">
           <div class="q-hint" style="margin-bottom:10px;">When's your tournament? This helps the AI focus on the most relevant news.</div>
           <div class="bf-timing-row" id="bfTimingRow">
@@ -1223,7 +1113,6 @@
           </div>
         </div>
 
-        <!-- Step 2: loading -->
         <div id="bfLoading" class="hidden" style="text-align:center;padding:14px 0;">
           <div class="q-hint" id="bfLoadingText">Pulling together your briefing…</div>
           <div class="progress-bar-wrap">
@@ -1232,10 +1121,8 @@
           <div class="progress-phrase" id="bfProgressPhrase"></div>
         </div>
 
-        <!-- Step 2 error -->
         <div class="q-error" id="bfError" style="display:none;"></div>
 
-        <!-- Step 3: result -->
         <div id="bfResultStep" class="hidden">
           <div id="bfVerifiedWrap"></div>
           <div class="bf-result" id="bfResultContent"></div>
@@ -1249,11 +1136,9 @@
 
       </div>
 
-      <!-- ====== CITATION CHECKER VIEW ====== -->
       <div id="view-citation" class="hidden">
         <div class="page-heading">Citation Checker</div>
 
-        <!-- Step 1: enter claim + source -->
         <div id="ccSetupStep">
           <div class="q-hint" style="margin-bottom:14px;">Paste the exact claim as you'd say it in your speech, enter the date it happened, then name the source it's attributed to. Gemini will search the web to verify it.</div>
           <div class="question-block">
@@ -1278,7 +1163,6 @@
           </div>
         </div>
 
-        <!-- Step 2: loading -->
         <div id="ccLoading" class="hidden" style="text-align:center;padding:14px 0;">
           <div class="q-hint" id="ccLoadingText">Searching the web to verify this citation…</div>
           <div class="progress-bar-wrap">
@@ -1287,10 +1171,8 @@
           <div class="progress-phrase" id="ccProgressPhrase"></div>
         </div>
 
-        <!-- Step 2 error -->
         <div class="q-error" id="ccError" style="display:none;"></div>
 
-        <!-- Step 3: result -->
         <div id="ccResultStep" class="hidden">
           <div class="cc-verdict-row">
             <div class="cc-verdict-stamp" id="ccVerdictStamp">
@@ -1308,18 +1190,6 @@
         </div>
       </div>
 
-      <!-- ====== LLM MODEL RANKINGS VIEW ======
-           Opens as its own page on the paper (same pattern as the
-           Tournament Briefing / Citation Checker pages above), toggled
-           by the AI chip icon immediately left of the rubric icon.
-           Ranks every judge model by third-party quality/cost
-           benchmarks; the ones actually selectable in the model picker
-           are marked "Available Here". Bar colors are solid (not a
-           gradient) and picked per score from the same red→orange→
-           yellow→green→teal spectrum the app already uses for its
-           delivery-metric scores (see colorFromRatio in app.js), so a
-           glance at the color alone tells you roughly how good a score
-           is without reading the number. -->
       <div id="view-aiCompare" class="hidden">
         <div class="page-heading">LLM Model Rankings</div>
         <div class="ai-compare-table">
@@ -1397,10 +1267,6 @@
           </div>
         </div>
 
-        <!-- Shared expand panel for the 4 rows above with a real sample
-             ballot (data-example="..."). app.js moves this element to sit
-             right after whichever row was clicked, and fills it with that
-             model's actual ballot via basicMarkdown(). -->
         <div class="ai-compare-example hidden" id="aiCompareExamplePanel">
           <div class="ai-compare-example-head">
             <button type="button" class="ai-compare-example-close" id="aiCompareExampleCloseBtn" aria-label="Close sample ballot">&times;</button>
@@ -1428,17 +1294,6 @@
   <div class="legal">Unofficial practice tool. Not affiliated with or endorsed by the NSDA</div>
 </main>
 
-<!-- ====== PREP TIMER MODALS (Regular/Intro/Body) ======
-     Body-level (not inside <main>), same as the comment popover and goal
-     modal below, so their z-index isn't capped by main's own stacking
-     context — this guarantees the dark overlay sits above the header
-     and side nav and actually blocks clicks on them while prep is active. -->
-
-<!-- ====== REGULAR PRACTICE: 30-minute prep countdown modal ======
-     Opened only when the user presses the "Start Timer" button next
-     to the practice mode switch while Regular Practice is selected.
-     Mirrors the Intro/Body Drill prep modals below in structure,
-     just with its own 30:00 countdown and full-round framing. -->
 <div class="dl-modal hidden prep-modal-regular" id="regularPrepModal">
   <div class="dl-modal-card prep-card-regular" id="regularPrepCard">
     <div class="dl-modal-head">Regular Practice: Prep Time</div>
@@ -1453,11 +1308,6 @@
   </div>
 </div>
 
-<!-- ====== INTRO DRILL: 5-minute prep countdown modal ======
-     Shown only when the user presses the "Start Timer" button next
-     to the practice mode switch while Intro Drill mode is active.
-     Auto-starts a 5:00 countdown; the user can pause/resume, skip
-     straight to recording, or exit back to normal practice mode. -->
 <div class="dl-modal hidden prep-modal-intro" id="introPrepModal">
   <div class="dl-modal-card prep-card-intro" id="introPrepCard">
     <div class="dl-modal-head">Intro Drill: Prep Time</div>
@@ -1472,11 +1322,6 @@
   </div>
 </div>
 
-<!-- ====== BODY DRILL: 10-minute prep countdown modal ======
-     Shown only when the user presses the "Start Timer" button next
-     to the practice mode switch while Body Drill mode is active.
-     Auto-starts a 10:00 countdown; the user can pause/resume, skip
-     straight to recording, or exit back to normal practice mode. -->
 <div class="dl-modal hidden prep-modal-body" id="bodyPrepModal">
   <div class="dl-modal-card prep-card-body" id="bodyPrepCard">
     <div class="dl-modal-head">Body Drill: Prep Time</div>
@@ -1491,13 +1336,6 @@
   </div>
 </div>
 
-<!-- ====== ROUGH DRAFT: 10-15 minute (user's choice) prep countdown modal ======
-     Shown only when the user presses the "Start Timer" button next
-     to the practice mode switch while Rough Draft mode is active.
-     The user first picks a prep length (10-15 minutes), then the
-     countdown starts; pause/resume, skip straight to writing, or
-     exit back to normal practice mode are all available, mirroring
-     the Intro/Body Drill prep modals above. -->
 <div class="dl-modal hidden prep-modal-roughdraft" id="roughDraftPrepModal">
   <div class="dl-modal-card prep-card-roughdraft" id="roughDraftPrepCard">
     <div class="dl-modal-head">Rough Draft: Prep Time</div>
@@ -1524,17 +1362,12 @@
   </div>
 </div>
 
-<!-- Body-level (not inside any single view) so the comment popover can show
-     regardless of which view/panel is currently active, including the
-     Example Ballot and the landing-page preview demo. -->
 <div class="comment-popover hidden" id="commentPopover">
   <div class="cp-arrow"></div>
   <div class="cp-tag" id="cpTag"></div>
   <div class="cp-text" id="cpText"></div>
 </div>
 
-<!-- Body-level goal-creation modal, shared by the Streak Calendar view and
-     the "My Ballot History" tab so both can open the same form. -->
 <div class="goal-modal-backdrop hidden" id="goalModalBackdrop"></div>
 <div class="goal-modal hidden" id="goalModal">
   <div class="goal-modal-head">
@@ -1548,10 +1381,6 @@
 
 <script src="app.js"></script>
 
-<!-- ============================================================
-     ONBOARDING TUTORIAL, cutscene-style walkthrough shown once,
-     automatically, the first time a brand new account signs up.
-     ============================================================ -->
 <div id="tutOverlayRoot" aria-live="polite">
   <div id="tutDim"></div>
   <div id="tutHighlightBox" class="tut-highlight-box" style="display:none;"></div>

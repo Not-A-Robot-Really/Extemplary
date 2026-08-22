@@ -59,7 +59,7 @@ Sign up → Generate questions → Write a speech → Record your speech → Rec
 - Recommended if you are focusing on introductions, creative AGDs, signposting, and vocal delivery
 3) **Rapid Drill: Body** 🟡: 10 minute prep, a 2 minute body paragraph, graded on 6 categories.
 - Recommended if you are focusing on the content, evidence, analysis, and vocal delivery
-4) [IN PROGRESS] **Drafting** 🟢: 10-15 minute prep (you choose!), solely a rough draft of your speech in plaintext, graded only on content (no delivery/speech).
+4) **Drafting** 🟢: 10-15 minute prep, a rough draft (in paragraphs & bullet points) of a tournament standard speech, graded only on content (no delivery/speech).
 - Recommended if you are focusing only on quality of information
 
 ![record](Images/recordround.png)
@@ -69,13 +69,15 @@ Sign up → Generate questions → Write a speech → Record your speech → Rec
 ![qdiff](Images/questiondiff.png)
 
 - **AI judged Ballot** | Extemplary Transcribes your speech, analyzes vocal delivery from the extracted audio, and scores you on a custom made **8-category NSDA extemp rubric**. The user can select their perferred AI model from the list below, in order from cheapest & weakest to most expensive & advanced.
-1) GPT-OSS 120B (default option)
-2) GLM 5.2
-3) DeepSeek V4 pro
-4) Claude Sonnet 5
-5) Kimi K3
-6) Claude Opus 4.8
+
+1) GPT-OSS 120B
+2) Qwen3.8 2.4T A95B
+3) Gemini 3.7 Flash
+4) GLM 5.2
+5) DeepSeek V4 Pro 0813
+6) Kimi K3
 7) Claude Opus 5
+
 
 ![rubric1](Images/rubric1.png)
 

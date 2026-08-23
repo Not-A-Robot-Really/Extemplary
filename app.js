@@ -4372,7 +4372,7 @@ Grading rules per claim:
       background_color: '#052235',
       theme_color: '#052235',
       icons: [{
-        src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23052235'/%3E%3Ctext x='32' y='46' font-family='Quicksand, Baloo 2, sans-serif' font-size='40' font-weight='900' fill='%231690e2' text-anchor='middle'%3EE%3C/text%3E%3C/svg%3E",
+        src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%230a1c30'/%3E%3Ctext x='32' y='46' font-family='Georgia, serif' font-size='40' font-weight='900' fill='%232f79c9' text-anchor='middle'%3EE%3C/text%3E%3C/svg%3E",
         sizes: '64x64', type: 'image/svg+xml'
       }]
     };

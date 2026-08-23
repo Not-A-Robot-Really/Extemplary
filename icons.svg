@@ -123,15 +123,15 @@
         <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 2-3 4"/>
         <line x1="12" y1="17" x2="12.01" y2="17"/>
       </symbol>
-<symbol id="icon-42" viewBox="0 0 36 37"><path d="M9 2H27C30.3137 2 33 4.68629 33 8V20C33 23.3137 30.3137 26 27 26H15.5L8.5 32.5C8.03 32.94 7.28 32.6 7.28 31.96V26H9C5.68629 26 3 23.3137 3 20V8C3 4.68629 5.68629 2 9 2Z" fill="#0b446a"/><text x="18" y="15" text-anchor="middle" dominant-baseline="central" style="font-family:'Quicksand','Baloo 2',sans-serif;" font-weight="900" font-size="23" fill="#ffffff">E</text></symbol>
-<symbol id="icon-43" viewBox="0 0 24 24"><path d="M7 4l14 8-14 8z" fill="#f2f5f8"/></symbol>
+<symbol id="icon-42" viewBox="0 0 36 37"><path d="M9 2H27C30.3137 2 33 4.68629 33 8V20C33 23.3137 30.3137 26 27 26H15.5L8.5 32.5C8.03 32.94 7.28 32.6 7.28 31.96V26H9C5.68629 26 3 23.3137 3 20V8C3 4.68629 5.68629 2 9 2Z" fill="#123a63"/><text x="18" y="15" text-anchor="middle" dominant-baseline="central" style="font-family:Georgia,serif;" font-weight="900" font-size="23" fill="#ffffff">E</text></symbol>
+<symbol id="icon-43" viewBox="0 0 24 24"><path d="M7 4l14 8-14 8z" fill="#f8f6f0"/></symbol>
 <symbol id="icon-44" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></symbol>
 <symbol id="icon-45" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></symbol>
 <symbol id="icon-46" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></symbol>
 <symbol id="icon-47" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></symbol>
 <symbol id="icon-48" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></symbol>
 <symbol id="icon-49" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></symbol>
-<symbol id="icon-50" viewBox="0 0 24 24"><path d="M7 4l14 8-14 8z" fill="#f2f5f8"/></symbol>
+<symbol id="icon-50" viewBox="0 0 24 24"><path d="M7 4l14 8-14 8z" fill="#f8f6f0"/></symbol>
 <symbol id="icon-51" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></symbol>
 <symbol id="icon-52" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></symbol>
 <symbol id="icon-53" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></symbol>

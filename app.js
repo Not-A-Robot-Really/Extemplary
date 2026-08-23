@@ -946,7 +946,7 @@ const DATA = window.APP_DATA;
 
   function buildTrendChartSvg(values, color, rounds){
     if(!values || !values.length) return '';
-    color = color || '#2356a8';
+    color = color || '#1276b9';
     const w = 640, h = 300;
     const marginLeft = 54, marginRight = 18, marginTop = 16, marginBottom = 48;
     const plotW = w - marginLeft - marginRight;
@@ -1075,7 +1075,7 @@ const DATA = window.APP_DATA;
         chartOptions.push({
           key: 'overall', label: 'Overall Score',
           latest: overallVals[overallVals.length-1].toFixed(0) + '/100',
-          values: overallVals, rounds: overallPts.map(p=>p.round), color: '#16283c'
+          values: overallVals, rounds: overallPts.map(p=>p.round), color: '#07304b'
         });
       }
       Object.keys(catSeries).forEach(name => {
@@ -2106,13 +2106,13 @@ const DATA = window.APP_DATA;
 
     if(introDrillMode){
       if(elapsedSeconds >= INTRO_RECORD_CAP_SECONDS){
-        fireSignalOverlay('⏹ Time Expired', fmt(elapsedSeconds), 'Introduction recording stopped automatically', '', '#a3322a');
+        fireSignalOverlay('⏹ Time Expired', fmt(elapsedSeconds), 'Introduction recording stopped automatically', '', '#bf0e0e');
         stopRecording();
         return;
       }
       if(elapsedSeconds >= INTRO_RECORD_CAP_SECONDS - 15){
         clockPill.classList.add('over');
-        if(elapsedSeconds === INTRO_RECORD_CAP_SECONDS - 15) fireSignalOverlay('⚠ Wrap It Up', fmt(elapsedSeconds), '15 seconds left in the intro cap', '', '#a3322a');
+        if(elapsedSeconds === INTRO_RECORD_CAP_SECONDS - 15) fireSignalOverlay('⚠ Wrap It Up', fmt(elapsedSeconds), '15 seconds left in the intro cap', '', '#bf0e0e');
       }else if(elapsedSeconds >= 45){
         clockPill.classList.add('warn');
       }
@@ -2121,13 +2121,13 @@ const DATA = window.APP_DATA;
 
     if(bodyDrillMode){
       if(elapsedSeconds >= BODY_RECORD_CAP_SECONDS){
-        fireSignalOverlay('⏹ Time Expired', fmt(elapsedSeconds), 'Body point recording stopped automatically', '', '#a6790c');
+        fireSignalOverlay('⏹ Time Expired', fmt(elapsedSeconds), 'Body point recording stopped automatically', '', '#a7780b');
         stopRecording();
         return;
       }
       if(elapsedSeconds >= BODY_RECORD_CAP_SECONDS - 15){
         clockPill.classList.add('over');
-        if(elapsedSeconds === BODY_RECORD_CAP_SECONDS - 15) fireSignalOverlay('⚠ Wrap It Up', fmt(elapsedSeconds), '15 seconds left in the body cap', '', '#a6790c');
+        if(elapsedSeconds === BODY_RECORD_CAP_SECONDS - 15) fireSignalOverlay('⚠ Wrap It Up', fmt(elapsedSeconds), '15 seconds left in the body cap', '', '#a7780b');
       }else if(elapsedSeconds >= 90){
         clockPill.classList.add('warn');
       }
@@ -2141,13 +2141,13 @@ const DATA = window.APP_DATA;
 
     if(elapsedSeconds >= 420){
       clockPill.classList.add('over');
-      if(elapsedSeconds === 420) fireSignalOverlay('⚠ Overtime Warning', fmt(elapsedSeconds), '7 Minutes — Hard stop in 30 seconds', '', '#a3322a');
+      if(elapsedSeconds === 420) fireSignalOverlay('⚠ Overtime Warning', fmt(elapsedSeconds), '7 Minutes — Hard stop in 30 seconds', '', '#bf0e0e');
     } else if(elapsedSeconds >= 360){
       clockPill.classList.add('warn');
     }
 
     if(elapsedSeconds === 450){
-      fireSignalOverlay('⏹ Time Expired', '7:30', 'Recording stopped automatically', '', '#a3322a');
+      fireSignalOverlay('⏹ Time Expired', '7:30', 'Recording stopped automatically', '', '#bf0e0e');
     }
 
     timeSignals.forEach(sig => {
@@ -2453,7 +2453,7 @@ const DATA = window.APP_DATA;
   }
   function finishRegularPrep(){
     regularPrepModal.classList.add('hidden');
-    fireSignalOverlay('⏰ Prep Time\'s Up', '0:00', 'Your 30 minutes of prep time have ended.', '', '#1d5c9e');
+    fireSignalOverlay('⏰ Prep Time\'s Up', '0:00', 'Your 30 minutes of prep time have ended.', '', '#116daa');
   }
   regularPrepPauseBtn.addEventListener('click', pauseRegularPrepTimer);
   regularPrepResumeBtn.addEventListener('click', startRegularPrepTimer);
@@ -2523,7 +2523,7 @@ const DATA = window.APP_DATA;
   }
   function finishIntroPrep(){
     introPrepModal.classList.add('hidden');
-    fireSignalOverlay('⏰ Prep Time\'s Up', '0:00', 'Record your introduction now.', '', '#a3322a');
+    fireSignalOverlay('⏰ Prep Time\'s Up', '0:00', 'Record your introduction now.', '', '#bf0e0e');
   }
   introPrepPauseBtn.addEventListener('click', pauseIntroPrepTimer);
   introPrepResumeBtn.addEventListener('click', startIntroPrepTimer);
@@ -2594,7 +2594,7 @@ const DATA = window.APP_DATA;
   }
   function finishBodyPrep(){
     bodyPrepModal.classList.add('hidden');
-    fireSignalOverlay('⏰ Prep Time\'s Up', '0:00', 'Record your body point now.', '', '#a6790c');
+    fireSignalOverlay('⏰ Prep Time\'s Up', '0:00', 'Record your body point now.', '', '#a7780b');
   }
   bodyPrepPauseBtn.addEventListener('click', pauseBodyPrepTimer);
   bodyPrepResumeBtn.addEventListener('click', startBodyPrepTimer);
@@ -2665,7 +2665,7 @@ const DATA = window.APP_DATA;
   }
   function finishRoughDraftPrep(){
     roughDraftPrepModal.classList.add('hidden');
-    fireSignalOverlay('⏰ Prep Time\'s Up', '0:00', 'Start writing your rough draft now.', '', '#2f7d3c');
+    fireSignalOverlay('⏰ Prep Time\'s Up', '0:00', 'Start writing your rough draft now.', '', '#49a705');
   }
   roughDraftPrepPauseBtn.addEventListener('click', pauseRoughDraftPrepTimer);
   roughDraftPrepResumeBtn.addEventListener('click', startRoughDraftPrepTimer);
@@ -3030,7 +3030,7 @@ Output ONLY this JSON, nothing else: {"questions":["...","...","..."]}`;
       if(!searchVerified){
         const warn = document.createElement('div');
         warn.className = 'q-gen-warning';
-        warn.style.cssText = 'background:#fff3cd;color:#7a5b00;border:1px solid #ffe08a;border-radius:8px;padding:10px 12px;margin-bottom:10px;font-size:0.9em;';
+        warn.style.cssText = 'background:#fcefd0;color:#735207;border:1px solid #f8d991;border-radius:8px;padding:10px 12px;margin-bottom:10px;font-size:0.9em;';
         warn.textContent = '⚠️ Live web search may not have been used, so these questions could not be confirmed against this week\'s news. Double-check them against current headlines before using them, or click Regenerate to try again.';
         qOptionsList.appendChild(warn);
       }
@@ -4288,7 +4288,7 @@ Grading rules per claim:
       navThemeIconMoon?.classList.add('hidden');
       navThemeIconSun?.classList.remove('hidden');
       if(navThemeLabel) navThemeLabel.textContent = 'Dark Mode';
-      if(metaTheme) metaTheme.setAttribute('content', '#e9edf1');
+      if(metaTheme) metaTheme.setAttribute('content', '#e8eef2');
     } else {
       document.documentElement.removeAttribute('data-theme');
       themeIconMoon.classList.remove('hidden');
@@ -4296,7 +4296,7 @@ Grading rules per claim:
       navThemeIconMoon?.classList.remove('hidden');
       navThemeIconSun?.classList.add('hidden');
       if(navThemeLabel) navThemeLabel.textContent = 'Light Mode';
-      if(metaTheme) metaTheme.setAttribute('content', '#0a1c30');
+      if(metaTheme) metaTheme.setAttribute('content', '#052235');
     }
   }
   (function initTheme(){
@@ -4369,10 +4369,10 @@ Grading rules per claim:
       short_name: 'Extemplary',
       start_url: '.',
       display: 'standalone',
-      background_color: '#0a1c30',
-      theme_color: '#0a1c30',
+      background_color: '#052235',
+      theme_color: '#052235',
       icons: [{
-        src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%230a1c30'/%3E%3Ctext x='32' y='46' font-family='Georgia, serif' font-size='40' font-weight='900' fill='%232f79c9' text-anchor='middle'%3EE%3C/text%3E%3C/svg%3E",
+        src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23052235'/%3E%3Ctext x='32' y='46' font-family='Quicksand, Baloo 2, sans-serif' font-size='40' font-weight='900' fill='%231690e2' text-anchor='middle'%3EE%3C/text%3E%3C/svg%3E",
         sizes: '64x64', type: 'image/svg+xml'
       }]
     };
@@ -4489,7 +4489,7 @@ Grading rules per claim:
       renderPrepTimer();
       if(prepSecondsLeft === 0){
         pausePrepTimer();
-        fireSignalOverlay("⏰ Prep Time's Up", '0:00', 'Your 30 minutes of prep time have ended.', '', '#a3322a');
+        fireSignalOverlay("⏰ Prep Time's Up", '0:00', 'Your 30 minutes of prep time have ended.', '', '#bf0e0e');
       }
       setPrepButtons();
     }, 1000);
@@ -5502,7 +5502,7 @@ Grading rules per claim:
   function onExamplePlayerError(e){
     const frame = examplePbPlayBtn.closest('.playback-frame');
     if(frame){
-      frame.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#f8f6f0;font-family:var(--font-mono);font-size:12.5px;text-align:center;padding:20px;">
+      frame.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#f1f5f7;font-family:var(--font-mono);font-size:12.5px;text-align:center;padding:20px;">
         This video can't be embedded here.<br/>
         <a href="https://www.youtube.com/watch?v=${EXAMPLE_YT_VIDEO_ID}&t=${EXAMPLE_SPEECH_START}s" target="_blank" rel="noopener noreferrer" style="color:var(--brass);margin-top:6px;display:inline-block;">Watch it on YouTube ↗</a>
       </div>`;

@@ -39,7 +39,7 @@
 
   function skelPct(min, max){ return Math.round(min + Math.random() * (max - min)); }
   function skelColor(){
-    var palette = ['#8a9bb5', '#b58a9b', '#9bb58a', '#c9a86a', '#7a8ca8', '#a87a8c'];
+    var palette = ['#51afee', '#f24d4d', '#91f946', '#f3bd40', '#37a3eb', '#f03232'];
     return palette[Math.floor(Math.random() * palette.length)];
   }
   function skelBarRow(){
@@ -507,7 +507,7 @@
   function skip(){ finish(false); }
 
   function fireConfetti(){
-    var colors = ['#123a63', '#a3322a', '#2f8f5b', '#c9932f', '#6a4c93', '#1e88a8'];
+    var colors = ['#0b446a', '#bf0e0e', '#50b806', '#e9a80f', '#1482cb', '#1273b4'];
     var root = document.createElement('div');
     root.className = 'tut-confetti-root';
     var count = 90;

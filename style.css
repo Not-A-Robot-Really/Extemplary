@@ -50,8 +50,8 @@
     --ink:#052235;
     --ink-soft:#07304c;
     --ink-line:#0b466d;
-    --parchment:#eaf6fe;
-    --parchment-deep:#d2edfc;
+    --parchment:#FBFAF6;
+    --parchment-deep:#F3F1E8;
     --rule:#b3dcf7;
     --charcoal:#0b2a4a;
     --slate:#1483cd;
@@ -215,7 +215,7 @@
   .side-words-inner{position:absolute;top:-80vh;left:0;width:100%;height:800vh;will-change:transform;}
   .side-word{
     position:absolute;left:50%;
-    font-family:var(--font-mono);font-size:13px;line-height:1.5;letter-spacing:4px;text-transform:uppercase;
+    font-family:'IBM Plex Mono','SF Mono','Courier New',monospace;font-size:13px;line-height:1.5;letter-spacing:4px;text-transform:uppercase;
     color:var(--watermark);white-space:nowrap;font-weight:500;
     transform:translateX(-50%);
     transition:opacity 0.6s ease;

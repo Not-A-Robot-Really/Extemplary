@@ -427,6 +427,7 @@
   .model-picker-menu.hidden{display:none;}
   .tier-switch{
     display:flex;width:100%;box-sizing:border-box;margin-bottom:2px;
+    padding:4px 4px 7px;
   }
   .tier-switch .tier-switch-btn{
     flex:1;text-align:center;padding:7px 0;font-size:11.5px;font-weight:700;
@@ -457,7 +458,7 @@
     font-family:var(--font-mono);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;
     color:var(--slate);text-align:center;
   }
-  .model-picker-option-sub{font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:0.8px;color:var(--slate);}
+  .model-picker-option-sub{font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:0.8px;color:var(--charcoal);}
   .model-picker-check{flex-shrink:0;color:var(--crimson);visibility:hidden;}
   .model-picker-option.active .model-picker-check{visibility:visible;}
   @media(max-width:600px){

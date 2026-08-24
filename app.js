@@ -1470,7 +1470,7 @@ const DATA = window.APP_DATA;
         const idx = Math.floor(Math.random() * pool.length);
         picked.push(pool.splice(idx, 1)[0]);
       }
-      return picked.join('\u00A0\u00A0\u00A0');
+      return picked.join('\u00A0\u00A0');
     }
 
     function fillColumn(container, glowContainer, wordList, spacing){

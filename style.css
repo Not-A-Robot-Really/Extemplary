@@ -163,7 +163,7 @@
     opacity:1;
     border-bottom:1px solid #0c507e;
     display:flex;
-    align-items:baseline;
+    align-items:center;
     justify-content:space-between;
     flex-wrap:wrap;
     gap:8px;
@@ -1177,13 +1177,13 @@
   }
 
   .gear-btn{
-    background:none;border:none;cursor:pointer;
+    background:none;border:1.5px solid rgba(255,255,255,0.4);cursor:pointer;
     color:#ffffff;padding:5px;border-radius:12px;
     display:flex;align-items:center;justify-content:center;gap:3px;
-    transition:color .15s, transform .2s;flex-shrink:0;
+    transition:color .15s, transform .2s, border-color .15s;flex-shrink:0;
     width:29px;height:29px;box-sizing:border-box;
   }
-  .gear-btn:hover{color:var(--crimson-bright);}
+  .gear-btn:hover{color:var(--crimson-bright);border-color:rgba(255,255,255,0.7);}
   .gear-btn.active{color:var(--brass);transform:rotate(45deg);}
   #timerToggle.active{transform:none;}
   #helpToggle.active{transform:none;}

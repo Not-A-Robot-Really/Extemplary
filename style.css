@@ -1153,7 +1153,7 @@
   .rec-btn{
     width:62px;height:62px;border-radius:50%;border:3px solid #920b0b;
     background:#bf0e0e;cursor:pointer;display:flex;align-items:center;justify-content:center;
-    box-shadow:0 var(--shadow-offset-lg) 0 #6b0808, 0 calc(var(--shadow-offset-lg) + 4px) 12px rgba(0,0,0,0.4);
+    box-shadow:0 var(--shadow-offset-lg) 0 #6b0808;
     transition:transform .15s ease, box-shadow .15s ease;
   }
   .rec-btn:hover{transform:translateY(-2px);}
@@ -1676,16 +1676,14 @@
     font-family:var(--font-body);font-size:14px;font-weight:700;
     padding:11px 20px;border-radius:var(--radius-md);border:none;
     background:var(--color-blue);color:var(--on-accent);cursor:pointer;
-    box-shadow:0 var(--shadow-offset-md) 0 var(--color-blue-shadow),
-               0 calc(var(--shadow-offset-md) + 4px) 10px rgba(3,15,26,0.35);
+    box-shadow:0 var(--shadow-offset-md) 0 var(--color-blue-shadow);
     transition:background-color var(--ease-hover), box-shadow var(--ease-hover), transform 100ms ease-out;
     transform:translateY(0);
   }
   .btn:hover{background:var(--color-blue-hover);}
   .btn:active{box-shadow:none;transform:translateY(var(--shadow-offset-md));transition:none;}
   .btn.primary{background:var(--color-blue);border-color:transparent;
-    box-shadow:0 var(--shadow-offset-md) 0 var(--color-blue-shadow),
-               0 calc(var(--shadow-offset-md) + 4px) 10px rgba(3,15,26,0.35);
+    box-shadow:0 var(--shadow-offset-md) 0 var(--color-blue-shadow);
   }
   .btn.primary:hover{background:var(--color-blue-hover);}
   .btn.primary:active{box-shadow:none;transform:translateY(var(--shadow-offset-md));}
@@ -2296,7 +2294,7 @@
   .nav-menu-item:hover{background:rgba(11,42,74,0.1);}
   .nav-menu-item svg{flex-shrink:0;color:var(--slate);}
   .nav-menu-item:hover svg{color:var(--charcoal);}
-  .nav-menu-item.active{background:var(--color-blue);color:#ffffff;box-shadow:0 var(--shadow-offset-md) 0 var(--color-blue-shadow);margin-bottom:var(--shadow-offset-md);}
+  .nav-menu-item.active{background:var(--color-blue);color:#ffffff;box-shadow:0 var(--shadow-offset-md) 0 var(--color-blue-shadow);}
   .nav-menu-item.active svg{color:#ffffff;}
   .nav-menu-item.active:hover{background:var(--color-blue);}
   .nav-menu-divider{height:1px;background:var(--rule);margin:8px 6px;}
@@ -2956,7 +2954,7 @@ textarea:focus-visible, summary:focus-visible, a:focus-visible{
   box-shadow:none;
   transition:transform 60ms ease-out;
 }
-.pb-icon-circle{box-shadow:0 3px 0 rgba(0,0,0,0.45), 0 6px 10px rgba(0,0,0,0.3);}
+.pb-icon-circle{box-shadow:0 3px 0 rgba(0,0,0,0.45);}
 
 /* Dropdown/select open-close motion, applied wherever a menu/panel uses
    the .settings-panel or similar toggle-visibility pattern already in

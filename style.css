@@ -438,12 +438,6 @@
   #tierSwitch .tier-switch-btn.tier-free.active{background:#1c9c3c;color:#fff;border-color:#157a2e;box-shadow:0 var(--shadow-offset-sm) 0 #157a2e;}
   #tierSwitch .tier-switch-btn.tier-advanced.active{background:#d97b0d;color:#fff;border-color:#a35a06;box-shadow:0 var(--shadow-offset-sm) 0 #a35a06;}
   #tierSwitch .tier-switch-btn.tier-frontier.active{background:#c81e1e;color:#fff;border-color:#8b0b0b;box-shadow:0 var(--shadow-offset-sm) 0 #8b0b0b;}
-  .tier-dot{
-    width:7px;height:7px;border-radius:50%;flex-shrink:0;display:inline-block;
-  }
-  .tier-dot-free{background:#1c9c3c;}
-  .tier-dot-advanced{background:#d97b0d;}
-  .tier-dot-frontier{background:#c81e1e;}
   .model-picker-option{
     display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;
     text-align:left;padding:8px 10px;border-radius:14px;border:none;
@@ -454,6 +448,9 @@
   .model-picker-option-text{display:flex;flex-direction:column;gap:2px;min-width:0;}
   .model-picker-option-name-row{display:flex;align-items:center;gap:7px;}
   .model-picker-option-name{font-family:var(--font-body);font-size:12.5px;font-weight:500;color:var(--charcoal);}
+  .model-star-rating{display:inline-flex;align-items:center;gap:1px;margin-left:auto;flex-shrink:0;}
+  .star-icon{fill:none;stroke:rgba(22,40,60,0.28);stroke-width:1.6;flex-shrink:0;}
+  .star-icon.filled{fill:#d9a417;stroke:#a97b0c;}
   .model-picker-option-badge{
     font-family:var(--font-mono);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;
     color:var(--slate);text-align:center;

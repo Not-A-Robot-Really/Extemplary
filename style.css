@@ -429,7 +429,7 @@
     position:absolute;top:calc(100% + 8px);right:0;z-index:60;
     width:236px;max-width:min(236px, calc(100vw - 48px));
     background:var(--parchment);border:1px solid var(--rule);border-radius:16px;
-    padding:6px;display:flex;flex-direction:column;gap:2px;
+    padding:6px;display:flex;flex-direction:column;gap:6px;
   }
   .model-picker-menu.hidden{display:none;}
   .model-picker-option{
@@ -1626,14 +1626,14 @@
     box-shadow:0 var(--shadow-offset-sm) 0 rgba(11,42,74,0.3);
     white-space:nowrap;transition:background .12s, border-color .12s, color .12s, box-shadow .12s, transform .12s;
   }
-  .btn-preset:hover{background:rgba(29,92,158,0.06);border-color:var(--crimson);color:var(--crimson);}
+  .btn-preset:hover{background:rgba(11,42,74,0.1);border-color:var(--crimson);color:var(--crimson);}
   .btn-preset:active{box-shadow:none;transform:translateY(var(--shadow-offset-sm));transition:none;}
 
   .bf-timing-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;}
   .bf-timing-btn{flex:1;min-width:130px;font-size:13px;padding:10px 12px;border:1px solid var(--rule);background:#ffffff;color:var(--charcoal);border-radius:10px;cursor:pointer;font-family:var(--font-body);
     box-shadow:0 var(--shadow-offset-sm) 0 rgba(11,42,74,0.22);
   }
-  .bf-timing-btn:hover{border-color:var(--brass);}
+  .bf-timing-btn:hover{border-color:var(--brass);background:rgba(11,42,74,0.06);}
   .bf-timing-btn.active{background:var(--brass);color:#fff;border-color:var(--brass);box-shadow:0 var(--shadow-offset-sm) 0 #7a5808;}
   .bf-timing-btn:active{box-shadow:none;transform:translateY(var(--shadow-offset-sm));}
 
@@ -1693,7 +1693,7 @@
     background:transparent;color:var(--chrome-text);border:1.5px solid rgba(255,255,255,0.4);
     box-shadow:0 var(--shadow-offset-sm) 0 rgba(0,0,0,0.4);
   }
-  .btn.ghost:hover{background:rgba(255,255,255,0.12);border-color:rgba(255,255,255,0.7);}
+  .btn.ghost:hover{background:rgba(0,0,0,0.18);border-color:rgba(255,255,255,0.7);}
   /* Ghost buttons inside light card surfaces (not directly on the dark page
      background) need dark text instead — scoped override, same convention
      the prep-card variants already use below. */
@@ -1704,7 +1704,7 @@
   }
   .ballot .btn.ghost:hover, .dl-modal-card:not(.prep-card-regular):not(.prep-card-intro):not(.prep-card-body):not(.prep-card-roughdraft) .btn.ghost:hover,
   .settings-panel .btn.ghost:hover, .goal-modal .btn.ghost:hover, .history-card .btn.ghost:hover{
-    background:var(--color-blue-pale);border-color:var(--color-blue-accent);
+    background:rgba(11,42,74,0.1);border-color:rgba(11,42,74,0.35);
   }
   .btn.ghost:active{transform:translateY(var(--shadow-offset-sm));box-shadow:none;}
   .btn:disabled{opacity:0.45;cursor:not-allowed;box-shadow:none;transform:none;}
@@ -2160,7 +2160,7 @@
     border-radius:20px;padding:5px 11px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;
     transition:background 0.15s ease,color 0.15s ease,border-color 0.15s ease;
   }
-  .sync-fix-btn:hover{color:var(--chrome-text);border-color:var(--brass);}
+  .sync-fix-btn:hover{color:var(--chrome-text);border-color:var(--brass);background:rgba(0,0,0,0.15);}
   .sync-fix-btn.armed{background:var(--brass);color:var(--on-accent);border-color:var(--brass);box-shadow:0 var(--shadow-offset-sm) 0 #0a446a;}
   .sync-fix-btn.armed:active{box-shadow:none;transform:translateY(var(--shadow-offset-sm));}
   .sync-fix-hint{font-family:var(--font-mono);font-size:11px;color:var(--brass);}
@@ -2214,14 +2214,14 @@
     position:fixed;top:0;left:0;right:auto;
     width:230px;max-height:none;z-index:600;
   }
-  .export-menu .sp-body{padding:8px;display:flex;flex-direction:column;gap:2px;}
+  .export-menu .sp-body{padding:8px;display:flex;flex-direction:column;gap:6px;}
   .export-item{
     display:flex;align-items:center;gap:10px;width:100%;
     background:none;border:none;text-align:left;cursor:pointer;
     font-family:var(--font-body);font-size:13px;font-weight:500;color:var(--charcoal);
     padding:9px 10px;border-radius:12px;transition:background .12s;
   }
-  .export-item:hover{background:var(--parchment-deep);}
+  .export-item:hover{background:rgba(11,42,74,0.1);}
   .export-item svg{flex-shrink:0;color:var(--slate);}
 
   .nav-drawer-head{
@@ -2286,17 +2286,17 @@
     border-radius:50%;transition:background .12s;
   }
   .nav-drawer-close:hover{background:rgba(255,255,255,0.12);}
-  .nav-menu-body{padding:12px;display:flex;flex-direction:column;gap:2px;}
+  .nav-menu-body{padding:12px;display:flex;flex-direction:column;gap:10px;}
   .nav-menu-item{
     display:flex;align-items:center;gap:14px;width:100%;
     background:none;border:none;text-align:left;cursor:pointer;
     font-family:var(--font-body);font-size:14.5px;font-weight:700;color:var(--charcoal);
     padding:13px 12px;border-radius:var(--radius-sm);transition:background-color var(--ease-hover);
   }
-  .nav-menu-item:hover{background:var(--color-blue-pale);}
+  .nav-menu-item:hover{background:rgba(11,42,74,0.1);}
   .nav-menu-item svg{flex-shrink:0;color:var(--slate);}
-  .nav-menu-item:hover svg{color:var(--color-blue);}
-  .nav-menu-item.active{background:var(--color-blue);color:#ffffff;box-shadow:0 var(--shadow-offset-md) 0 var(--color-blue-shadow);}
+  .nav-menu-item:hover svg{color:var(--charcoal);}
+  .nav-menu-item.active{background:var(--color-blue);color:#ffffff;box-shadow:0 var(--shadow-offset-md) 0 var(--color-blue-shadow);margin-bottom:var(--shadow-offset-md);}
   .nav-menu-item.active svg{color:#ffffff;}
   .nav-menu-item.active:hover{background:var(--color-blue);}
   .nav-menu-divider{height:1px;background:var(--rule);margin:8px 6px;}
@@ -2892,7 +2892,7 @@
 .tut-btn{border:none;border-radius:14px;padding:9px 15px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;transition:background .15s ease,box-shadow .15s ease,transform .1s ease;}
 .tut-btn:active{box-shadow:none !important;transform:translateY(var(--shadow-offset-sm));}
 .tut-btn-skip{background:transparent;color:#d89b0e;text-decoration:underline;padding:8px 4px;box-shadow:none;}
-.tut-btn-skip:hover{color:#a5770b;}
+.tut-btn-skip:hover{color:#a5770b;background:rgba(0,0,0,0.08);}
 .tut-btn-skip:active{transform:none;}
 .tut-btn-next{background:#0b446a;color:#f0f4f7;box-shadow:0 var(--shadow-offset-sm) 0 #062a42;}
 .tut-btn-next:hover{background:#083350;}

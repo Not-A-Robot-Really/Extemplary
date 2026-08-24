@@ -1886,13 +1886,7 @@ const DATA = window.APP_DATA;
   const modelPickerLabel = document.getElementById('modelPickerLabel');
   const modelPickerMenu  = document.getElementById('modelPickerMenu');
   const tierSwitch     = document.getElementById('tierSwitch');
-  const tierSwitchHint  = document.getElementById('tierSwitchHint');
   const JUDGE_MODEL_KEY = 'extemplary_judge_model';
-  const TIER_HINT_TEXT = {
-    free:     'Free models use 10/100 of your daily ballot feedback limit per round.',
-    advanced: 'Advanced models use 20/100 of your daily ballot feedback limit per round.',
-    frontier: 'Frontier models use 50/100 of your daily ballot feedback limit per round.'
-  };
   function setModelTier(tier){
     if(!tierSwitch) return;
     tierSwitch.querySelectorAll('.tier-switch-btn').forEach(btn => {
@@ -1905,7 +1899,6 @@ const DATA = window.APP_DATA;
         opt.classList.toggle('hidden', opt.dataset.tier !== tier);
       });
     }
-    if(tierSwitchHint) tierSwitchHint.textContent = TIER_HINT_TEXT[tier] || '';
   }
   if(tierSwitch){
     tierSwitch.querySelectorAll('.tier-switch-btn').forEach(btn => {

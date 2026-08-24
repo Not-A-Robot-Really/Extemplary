@@ -218,12 +218,11 @@
               <svg class="model-picker-chevron" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
             </button>
             <div class="model-picker-menu hidden" id="modelPickerMenu" role="listbox" aria-label="Judge model">
-              <div class="tier-switch" id="tierSwitch" role="tablist" aria-label="Model tier">
-                <button type="button" class="tier-switch-btn tier-free active" data-tier="free" role="tab" aria-selected="true">Free</button>
-                <button type="button" class="tier-switch-btn tier-advanced" data-tier="advanced" role="tab" aria-selected="false">Advanced</button>
-                <button type="button" class="tier-switch-btn tier-frontier" data-tier="frontier" role="tab" aria-selected="false">Frontier</button>
+              <div class="tier-switch mode-switch" id="tierSwitch" role="tablist" aria-label="Model tier">
+                <button type="button" class="mode-switch-btn tier-switch-btn tier-free active" data-tier="free" role="tab" aria-selected="true">Free</button>
+                <button type="button" class="mode-switch-btn tier-switch-btn tier-advanced" data-tier="advanced" role="tab" aria-selected="false">Advanced</button>
+                <button type="button" class="mode-switch-btn tier-switch-btn tier-frontier" data-tier="frontier" role="tab" aria-selected="false">Frontier</button>
               </div>
-              <div class="tier-switch-hint" id="tierSwitchHint">Free models use 10/100 of your daily ballot feedback limit per round.</div>
               <button type="button" class="model-picker-option active" data-model="llama" data-tier="free" role="option" aria-selected="true">
                 <span class="model-picker-option-text">
                   <span class="model-picker-option-name-row"><span class="tier-dot tier-dot-free"></span><span class="model-picker-option-name">GPT-OSS 120B</span><span class="model-picker-option-badge">default</span></span>
@@ -245,17 +244,17 @@
                 </span>
                 <svg class="model-picker-check" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
               </button>
-              <button type="button" class="model-picker-option hidden" data-model="deepseekv4pro" data-tier="advanced" role="option" aria-selected="false">
-                <span class="model-picker-option-text">
-                  <span class="model-picker-option-name-row"><span class="tier-dot tier-dot-advanced"></span><span class="model-picker-option-name">DeepSeek V4 Pro</span></span>
-                  <span class="model-picker-option-sub">DeepSeek</span>
-                </span>
-                <svg class="model-picker-check" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-              </button>
               <button type="button" class="model-picker-option hidden" data-model="kimik3" data-tier="advanced" role="option" aria-selected="false">
                 <span class="model-picker-option-text">
                   <span class="model-picker-option-name-row"><span class="tier-dot tier-dot-advanced"></span><span class="model-picker-option-name">Kimi K3</span></span>
                   <span class="model-picker-option-sub">Moonshot AI</span>
+                </span>
+                <svg class="model-picker-check" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              </button>
+              <button type="button" class="model-picker-option hidden" data-model="deepseekv4pro" data-tier="advanced" role="option" aria-selected="false">
+                <span class="model-picker-option-text">
+                  <span class="model-picker-option-name-row"><span class="tier-dot tier-dot-advanced"></span><span class="model-picker-option-name">DeepSeek V4 Pro</span></span>
+                  <span class="model-picker-option-sub">DeepSeek</span>
                 </span>
                 <svg class="model-picker-check" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
               </button>

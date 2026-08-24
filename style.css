@@ -1,14 +1,3 @@
-/* ======================================================================
-   Typography — DIN Round Pro (per the UI Aesthetic Teardown report,
-   Section 7). Declared via @font-face with local() lookups so the
-   browser picks up a licensed/system-installed copy of DIN Round Pro
-   automatically if one is present; otherwise these rules simply don't
-   match and the font-family fallback stack in :root (Quicksand/Baloo 2/
-   ui-rounded) takes over. No font files are bundled here — DIN Round
-   Pro is a commercial family and must be licensed/self-hosted per
-   organization; this wiring makes that a drop-in addition later
-   (add src:url(...) format('woff2') once files are available).
-   ====================================================================== */
 @font-face{
   font-family:'DIN Round Pro';
   font-weight:400;
@@ -46,7 +35,7 @@
 }
 
 :root{
-    /* === Legacy tokens (kept for compatibility — values now point at the new palette) === */
+
     --ink:#052235;
     --ink-soft:#07304c;
     --ink-line:#0b466d;
@@ -78,7 +67,6 @@
     --watermark:rgba(255,255,255,0.09);
     --watermark-hover:rgba(255,255,255,0.55);
 
-    /* === Gamified-skeuomorphism design tokens (see UI Aesthetic Teardown report) === */
     --color-green:        #58CC02;
     --color-green-shadow:  #3E8500;
     --color-green-hover:   #4FBB02;
@@ -1709,9 +1697,7 @@
     box-shadow:0 var(--shadow-offset-sm) 0 rgba(0,0,0,0.4);
   }
   .btn.ghost:hover{background:rgba(0,0,0,0.18);border-color:rgba(255,255,255,0.7);}
-  /* Ghost buttons inside light card surfaces (not directly on the dark page
-     background) need dark text instead — scoped override, same convention
-     the prep-card variants already use below. */
+
   .ballot .btn.ghost, .dl-modal-card:not(.prep-card-regular):not(.prep-card-intro):not(.prep-card-body):not(.prep-card-roughdraft) .btn.ghost,
   .settings-panel .btn.ghost, .goal-modal .btn.ghost, .history-card .btn.ghost{
     color:var(--charcoal);border-color:rgba(11,42,74,0.22);
@@ -2925,26 +2911,15 @@
 @media (max-width:640px){
   #tutBox{max-width:88vw;min-width:0;left:6vw !important;right:6vw !important;}
 }
-/* ======================================================================
-   RENOVATION — Gamified Skeuomorphism theme pass
-   Front-end appearance only. No selectors removed, no layout/structure
-   properties (display/position/flex logic) altered — colors, radii,
-   shadows, fonts, and interaction easing only, per the UI Aesthetic
-   Teardown report.
-   ====================================================================== */
 
-/* Headings inherit the rounded display font everywhere */
 h1,h2,h3,h4,h5,h6{font-family:var(--font-display);}
 
-/* Universal focus-visible ring in brand blue */
 button:focus-visible, input:focus-visible, select:focus-visible,
 textarea:focus-visible, summary:focus-visible, a:focus-visible{
   outline:3px solid var(--color-blue-accent);
   outline-offset:2px;
 }
 
-/* Secondary/utility buttons across the app get the same hover + press
-   language as .btn, even where they don't share that base class */
 .gear-btn, .mode-switch-btn, .q-cat-btn, .dl-modal-btn, .bf-timing-btn,
 .model-picker-option, .btn-add, .btn-preset, .q-change-link{
   transition:background-color var(--ease-hover), transform 100ms ease-out, box-shadow 100ms ease-out;
@@ -2955,11 +2930,6 @@ textarea:focus-visible, summary:focus-visible, a:focus-visible{
   transition:transform 60ms ease-out;
 }
 
-/* Icon-circle style controls (toolbar icon buttons) get the small-scale
-   press treatment rather than the full ridge-shadow collapse, per
-   Section 13h. Targets the real toolbar/icon-button classes in this
-   codebase: .gear-btn (topbar icons), .pb-icon-circle (play button),
-   .rubric-toggle-btn, .comment-popover-close. */
 .gear-btn, .pb-icon-circle, .rubric-toggle-btn, .comment-popover-close,
 .cancel-ballot-btn, .ai-compare-toggle-btn{
   transition:transform 100ms ease-out, color var(--ease-hover), box-shadow 100ms ease-out;
@@ -2973,14 +2943,6 @@ textarea:focus-visible, summary:focus-visible, a:focus-visible{
 }
 .pb-icon-circle{box-shadow:0 3px 0 rgba(0,0,0,0.45);}
 
-/* Click "pop" bounce — a quick, slight grow-then-settle on release,
-   layered on top of the existing shadow-collapse press (Section 13c)
-   rather than replacing it. Triggered by JS adding .btn-pop-anim on
-   click and removing it on animationend, so it can retrigger on
-   repeated clicks. The overshoot curve (a touch past 1, easing back)
-   matches the same bouncy-but-controlled feel as the confetti
-   scale-bounce and dropdown "pop" curve elsewhere in this system,
-   rather than a linear/ease-in-out grow. */
 @keyframes btnClickPop{
   0%{transform:scale(1);}
   45%{transform:scale(1.02);}
@@ -2990,7 +2952,7 @@ textarea:focus-visible, summary:focus-visible, a:focus-visible{
   animation:btnClickPop 220ms cubic-bezier(0.34,1.56,0.64,1);
   transform-origin:center;
 }
-/* Icon-circle controls get a smaller pop matching their smaller scale */
+
 .gear-btn.btn-pop-anim, .pb-icon-circle.btn-pop-anim, .rubric-toggle-btn.btn-pop-anim,
 .comment-popover-close.btn-pop-anim, .cancel-ballot-btn.btn-pop-anim,
 .ai-compare-toggle-btn.btn-pop-anim{
@@ -3002,15 +2964,10 @@ textarea:focus-visible, summary:focus-visible, a:focus-visible{
   100%{transform:scale(1);}
 }
 
-/* Dropdown/select open-close motion, applied wherever a menu/panel uses
-   the .settings-panel or similar toggle-visibility pattern already in
-   the codebase — softened easing curve rather than an instant snap */
 .settings-panel, .export-menu, .comment-popover, #dlModal .dl-modal-card{
   transition:transform var(--ease-dropdown-open), opacity 150ms ease-out;
 }
 
-/* Reduced motion: shorten/disable decorative animation, keep instant
-   press-state feedback since it is a near-zero-duration state change */
 @media (prefers-reduced-motion: reduce){
   .tut-skel-block::after,
   .feature-card,
@@ -3022,13 +2979,10 @@ textarea:focus-visible, summary:focus-visible, a:focus-visible{
   }
 }
 
-/* Gold-family surfaces need dark ink text for contrast, per the
-   measured-value note on gold accessibility */
 .bf-warning, .bf-verified-badge{
   color:var(--color-gold-ink);
 }
 
-/* Progress bar fill duration aligned to the documented 400ms ease-out */
 .progress-bar-fill{
   transition:width var(--ease-progress);
 }

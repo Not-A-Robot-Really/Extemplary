@@ -2956,6 +2956,35 @@ textarea:focus-visible, summary:focus-visible, a:focus-visible{
 }
 .pb-icon-circle{box-shadow:0 3px 0 rgba(0,0,0,0.45);}
 
+/* Click "pop" bounce — a quick, slight grow-then-settle on release,
+   layered on top of the existing shadow-collapse press (Section 13c)
+   rather than replacing it. Triggered by JS adding .btn-pop-anim on
+   click and removing it on animationend, so it can retrigger on
+   repeated clicks. The overshoot curve (a touch past 1, easing back)
+   matches the same bouncy-but-controlled feel as the confetti
+   scale-bounce and dropdown "pop" curve elsewhere in this system,
+   rather than a linear/ease-in-out grow. */
+@keyframes btnClickPop{
+  0%{transform:scale(1);}
+  45%{transform:scale(1.06);}
+  100%{transform:scale(1);}
+}
+.btn-pop-anim{
+  animation:btnClickPop 240ms cubic-bezier(0.34,1.56,0.64,1);
+  transform-origin:center;
+}
+/* Icon-circle controls get a smaller pop matching their smaller scale */
+.gear-btn.btn-pop-anim, .pb-icon-circle.btn-pop-anim, .rubric-toggle-btn.btn-pop-anim,
+.comment-popover-close.btn-pop-anim, .cancel-ballot-btn.btn-pop-anim,
+.ai-compare-toggle-btn.btn-pop-anim{
+  animation-name:btnClickPopSmall;
+}
+@keyframes btnClickPopSmall{
+  0%{transform:scale(1);}
+  45%{transform:scale(1.12);}
+  100%{transform:scale(1);}
+}
+
 /* Dropdown/select open-close motion, applied wherever a menu/panel uses
    the .settings-panel or similar toggle-visibility pattern already in
    the codebase — softened easing curve rather than an instant snap */
@@ -2969,7 +2998,8 @@ textarea:focus-visible, summary:focus-visible, a:focus-visible{
   .tut-skel-block::after,
   .feature-card,
   .settings-panel:not(.hidden),
-  .flame-layer, .flame-spark, .flame-sway{
+  .flame-layer, .flame-spark, .flame-sway,
+  .btn-pop-anim{
     animation:none !important;
     transition-duration:1ms !important;
   }

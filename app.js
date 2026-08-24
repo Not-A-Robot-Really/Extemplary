@@ -31,14 +31,24 @@ const DATA = window.APP_DATA;
     { key: 'question_generator',label: 'Practice Question Generator',  limit: 40 },
     { key: 'current_events',    label: 'Current Events Summary',       limit: 15 }
   ];
+  const MODEL_TIERS = {
+    llama:      'free',
+    glm52:      'free',
+    qwen38:     'free',
+    deepseekv4pro: 'advanced',
+    kimik3:     'advanced',
+    gemini37flash: 'advanced',
+    opus5:      'frontier'
+  };
+  const TIER_BALLOT_FEEDBACK_WEIGHTS = { free: 10, advanced: 20, frontier: 50 };
   const BALLOT_FEEDBACK_MODEL_WEIGHTS = {
-    llama:      1,
-    deepseekv4pro: 1,
-    qwen38:     1,
-    gemini37flash: 1,
-    glm52:      1,
-    kimik3:     3,
-    opus5:      5
+    llama:      TIER_BALLOT_FEEDBACK_WEIGHTS[MODEL_TIERS.llama],
+    deepseekv4pro: TIER_BALLOT_FEEDBACK_WEIGHTS[MODEL_TIERS.deepseekv4pro],
+    qwen38:     TIER_BALLOT_FEEDBACK_WEIGHTS[MODEL_TIERS.qwen38],
+    gemini37flash: TIER_BALLOT_FEEDBACK_WEIGHTS[MODEL_TIERS.gemini37flash],
+    glm52:      TIER_BALLOT_FEEDBACK_WEIGHTS[MODEL_TIERS.glm52],
+    kimik3:     TIER_BALLOT_FEEDBACK_WEIGHTS[MODEL_TIERS.kimik3],
+    opus5:      TIER_BALLOT_FEEDBACK_WEIGHTS[MODEL_TIERS.opus5]
   };
   const BALLOT_FEEDBACK_USAGE_KEY = 'extemplary_bf_weighted_usage';
   function todayISO(){ return new Date().toISOString().slice(0,10); }
@@ -1875,7 +1885,36 @@ const DATA = window.APP_DATA;
   const modelPickerBtn   = document.getElementById('modelPickerBtn');
   const modelPickerLabel = document.getElementById('modelPickerLabel');
   const modelPickerMenu  = document.getElementById('modelPickerMenu');
+  const tierSwitch     = document.getElementById('tierSwitch');
+  const tierSwitchHint  = document.getElementById('tierSwitchHint');
   const JUDGE_MODEL_KEY = 'extemplary_judge_model';
+  const TIER_HINT_TEXT = {
+    free:     'Free models use 10/100 of your daily ballot feedback limit per round.',
+    advanced: 'Advanced models use 20/100 of your daily ballot feedback limit per round.',
+    frontier: 'Frontier models use 50/100 of your daily ballot feedback limit per round.'
+  };
+  function setModelTier(tier){
+    if(!tierSwitch) return;
+    tierSwitch.querySelectorAll('.tier-switch-btn').forEach(btn => {
+      const isActive = btn.dataset.tier === tier;
+      btn.classList.toggle('active', isActive);
+      btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
+    });
+    if(modelPickerMenu){
+      modelPickerMenu.querySelectorAll('.model-picker-option').forEach(opt => {
+        opt.classList.toggle('hidden', opt.dataset.tier !== tier);
+      });
+    }
+    if(tierSwitchHint) tierSwitchHint.textContent = TIER_HINT_TEXT[tier] || '';
+  }
+  if(tierSwitch){
+    tierSwitch.querySelectorAll('.tier-switch-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        setModelTier(btn.dataset.tier);
+      });
+    });
+  }
   const TIER_PROFILES = {
     fast:    { reasoningEffort: 'low', maxRounds: 4,  maxTokensPerRound: 24000, roundDelayMs: 500 },
     verbose: { reasoningEffort: 'low', maxRounds: 10, maxTokensPerRound: 32000, roundDelayMs: 600 },
@@ -2014,6 +2053,7 @@ const DATA = window.APP_DATA;
       });
     }
     if(persist){ try{ localStorage.setItem(JUDGE_MODEL_KEY, val); }catch(e){} }
+    setModelTier(MODEL_TIERS[val] || 'free');
   }
   function closeModelPicker(){
     if(!modelPicker) return;

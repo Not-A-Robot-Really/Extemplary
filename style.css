@@ -164,9 +164,9 @@
     border-bottom:1px solid #0c507e;
     display:flex;
     align-items:center;
-    justify-content:space-between;
+    justify-content:flex-start;
     flex-wrap:wrap;
-    gap:8px;
+    gap:24px;
     max-width:none;
     margin:0;
     position:relative;
@@ -2947,7 +2947,7 @@ textarea:focus-visible, summary:focus-visible, a:focus-visible{
 .gear-btn, .pb-icon-circle, .rubric-toggle-btn, .comment-popover-close,
 .cancel-ballot-btn, .ai-compare-toggle-btn{
   transition:transform 100ms ease-out, color var(--ease-hover), box-shadow 100ms ease-out;
-  box-shadow:0 2px 0 rgba(0,0,0,0.28);
+  box-shadow:0 3px 0 rgba(0,0,0,0.55);
 }
 .gear-btn:active, .pb-icon-circle:active, .rubric-toggle-btn:active,
 .cancel-ballot-btn:active, .ai-compare-toggle-btn:active{

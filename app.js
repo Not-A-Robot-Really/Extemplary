@@ -1370,12 +1370,20 @@ const DATA = window.APP_DATA;
   });
 
   document.getElementById('historyToggle').addEventListener('click', () => {
+    if(!viewHistory.classList.contains('hidden')){
+      showView(viewRecord);
+      return;
+    }
     renderHistoryList();
     showView(viewHistory);
   });
   document.getElementById('historyBackBtn').addEventListener('click', () => showView(viewRecord));
 
   document.getElementById('streakToggle').addEventListener('click', () => {
+    if(!viewStreak.classList.contains('hidden')){
+      showView(viewRecord);
+      return;
+    }
     renderStreakView();
     showView(viewStreak);
   });
@@ -1423,6 +1431,7 @@ const DATA = window.APP_DATA;
     document.getElementById('streakFab')?.classList.remove('hidden');
     refreshStreakFab();
     applySpeakerName(currentUser.email);
+    document.getElementById('navHomeBtn')?.classList.add('active');
   }
   function onSignedOut(){
     currentUser = null;
@@ -3138,7 +3147,7 @@ Output ONLY this JSON, nothing else: {"questions":["...","...","..."]}`;
   function closeBriefingView(){
     briefingOpen = false;
     briefingToggle.classList.remove('active');
-    showView(viewBeforeBriefing || viewRecord);
+    showView(viewRecord);
   }
   briefingToggle.addEventListener('click', (e) => {
     e.stopPropagation();
@@ -3373,7 +3382,7 @@ Formatting rules: plain text only, with the sole exception of wrapping key terms
   function closeCitationView(){
     citationOpen = false;
     citationToggle.classList.remove('active');
-    showView(viewBeforeCitation || viewRecord);
+    showView(viewRecord);
   }
   citationToggle.addEventListener('click', (e) => {
     e.stopPropagation();
@@ -5857,7 +5866,7 @@ Grading rules per claim:
       window.location.href = 'landingsite.html';
       return;
     }
-    showView(viewBeforeExample || viewRecord);
+    showView(viewRecord);
   }
   helpToggle.addEventListener('click', (e) => {
     e.stopPropagation();

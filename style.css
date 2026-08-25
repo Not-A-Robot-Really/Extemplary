@@ -159,7 +159,6 @@
     margin:0;
     position:relative;
     z-index:2;
-    overflow-x:auto;
   }
   header.topbar{padding-left:calc((100% - 880px)/2 + 24px);padding-right:calc((100% - 880px)/2 + 24px);}
   @media(max-width:928px){ header.topbar{padding-left:24px;padding-right:24px;} }
@@ -1194,7 +1193,6 @@
   }
   .gear-btn:hover{color:#ffffff;border-color:#0a446a;}
   .gear-btn.active{background:#0a446a;border-color:#062a42;box-shadow:0 3px 0 #062a42;}
-  .gear-btn.active svg{transform:rotate(45deg);}
   #timerToggle.active{transform:none;}
   #helpToggle.active{transform:none;}
   #shortcutsToggle.active{transform:none;}

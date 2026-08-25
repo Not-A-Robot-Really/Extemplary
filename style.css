@@ -164,7 +164,7 @@
   @media(max-width:928px){ header.topbar{padding-left:24px;padding-right:24px;} }
   .brand{display:flex;flex-direction:row;align-items:center;gap:14px;flex-wrap:wrap;}
   .brand .mark{
-    font-family:Georgia,'Iowan Old Style','Palatino Linotype','Book Antiqua',serif;font-size:28px;letter-spacing:0.5px;color:#ffffff;
+    font-family:Georgia,'Iowan Old Style','Palatino Linotype','Book Antiqua',serif;font-size:34px;letter-spacing:0.5px;color:#ffffff;
     display:flex;align-items:center;line-height:1;
   }
   .mark-e-wrap{
@@ -176,7 +176,7 @@
   .brand .sub{font-family:var(--font-mono);font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#72bef1;margin-top:4px;}
   .session-tag{
     font-family:var(--font-mono);font-size:12px;line-height:1;letter-spacing:0.6px;
-    display:inline-flex;align-items:center;height:29px;
+    display:inline-flex;align-items:center;height:36px;box-sizing:border-box;
     background:#116daa;border-radius:12px;padding:0 10px;
   }
   .session-tag .rt-num{color:#ffffff;font-weight:700;text-transform:uppercase;font-size:17px;letter-spacing:0.3px;}
@@ -1185,7 +1185,7 @@
     border-style:solid;border-color:#0a446a;
     border-width:1.5px;
     cursor:pointer;
-    color:#ffffff;padding:5px;border-radius:50%;
+    color:#ffffff;padding:5px;border-radius:11px;
     display:flex;align-items:center;justify-content:center;gap:3px;
     transition:color .15s, transform .2s, border-color .15s;flex-shrink:0;
     width:36px;height:36px;box-sizing:border-box;

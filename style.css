@@ -153,16 +153,17 @@
     display:flex;
     align-items:center;
     justify-content:flex-start;
-    flex-wrap:wrap;
+    flex-wrap:nowrap;
     gap:24px;
     max-width:none;
     margin:0;
     position:relative;
     z-index:2;
+    overflow-x:auto;
   }
   header.topbar{padding-left:calc((100% - 880px)/2 + 24px);padding-right:calc((100% - 880px)/2 + 24px);}
   @media(max-width:928px){ header.topbar{padding-left:24px;padding-right:24px;} }
-  .brand{display:flex;flex-direction:row;align-items:center;gap:14px;flex-wrap:wrap;}
+  .brand{display:flex;flex-direction:row;align-items:center;gap:14px;flex-wrap:nowrap;flex-shrink:0;}
   .brand .mark{
     font-family:Georgia,'Iowan Old Style','Palatino Linotype','Book Antiqua',serif;font-size:34px;letter-spacing:0.5px;color:#ffffff;
     display:flex;align-items:center;line-height:1;
@@ -1192,7 +1193,8 @@
     box-shadow:0 3px 0 #0a446a;
   }
   .gear-btn:hover{color:#ffffff;border-color:#0a446a;}
-  .gear-btn.active{transform:rotate(45deg);}
+  .gear-btn.active{background:#0a446a;border-color:#062a42;box-shadow:0 3px 0 #062a42;}
+  .gear-btn.active svg{transform:rotate(45deg);}
   #timerToggle.active{transform:none;}
   #helpToggle.active{transform:none;}
   #shortcutsToggle.active{transform:none;}

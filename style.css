@@ -1181,13 +1181,16 @@
   }
 
   .gear-btn{
-    background:none;border:1.5px solid rgba(255,255,255,0.4);cursor:pointer;
+    background:none;
+    border-style:solid;border-color:rgba(255,255,255,0.4) rgba(255,255,255,0.4) rgba(0,0,0,0.55) rgba(255,255,255,0.4);
+    border-width:1.5px 1.5px 3px 1.5px;
+    cursor:pointer;
     color:#ffffff;padding:5px;border-radius:12px;
     display:flex;align-items:center;justify-content:center;gap:3px;
     transition:color .15s, transform .2s, border-color .15s;flex-shrink:0;
     width:29px;height:29px;box-sizing:border-box;
   }
-  .gear-btn:hover{color:var(--crimson-bright);border-color:rgba(255,255,255,0.7);}
+  .gear-btn:hover{color:var(--crimson-bright);border-top-color:rgba(255,255,255,0.7);border-left-color:rgba(255,255,255,0.7);border-right-color:rgba(255,255,255,0.7);}
   .gear-btn.active{color:var(--brass);transform:rotate(45deg);}
   #timerToggle.active{transform:none;}
   #helpToggle.active{transform:none;}
@@ -2930,14 +2933,13 @@ textarea:focus-visible, summary:focus-visible, a:focus-visible{
   transition:transform 60ms ease-out;
 }
 
-.gear-btn, .pb-icon-circle, .rubric-toggle-btn, .comment-popover-close,
+.pb-icon-circle, .rubric-toggle-btn, .comment-popover-close,
 .cancel-ballot-btn, .ai-compare-toggle-btn{
-  transition:transform 100ms ease-out, color var(--ease-hover), box-shadow 100ms ease-out, filter 100ms ease-out;
+  transition:transform 100ms ease-out, color var(--ease-hover), box-shadow 100ms ease-out;
   box-shadow:0 3px 0 rgba(0,0,0,0.55);
 }
 .gear-btn{
-  box-shadow:none;
-  filter:drop-shadow(0 3px 0 rgba(0,0,0,0.55));
+  transition:transform 100ms ease-out, color var(--ease-hover), border-color 100ms ease-out;
 }
 .gear-btn:active, .pb-icon-circle:active, .rubric-toggle-btn:active,
 .cancel-ballot-btn:active, .ai-compare-toggle-btn:active{
@@ -2946,7 +2948,8 @@ textarea:focus-visible, summary:focus-visible, a:focus-visible{
   transition:transform 60ms ease-out;
 }
 .gear-btn:active{
-  filter:none;
+  transform:scale(0.88);
+  transition:transform 60ms ease-out;
 }
 .pb-icon-circle{box-shadow:0 3px 0 rgba(0,0,0,0.45);}
 

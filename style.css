@@ -2102,6 +2102,8 @@
   }
 
   .delivery-section{margin-top:28px;border-top:2px solid var(--charcoal);padding-top:18px;}
+  .results-tab-panel{margin-top:20px;}
+  .results-tab-panel .delivery-section{margin-top:0;border-top:none;padding-top:0;}
   .delivery-section .ts-head{font-family:var(--font-display);font-size:16px;font-weight:bold;margin:0 0 4px;display:flex;align-items:center;gap:10px;}
   .delivery-section .ts-meta{font-family:var(--font-mono);font-size:11px;color:var(--slate);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;}
   .delivery-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(125px,1fr));gap:10px;}
@@ -2320,10 +2322,11 @@
     header.topbar, .side-words, .toast-container, .hint-banner,
     .settings-panel, #dlModal, .comment-popover,
     #view-record, .flight, .actions, .export-menu,
-    .ann-legend-hint{
+    .ann-legend-hint, .mode-switch-row{
       display:none !important;
     }
     #view-results .delivery-section.hidden{ display:none !important; }
+    .results-tab-panel.hidden{ display:block !important; }
 
     main{
       display:block !important; max-width:none !important; width:100% !important;

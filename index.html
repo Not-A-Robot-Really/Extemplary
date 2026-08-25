@@ -904,46 +904,65 @@
           <div class="rq-text" id="resultQuestionText"></div>
         </div>
 
-        <div id="resultsContent"></div>
-
-        <div class="delivery-section hidden" id="deliverySection">
-          <div class="ts-head">Vocal Delivery Analysis</div>
-          <div class="ts-meta">Measured directly from the audio waveform · independent of the AI's reading of the text</div>
-          <div class="delivery-grid" id="deliveryGrid"></div>
-          <div class="delivery-note" id="deliveryNote"></div>
-        </div>
-
-        <div class="playback-section hidden" id="playbackSection">
-          <div class="ts-head">Watch &amp; Read Along</div>
-          <div class="ts-meta">Click any word in the transcript below (or a judge's note) to jump the video there</div>
-          <div class="playback-stage">
-            <div class="playback-frame">
-              <video id="resultsVideo" playsinline></video>
-              <button class="pb-play-btn" id="pbPlayBtn" type="button" aria-label="Play video">
-                <span class="pb-icon-circle">
-                  <svg viewBox="0 0 24 24" id="pbPlayIcon" width="22" height="22"><use href="#icon-43"></use></svg>
-                </span>
-              </button>
-            </div>
-            <div class="pb-scrub-row">
-              <span class="pb-time" id="pbTimeCur">0:00</span>
-              <input type="range" id="pbScrub" class="pb-scrub" min="0" max="1000" value="0" step="0.1">
-              <span class="pb-time" id="pbTimeDur">0:00</span>
-            </div>
+        <div class="mode-switch-row">
+          <div class="mode-switch" id="resultsTabSwitch" role="tablist" aria-label="Ballot feedback section">
+            <button type="button" class="mode-switch-btn active" data-rtab="feedback" role="tab" aria-selected="true">Feedback</button>
+            <button type="button" class="mode-switch-btn" data-rtab="factcheck" role="tab" aria-selected="false">Fact Check</button>
+            <button type="button" class="mode-switch-btn" data-rtab="delivery" role="tab" aria-selected="false">Voice Delivery</button>
+            <button type="button" class="mode-switch-btn" data-rtab="transcript" role="tab" aria-selected="false">Transcript</button>
           </div>
         </div>
 
-        <div class="transcript-section" id="transcriptSection">
-          <div class="ts-head">Stenographer's Transcript</div>
-          <div class="ts-meta" id="transcriptMeta">Round <span id="tsMeta_round">1</span> · Extemporaneous Speaking</div>
-          <div class="ann-legend" id="annLegend">
-            <span class="ann-legend-item"><i class="ann-swatch ann-red"></i>Important suggestion / big mistake</span>
-            <span class="ann-legend-item"><i class="ann-swatch ann-blue"></i>Misc. comment</span>
-            <span class="ann-legend-item"><i class="ann-swatch ann-green"></i>Brilliant move</span>
-            <span class="ann-legend-item"><i class="ann-swatch ann-yellow"></i>Minor error</span>
-            <span class="ann-legend-hint">Click any underlined phrase for the judge's note</span>
+        <div class="results-tab-panel" data-rtab-panel="feedback">
+          <div id="resultsContent"></div>
+        </div>
+
+        <div class="results-tab-panel hidden" data-rtab-panel="factcheck">
+          <div id="factCheckContent"></div>
+        </div>
+
+        <div class="results-tab-panel hidden" data-rtab-panel="delivery">
+          <div class="delivery-section hidden" id="deliverySection">
+            <div class="ts-head">Vocal Delivery Analysis</div>
+            <div class="ts-meta">Measured directly from the audio waveform · independent of the AI's reading of the text</div>
+            <div class="delivery-grid" id="deliveryGrid"></div>
+            <div class="delivery-note" id="deliveryNote"></div>
           </div>
-          <div class="transcript-body" id="transcriptBody"></div>
+        </div>
+
+        <div class="results-tab-panel hidden" data-rtab-panel="transcript">
+          <div class="playback-section hidden" id="playbackSection">
+            <div class="ts-head">Watch &amp; Read Along</div>
+            <div class="ts-meta">Click any word in the transcript below (or a judge's note) to jump the video there</div>
+            <div class="playback-stage">
+              <div class="playback-frame">
+                <video id="resultsVideo" playsinline></video>
+                <button class="pb-play-btn" id="pbPlayBtn" type="button" aria-label="Play video">
+                  <span class="pb-icon-circle">
+                    <svg viewBox="0 0 24 24" id="pbPlayIcon" width="22" height="22"><use href="#icon-43"></use></svg>
+                  </span>
+                </button>
+              </div>
+              <div class="pb-scrub-row">
+                <span class="pb-time" id="pbTimeCur">0:00</span>
+                <input type="range" id="pbScrub" class="pb-scrub" min="0" max="1000" value="0" step="0.1">
+                <span class="pb-time" id="pbTimeDur">0:00</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="transcript-section" id="transcriptSection">
+            <div class="ts-head">Stenographer's Transcript</div>
+            <div class="ts-meta" id="transcriptMeta">Round <span id="tsMeta_round">1</span> · Extemporaneous Speaking</div>
+            <div class="ann-legend" id="annLegend">
+              <span class="ann-legend-item"><i class="ann-swatch ann-red"></i>Important suggestion / big mistake</span>
+              <span class="ann-legend-item"><i class="ann-swatch ann-blue"></i>Misc. comment</span>
+              <span class="ann-legend-item"><i class="ann-swatch ann-green"></i>Brilliant move</span>
+              <span class="ann-legend-item"><i class="ann-swatch ann-yellow"></i>Minor error</span>
+              <span class="ann-legend-hint">Click any underlined phrase for the judge's note</span>
+            </div>
+            <div class="transcript-body" id="transcriptBody"></div>
+          </div>
         </div>
 
         <div class="actions">
@@ -993,47 +1012,66 @@
           This is a sample of what a finished ballot looks like, with a full AI judge feedback plus a color-coded transcript (with comments!) you can click through. The speech itself is from the round below.
         </div>
 
-        <div id="exampleResultsContent"></div>
-
-        <div class="delivery-section" id="exampleDeliverySection">
-          <div class="ts-head">Vocal Delivery Analysis</div>
-          <div class="ts-meta">Measured directly from the audio waveform · independent of the AI's reading of the text</div>
-          <div class="delivery-grid" id="exampleDeliveryGrid"></div>
-          <div class="delivery-note">These figures are measured straight from the audio waveform and word timing, then handed to the AI judge to inform the Speech Quality score above.</div>
-        </div>
-
-        <div class="playback-section" id="examplePlaybackSection">
-          <div class="ts-head">Watch &amp; Read Along</div>
-          <div class="ts-meta">Click any word in the transcript below (or a judge's note) to jump the video there.</div>
-          <div class="playback-stage">
-            <div class="playback-frame">
-              <div id="exampleYtPlayer"></div>
-              <button class="pb-play-btn" id="examplePbPlayBtn" type="button" aria-label="Play video">
-                <span class="pb-icon-circle">
-                  <svg viewBox="0 0 24 24" width="22" height="22"><use href="#icon-50"></use></svg>
-                </span>
-              </button>
-            </div>
-            <div class="pb-scrub-row">
-              <span class="pb-time" id="examplePbTimeCur">0:00</span>
-              <input type="range" id="examplePbScrub" class="pb-scrub" min="0" max="1000" value="0" step="0.1">
-              <span class="pb-time" id="examplePbTimeDur">0:00</span>
-            </div>
-            <div class="stage-note"><a href="https://www.youtube.com/watch?v=lzoUu1fDmWE&t=20s" target="_blank" rel="noopener noreferrer" style="color:inherit;">Trouble playing? Open on YouTube ↗</a></div>
+        <div class="mode-switch-row">
+          <div class="mode-switch" id="exampleTabSwitch" role="tablist" aria-label="Ballot feedback section">
+            <button type="button" class="mode-switch-btn active" data-rtab="feedback" role="tab" aria-selected="true">Feedback</button>
+            <button type="button" class="mode-switch-btn" data-rtab="factcheck" role="tab" aria-selected="false">Fact Check</button>
+            <button type="button" class="mode-switch-btn" data-rtab="delivery" role="tab" aria-selected="false">Voice Delivery</button>
+            <button type="button" class="mode-switch-btn" data-rtab="transcript" role="tab" aria-selected="false">Transcript</button>
           </div>
         </div>
 
-        <div class="transcript-section">
-          <div class="ts-head">Stenographer's Transcript</div>
-          <div class="ts-meta">Round 1 · Extemporaneous Speaking</div>
-          <div class="ann-legend" id="exampleAnnLegend">
-            <span class="ann-legend-item"><i class="ann-swatch ann-red"></i>Important suggestion / big mistake</span>
-            <span class="ann-legend-item"><i class="ann-swatch ann-blue"></i>Misc. comment</span>
-            <span class="ann-legend-item"><i class="ann-swatch ann-green"></i>Brilliant move</span>
-            <span class="ann-legend-item"><i class="ann-swatch ann-yellow"></i>Minor error</span>
-            <span class="ann-legend-hint">Click any underlined phrase for the judge's note</span>
+        <div class="results-tab-panel" data-rtab-panel="feedback">
+          <div id="exampleResultsContent"></div>
+        </div>
+
+        <div class="results-tab-panel hidden" data-rtab-panel="factcheck">
+          <div id="exampleFactCheckContent"></div>
+        </div>
+
+        <div class="results-tab-panel hidden" data-rtab-panel="delivery">
+          <div class="delivery-section" id="exampleDeliverySection">
+            <div class="ts-head">Vocal Delivery Analysis</div>
+            <div class="ts-meta">Measured directly from the audio waveform · independent of the AI's reading of the text</div>
+            <div class="delivery-grid" id="exampleDeliveryGrid"></div>
+            <div class="delivery-note">These figures are measured straight from the audio waveform and word timing, then handed to the AI judge to inform the Speech Quality score above.</div>
           </div>
-          <div class="transcript-body" id="exampleTranscriptBody"></div>
+        </div>
+
+        <div class="results-tab-panel hidden" data-rtab-panel="transcript">
+          <div class="playback-section" id="examplePlaybackSection">
+            <div class="ts-head">Watch &amp; Read Along</div>
+            <div class="ts-meta">Click any word in the transcript below (or a judge's note) to jump the video there.</div>
+            <div class="playback-stage">
+              <div class="playback-frame">
+                <div id="exampleYtPlayer"></div>
+                <button class="pb-play-btn" id="examplePbPlayBtn" type="button" aria-label="Play video">
+                  <span class="pb-icon-circle">
+                    <svg viewBox="0 0 24 24" width="22" height="22"><use href="#icon-50"></use></svg>
+                  </span>
+                </button>
+              </div>
+              <div class="pb-scrub-row">
+                <span class="pb-time" id="examplePbTimeCur">0:00</span>
+                <input type="range" id="examplePbScrub" class="pb-scrub" min="0" max="1000" value="0" step="0.1">
+                <span class="pb-time" id="examplePbTimeDur">0:00</span>
+              </div>
+              <div class="stage-note"><a href="https://www.youtube.com/watch?v=lzoUu1fDmWE&t=20s" target="_blank" rel="noopener noreferrer" style="color:inherit;">Trouble playing? Open on YouTube ↗</a></div>
+            </div>
+          </div>
+
+          <div class="transcript-section">
+            <div class="ts-head">Stenographer's Transcript</div>
+            <div class="ts-meta">Round 1 · Extemporaneous Speaking</div>
+            <div class="ann-legend" id="exampleAnnLegend">
+              <span class="ann-legend-item"><i class="ann-swatch ann-red"></i>Important suggestion / big mistake</span>
+              <span class="ann-legend-item"><i class="ann-swatch ann-blue"></i>Misc. comment</span>
+              <span class="ann-legend-item"><i class="ann-swatch ann-green"></i>Brilliant move</span>
+              <span class="ann-legend-item"><i class="ann-swatch ann-yellow"></i>Minor error</span>
+              <span class="ann-legend-hint">Click any underlined phrase for the judge's note</span>
+            </div>
+            <div class="transcript-body" id="exampleTranscriptBody"></div>
+          </div>
         </div>
 
         <div class="actions">

@@ -1342,7 +1342,7 @@ const DATA = window.APP_DATA;
           if(!t.dataset.built){
             t.dataset.built = '1';
             const parsed = parseBallot(entry.feedback || '');
-            const ballotHtml = buildBallotBodyHtml(parsed, entry.feedback || '(no feedback saved)', entry.factCheck);
+            const ballotHtml = buildBallotBodyHtml(parsed, entry.feedback || '(no feedback saved)', entry.factCheck) + buildFactCheckHtml(entry.factCheck);
             const deliveryHtml = buildDeliveryGridHtml(entry.deliveryMetrics);
             const transcriptHtml = buildTranscriptSectionHtml(entry.transcript || '', entry.annotations);
             t.innerHTML = `<div class="hc-full-ballot">${ballotHtml}</div>${deliveryHtml}${transcriptHtml}`;
@@ -2123,6 +2123,28 @@ const DATA = window.APP_DATA;
     document.querySelector('.nav-menu-item[data-target="historyToggle"]')?.classList.toggle('active', v === viewHistory);
     document.getElementById('navHomeBtn')?.classList.toggle('active', v === viewRecord);
   }
+
+  function setupResultsTabSwitch(switchEl){
+    if(!switchEl || switchEl.dataset.wired) return;
+    switchEl.dataset.wired = '1';
+    const scope = switchEl.closest('#view-results, #view-example') || document;
+    const btns = Array.from(switchEl.querySelectorAll('.mode-switch-btn'));
+    const panels = Array.from(scope.querySelectorAll('.results-tab-panel'));
+    switchEl.addEventListener('click', (e) => {
+      const btn = e.target.closest('.mode-switch-btn');
+      if(!btn || !switchEl.contains(btn)) return;
+      const tab = btn.dataset.rtab;
+      btns.forEach(b => {
+        const active = b === btn;
+        b.classList.toggle('active', active);
+        b.setAttribute('aria-selected', active ? 'true' : 'false');
+      });
+      panels.forEach(p => p.classList.toggle('hidden', p.dataset.rtabPanel !== tab));
+    });
+  }
+  setupResultsTabSwitch(document.getElementById('resultsTabSwitch'));
+  setupResultsTabSwitch(document.getElementById('exampleTabSwitch'));
+
 
   async function initCamera(){
     try{
@@ -5768,6 +5790,7 @@ Grading rules per claim:
 
   function renderExampleBallot(){
     autoScrollToWordEnabled = true;
+    resetResultsTab('exampleTabSwitch');
     if(typeof setExampleSyncArmed === 'function') setExampleSyncArmed(false);
     let html = scoreKeyHtml();
     EXAMPLE_CATEGORIES.forEach(cat => {
@@ -5802,8 +5825,8 @@ Grading rules per claim:
         <span class="tag" style="font-size:16px;font-weight:800;">Feedback</span>
         <p>${inlineMd(EXAMPLE_DRILL)}</p>
       </div>`;
-    html += buildFactCheckHtml(EXAMPLE_FACT_CHECK);
     document.getElementById('exampleResultsContent').innerHTML = html;
+    document.getElementById('exampleFactCheckContent').innerHTML = buildFactCheckHtml(EXAMPLE_FACT_CHECK);
 
     document.getElementById('exampleDeliveryGrid').innerHTML = [
       { label:'Volume', val:'-22.9 dBFS', sub:'Adequate', band:colorFromRatio(0.5) },
@@ -6478,7 +6501,6 @@ Grading rules per claim:
     }else{
       html += `<div class="raw-fallback">${basicMarkdown(rawFeedback)}</div>`;
     }
-    html += buildFactCheckHtml(factCheck);
     return html;
   }
 
@@ -6585,8 +6607,21 @@ Grading rules per claim:
       </div>`;
   }
 
+  function resetResultsTab(switchId){
+    const switchEl = document.getElementById(switchId);
+    if(!switchEl) return;
+    const scope = switchEl.closest('#view-results, #view-example') || document;
+    switchEl.querySelectorAll('.mode-switch-btn').forEach(b => {
+      const active = b.dataset.rtab === 'feedback';
+      b.classList.toggle('active', active);
+      b.setAttribute('aria-selected', active ? 'true' : 'false');
+    });
+    scope.querySelectorAll('.results-tab-panel').forEach(p => p.classList.toggle('hidden', p.dataset.rtabPanel !== 'feedback'));
+  }
+
   function renderResults(feedback, transcript){
     autoScrollToWordEnabled = true;
+    resetResultsTab('resultsTabSwitch');
     const parsed = parseBallot(feedback);
     let html = '';
 
@@ -6602,6 +6637,8 @@ Grading rules per claim:
     html += buildBallotBodyHtml(parsed, feedback, lastFactCheck);
 
     resultsContent.innerHTML = html;
+    const factCheckContentEl = document.getElementById('factCheckContent');
+    if(factCheckContentEl) factCheckContentEl.innerHTML = buildFactCheckHtml(lastFactCheck);
 
     renderDeliveryMetrics(lastDeliveryMetrics);
 
@@ -6936,7 +6973,8 @@ Grading rules per claim:
 
   function getExampleFeedbackText(){
     const el = document.getElementById('exampleResultsContent');
-    return el ? el.innerText.trim() : '';
+    const fc = document.getElementById('exampleFactCheckContent');
+    return [el ? el.innerText.trim() : '', fc ? fc.innerText.trim() : ''].filter(Boolean).join('\n\n');
   }
   function getExampleTranscriptText(){
     const el = document.getElementById('exampleTranscriptBody');

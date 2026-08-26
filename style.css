@@ -1712,12 +1712,12 @@
   .btn.ghost:hover{background:rgba(0,0,0,0.18);border-color:rgba(255,255,255,0.7);}
 
   .ballot .btn.ghost, .dl-modal-card:not(.prep-card-regular):not(.prep-card-intro):not(.prep-card-body):not(.prep-card-roughdraft) .btn.ghost,
-  .settings-panel .btn.ghost, .goal-modal .btn.ghost, .history-card .btn.ghost{
+  .settings-panel .btn.ghost, .goal-modal .btn.ghost, .history-card .btn.ghost, .demo-panel .btn.ghost{
     color:var(--charcoal);border-color:rgba(11,42,74,0.22);
     box-shadow:0 var(--shadow-offset-sm) 0 rgba(11,42,74,0.22);
   }
   .ballot .btn.ghost:hover, .dl-modal-card:not(.prep-card-regular):not(.prep-card-intro):not(.prep-card-body):not(.prep-card-roughdraft) .btn.ghost:hover,
-  .settings-panel .btn.ghost:hover, .goal-modal .btn.ghost:hover, .history-card .btn.ghost:hover{
+  .settings-panel .btn.ghost:hover, .goal-modal .btn.ghost:hover, .history-card .btn.ghost:hover, .demo-panel .btn.ghost:hover{
     background:rgba(11,42,74,0.1);border-color:rgba(11,42,74,0.35);
   }
   .btn.ghost:active{transform:translateY(var(--shadow-offset-sm));box-shadow:none;}

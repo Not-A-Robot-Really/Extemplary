@@ -1489,17 +1489,18 @@
   }
 
   .result-question{
-    border:1px solid var(--rule);border-radius:10px;
+    border:1.5px solid var(--color-blue-shadow);border-radius:var(--radius-md);
     padding:14px 16px;margin-bottom:22px;
-    background:#ffffff;
+    background:var(--color-blue);
+    box-shadow:0 var(--shadow-offset-md) 0 var(--color-blue-shadow);
   }
   .result-question .rq-label{
     font-family:var(--font-mono);font-size:10px;text-transform:uppercase;
-    letter-spacing:1.5px;color:var(--slate);margin-bottom:6px;
+    letter-spacing:1.5px;color:rgba(255,255,255,0.8);margin-bottom:6px;
   }
   .result-question .rq-text{
     font-family:var(--font-display);font-size:16px;font-style:italic;
-    color:var(--charcoal);line-height:1.4;
+    color:#ffffff;line-height:1.4;
   }
   .example-note{
     font-family:var(--font-body);font-size:16px;color:var(--charcoal);
@@ -1849,14 +1850,22 @@
     display:flex;justify-content:center;align-items:stretch;
     gap:16px;flex-wrap:wrap;margin:8px 0 26px;
   }
-  .verdict-stamp{
-    border:3px double var(--crimson);color:var(--crimson);
+  .verdict-stamp, .rank-stamp{
+    border:1.5px solid var(--color-blue-shadow);color:#ffffff;background:var(--color-blue);
     width:fit-content;margin:0;padding:10px 26px;
-    text-align:center;border-radius:12px;
+    text-align:center;border-radius:var(--radius-md);
+    box-shadow:0 var(--shadow-offset-md) 0 var(--color-blue-shadow);
   }
-  .verdict-stamp .label{font-family:var(--font-mono);font-size:10px;letter-spacing:2px;text-transform:uppercase;}
-  .verdict-stamp .num{font-family:var(--font-display);font-size:34px;font-weight:bold;line-height:1.1;}
+  .verdict-stamp .label, .rank-stamp .label{font-family:var(--font-mono);font-size:10px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,0.8);}
+  .verdict-stamp .num, .rank-stamp .num{font-family:var(--font-display);font-size:34px;font-weight:bold;line-height:1.1;}
   .verdict-stamp .num small{font-size:18px;}
+  .rank-stamp .num small{font-size:14px;}
+  .rank-stamp{display:flex;flex-direction:column;justify-content:center;}
+  .stamp-tier-1{background:#116daa;border-color:#0b446a;box-shadow:0 var(--shadow-offset-md) 0 #0b446a;}
+  .stamp-tier-2{background:#49a705;border-color:#337404;box-shadow:0 var(--shadow-offset-md) 0 #337404;}
+  .stamp-tier-3{background:#c99a10;border-color:#8f6d0a;box-shadow:0 var(--shadow-offset-md) 0 #8f6d0a;}
+  .stamp-tier-4{background:#d9720b;border-color:#a15206;box-shadow:0 var(--shadow-offset-md) 0 #a15206;}
+  .stamp-tier-5{background:#bf0e0e;border-color:#8b0b0b;box-shadow:0 var(--shadow-offset-md) 0 #8b0b0b;}
 
   .category{
     border-top:1px solid var(--rule);padding:20px 0;
@@ -1871,15 +1880,6 @@
   }
   .badge-wrap .score small{font-family:var(--font-mono);font-weight:normal;font-size:9px;color:var(--slate);margin-top:2px;}
 
-  .rank-stamp{
-    border:3px double var(--brass);color:var(--brass);
-    width:fit-content;margin:0;padding:10px 26px;
-    text-align:center;border-radius:12px;
-    display:flex;flex-direction:column;justify-content:center;
-  }
-  .rank-stamp .label{font-family:var(--font-mono);font-size:10px;letter-spacing:2px;text-transform:uppercase;}
-  .rank-stamp .num{font-family:var(--font-display);font-size:34px;font-weight:bold;line-height:1.1;}
-  .rank-stamp .num small{font-size:14px;}
   .rank-explanation{
     max-width:520px;margin:0 auto 26px;font-size:13px;line-height:1.6;
     color:var(--charcoal);text-align:center;font-style:italic;

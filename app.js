@@ -4202,12 +4202,12 @@ Grading rules per claim:
     if(parsed.total !== null){
       html += `
       <div class="stamp-row">
-        <div class="verdict-stamp">
+        <div class="verdict-stamp ${scoreTierClass(parsed.total)}">
           <div class="label">Composite Score</div>
           <div class="num">${parsed.total}<small>/100</small></div>
         </div>`;
       if(parsed.rank !== null) html += `
-        <div class="rank-stamp">
+        <div class="rank-stamp ${rankTierClass(parsed.rank)}">
           <div class="label">Judge's Rank</div>
           <div class="num">${ordinal(parsed.rank)}</div>
         </div>`;
@@ -5811,11 +5811,11 @@ Grading rules per claim:
     });
     html += `
       <div class="stamp-row">
-        <div class="verdict-stamp">
+        <div class="verdict-stamp ${scoreTierClass(EXAMPLE_TOTAL)}">
           <div class="label">Composite Score</div>
           <div class="num">${EXAMPLE_TOTAL}<small>/100</small></div>
         </div>
-        <div class="rank-stamp">
+        <div class="rank-stamp ${rankTierClass(EXAMPLE_RANK)}">
           <div class="label">Judge's Rank</div>
           <div class="num">${ordinal(EXAMPLE_RANK)}</div>
         </div>
@@ -6451,6 +6451,18 @@ Grading rules per claim:
     return n + (s[(v-20)%10] || s[v] || s[0]);
   }
 
+  function scoreTierClass(total){
+    if(total < 20) return 'stamp-tier-1';
+    if(total < 40) return 'stamp-tier-2';
+    if(total < 60) return 'stamp-tier-3';
+    if(total < 80) return 'stamp-tier-4';
+    return 'stamp-tier-5';
+  }
+  function rankTierClass(rank){
+    const tiers = {1:'stamp-tier-1', 2:'stamp-tier-2', 3:'stamp-tier-3', 4:'stamp-tier-4', 5:'stamp-tier-5'};
+    return tiers[rank] || 'stamp-tier-5';
+  }
+
   function buildBallotBodyHtml(parsed, rawFeedback, factCheck){
     let html = '';
     if(parsed.categories.length >= 1){
@@ -6474,12 +6486,12 @@ Grading rules per claim:
       if(parsed.total !== null){
         html += `
         <div class="stamp-row">
-          <div class="verdict-stamp">
+          <div class="verdict-stamp ${scoreTierClass(parsed.total)}">
             <div class="label">Composite Score</div>
             <div class="num">${parsed.total}<small>/100</small></div>
           </div>`;
         if(parsed.rank !== null) html += `
-          <div class="rank-stamp">
+          <div class="rank-stamp ${rankTierClass(parsed.rank)}">
             <div class="label">Judge's Rank</div>
             <div class="num">${ordinal(parsed.rank)}</div>
           </div>`;

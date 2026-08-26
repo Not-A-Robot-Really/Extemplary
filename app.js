@@ -5736,28 +5736,43 @@ Grading rules per claim:
   window.addEventListener('scroll', hideCommentPopover, true);
   window.addEventListener('resize', hideCommentPopover);
 
+  function deliveryTierClass(score10){
+    const s = Math.max(0, Math.min(10, score10));
+    if(s < 2) return 'stamp-tier-1';
+    if(s < 4) return 'stamp-tier-2';
+    if(s < 6) return 'stamp-tier-3';
+    if(s < 8) return 'stamp-tier-4';
+    return 'stamp-tier-5';
+  }
   function computeDeliveryCards(m){
     const cards = [];
     if(!m || m.audioUnavailable) return cards;
+    const volS = m.volumeScore;
+    const empS = m.emphasisRatio>=8&&m.emphasisRatio<=35?9:m.emphasisRatio===0?2:5;
+    const toneS = m.pitchVarietyLabel.startsWith('High')?9:m.pitchVarietyLabel.startsWith('Moderate')?5.5:2;
+    const paceS = (m.wpm>=120&&m.wpm<=175)?9:(m.wpm>=100&&m.wpm<=195)?6:(m.wpm>=80&&m.wpm<=220)?3.5:1.5;
+    const pauseS = (m.avgPauseLen>=0.4&&m.avgPauseLen<=2.5)?8:(m.avgPauseLen<0.2||m.avgPauseLen>4)?2:5;
     cards.push(
-      { label:'Volume', val:m.avgDb+' dBFS', sub:m.volumeLabel, band:dvBand(m.volumeScore) },
-      { label:'Emphasis', val:m.emphasisRatio+'%', sub:m.emphasizedCount+' of '+m.totalWords+' words stressed', band:dvBand(m.emphasisRatio>=8&&m.emphasisRatio<=35?9:m.emphasisRatio===0?2:5) },
-      { label:'Tone Variety', val:m.pitchVarietyLabel.split(' —')[0], sub:m.toneChanges+' pitch shifts detected', band:dvBand(m.pitchVarietyLabel.startsWith('High')?9:m.pitchVarietyLabel.startsWith('Moderate')?5.5:2) },
-      { label:'Pace', val:m.wpm+' wpm', sub:m.paceLabel, band:dvBand((m.wpm>=120&&m.wpm<=175)?9:(m.wpm>=100&&m.wpm<=195)?6:(m.wpm>=80&&m.wpm<=220)?3.5:1.5) },
-      { label:'Pauses', val:m.pauseCount, sub:'avg '+m.avgPauseLen+'s each', band:dvBand((m.avgPauseLen>=0.4&&m.avgPauseLen<=2.5)?8:(m.avgPauseLen<0.2||m.avgPauseLen>4)?2:5) }
+      { label:'Volume', val:m.avgDb+' dBFS', sub:m.volumeLabel, band:dvBand(volS), tier:deliveryTierClass(volS) },
+      { label:'Emphasis', val:m.emphasisRatio+'%', sub:m.emphasizedCount+' of '+m.totalWords+' words stressed', band:dvBand(empS), tier:deliveryTierClass(empS) },
+      { label:'Tone Variety', val:m.pitchVarietyLabel.split(' —')[0], sub:m.toneChanges+' pitch shifts detected', band:dvBand(toneS), tier:deliveryTierClass(toneS) },
+      { label:'Pace', val:m.wpm+' wpm', sub:m.paceLabel, band:dvBand(paceS), tier:deliveryTierClass(paceS) },
+      { label:'Pauses', val:m.pauseCount, sub:'avg '+m.avgPauseLen+'s each', band:dvBand(pauseS), tier:deliveryTierClass(pauseS) }
     );
     if(typeof m.fillerCount === 'number'){
+      const fillS = m.fillerCount===0?10:m.fillerCount<=2?7:m.fillerCount<=5?5:m.fillerCount<=8?3:1;
       cards.push({
         label:'Filler Words', val:m.fillerCount,
         sub: m.fillerCount ? Object.entries(m.fillerBreakdown).slice(0,3).map(([w,c])=>`"${w}"×${c}`).join(', ') : 'None detected',
-        band: dvBand(m.fillerCount===0?10:m.fillerCount<=2?7:m.fillerCount<=5?5:m.fillerCount<=8?3:1)
+        band: dvBand(fillS), tier: deliveryTierClass(fillS)
       });
     }
     if(typeof m.stutterCount === 'number'){
+      const stutS = m.stutterCount===0?10:m.stutterCount<=1?7:m.stutterCount<=3?4:1;
       cards.push({
         label:'Stutters', val:m.stutterCount,
         sub: m.stutterCount ? 'repeated words / stammered fragments' : 'None detected',
-        band: dvBand(m.stutterCount===0?10:m.stutterCount<=1?7:m.stutterCount<=3?4:1)
+        band: dvBand(stutS), tier: deliveryTierClass(stutS)
       });
     }
     return cards;
@@ -5770,14 +5785,14 @@ Grading rules per claim:
     }
     const cards = computeDeliveryCards(m);
     deliveryGrid.innerHTML = cards.map(c=>`
-      <div class="delivery-stat" style="--bc:${c.band}">
+      <div class="delivery-stat ${c.tier}">
         <span class="dv-label">${c.label}</span>
         <div class="dv-val">${c.val}</div>
         <div class="dv-sub">${escHtml(String(c.sub))}</div>
       </div>`).join('');
     deliveryNote.textContent = m.audioUnavailable
       ? 'Volume/tone/pacing could not be measured for this recording, but filler words and stutters are still auto-counted from the transcript text.'
-      : 'These figures are measured straight from the audio waveform and word timing, then handed to the AI judge to inform the Speech Quality score below.';
+      : '';
     deliverySection.classList.remove('hidden');
   }
 
@@ -5829,15 +5844,15 @@ Grading rules per claim:
     document.getElementById('exampleFactCheckContent').innerHTML = buildFactCheckHtml(EXAMPLE_FACT_CHECK);
 
     document.getElementById('exampleDeliveryGrid').innerHTML = [
-      { label:'Volume', val:'-22.9 dBFS', sub:'Adequate', band:colorFromRatio(0.5) },
-      { label:'Emphasis', val:'26%', sub:'284 of 1078 words stressed', band:colorFromRatio(0.86) },
-      { label:'Tone Variety', val:'High', sub:'3469 pitch shifts detected', band:colorFromRatio(0.92) },
-      { label:'Pace', val:'152 wpm', sub:'Solid competitive pace', band:colorFromRatio(1.0) },
-      { label:'Pauses', val:7, sub:'avg 1.93s each', band:colorFromRatio(0.68) },
-      { label:'Filler Words', val:5, sub:'"literally"×1, "actually"×2, "like"×2', band:colorFromRatio(0.46) },
-      { label:'Stutters', val:0, sub:'None detected', band:colorFromRatio(1.0) }
+      { label:'Volume', val:'-22.9 dBFS', sub:'Adequate', tier:deliveryTierClass(5) },
+      { label:'Emphasis', val:'26%', sub:'284 of 1078 words stressed', tier:deliveryTierClass(8.6) },
+      { label:'Tone Variety', val:'High', sub:'3469 pitch shifts detected', tier:deliveryTierClass(9.2) },
+      { label:'Pace', val:'152 wpm', sub:'Solid competitive pace', tier:deliveryTierClass(10) },
+      { label:'Pauses', val:7, sub:'avg 1.93s each', tier:deliveryTierClass(6.8) },
+      { label:'Filler Words', val:5, sub:'"literally"×1, "actually"×2, "like"×2', tier:deliveryTierClass(4.6) },
+      { label:'Stutters', val:0, sub:'None detected', tier:deliveryTierClass(10) }
     ].map(c => `
-      <div class="delivery-stat" style="--bc:${c.band}">
+      <div class="delivery-stat ${c.tier}">
         <span class="dv-label">${c.label}</span>
         <div class="dv-val">${c.val}</div>
         <div class="dv-sub">${escHtml(String(c.sub))}</div>
@@ -6523,18 +6538,14 @@ Grading rules per claim:
     return `
       <div class="delivery-section">
         <div class="ts-head">Vocal Delivery Analysis</div>
-        <div class="ts-meta">Measured directly from the audio waveform · independent of the AI's reading of the text</div>
         <div class="delivery-grid">
           ${cards.map(c=>`
-            <div class="delivery-stat" style="--bc:${c.band}">
+            <div class="delivery-stat ${c.tier}">
               <span class="dv-label">${c.label}</span>
               <div class="dv-val">${c.val}</div>
               <div class="dv-sub">${escHtml(String(c.sub))}</div>
             </div>`).join('')}
         </div>
-        <div class="delivery-note">${m.audioUnavailable
-          ? 'Volume/tone/pacing could not be measured for this recording, but filler words and stutters are still auto-counted from the transcript text.'
-          : "These figures were measured straight from the audio waveform and word timing, then handed to the AI judge to inform the Speech Quality score above."}</div>
       </div>`;
   }
 

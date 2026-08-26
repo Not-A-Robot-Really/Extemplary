@@ -2116,8 +2116,8 @@
   .delivery-section .ts-meta{font-family:var(--font-mono);font-size:11px;color:var(--slate);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;}
   .delivery-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(125px,1fr));gap:10px;}
   .delivery-stat{
-    background:#5b3fa8;border:1.5px solid #35235f;border-radius:var(--radius-md);
-    padding:10px 12px;box-shadow:0 var(--shadow-offset-md) 0 #35235f;
+    background:var(--color-blue);border:1.5px solid var(--color-blue-shadow);border-radius:var(--radius-md);
+    padding:10px 12px;box-shadow:0 var(--shadow-offset-md) 0 var(--color-blue-shadow);
   }
   .delivery-stat .dv-label{font-family:var(--font-mono);font-size:9.5px;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,0.75);display:block;margin-bottom:5px;}
   .delivery-stat .dv-val{font-family:var(--font-display);font-size:19px;color:#ffffff;font-weight:bold;}

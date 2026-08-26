@@ -670,7 +670,7 @@
     to{opacity:1;transform:translateY(0);}
   }
   .auth-card-logo{
-    font-family:Georgia,'Iowan Old Style','Palatino Linotype','Book Antiqua',serif;letter-spacing:0.5px;line-height:1;
+    font-family:var(--font-display);letter-spacing:0.5px;line-height:1;
     display:flex;align-items:center;justify-content:center;text-align:center;margin:0 0 10px;
     color:var(--charcoal);font-size:36px;
   }
@@ -885,6 +885,8 @@
   .demo-record-mock .rec-pill{position:static;}
   .demo-record-btn{
     width:44px;height:44px;pointer-events:none;
+  }
+  .rec-btn.recording.demo-record-btn{
     border:none;box-shadow:none;background:#db1010;animation:none;
   }
   .demo-record-btn:hover{transform:none;}

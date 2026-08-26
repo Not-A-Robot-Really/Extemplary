@@ -4188,7 +4188,6 @@ Grading rules per claim:
       html += `
         <div class="category">
           <div class="badge-wrap" style="--bc:${band}">
-            <svg viewBox="0 0 64 64"><path d="${CIRCLE_PATH}" fill="none" stroke-width="2.5"/></svg>
             <div class="score">${cat.score}<small>/${cat.max||10}</small></div>
           </div>
           <div>
@@ -4217,7 +4216,7 @@ Grading rules per claim:
     if(parsed.rankExplanation) html += `
       <div class="rank-explanation">${inlineMd(parsed.rankExplanation)}</div>`;
     if(parsed.drill) html += `
-      <div class="drill">
+      <div class="drill feedback-box">
         <span class="tag" style="font-size:16px;font-weight:800;">Feedback</span>
         <p>${inlineMd(parsed.drill)}</p>
       </div>`;
@@ -5813,7 +5812,6 @@ Grading rules per claim:
       html += `
         <div class="category">
           <div class="badge-wrap" style="--bc:${band}">
-            <svg viewBox="0 0 64 64"><path d="${CIRCLE_PATH}" fill="none" stroke-width="2.5"/></svg>
             <div class="score">${cat.score}<small>/${cat.max}</small></div>
           </div>
           <div>
@@ -5836,7 +5834,7 @@ Grading rules per claim:
         </div>
       </div>
       <div class="rank-explanation">${inlineMd(EXAMPLE_RANK_EXPLANATION)}</div>
-      <div class="drill">
+      <div class="drill feedback-box">
         <span class="tag" style="font-size:16px;font-weight:800;">Feedback</span>
         <p>${inlineMd(EXAMPLE_DRILL)}</p>
       </div>`;
@@ -6521,7 +6519,7 @@ Grading rules per claim:
       if(parsed.rankExplanation) html += `
         <div class="rank-explanation">${inlineMd(parsed.rankExplanation)}</div>`;
       if(parsed.drill) html += `
-        <div class="drill">
+        <div class="drill feedback-box">
           <span class="tag" style="font-size:16px;font-weight:800;">Feedback</span>
           <p>${inlineMd(parsed.drill)}</p>
         </div>`;
@@ -6668,7 +6666,7 @@ Grading rules per claim:
     setupResultsPlayback();
 
     renderTranscript(transcript, lastTranscriptAnnotations);
-    tsMeta_round.textContent = roundNo;
+    if(tsMeta_round) tsMeta_round.textContent = roundNo;
 
     if(parsed.total !== null) flightHistory.push({round:roundNo, total:parsed.total});
     renderFlightStrips();

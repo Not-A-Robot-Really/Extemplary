@@ -1442,7 +1442,6 @@ Grading rules:
     panel.innerHTML = `
       <div class="category demo-category-reveal" style="border-top:none;padding-top:0;">
         <div class="badge-wrap" style="--bc:${band}">
-          <svg viewBox="0 0 64 64"><path class="demo-ring-path" d="${CIRCLE_PATH}" fill="none" stroke-width="2.5"/></svg>
           <div class="score">${demoCat.score}<small>/${demoCat.max}</small></div>
         </div>
         <div>

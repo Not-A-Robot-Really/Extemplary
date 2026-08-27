@@ -3592,7 +3592,7 @@ Grading rules per claim:
             ? `<div style="font-size:12px;color:var(--slate);margin-bottom:4px;"><b>Source:</b> <a href="${escFactCheckHtml(c.sourceUrl)}" target="_blank" rel="noopener noreferrer">${escFactCheckHtml(c.sourceUrl)}</a></div>`
             : '');
       return `
-      <div class="cat-row" style="border-left:3px solid var(--rule);padding:10px 12px;margin-bottom:10px;margin-top:12px;background:rgba(0,0,0,0.02);">
+      <div class="fc-claim-row" style="border-left:3px solid var(--rule);padding:10px 12px;margin-bottom:10px;margin-top:12px;background:rgba(0,0,0,0.02);">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;flex-wrap:wrap;">
           <span class="cc-verdict-stamp ${c.verdict}" style="padding:4px 12px;display:inline-block;">
             <span class="num" style="font-size:13px;">${verdictLabel(c.verdict)}</span>

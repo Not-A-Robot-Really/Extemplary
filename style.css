@@ -1907,6 +1907,9 @@
   }
   .cat-row.evidence strong{color:#ffffff;font-weight:700;}
 
+  .fc-claim-row{color:var(--charcoal);}
+  .fc-claim-row strong{color:var(--charcoal);}
+
   .drill{
     margin-top:24px;border:1px dashed var(--charcoal);
     padding:16px 18px;border-radius:10px;

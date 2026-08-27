@@ -1880,9 +1880,9 @@
   }
   .badge-wrap .score{
     position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
-    font-family:var(--font-display);font-weight:bold;font-size:19px;line-height:1;
+    font-family:var(--font-display);font-weight:bold;font-size:25px;line-height:1;
   }
-  .badge-wrap .score small{font-family:var(--font-mono);font-weight:normal;font-size:9px;color:rgba(255,255,255,0.85);margin-top:2px;}
+  .badge-wrap .score small{font-family:var(--font-mono);font-weight:normal;font-size:10px;color:rgba(255,255,255,0.85);margin-top:2px;}
 
   .rank-explanation{
     max-width:520px;margin:0 auto 26px;font-size:13px;line-height:1.6;
@@ -1891,19 +1891,21 @@
   .badge-wrap .score{color:#ffffff;}
 
   .cat-name{font-family:var(--font-display);font-size:17px;margin:0 0 10px;}
-  .cat-row{margin-bottom:9px;font-size:13.5px;line-height:1.5;}
+  .cat-row{
+    margin-bottom:12px;font-size:13.5px;line-height:1.6;
+    padding:14px 16px;border-radius:var(--radius-md);color:#ffffff;
+  }
   .cat-row .tag{
     font-family:var(--font-mono);font-size:10px;text-transform:uppercase;
-    letter-spacing:1px;color:var(--slate);display:block;margin-bottom:2px;
+    letter-spacing:1px;color:rgba(255,255,255,0.8);display:block;margin-bottom:6px;
   }
-  .cat-row.worked .tag{color:var(--forest);}
-  .cat-row.flaws .tag{color:var(--score-red);}
+  .cat-row.worked{background:#49a705;border:1.5px solid #337404;box-shadow:0 var(--shadow-offset-sm) 0 #337404;}
+  .cat-row.flaws{background:#bf0e0e;border:1.5px solid #8b0b0b;box-shadow:0 var(--shadow-offset-sm) 0 #8b0b0b;}
   .cat-row.evidence{
     font-family:var(--font-mono);font-size:12.5px;
-    background:rgba(0,0,0,0.04);border-left:2px solid var(--rule);padding:8px 10px;
+    background:#c99a10;border:1.5px solid #8f6d0a;box-shadow:0 var(--shadow-offset-sm) 0 #8f6d0a;
   }
-  .cat-row.evidence .tag{color:var(--score-orange);}
-  .cat-row.evidence strong{color:var(--charcoal);font-weight:700;}
+  .cat-row.evidence strong{color:#ffffff;font-weight:700;}
 
   .drill{
     margin-top:24px;border:1px dashed var(--charcoal);
@@ -2411,7 +2413,7 @@
     .category{grid-template-columns:48px 1fr;}
     .badge-wrap{width:48px;height:48px;}
     .badge-wrap svg{width:48px;height:48px;}
-    .badge-wrap .score{font-size:16px;}
+    .badge-wrap .score{font-size:20px;}
     .add-signal-form{grid-template-columns:1fr 1fr;}
     .overlay-card{padding:28px 30px;}
     .overlay-card .ov-time{font-size:52px;}

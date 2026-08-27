@@ -1208,6 +1208,12 @@
   #themeToggle.active{transform:none;}
   #briefingToggle.active{transform:none;}
   #citationToggle.active{transform:none;color:var(--score-green);}
+  #themeToggle{background:#7a3fc9;border-color:#4a2280;box-shadow:0 3px 0 #4a2280;}
+  #themeToggle:hover{border-color:#4a2280;}
+  #themeToggle.active{background:#4a2280;border-color:#2f1552;box-shadow:0 3px 0 #2f1552;}
+  html[data-theme="light"] #themeToggle{background:#e2790f;border-color:#a1560a;box-shadow:0 3px 0 #a1560a;}
+  html[data-theme="light"] #themeToggle:hover{border-color:#a1560a;}
+  html[data-theme="light"] #themeToggle.active{background:#a1560a;border-color:#6e3b06;box-shadow:0 3px 0 #6e3b06;}
 
   #streakToggle.active{transform:none;}
   #streakToggle.active.has-streak{color:#f2ba38;}

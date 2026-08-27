@@ -4182,12 +4182,12 @@ Grading rules per claim:
   function buildBallotCardsHtml(feedback){
     const { ballotText, factCheckText } = splitOffFactCheckAndTranscript(feedback);
     const parsed = parseBallot(ballotText);
-    let html = scoreKeyHtml();
+    let html = '';
     parsed.categories.forEach(cat => {
       const band = bandClass(cat.score, cat.max);
       html += `
         <div class="category">
-          <div class="badge-wrap" style="--bc:${band}">
+          <div class="badge-wrap" style="--bc:${band};--bc-dark:${darkenRgb(band,0.4)}">
             <div class="score">${cat.score}<small>/${cat.max||10}</small></div>
           </div>
           <div>
@@ -5221,6 +5221,12 @@ Grading rules per claim:
   }
   function dvBand(score10){ return colorFromRatio(score10/10); }
   function bandFromRatio(ratio){ return colorFromRatio(ratio); }
+  function darkenRgb(rgbStr, amount){
+    const m = /rgb\((\d+),\s*(\d+),\s*(\d+)\)/.exec(rgbStr);
+    if(!m) return rgbStr;
+    const [r,g,b] = [m[1],m[2],m[3]].map(n => Math.max(0, Math.round(Number(n) * (1 - amount))));
+    return `rgb(${r},${g},${b})`;
+  }
 
   const ANN_COLORS = DATA.ANN_COLORS;
   const ANN_LABELS = DATA.ANN_LABELS;
@@ -5806,12 +5812,12 @@ Grading rules per claim:
     autoScrollToWordEnabled = true;
     resetResultsTab('exampleTabSwitch');
     if(typeof setExampleSyncArmed === 'function') setExampleSyncArmed(false);
-    let html = scoreKeyHtml();
+    let html = '';
     EXAMPLE_CATEGORIES.forEach(cat => {
       const band = bandClass(cat.score, cat.max);
       html += `
         <div class="category">
-          <div class="badge-wrap" style="--bc:${band}">
+          <div class="badge-wrap" style="--bc:${band};--bc-dark:${darkenRgb(band,0.4)}">
             <div class="score">${cat.score}<small>/${cat.max}</small></div>
           </div>
           <div>
@@ -6450,14 +6456,6 @@ Grading rules per claim:
     const ratio = (max ? score/max : score/10);
     return colorFromRatio(ratio);
   }
-  function scoreKeyHtml(){
-    return `
-      <div class="score-key">
-        <span class="score-key-label">0%</span>
-        <div class="score-key-bar"></div>
-        <span class="score-key-label">100%</span>
-      </div>`;
-  }
   function ordinal(n){
     n = Math.round(n);
     const s = ['th','st','nd','rd'], v = n % 100;
@@ -6479,13 +6477,11 @@ Grading rules per claim:
   function buildBallotBodyHtml(parsed, rawFeedback, factCheck){
     let html = '';
     if(parsed.categories.length >= 1){
-      html += scoreKeyHtml();
       parsed.categories.forEach(cat => {
         const band = bandClass(cat.score, cat.max);
         html += `
           <div class="category">
-            <div class="badge-wrap" style="--bc:${band}">
-              <svg viewBox="0 0 64 64"><path d="${CIRCLE_PATH}" fill="none" stroke-width="2.5"/></svg>
+            <div class="badge-wrap" style="--bc:${band};--bc-dark:${darkenRgb(band,0.4)}">
               <div class="score">${cat.score}<small>/${cat.max||10}</small></div>
             </div>
             <div>

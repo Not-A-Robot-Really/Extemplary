@@ -39,6 +39,12 @@
     const last = SPECTRUM_STOPS[SPECTRUM_STOPS.length-1].c;
     return `rgb(${last[0]},${last[1]},${last[2]})`;
   }
+  function darkenRgb(rgbStr, amount){
+    const m = /rgb\((\d+),\s*(\d+),\s*(\d+)\)/.exec(rgbStr);
+    if(!m) return rgbStr;
+    const [r,g,b] = [m[1],m[2],m[3]].map(n => Math.max(0, Math.round(Number(n) * (1 - amount))));
+    return `rgb(${r},${g},${b})`;
+  }
   const ANN_LABELS = DATA.ANN_LABELS;
   const CIRCLE_PATH = DATA.CIRCLE_PATH;
   function escHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
@@ -1441,7 +1447,7 @@ Grading rules:
     const band = bandClass(demoCat.score, demoCat.max);
     panel.innerHTML = `
       <div class="category demo-category-reveal" style="border-top:none;padding-top:0;">
-        <div class="badge-wrap" style="--bc:${band}">
+        <div class="badge-wrap" style="--bc:${band};--bc-dark:${darkenRgb(band,0.4)}">
           <div class="score">${demoCat.score}<small>/${demoCat.max}</small></div>
         </div>
         <div>

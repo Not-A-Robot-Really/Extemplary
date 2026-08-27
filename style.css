@@ -1874,8 +1874,8 @@
   .badge-wrap{
     position:relative;width:64px;height:64px;border-radius:16px;
     background:var(--bc, var(--score-cyan));
-    box-shadow:0 var(--shadow-offset-sm) 0 rgba(0,0,0,0.4);
-    border:1.5px solid rgba(0,0,0,0.28);
+    box-shadow:0 var(--shadow-offset-sm) 0 var(--bc-dark, rgba(0,0,0,0.4));
+    border:1.5px solid var(--bc-dark, rgba(0,0,0,0.28));
     box-sizing:border-box;
   }
   .badge-wrap .score{
@@ -1904,17 +1904,6 @@
   }
   .cat-row.evidence .tag{color:var(--score-orange);}
   .cat-row.evidence strong{color:var(--charcoal);font-weight:700;}
-
-  .score-key{
-    display:flex;align-items:center;gap:10px;margin:0 0 20px;
-    font-family:var(--font-mono);font-size:10px;color:var(--slate);
-  }
-  .score-key .score-key-bar{
-    flex:1;height:10px;border-radius:12px;
-    background:linear-gradient(to right, #db1010 0%, #f0ae14 25%, #cd930d 50%, #5dd607 75%, #1378bc 100%);
-    border:1px solid rgba(0,0,0,0.12);
-  }
-  .score-key .score-key-label{white-space:nowrap;letter-spacing:0.5px;}
 
   .drill{
     margin-top:24px;border:1px dashed var(--charcoal);

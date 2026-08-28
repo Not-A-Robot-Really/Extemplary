@@ -4526,15 +4526,11 @@ Grading rules per claim:
     timerDisplay.textContent = str;
     const low = prepSecondsLeft <= 60 && prepSecondsLeft > 0;
     timerDisplay.classList.toggle('warn', low);
-    if(!prepRunning && prepSecondsLeft < PREP_TIME_SECONDS){
-      timerBadge.textContent = str;
-      timerBadge.classList.remove('hidden');
-      timerBadge.classList.toggle('running', prepRunning);
-      timerBadge.classList.toggle('warn', low);
-    }else{
-      timerBadge.classList.add('hidden');
-    }
+    timerBadge.classList.add('hidden');
     timerToggle.classList.toggle('ticking', prepRunning);
+    const isPaused = !prepRunning && prepSecondsLeft > 0 && prepSecondsLeft < PREP_TIME_SECONDS;
+    timerToggle.classList.toggle('timer-running', prepRunning);
+    timerToggle.classList.toggle('timer-paused', isPaused);
   }
   function setPrepButtons(){
     timerStartBtn.classList.toggle('hidden', prepRunning || prepSecondsLeft !== PREP_TIME_SECONDS);

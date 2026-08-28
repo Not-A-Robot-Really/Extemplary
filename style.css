@@ -1215,6 +1215,11 @@
   html[data-theme="light"] #themeToggle:hover{border-color:#a1560a;}
   html[data-theme="light"] #themeToggle.active{background:#a1560a;border-color:#6e3b06;box-shadow:0 3px 0 #6e3b06;}
 
+  #timerToggle.timer-running{background:#49a705;border-color:#337404;box-shadow:0 3px 0 #337404;}
+  #timerToggle.timer-running:hover{border-color:#337404;}
+  #timerToggle.timer-paused{background:#bf0e0e;border-color:#8b0b0b;box-shadow:0 3px 0 #8b0b0b;}
+  #timerToggle.timer-paused:hover{border-color:#8b0b0b;}
+
   #streakToggle.active{transform:none;}
   #streakToggle.active.has-streak{color:#f2ba38;}
   #timerToggle{position:relative;}

@@ -761,6 +761,16 @@
   .auth-submit:focus, .auth-submit:focus-visible{outline:none;}
   .auth-submit:disabled{opacity:0.65;cursor:default;box-shadow:0 var(--shadow-offset-md) 0 var(--color-blue-shadow);transform:none;}
 
+  body.landing-page .auth-submit{
+    border-width:1.5px;box-shadow:0 var(--shadow-offset-sm) 0 var(--color-blue-shadow);
+  }
+  body.landing-page .auth-submit:active{transform:translateY(var(--shadow-offset-sm));}
+  body.landing-page .auth-submit:disabled{box-shadow:0 var(--shadow-offset-sm) 0 var(--color-blue-shadow);}
+  body.landing-page .btn.primary{box-shadow:0 var(--shadow-offset-sm) 0 var(--color-blue-shadow);}
+  body.landing-page .btn.primary:active{transform:translateY(var(--shadow-offset-sm));}
+  body.landing-page .demo-signup-btn{border-width:1.5px;box-shadow:0 var(--shadow-offset-sm) 0 var(--color-blue-shadow);}
+  body.landing-page .demo-signup-btn:active{transform:translateY(var(--shadow-offset-sm));}
+
   .landing-scroll-cue{
     position:absolute;bottom:22px;left:50%;transform:translateX(-50%);
     display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--chrome-text-dim);

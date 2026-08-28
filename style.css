@@ -790,14 +790,16 @@
   .feature-card{
     background:var(--ink-soft);border:3px solid var(--crimson-deep);border-radius:10px;padding:18px 18px;
     opacity:0;
-    transition:transform 0.06s linear, opacity 0.06s linear, box-shadow 0.35s ease, border-color 0.35s ease;
-    transform-style:preserve-3d;will-change:transform;
+    transition:box-shadow 0.35s ease, border-color 0.35s ease;
+    transform-style:preserve-3d;will-change:transform, opacity;
   }
-  .feature-card.revealed{opacity:1;}
+  .feature-card.revealed{opacity:1;transition:transform 0.15s cubic-bezier(.22,.9,.3,1), box-shadow 0.35s ease, border-color 0.35s ease;}
   .feature-card:hover{border-color:var(--brass);box-shadow:0 20px 46px rgba(0,0,0,0.28);}
   .feature-card .fc-icon{
-    width:34px;height:34px;border-radius:9px;background:var(--crimson);color:var(--on-accent);
+    width:34px;height:34px;border-radius:11px;background:var(--crimson);color:var(--on-accent);
     display:flex;align-items:center;justify-content:center;margin-bottom:12px;
+    border:1.5px solid rgba(0,0,0,0.3);box-shadow:0 3px 0 rgba(0,0,0,0.35);
+    box-sizing:border-box;
     transform:translateZ(24px);transition:transform 0.35s ease;
   }
   .feature-card:hover .fc-icon{transform:translateZ(34px) scale(1.06);}
@@ -807,9 +809,9 @@
   .feature-card .fc-icon{ background:var(--fc-accent, var(--crimson)); }
   .feature-card:hover{ border-color:var(--fc-accent, var(--brass)); }
 
-  .fc-head-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+  .fc-head-row{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px;min-height:34px;}
   .fc-head-row .fc-icon{margin-bottom:0;}
-  .fc-decor{flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+  .fc-decor{flex-shrink:0;display:flex;align-items:flex-start;justify-content:center;}
 
   .fc-decor-flame svg{width:58px;height:58px;overflow:visible;}
   .fc-decor-flame .flame-layer{transform-box:fill-box;transform-origin:50% 85%;}

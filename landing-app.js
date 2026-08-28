@@ -659,9 +659,9 @@ Grading rules:
     const SENS_WHEEL = 0.0028;
     const SENS_TOUCH = 0.0042;
     const SENS_KEY = 0.14;
-    const APPROACH_STEP_MAX = 46;
     const APPROACH_FRAME_CAP = 120;
-    const state = cards.map((el, i) => ({ el, dir: i % 2 === 0 ? 'left' : 'right', progress: 0 }));
+    const SMOOTH = 0.14;
+    const state = cards.map((el, i) => ({ el, dir: i % 2 === 0 ? 'left' : 'right', target: 0, current: 0 }));
     let currentIndex = 0;
     let mode = 'approach';
 
@@ -670,24 +670,38 @@ Grading rules:
 
     function render(i){
       const s = state[i];
-      const eased = 1 - Math.pow(1 - s.progress, 3);
+      const p = s.current;
+      const eased = 1 - Math.pow(1 - p, 3);
       const offsetPct = (1 - eased) * 100;
-      if(s.progress <= 0){
+      if(p <= 0.001){
         s.el.style.transform = `translateX(${s.dir === 'left' ? -100 : 100}%)`;
         s.el.style.opacity = '0';
         s.el.classList.remove('revealed');
-      } else if(s.progress >= 1){
+      } else if(p >= 0.999){
         s.el.style.transform = '';
         s.el.style.opacity = '';
         s.el.classList.add('revealed');
       } else {
         s.el.style.transform = `translateX(${(s.dir === 'left' ? -offsetPct : offsetPct).toFixed(2)}%)`;
-        s.el.style.opacity = String(Math.min(1, s.progress / 0.7));
+        s.el.style.opacity = String(Math.min(1, p / 0.7));
         s.el.classList.remove('revealed');
       }
     }
 
-    state.forEach((s, i) => { s.progress = 0; render(i); });
+    state.forEach((s, i) => render(i));
+
+    window.__frameTasks.push(function(){
+      for(let i = 0; i < state.length; i++){
+        const s = state[i];
+        const diff = s.target - s.current;
+        if(Math.abs(diff) < 0.0008) {
+          if(s.current !== s.target){ s.current = s.target; render(i); }
+          continue;
+        }
+        s.current += diff * SMOOTH;
+        render(i);
+      }
+    });
 
     (function ensureTopTriggerCardReveals(){
       const idx = cards.findIndex(c => c.dataset.trigger === 'top');
@@ -697,22 +711,12 @@ Grading rules:
           if(!entry.isIntersecting) return;
           io.unobserve(entry.target);
           const s = state[idx];
-          if(s.progress >= 1) return;
-          const startProgress = s.progress;
-          const duration = 550;
-          const startTime = performance.now();
-          function tick(now){
-            const t = Math.min(1, (now - startTime) / duration);
-            s.progress = startProgress + (1 - startProgress) * t;
-            render(idx);
-            if(t < 1){
-              requestAnimationFrame(tick);
-            } else if(currentIndex <= idx){
-              currentIndex = idx + 1;
-              mode = 'approach';
-            }
+          if(s.target >= 1) return;
+          s.target = 1;
+          if(currentIndex <= idx){
+            currentIndex = idx + 1;
+            mode = 'approach';
           }
-          requestAnimationFrame(tick);
         });
       }, { threshold: 0.5 });
       io.observe(cards[idx]);
@@ -750,19 +754,16 @@ Grading rules:
 
       if(mode === 'slide'){
         const s = state[currentIndex];
-        const next = s.progress + delta * sens;
+        const next = s.target + delta * sens;
         if(next >= 1){
-          s.progress = 1;
-          render(currentIndex);
+          s.target = 1;
           currentIndex++;
           mode = 'approach';
         } else if(next <= 0 && delta < 0){
-          s.progress = 0;
-          render(currentIndex);
+          s.target = 0;
           mode = 'approach';
         } else {
-          s.progress = Math.max(0, Math.min(1, next));
-          render(currentIndex);
+          s.target = Math.max(0, Math.min(1, next));
         }
         return;
       }
@@ -1542,8 +1543,8 @@ Grading rules:
       targetRightY = -(y * 0.11);
     }
     function animateParallax(){
-      currentLeftY  += (targetLeftY  - currentLeftY)  * 0.06;
-      currentRightY += (targetRightY - currentRightY) * 0.06;
+      currentLeftY  += (targetLeftY  - currentLeftY)  * 0.1;
+      currentRightY += (targetRightY - currentRightY) * 0.1;
       leftInner.style.transform  = 'translateY(' + currentLeftY.toFixed(2)  + 'px)';
       rightInner.style.transform = 'translateY(' + currentRightY.toFixed(2) + 'px)';
       requestAnimationFrame(animateParallax);

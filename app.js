@@ -4009,7 +4009,7 @@ Grading rules per claim:
   let shortcutsOpen = false;
   function positionShortcutsPanel(){
     const rect = shortcutsToggle.getBoundingClientRect();
-    const width = Math.min(280, window.innerWidth - 24);
+    const width = Math.min(300, window.innerWidth - 24);
     shortcutsPanel.style.width = width + 'px';
     shortcutsPanel.style.left = 'auto';
     let right = window.innerWidth - rect.right;
@@ -4412,6 +4412,31 @@ Grading rules per claim:
     if(e.key === 'h' || e.key === 'H'){
       e.preventDefault();
       helpToggle.click();
+      return;
+    }
+    if(e.key === 'c' || e.key === 'C'){
+      e.preventDefault();
+      document.getElementById('streakToggle')?.click();
+      return;
+    }
+    if(e.key === 'm' || e.key === 'M'){
+      e.preventDefault();
+      document.getElementById('historyToggle')?.click();
+      return;
+    }
+    if(e.key === 'b' || e.key === 'B'){
+      e.preventDefault();
+      document.getElementById('briefingToggle')?.click();
+      return;
+    }
+    if(e.key === 'q' || e.key === 'Q'){
+      e.preventDefault();
+      document.getElementById('citationToggle')?.click();
+      return;
+    }
+    if(e.key === 'Home'){
+      e.preventDefault();
+      document.getElementById('navHomeBtn')?.click();
       return;
     }
     if(e.code === 'Space' || e.key === ' '){

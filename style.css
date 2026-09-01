@@ -140,8 +140,8 @@
     --shadow:rgba(45,60,85,0.14);
     --chrome-text:#072c44;
     --chrome-text-dim:#1378bb;
-    --watermark:rgba(11,42,74,0.22);
-    --watermark-hover:rgba(11,42,74,0.7);
+    --watermark:rgba(11,42,74,0.55);
+    --watermark-hover:rgba(11,42,74,0.85);
     --header-bg:#ffffff;
     --header-text:#0b2a4a;
     --header-text-dim:#1483cd;
